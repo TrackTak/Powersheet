@@ -2,7 +2,6 @@
   "name": "spreadsheet",
   "version": "1.0.0",
   "description": "Powersheet app.",
-  "type": "module",
   "source": "src/index.ts",
   "exports": "./dist/index.modern.js",
   "main": "./dist/index.cjs",

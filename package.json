@@ -2,7 +2,11 @@
   "name": "elegantstack",
   "private": true,
   "license": "",
-  "workspaces": ["packages/**", "powersheet"],
+  "workspaces": [
+    "packages/**",
+    "landingPage",
+    "spreadsheet"
+  ],
   "scripts": {
     "clean": "lerna clean",
     "release": "lerna version",

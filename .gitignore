@@ -76,3 +76,6 @@ yarn-error.log
 
 # firebase cache files
 .firebase/
+
+# spreadsheet
+/spreadsheet/build

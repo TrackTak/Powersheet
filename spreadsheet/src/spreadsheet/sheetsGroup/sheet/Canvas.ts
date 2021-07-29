@@ -1,5 +1,6 @@
 import { Layer } from 'konva/lib/Layer';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import Col from './Col';
 import defaultCanvasStyles, { ICanvasStyles } from './defaultCanvasStyles';
@@ -12,9 +13,24 @@ interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
 interface IConstructor {
   stageConfig?: ICreateStageConfig;
   styles?: Partial<ICanvasStyles>;
+  colHeaderConfig?: IColHeaderConfig;
+  rowHeaderConfig?: IRowHeaderConfig;
   rows: Row[];
   cols: Col[];
 }
+
+interface IColHeaderConfig extends RectConfig {}
+interface IRowHeaderConfig extends RectConfig {}
+
+const defaultColHeaderConfig = {
+  fill: '#f4f5f8',
+  height: 20,
+};
+
+const defaultRowHeaderConfig = {
+  fill: '#f4f5f8',
+  width: 25,
+};
 
 class Canvas {
   container!: HTMLDivElement;
@@ -29,7 +45,18 @@ class Canvas {
     };
 
     this.create(params.stageConfig);
-    this.drawGridLines(params.rows, params.cols);
+    this.drawHeaders(
+      params.rows,
+      params.cols,
+      params.rowHeaderConfig,
+      params.colHeaderConfig
+    );
+    this.drawGridLines(
+      params.rows,
+      params.cols,
+      params.colHeaderConfig?.rowWidth,
+      params.colHeaderConfig?.colHeight
+    );
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
@@ -55,7 +82,47 @@ class Canvas {
     this.layer.draw();
   }
 
-  drawGridLines(rows: Row[], cols: Col[]) {
+  drawHeaders(
+    rows: Row[],
+    cols: Col[],
+    rowHeaderConfig: IColHeaderConfig = defaultRowHeaderConfig,
+    colHeaderConfig: IColHeaderConfig = defaultColHeaderConfig
+  ) {
+    const getRowHeader = (y: number, height: number) => {
+      return new Rect({
+        y,
+        height,
+        ...rowHeaderConfig,
+      });
+    };
+
+    const getColHeader = (x: number, width: number) => {
+      return new Rect({
+        x,
+        width,
+        ...colHeaderConfig,
+      });
+    };
+
+    rows.forEach((row, i) => {
+      const header = getRowHeader(i * row.height, row.height);
+
+      this.layer.add(header);
+    });
+
+    cols.forEach((col, i) => {
+      const header = getColHeader(i * col.width, col.width);
+
+      this.layer.add(header);
+    });
+  }
+
+  drawGridLines(
+    rows: Row[],
+    cols: Col[],
+    rowHeaderOffset: number = defaultRowHeaderConfig.width,
+    colHeaderOffset: number = defaultColHeaderConfig.height
+  ) {
     const lineConfig: LineConfig = {
       stroke: this.styles.gridLineStroke,
     };
@@ -63,7 +130,12 @@ class Canvas {
     const getHorizontalGridLine = (y: number) => {
       return new Line({
         ...lineConfig,
-        points: [0, 0, this.stage.width(), 0],
+        points: [
+          rowHeaderOffset,
+          colHeaderOffset,
+          this.stage.width(),
+          colHeaderOffset,
+        ],
         strokeWidth: 0.6,
         y,
       });
@@ -72,7 +144,12 @@ class Canvas {
     const getVerticalGridLine = (x: number) => {
       return new Line({
         ...lineConfig,
-        points: [0, 0, 0, this.stage.height()],
+        points: [
+          rowHeaderOffset,
+          colHeaderOffset,
+          rowHeaderOffset,
+          this.stage.height(),
+        ],
         strokeWidth: 0.6,
         x,
       });

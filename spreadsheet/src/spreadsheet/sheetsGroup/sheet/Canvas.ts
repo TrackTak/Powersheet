@@ -2,29 +2,36 @@ import { Layer } from 'konva/lib/Layer';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import Col from './Col';
+import defaultCanvasStyles from './defaultCanvasStyles';
 import Row from './Row';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
 }
 
+interface ICanvasStyles {
+  backgroundColor?: string;
+  gridLineStroke?: string;
+}
+
 interface IConstructor {
   stageConfig?: ICreateStageConfig;
+  canvasStyles?: ICanvasStyles;
   rows: Row[];
   cols: Col[];
 }
 
 class Canvas {
-  public container!: HTMLDivElement;
-  public stage!: Stage;
-  public layer!: Layer;
+  container!: HTMLDivElement;
+  private stage!: Stage;
+  private layer!: Layer;
 
   constructor(params: IConstructor) {
-    this.create(params.stageConfig);
+    this.create(params.stageConfig, params.canvasStyles);
     this.drawGridLines(params.rows, params.cols);
   }
 
-  create(stageConfig: ICreateStageConfig = {}) {
+  create(stageConfig: ICreateStageConfig = {}, canvasStyles?: ICanvasStyles) {
     const id = 'powersheet-canvas';
 
     this.container = document.createElement('div');
@@ -38,7 +45,8 @@ class Canvas {
       ...stageConfig,
     });
 
-    this.stage.container().style.backgroundColor = 'white';
+    this.stage.container().style.backgroundColor =
+      canvasStyles?.backgroundColor ?? defaultCanvasStyles?.backgroundColor;
 
     this.layer = new Layer();
 
@@ -47,9 +55,10 @@ class Canvas {
     this.layer.draw();
   }
 
-  drawGridLines(rows: Row[], cols: Col[]) {
+  drawGridLines(rows: Row[], cols: Col[], canvasStyles?: ICanvasStyles) {
     const lineConfig: LineConfig = {
-      stroke: '#c6c6c6',
+      stroke:
+        canvasStyles?.gridLineStroke ?? defaultCanvasStyles.gridLineStroke,
     };
 
     const getHorizontalGridLine = (y: number) => {

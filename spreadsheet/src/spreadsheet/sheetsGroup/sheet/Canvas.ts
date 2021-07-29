@@ -4,8 +4,10 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import Col from './Col';
 import Row from './Row';
-import { merge } from 'lodash';
+import { merge, throttle } from 'lodash';
 import { Text, TextConfig } from 'konva/lib/shapes/Text';
+import { prefix } from '../../utils';
+import styles from './Canvas.module.scss';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -44,24 +46,30 @@ interface ICanvasStyles {
   backgroundColor: string;
   horizontalGridLine: IGridLineConfig;
   verticalGridLine: IGridLineConfig;
-  row: IRowHeaderConfig;
-  col: IColHeaderConfig;
+  rowHeader: IRowHeaderConfig;
+  colHeader: IColHeaderConfig;
 }
 
 const sharedCanvasStyles = {
   gridLine: {
     stroke: '#c6c6c6',
     strokeWidth: 0.6,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
   },
   headerRect: {
     fill: '#f4f5f8',
     stroke: '#E6E6E6',
     strokeWidth: 0.6,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
   },
   headerText: {
     fontSize: 12,
     fontFamily: 'Source Sans Pro',
     fill: '#585757',
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
   },
 };
 
@@ -69,7 +77,7 @@ const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
   horizontalGridLine: sharedCanvasStyles.gridLine,
   verticalGridLine: sharedCanvasStyles.gridLine,
-  col: {
+  colHeader: {
     rect: {
       ...sharedCanvasStyles.headerRect,
       height: 20,
@@ -78,7 +86,7 @@ const defaultCanvasStyles: ICanvasStyles = {
       ...sharedCanvasStyles.headerText,
     },
   },
-  row: {
+  rowHeader: {
     rect: {
       ...sharedCanvasStyles.headerRect,
       width: 25,
@@ -90,13 +98,26 @@ const defaultCanvasStyles: ICanvasStyles = {
 };
 
 class Canvas {
-  container!: HTMLDivElement;
+  scrollContainer!: HTMLDivElement;
+  private largeContainer!: HTMLDivElement;
+  private container!: HTMLDivElement;
   private stage!: Stage;
   private layer!: Layer;
   private styles: ICanvasStyles;
+  private spreadsheetWidth: number;
+  private rowHeaderWidth: number;
+  private colHeaderHeight: number;
 
   constructor(params: IConstructor) {
     this.styles = merge({}, defaultCanvasStyles, params.styles);
+
+    this.spreadsheetWidth = params.cols.reduce(
+      (currentWidth, col) => col.width + currentWidth,
+      0
+    );
+
+    this.rowHeaderWidth = this.styles.rowHeader.rect.width;
+    this.colHeaderHeight = this.styles.colHeader.rect.height;
 
     this.create(params.stageConfig);
     this.drawHeaders(params.rows, params.cols);
@@ -104,16 +125,34 @@ class Canvas {
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
-    const id = 'powersheet-canvas';
+    this.scrollContainer = document.createElement('div');
+    this.scrollContainer.classList.add(
+      `${prefix}-canvas-scroll-container`,
+      styles.scrollContainer
+    );
+
+    this.largeContainer = document.createElement('div');
+    this.largeContainer.classList.add(
+      `${prefix}-canvas-large-container`,
+      styles.largeContainer
+    );
 
     this.container = document.createElement('div');
+    this.container.classList.add(`${prefix}-canvas`);
 
-    this.container.id = id;
+    this.scrollContainer.appendChild(this.largeContainer);
+    this.largeContainer.appendChild(this.container);
+
+    this.largeContainer.style.width = `${
+      this.spreadsheetWidth + this.rowHeaderWidth
+    }px`;
+
+    const PADDING = 500;
 
     this.stage = new Stage({
       container: this.container,
-      width: document.documentElement.clientWidth,
-      height: document.documentElement.clientHeight,
+      width: window.innerWidth + PADDING * 2,
+      height: window.innerHeight + PADDING * 2,
       ...stageConfig,
     });
 
@@ -123,13 +162,23 @@ class Canvas {
 
     this.stage.add(this.layer);
 
+    const repositionStage = throttle(() => {
+      const dx = this.scrollContainer.scrollLeft - PADDING;
+      const dy = this.scrollContainer.scrollTop - PADDING;
+
+      this.stage.container().style.transform =
+        'translate(' + dx + 'px, ' + dy + 'px)';
+
+      this.stage.x(-dx);
+      this.stage.y(-dy);
+    }, 75);
+
+    this.scrollContainer.addEventListener('scroll', repositionStage);
+
     this.layer.draw();
   }
 
   drawHeaders(rows: Row[], cols: Col[]) {
-    const colHeaderXOffset = this.styles.row.rect.width;
-    const rowHeaderYOffset = this.styles.col.rect.height;
-
     const getMidPoints = (rect: Rect, text: Text) => {
       const rectMidPoint = {
         x: rect.x() + rect.width() / 2,
@@ -148,21 +197,19 @@ class Canvas {
     };
 
     rows.forEach((row, i) => {
-      const y = i * row.height + rowHeaderYOffset;
+      const y = i * row.height + this.colHeaderHeight;
       const height = row.height;
 
       const rect = new Rect({
         y,
         height,
-        ...this.styles.row.rect,
+        ...this.styles.rowHeader.rect,
       });
-
-      rect.cache();
 
       const text = new Text({
         y,
         text: row.number.toString(),
-        ...this.styles.row.text,
+        ...this.styles.rowHeader.text,
       });
 
       const midPoints = getMidPoints(rect, text);
@@ -177,19 +224,19 @@ class Canvas {
     cols.forEach((col, i) => {
       const startCharCode = 'A'.charCodeAt(0);
       const colLetter = String.fromCharCode(startCharCode + i);
-      const x = i * col.width + colHeaderXOffset;
+      const x = i * col.width + this.rowHeaderWidth;
       const width = col.width;
 
       const rect = new Rect({
         x,
         width,
-        ...this.styles.col.rect,
+        ...this.styles.colHeader.rect,
       });
 
       const text = new Text({
         x,
         text: colLetter,
-        ...this.styles.col.text,
+        ...this.styles.colHeader.text,
       });
 
       const midPoints = getMidPoints(rect, text);
@@ -203,17 +250,14 @@ class Canvas {
   }
 
   drawGridLines(rows: Row[], cols: Col[]) {
-    const rowHeaderXOffset = this.styles.row.rect.width;
-    const colHeaderYOffset = this.styles.col.rect.height;
-
     const getHorizontalGridLine = (y: number) => {
       return new Line({
         ...this.styles.horizontalGridLine,
         points: [
-          rowHeaderXOffset,
-          colHeaderYOffset,
+          this.rowHeaderWidth,
+          this.colHeaderHeight,
           this.stage.width(),
-          colHeaderYOffset,
+          this.colHeaderHeight,
         ],
         y,
       });
@@ -223,9 +267,9 @@ class Canvas {
       return new Line({
         ...this.styles.verticalGridLine,
         points: [
-          rowHeaderXOffset,
-          colHeaderYOffset,
-          rowHeaderXOffset,
+          this.rowHeaderWidth,
+          this.colHeaderHeight,
+          this.rowHeaderWidth,
           this.stage.height(),
         ],
         x,

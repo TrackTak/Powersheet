@@ -1,0 +1,12 @@
+.scrollContainer {
+  $scrollBarWidth: 22px;
+  $scrollBarHeight: 22px;
+
+  width: calc(100% - #{$scrollBarWidth});
+  height: calc(100vh - #{$scrollBarHeight});
+  overflow: auto;
+}
+
+.largeContainer {
+  overflow: hidden;
+}

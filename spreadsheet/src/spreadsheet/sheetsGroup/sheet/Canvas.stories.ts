@@ -2,6 +2,7 @@ import { Story, Meta } from '@storybook/html';
 import Canvas from './Canvas';
 import Col from './Col';
 import Row from './Row';
+import 'fpsmeter';
 
 export default {
   title: 'spreadsheet/sheetsGroup/sheet/Canvas',
@@ -26,7 +27,7 @@ const Template: Story<{}> = () => {
     cols,
   });
 
-  return canvas.container;
+  return canvas.scrollContainer;
 };
 
 export const Default = Template.bind({});

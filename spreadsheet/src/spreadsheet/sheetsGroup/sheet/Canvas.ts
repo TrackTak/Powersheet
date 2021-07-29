@@ -3,8 +3,9 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import Col from './Col';
-import defaultCanvasStyles, { ICanvasStyles } from './defaultCanvasStyles';
 import Row from './Row';
+import { merge } from 'lodash';
+import { Text, TextConfig } from 'konva/lib/shapes/Text';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -19,44 +20,87 @@ interface IConstructor {
   cols: Col[];
 }
 
-interface IColHeaderConfig extends RectConfig {}
-interface IRowHeaderConfig extends RectConfig {}
+interface IColHeaderRectConfig extends RectConfig {
+  height: number;
+}
 
-const defaultColHeaderConfig = {
-  fill: '#f4f5f8',
-  height: 20,
+interface IRowHeaderRectConfig extends RectConfig {
+  width: number;
+}
+
+interface IColHeaderConfig {
+  rect: IColHeaderRectConfig;
+  text: TextConfig;
+}
+
+interface IRowHeaderConfig {
+  rect: IRowHeaderRectConfig;
+  text: TextConfig;
+}
+
+interface IGridLineConfig extends LineConfig {}
+
+interface ICanvasStyles {
+  backgroundColor: string;
+  horizontalGridLine: IGridLineConfig;
+  verticalGridLine: IGridLineConfig;
+  row: IRowHeaderConfig;
+  col: IColHeaderConfig;
+}
+
+const sharedCanvasStyles = {
+  gridLine: {
+    stroke: '#c6c6c6',
+    strokeWidth: 0.6,
+  },
+  headerRect: {
+    fill: '#f4f5f8',
+    stroke: '#E6E6E6',
+    strokeWidth: 0.6,
+  },
+  headerText: {
+    fontSize: 12,
+    fontFamily: 'Source Sans Pro',
+    fill: '#585757',
+  },
 };
 
-const defaultRowHeaderConfig = {
-  fill: '#f4f5f8',
-  width: 25,
+const defaultCanvasStyles: ICanvasStyles = {
+  backgroundColor: 'white',
+  horizontalGridLine: sharedCanvasStyles.gridLine,
+  verticalGridLine: sharedCanvasStyles.gridLine,
+  col: {
+    rect: {
+      ...sharedCanvasStyles.headerRect,
+      height: 20,
+    },
+    text: {
+      ...sharedCanvasStyles.headerText,
+    },
+  },
+  row: {
+    rect: {
+      ...sharedCanvasStyles.headerRect,
+      width: 25,
+    },
+    text: {
+      ...sharedCanvasStyles.headerText,
+    },
+  },
 };
 
 class Canvas {
   container!: HTMLDivElement;
   private stage!: Stage;
   private layer!: Layer;
-  private styles!: ICanvasStyles;
+  private styles: ICanvasStyles;
 
   constructor(params: IConstructor) {
-    this.styles = {
-      ...defaultCanvasStyles,
-      ...params.styles,
-    };
+    this.styles = merge({}, defaultCanvasStyles, params.styles);
 
     this.create(params.stageConfig);
-    this.drawHeaders(
-      params.rows,
-      params.cols,
-      params.rowHeaderConfig,
-      params.colHeaderConfig
-    );
-    this.drawGridLines(
-      params.rows,
-      params.cols,
-      params.colHeaderConfig?.rowWidth,
-      params.colHeaderConfig?.colHeight
-    );
+    this.drawHeaders(params.rows, params.cols);
+    this.drawGridLines(params.rows, params.cols);
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
@@ -82,75 +126,108 @@ class Canvas {
     this.layer.draw();
   }
 
-  drawHeaders(
-    rows: Row[],
-    cols: Col[],
-    rowHeaderConfig: IColHeaderConfig = defaultRowHeaderConfig,
-    colHeaderConfig: IColHeaderConfig = defaultColHeaderConfig
-  ) {
-    const getRowHeader = (y: number, height: number) => {
-      return new Rect({
-        y,
-        height,
-        ...rowHeaderConfig,
-      });
-    };
+  drawHeaders(rows: Row[], cols: Col[]) {
+    const colHeaderXOffset = this.styles.row.rect.width;
+    const rowHeaderYOffset = this.styles.col.rect.height;
 
-    const getColHeader = (x: number, width: number) => {
-      return new Rect({
-        x,
-        width,
-        ...colHeaderConfig,
-      });
+    const getMidPoints = (rect: Rect, text: Text) => {
+      const rectMidPoint = {
+        x: rect.x() + rect.width() / 2,
+        y: rect.y() + rect.height() / 2,
+      };
+
+      const textMidPoint = {
+        x: text.width() / 2,
+        y: text.height() / 2,
+      };
+
+      return {
+        x: rectMidPoint.x - textMidPoint.x,
+        y: rectMidPoint.y - textMidPoint.y,
+      };
     };
 
     rows.forEach((row, i) => {
-      const header = getRowHeader(i * row.height, row.height);
+      const y = i * row.height + rowHeaderYOffset;
+      const height = row.height;
 
-      this.layer.add(header);
+      const rect = new Rect({
+        y,
+        height,
+        ...this.styles.row.rect,
+      });
+
+      rect.cache();
+
+      const text = new Text({
+        y,
+        text: row.number.toString(),
+        ...this.styles.row.text,
+      });
+
+      const midPoints = getMidPoints(rect, text);
+
+      text.x(midPoints.x);
+      text.y(midPoints.y);
+
+      this.layer.add(rect);
+      this.layer.add(text);
     });
 
     cols.forEach((col, i) => {
-      const header = getColHeader(i * col.width, col.width);
+      const startCharCode = 'A'.charCodeAt(0);
+      const colLetter = String.fromCharCode(startCharCode + i);
+      const x = i * col.width + colHeaderXOffset;
+      const width = col.width;
 
-      this.layer.add(header);
+      const rect = new Rect({
+        x,
+        width,
+        ...this.styles.col.rect,
+      });
+
+      const text = new Text({
+        x,
+        text: colLetter,
+        ...this.styles.col.text,
+      });
+
+      const midPoints = getMidPoints(rect, text);
+
+      text.x(midPoints.x);
+      text.y(midPoints.y);
+
+      this.layer.add(rect);
+      this.layer.add(text);
     });
   }
 
-  drawGridLines(
-    rows: Row[],
-    cols: Col[],
-    rowHeaderOffset: number = defaultRowHeaderConfig.width,
-    colHeaderOffset: number = defaultColHeaderConfig.height
-  ) {
-    const lineConfig: LineConfig = {
-      stroke: this.styles.gridLineStroke,
-    };
+  drawGridLines(rows: Row[], cols: Col[]) {
+    const rowHeaderXOffset = this.styles.row.rect.width;
+    const colHeaderYOffset = this.styles.col.rect.height;
 
     const getHorizontalGridLine = (y: number) => {
       return new Line({
-        ...lineConfig,
+        ...this.styles.horizontalGridLine,
         points: [
-          rowHeaderOffset,
-          colHeaderOffset,
+          rowHeaderXOffset,
+          colHeaderYOffset,
           this.stage.width(),
-          colHeaderOffset,
+          colHeaderYOffset,
         ],
-        strokeWidth: 0.6,
         y,
       });
     };
 
     const getVerticalGridLine = (x: number) => {
       return new Line({
-        ...lineConfig,
+        ...this.styles.verticalGridLine,
         points: [
-          rowHeaderOffset,
-          colHeaderOffset,
-          rowHeaderOffset,
+          rowHeaderXOffset,
+          colHeaderYOffset,
+          rowHeaderXOffset,
           this.stage.height(),
         ],
-        strokeWidth: 0.6,
         x,
       });
     };

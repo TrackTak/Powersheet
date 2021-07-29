@@ -107,9 +107,12 @@ class Canvas {
   private spreadsheetWidth: number;
   private rowHeaderWidth: number;
   private colHeaderHeight: number;
+  private scrollPadding: number;
+  private throttledScroll: () => void;
 
   constructor(params: IConstructor) {
     this.styles = merge({}, defaultCanvasStyles, params.styles);
+    this.scrollPadding = 500;
 
     this.spreadsheetWidth = params.cols.reduce(
       (currentWidth, col) => col.width + currentWidth,
@@ -119,6 +122,7 @@ class Canvas {
     this.rowHeaderWidth = this.styles.rowHeader.rect.width;
     this.colHeaderHeight = this.styles.colHeader.rect.height;
 
+    this.throttledScroll = throttle(this.scroll, 75);
     this.create(params.stageConfig);
     this.drawHeaders(params.rows, params.cols);
     this.drawGridLines(params.rows, params.cols);
@@ -147,12 +151,10 @@ class Canvas {
       this.spreadsheetWidth + this.rowHeaderWidth
     }px`;
 
-    const PADDING = 500;
-
     this.stage = new Stage({
       container: this.container,
-      width: window.innerWidth + PADDING * 2,
-      height: window.innerHeight + PADDING * 2,
+      width: window.innerWidth + this.scrollPadding * 2,
+      height: window.innerHeight + this.scrollPadding * 2,
       ...stageConfig,
     });
 
@@ -162,20 +164,24 @@ class Canvas {
 
     this.stage.add(this.layer);
 
-    const repositionStage = throttle(() => {
-      const dx = this.scrollContainer.scrollLeft - PADDING;
-      const dy = this.scrollContainer.scrollTop - PADDING;
-
-      this.stage.container().style.transform =
-        'translate(' + dx + 'px, ' + dy + 'px)';
-
-      this.stage.x(-dx);
-      this.stage.y(-dy);
-    }, 75);
-
-    this.scrollContainer.addEventListener('scroll', repositionStage);
+    this.scrollContainer.addEventListener('scroll', this.throttledScroll);
 
     this.layer.draw();
+  }
+
+  destroy() {
+    this.scrollContainer.removeEventListener('scroll', this.throttledScroll);
+  }
+
+  scroll() {
+    const dx = this.scrollContainer.scrollLeft - this.scrollPadding;
+    const dy = this.scrollContainer.scrollTop - this.scrollPadding;
+
+    this.stage.container().style.transform =
+      'translate(' + dx + 'px, ' + dy + 'px)';
+
+    this.stage.x(-dx);
+    this.stage.y(-dy);
   }
 
   drawHeaders(rows: Row[], cols: Col[]) {

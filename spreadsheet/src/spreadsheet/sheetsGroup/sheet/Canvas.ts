@@ -16,27 +16,29 @@ interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
 interface IConstructor {
   stageConfig?: ICreateStageConfig;
   styles?: Partial<ICanvasStyles>;
-  colHeaderConfig?: IColHeaderConfig;
   rowHeaderConfig?: IRowHeaderConfig;
+  colHeaderConfig?: IColHeaderConfig;
   rows: Row[];
   cols: Col[];
-}
-
-interface IColHeaderRectConfig extends RectConfig {
-  height: number;
+  defaultRowHeight: number;
+  defaultColWidth: number;
 }
 
 interface IRowHeaderRectConfig extends RectConfig {
   width: number;
 }
 
-interface IColHeaderConfig {
-  rect: IColHeaderRectConfig;
-  text: TextConfig;
+interface IColHeaderRectConfig extends RectConfig {
+  height: number;
 }
 
 interface IRowHeaderConfig {
   rect: IRowHeaderRectConfig;
+  text: TextConfig;
+}
+
+interface IColHeaderConfig {
+  rect: IColHeaderRectConfig;
   text: TextConfig;
 }
 
@@ -50,12 +52,19 @@ interface ICanvasStyles {
   colHeader: IColHeaderConfig;
 }
 
+interface IDimensions {
+  width: number;
+  height: number;
+}
+
 const sharedCanvasStyles = {
   gridLine: {
     stroke: '#c6c6c6',
     strokeWidth: 0.6,
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
+    listening: false,
+    perfectDrawEnabled: false,
   },
   headerRect: {
     fill: '#f4f5f8',
@@ -63,6 +72,7 @@ const sharedCanvasStyles = {
     strokeWidth: 0.6,
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
+    perfectDrawEnabled: false,
   },
   headerText: {
     fontSize: 12,
@@ -70,6 +80,8 @@ const sharedCanvasStyles = {
     fill: '#585757',
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
+    listening: false,
+    perfectDrawEnabled: false,
   },
 };
 
@@ -77,15 +89,6 @@ const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
   horizontalGridLine: sharedCanvasStyles.gridLine,
   verticalGridLine: sharedCanvasStyles.gridLine,
-  colHeader: {
-    rect: {
-      ...sharedCanvasStyles.headerRect,
-      height: 20,
-    },
-    text: {
-      ...sharedCanvasStyles.headerText,
-    },
-  },
   rowHeader: {
     rect: {
       ...sharedCanvasStyles.headerRect,
@@ -95,6 +98,32 @@ const defaultCanvasStyles: ICanvasStyles = {
       ...sharedCanvasStyles.headerText,
     },
   },
+  colHeader: {
+    rect: {
+      ...sharedCanvasStyles.headerRect,
+      height: 20,
+    },
+    text: {
+      ...sharedCanvasStyles.headerText,
+    },
+  },
+};
+
+const getHeaderMidPoints = (rect: Rect, text: Text) => {
+  const rectMidPoint = {
+    x: rect.x() + rect.width() / 2,
+    y: rect.y() + rect.height() / 2,
+  };
+
+  const textMidPoint = {
+    x: text.width() / 2,
+    y: text.height() / 2,
+  };
+
+  return {
+    x: rectMidPoint.x - textMidPoint.x,
+    y: rectMidPoint.y - textMidPoint.y,
+  };
 };
 
 class Canvas {
@@ -105,8 +134,8 @@ class Canvas {
   private layer!: Layer;
   private styles: ICanvasStyles;
   private spreadsheetWidth: number;
-  private rowHeaderWidth: number;
-  private colHeaderHeight: number;
+  private rowHeaderDimensions: IDimensions;
+  private colHeaderDimensions: IDimensions;
   private scrollPadding: number;
   private throttledScroll: () => void;
 
@@ -114,18 +143,32 @@ class Canvas {
     this.styles = merge({}, defaultCanvasStyles, params.styles);
     this.scrollPadding = 500;
 
+    this.rowHeaderDimensions = {
+      width: this.styles.rowHeader.rect.width,
+      height: params.defaultRowHeight,
+    };
+    this.colHeaderDimensions = {
+      width: params.defaultColWidth,
+      height: this.styles.colHeader.rect.height,
+    };
+
     this.spreadsheetWidth = params.cols.reduce(
-      (currentWidth, col) => col.width + currentWidth,
+      (currentWidth, col) => this.getWidthFromCol(col) + currentWidth,
       0
     );
-
-    this.rowHeaderWidth = this.styles.rowHeader.rect.width;
-    this.colHeaderHeight = this.styles.colHeader.rect.height;
 
     this.throttledScroll = throttle(this.scroll, 75);
     this.create(params.stageConfig);
     this.drawHeaders(params.rows, params.cols);
     this.drawGridLines(params.rows, params.cols);
+  }
+
+  getWidthFromCol(col: Col) {
+    return col.width ? col.width : this.colHeaderDimensions.width;
+  }
+
+  getHeightFromRow(row: Row) {
+    return row.height ? row.height : this.rowHeaderDimensions.height;
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
@@ -148,7 +191,7 @@ class Canvas {
     this.largeContainer.appendChild(this.container);
 
     this.largeContainer.style.width = `${
-      this.spreadsheetWidth + this.rowHeaderWidth
+      this.spreadsheetWidth + this.rowHeaderDimensions.width
     }px`;
 
     this.stage = new Stage({
@@ -171,45 +214,40 @@ class Canvas {
 
   destroy() {
     this.scrollContainer.removeEventListener('scroll', this.throttledScroll);
+    this.stage.destroy();
   }
 
-  scroll() {
+  scroll = () => {
     const dx = this.scrollContainer.scrollLeft - this.scrollPadding;
     const dy = this.scrollContainer.scrollTop - this.scrollPadding;
-
     this.stage.container().style.transform =
       'translate(' + dx + 'px, ' + dy + 'px)';
-
     this.stage.x(-dx);
     this.stage.y(-dy);
-  }
+  };
 
   drawHeaders(rows: Row[], cols: Col[]) {
-    const getMidPoints = (rect: Rect, text: Text) => {
-      const rectMidPoint = {
-        x: rect.x() + rect.width() / 2,
-        y: rect.y() + rect.height() / 2,
-      };
+    this.drawRowHeaders(rows);
+    this.drawColHeaders(cols);
+  }
 
-      const textMidPoint = {
-        x: text.width() / 2,
-        y: text.height() / 2,
-      };
+  drawRowHeaders(rows: Row[]) {
+    const rect = new Rect({
+      ...this.rowHeaderDimensions,
+      ...this.styles.rowHeader.rect,
+    });
 
-      return {
-        x: rectMidPoint.x - textMidPoint.x,
-        y: rectMidPoint.y - textMidPoint.y,
-      };
-    };
+    rect.cache();
+
+    let clone;
 
     rows.forEach((row, i) => {
-      const y = i * row.height + this.colHeaderHeight;
-      const height = row.height;
+      const height = this.getHeightFromRow(row);
+      const y = i * height + this.colHeaderDimensions.height;
 
-      const rect = new Rect({
+      clone = rect.clone({
         y,
         height,
-        ...this.styles.rowHeader.rect,
       });
 
       const text = new Text({
@@ -218,25 +256,35 @@ class Canvas {
         ...this.styles.rowHeader.text,
       });
 
-      const midPoints = getMidPoints(rect, text);
+      const midPoints = getHeaderMidPoints(clone, text);
 
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.layer.add(rect);
+      this.layer.add(clone);
       this.layer.add(text);
     });
+  }
+
+  drawColHeaders(cols: Col[]) {
+    const rect = new Rect({
+      ...this.colHeaderDimensions,
+      ...this.styles.colHeader.rect,
+    });
+
+    rect.cache();
+
+    let clone;
 
     cols.forEach((col, i) => {
+      const width = this.getWidthFromCol(col);
       const startCharCode = 'A'.charCodeAt(0);
       const colLetter = String.fromCharCode(startCharCode + i);
-      const x = i * col.width + this.rowHeaderWidth;
-      const width = col.width;
+      const x = i * width + this.rowHeaderDimensions.width;
 
-      const rect = new Rect({
+      clone = rect.clone({
         x,
         width,
-        ...this.styles.colHeader.rect,
       });
 
       const text = new Text({
@@ -245,53 +293,66 @@ class Canvas {
         ...this.styles.colHeader.text,
       });
 
-      const midPoints = getMidPoints(rect, text);
+      const midPoints = getHeaderMidPoints(clone, text);
 
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.layer.add(rect);
+      this.layer.add(clone);
       this.layer.add(text);
     });
   }
 
   drawGridLines(rows: Row[], cols: Col[]) {
-    const getHorizontalGridLine = (y: number) => {
-      return new Line({
-        ...this.styles.horizontalGridLine,
-        points: [
-          this.rowHeaderWidth,
-          this.colHeaderHeight,
-          this.stage.width(),
-          this.colHeaderHeight,
-        ],
-        y,
-      });
-    };
+    this.drawHorizontalGridLines(rows);
+    this.drawVerticalGridLines(cols);
+  }
 
-    const getVerticalGridLine = (x: number) => {
-      return new Line({
-        ...this.styles.verticalGridLine,
-        points: [
-          this.rowHeaderWidth,
-          this.colHeaderHeight,
-          this.rowHeaderWidth,
-          this.stage.height(),
-        ],
-        x,
-      });
-    };
-
-    rows.forEach((row) => {
-      const horizontalGridLine = getHorizontalGridLine(row.number * row.height);
-
-      this.layer.add(horizontalGridLine);
+  drawHorizontalGridLines(rows: Row[]) {
+    const line = new Line({
+      ...this.styles.horizontalGridLine,
+      points: [
+        this.rowHeaderDimensions.width,
+        this.colHeaderDimensions.height,
+        this.stage.width(),
+        this.colHeaderDimensions.height,
+      ],
     });
 
-    cols.forEach((col) => {
-      const verticalGridLine = getVerticalGridLine(col.number * col.width);
+    let clone;
 
-      this.layer.add(verticalGridLine);
+    rows.forEach((row) => {
+      const height = this.getHeightFromRow(row);
+
+      clone = line.clone({
+        y: row.number * height,
+      });
+
+      this.layer.add(clone);
+    });
+  }
+
+  drawVerticalGridLines(cols: Col[]) {
+    const line = new Line({
+      ...this.styles.verticalGridLine,
+      points: [
+        this.rowHeaderDimensions.width,
+        this.colHeaderDimensions.height,
+        this.rowHeaderDimensions.width,
+        this.stage.height(),
+      ],
+    });
+
+    let clone;
+
+    cols.forEach((col) => {
+      const width = this.getWidthFromCol(col);
+
+      clone = line.clone({
+        x: col.number * width,
+      });
+
+      this.layer.add(clone);
     });
   }
 }

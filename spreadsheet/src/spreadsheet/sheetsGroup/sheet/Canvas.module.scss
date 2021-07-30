@@ -2,7 +2,7 @@
   $scrollBarWidth: 22px;
   $scrollBarHeight: 22px;
 
-  width: calc(100% - #{$scrollBarWidth});
+  width: 100%;
   height: calc(100vh - #{$scrollBarHeight});
   overflow: auto;
 }

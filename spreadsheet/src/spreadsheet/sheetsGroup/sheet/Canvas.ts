@@ -8,6 +8,8 @@ import { merge, throttle } from 'lodash';
 import { Text, TextConfig } from 'konva/lib/shapes/Text';
 import { prefix } from '../../utils';
 import styles from './Canvas.module.scss';
+import EventEmitter from 'eventemitter3';
+import events from '../../events';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -22,6 +24,7 @@ interface IConstructor {
   cols: Col[];
   defaultRowHeight: number;
   defaultColWidth: number;
+  eventEmitter: EventEmitter;
 }
 
 interface IRowHeaderRectConfig extends RectConfig {
@@ -52,7 +55,7 @@ interface ICanvasStyles {
   colHeader: IColHeaderConfig;
 }
 
-interface IDimensions {
+interface IHeaderDimensions {
   width: number;
   height: number;
 }
@@ -128,18 +131,20 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
 
 class Canvas {
   scrollContainer!: HTMLDivElement;
-  private largeContainer!: HTMLDivElement;
-  private container!: HTMLDivElement;
-  private stage!: Stage;
-  private layer!: Layer;
+  largeContainer!: HTMLDivElement;
+  container!: HTMLDivElement;
+  stage!: Stage;
+  layer!: Layer;
   private styles: ICanvasStyles;
   private spreadsheetWidth: number;
-  private rowHeaderDimensions: IDimensions;
-  private colHeaderDimensions: IDimensions;
+  private rowHeaderDimensions: IHeaderDimensions;
+  private colHeaderDimensions: IHeaderDimensions;
   private scrollPadding: number;
-  private throttledScroll: () => void;
+  private onThrottledScroll: (e: Event) => void;
+  private eventEmitter: EventEmitter;
 
   constructor(params: IConstructor) {
+    this.eventEmitter = params.eventEmitter;
     this.styles = merge({}, defaultCanvasStyles, params.styles);
     this.scrollPadding = 500;
 
@@ -157,7 +162,7 @@ class Canvas {
       0
     );
 
-    this.throttledScroll = throttle(this.scroll, 75);
+    this.onThrottledScroll = throttle(this.onScroll, 75);
     this.create(params.stageConfig);
     this.drawHeaders(params.rows, params.cols);
     this.drawGridLines(params.rows, params.cols);
@@ -207,23 +212,23 @@ class Canvas {
 
     this.stage.add(this.layer);
 
-    this.scrollContainer.addEventListener('scroll', this.throttledScroll);
-
-    this.layer.draw();
+    this.scrollContainer.addEventListener('scroll', this.onThrottledScroll);
   }
 
   destroy() {
-    this.scrollContainer.removeEventListener('scroll', this.throttledScroll);
+    this.scrollContainer.removeEventListener('scroll', this.onThrottledScroll);
     this.stage.destroy();
   }
 
-  scroll = () => {
+  onScroll = (e: Event) => {
     const dx = this.scrollContainer.scrollLeft - this.scrollPadding;
     const dy = this.scrollContainer.scrollTop - this.scrollPadding;
     this.stage.container().style.transform =
       'translate(' + dx + 'px, ' + dy + 'px)';
     this.stage.x(-dx);
     this.stage.y(-dy);
+
+    this.eventEmitter.emit(events.canvas.throttledScroll, e);
   };
 
   drawHeaders(rows: Row[], cols: Col[]) {
@@ -232,6 +237,8 @@ class Canvas {
   }
 
   drawRowHeaders(rows: Row[]) {
+    const startOffset = this.colHeaderDimensions.height;
+
     const rect = new Rect({
       ...this.rowHeaderDimensions,
       ...this.styles.rowHeader.rect,
@@ -243,7 +250,7 @@ class Canvas {
 
     rows.forEach((row, i) => {
       const height = this.getHeightFromRow(row);
-      const y = i * height + this.colHeaderDimensions.height;
+      const y = i * height + startOffset;
 
       clone = rect.clone({
         y,
@@ -267,6 +274,7 @@ class Canvas {
   }
 
   drawColHeaders(cols: Col[]) {
+    const startOffset = this.rowHeaderDimensions.width;
     const rect = new Rect({
       ...this.colHeaderDimensions,
       ...this.styles.colHeader.rect,
@@ -280,7 +288,7 @@ class Canvas {
       const width = this.getWidthFromCol(col);
       const startCharCode = 'A'.charCodeAt(0);
       const colLetter = String.fromCharCode(startCharCode + i);
-      const x = i * width + this.rowHeaderDimensions.width;
+      const x = i * width + startOffset;
 
       clone = rect.clone({
         x,

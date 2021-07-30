@@ -7,7 +7,6 @@ import Row from './Row';
 import { merge, throttle } from 'lodash';
 import { Text, TextConfig } from 'konva/lib/shapes/Text';
 import { prefix } from '../../utils';
-import styles from './Canvas.module.scss';
 import EventEmitter from 'eventemitter3';
 import events from '../../events';
 
@@ -56,6 +55,11 @@ interface ICanvasStyles {
 }
 
 interface IHeaderDimensions {
+  width: number;
+  height: number;
+}
+
+interface ISheetDimensions {
   width: number;
   height: number;
 }
@@ -129,24 +133,24 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
   };
 };
 
+const padding = 5;
+
 class Canvas {
-  scrollContainer!: HTMLDivElement;
-  largeContainer!: HTMLDivElement;
   container!: HTMLDivElement;
   stage!: Stage;
-  layer!: Layer;
+  mainLayer!: Layer;
+  scrollLayer!: Layer;
   private styles: ICanvasStyles;
-  private spreadsheetWidth: number;
+  private verticalScrollBar!: Rect;
+  private horizontalScrollBar!: Rect;
+  private sheetDimensions!: ISheetDimensions;
   private rowHeaderDimensions: IHeaderDimensions;
   private colHeaderDimensions: IHeaderDimensions;
-  private scrollPadding: number;
-  private onThrottledScroll: (e: Event) => void;
   private eventEmitter: EventEmitter;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
     this.styles = merge({}, defaultCanvasStyles, params.styles);
-    this.scrollPadding = 500;
 
     this.rowHeaderDimensions = {
       width: this.styles.rowHeader.rect.width,
@@ -157,15 +161,20 @@ class Canvas {
       height: this.styles.colHeader.rect.height,
     };
 
-    this.spreadsheetWidth = params.cols.reduce(
-      (currentWidth, col) => this.getWidthFromCol(col) + currentWidth,
-      0
-    );
-
-    this.onThrottledScroll = throttle(this.onScroll, 75);
     this.create(params.stageConfig);
     this.drawHeaders(params.rows, params.cols);
     this.drawGridLines(params.rows, params.cols);
+    this.drawScrollBars();
+
+    console.log(this.verticalScrollBar.width());
+
+    this.sheetDimensions = {
+      width: params.cols.reduce(
+        (currentWidth, col) => this.getWidthFromCol(col) + currentWidth,
+        0
+      ),
+      height: 3000,
+    };
   }
 
   getWidthFromCol(col: Col) {
@@ -177,59 +186,142 @@ class Canvas {
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
-    this.scrollContainer = document.createElement('div');
-    this.scrollContainer.classList.add(
-      `${prefix}-canvas-scroll-container`,
-      styles.scrollContainer
-    );
-
-    this.largeContainer = document.createElement('div');
-    this.largeContainer.classList.add(
-      `${prefix}-canvas-large-container`,
-      styles.largeContainer
-    );
-
     this.container = document.createElement('div');
     this.container.classList.add(`${prefix}-canvas`);
 
-    this.scrollContainer.appendChild(this.largeContainer);
-    this.largeContainer.appendChild(this.container);
-
-    this.largeContainer.style.width = `${
-      this.spreadsheetWidth + this.rowHeaderDimensions.width
-    }px`;
-
     this.stage = new Stage({
       container: this.container,
-      width: window.innerWidth + this.scrollPadding * 2,
-      height: window.innerHeight + this.scrollPadding * 2,
+      width: window.innerWidth - 100,
+      height: window.innerHeight - 100,
       ...stageConfig,
     });
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
-    this.layer = new Layer();
+    this.mainLayer = new Layer();
+    this.scrollLayer = new Layer();
 
-    this.stage.add(this.layer);
+    this.stage.add(this.mainLayer);
+    this.stage.add(this.scrollLayer);
 
-    this.scrollContainer.addEventListener('scroll', this.onThrottledScroll);
+    this.stage.on('wheel', (e) => {
+      e.evt.preventDefault();
+
+      const dx = e.evt.deltaX;
+      const dy = e.evt.deltaY;
+
+      const minX = -(this.sheetDimensions.width - this.stage.width());
+      const maxX = 0;
+
+      const x = Math.max(minX, Math.min(this.mainLayer.x() - dx, maxX));
+
+      const minY = -(this.sheetDimensions.height - this.stage.height());
+      const maxY = 0;
+
+      const y = Math.max(minY, Math.min(this.mainLayer.y() - dy, maxY));
+      this.mainLayer.position({ x, y });
+
+      const availableHeight =
+        this.stage.height() - padding * 2 - this.verticalScrollBar.height();
+      const vy =
+        (this.mainLayer.y() /
+          (-this.sheetDimensions.height + this.stage.height())) *
+          availableHeight +
+        padding;
+      this.verticalScrollBar.y(vy);
+
+      const availableWidth =
+        this.stage.width() - padding * 2 - this.horizontalScrollBar.width();
+
+      const hx =
+        (this.mainLayer.x() /
+          (-this.sheetDimensions.width + this.stage.width())) *
+          availableWidth +
+        padding;
+      this.horizontalScrollBar.x(hx);
+    });
+  }
+
+  drawScrollBars() {
+    this.drawHorizontalScrollBar();
+    this.drawVerticalScrollBar();
+  }
+
+  drawHorizontalScrollBar() {
+    this.horizontalScrollBar = new Rect({
+      width: 100,
+      height: 10,
+      fill: 'grey',
+      opacity: 0.8,
+      x: padding,
+      y: this.stage.height() - padding - 10,
+      draggable: true,
+      dragBoundFunc: (pos) => {
+        pos.x = Math.max(
+          Math.min(
+            pos.x,
+            this.stage.width() - this.horizontalScrollBar.width() - padding
+          ),
+          padding
+        );
+        pos.y = this.stage.height() - padding - 10;
+
+        return pos;
+      },
+    });
+
+    this.scrollLayer.add(this.horizontalScrollBar);
+
+    this.horizontalScrollBar.on('dragmove', () => {
+      const availableWidth =
+        this.stage.width() - padding * 2 - this.horizontalScrollBar.width();
+
+      var delta = (this.horizontalScrollBar.x() - padding) / availableWidth;
+
+      this.mainLayer.x(
+        -(this.sheetDimensions.width - this.stage.width()) * delta
+      );
+    });
+  }
+
+  drawVerticalScrollBar() {
+    this.verticalScrollBar = new Rect({
+      width: 10,
+      height: 100,
+      fill: 'grey',
+      opacity: 0.8,
+      x: this.stage.width() - padding - 10,
+      y: padding,
+      draggable: true,
+      dragBoundFunc: (pos) => {
+        pos.x = this.stage.width() - padding - 10;
+        pos.y = Math.max(
+          Math.min(
+            pos.y,
+            this.stage.height() - this.verticalScrollBar.height() - padding
+          ),
+          padding
+        );
+        return pos;
+      },
+    });
+
+    this.scrollLayer.add(this.verticalScrollBar);
+
+    this.verticalScrollBar.on('dragmove', () => {
+      const availableHeight =
+        this.stage.height() - padding * 2 - this.verticalScrollBar.height();
+      const delta = (this.verticalScrollBar.y() - padding) / availableHeight;
+
+      this.mainLayer.y(
+        -(this.sheetDimensions.height - this.stage.height()) * delta
+      );
+    });
   }
 
   destroy() {
-    this.scrollContainer.removeEventListener('scroll', this.onThrottledScroll);
     this.stage.destroy();
   }
-
-  onScroll = (e: Event) => {
-    const dx = this.scrollContainer.scrollLeft - this.scrollPadding;
-    const dy = this.scrollContainer.scrollTop - this.scrollPadding;
-    this.stage.container().style.transform =
-      'translate(' + dx + 'px, ' + dy + 'px)';
-    this.stage.x(-dx);
-    this.stage.y(-dy);
-
-    this.eventEmitter.emit(events.canvas.throttledScroll, e);
-  };
 
   drawHeaders(rows: Row[], cols: Col[]) {
     this.drawRowHeaders(rows);
@@ -268,8 +360,8 @@ class Canvas {
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.layer.add(clone);
-      this.layer.add(text);
+      this.mainLayer.add(clone);
+      this.mainLayer.add(text);
     });
   }
 
@@ -306,8 +398,8 @@ class Canvas {
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.layer.add(clone);
-      this.layer.add(text);
+      this.mainLayer.add(clone);
+      this.mainLayer.add(text);
     });
   }
 
@@ -336,7 +428,7 @@ class Canvas {
         y: row.number * height,
       });
 
-      this.layer.add(clone);
+      this.mainLayer.add(clone);
     });
   }
 
@@ -360,7 +452,7 @@ class Canvas {
         x: col.number * width,
       });
 
-      this.layer.add(clone);
+      this.mainLayer.add(clone);
     });
   }
 }

@@ -34,7 +34,7 @@ const Template: Story<{}> = () => {
     eventEmitter,
   });
 
-  return canvas.scrollContainer;
+  return canvas.container;
 };
 
 export const Default = Template.bind({});

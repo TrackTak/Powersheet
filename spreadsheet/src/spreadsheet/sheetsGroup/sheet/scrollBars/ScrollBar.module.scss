@@ -1,0 +1,31 @@
+.verticalScrollBar {
+  bottom: 15px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #f4f5f8;
+  z-index: 12;
+  height: 932px;
+}
+
+.verticalScroll {
+  width: 1px;
+  background: #ddd;
+}
+
+.horizontalScrollBar {
+  position: sticky;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  bottom: 0;
+  right: 0;
+  background-color: #f4f5f8;
+  z-index: 12;
+}
+
+.horizontalScroll {
+  height: 1px;
+  background: #ddd;
+}

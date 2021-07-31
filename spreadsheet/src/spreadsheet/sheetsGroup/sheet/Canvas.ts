@@ -4,11 +4,13 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import Col from './Col';
 import Row from './Row';
-import { merge, throttle } from 'lodash';
+import { merge } from 'lodash';
 import { Text, TextConfig } from 'konva/lib/shapes/Text';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
-import events from '../../events';
+import styles from './Canvas.module.scss';
+import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
+import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -59,7 +61,7 @@ interface IHeaderDimensions {
   height: number;
 }
 
-interface ISheetDimensions {
+export interface ISheetDimensions {
   width: number;
   height: number;
 }
@@ -133,16 +135,13 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
   };
 };
 
-const padding = 5;
-
 class Canvas {
   container!: HTMLDivElement;
   stage!: Stage;
   mainLayer!: Layer;
-  scrollLayer!: Layer;
+  private horizontalScrollBar!: HorizontalScrollBar;
+  private verticalScrollBar!: VerticalScrollBar;
   private styles: ICanvasStyles;
-  private verticalScrollBar!: Rect;
-  private horizontalScrollBar!: Rect;
   private sheetDimensions!: ISheetDimensions;
   private rowHeaderDimensions: IHeaderDimensions;
   private colHeaderDimensions: IHeaderDimensions;
@@ -161,20 +160,21 @@ class Canvas {
       height: this.styles.colHeader.rect.height,
     };
 
-    this.create(params.stageConfig);
-    this.drawHeaders(params.rows, params.cols);
-    this.drawGridLines(params.rows, params.cols);
-    this.drawScrollBars();
-
-    console.log(this.verticalScrollBar.width());
-
     this.sheetDimensions = {
       width: params.cols.reduce(
         (currentWidth, col) => this.getWidthFromCol(col) + currentWidth,
         0
       ),
-      height: 3000,
+      height: params.rows.reduce(
+        (currentHeight, row) => this.getHeightFromRow(row) + currentHeight,
+        0
+      ),
     };
+
+    this.create(params.stageConfig);
+    this.createScrollBars();
+    this.drawHeaders(params.rows, params.cols);
+    this.drawGridLines(params.rows, params.cols);
   }
 
   getWidthFromCol(col: Col) {
@@ -186,137 +186,42 @@ class Canvas {
   }
 
   create(stageConfig: ICreateStageConfig = {}) {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
     this.container = document.createElement('div');
-    this.container.classList.add(`${prefix}-canvas`);
+    this.container.classList.add(`${prefix}-canvas`, styles.canvas);
 
     this.stage = new Stage({
       container: this.container,
-      width: window.innerWidth - 100,
-      height: window.innerHeight - 100,
+      width,
+      height,
       ...stageConfig,
     });
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
     this.mainLayer = new Layer();
-    this.scrollLayer = new Layer();
 
     this.stage.add(this.mainLayer);
-    this.stage.add(this.scrollLayer);
-
-    this.stage.on('wheel', (e) => {
-      e.evt.preventDefault();
-
-      const dx = e.evt.deltaX;
-      const dy = e.evt.deltaY;
-
-      const minX = -(this.sheetDimensions.width - this.stage.width());
-      const maxX = 0;
-
-      const x = Math.max(minX, Math.min(this.mainLayer.x() - dx, maxX));
-
-      const minY = -(this.sheetDimensions.height - this.stage.height());
-      const maxY = 0;
-
-      const y = Math.max(minY, Math.min(this.mainLayer.y() - dy, maxY));
-      this.mainLayer.position({ x, y });
-
-      const availableHeight =
-        this.stage.height() - padding * 2 - this.verticalScrollBar.height();
-      const vy =
-        (this.mainLayer.y() /
-          (-this.sheetDimensions.height + this.stage.height())) *
-          availableHeight +
-        padding;
-      this.verticalScrollBar.y(vy);
-
-      const availableWidth =
-        this.stage.width() - padding * 2 - this.horizontalScrollBar.width();
-
-      const hx =
-        (this.mainLayer.x() /
-          (-this.sheetDimensions.width + this.stage.width())) *
-          availableWidth +
-        padding;
-      this.horizontalScrollBar.x(hx);
-    });
   }
 
-  drawScrollBars() {
-    this.drawHorizontalScrollBar();
-    this.drawVerticalScrollBar();
-  }
+  createScrollBars() {
+    this.verticalScrollBar = new VerticalScrollBar(
+      this.stage,
+      this.mainLayer,
+      this.sheetDimensions
+    );
 
-  drawHorizontalScrollBar() {
-    this.horizontalScrollBar = new Rect({
-      width: 100,
-      height: 10,
-      fill: 'grey',
-      opacity: 0.8,
-      x: padding,
-      y: this.stage.height() - padding - 10,
-      draggable: true,
-      dragBoundFunc: (pos) => {
-        pos.x = Math.max(
-          Math.min(
-            pos.x,
-            this.stage.width() - this.horizontalScrollBar.width() - padding
-          ),
-          padding
-        );
-        pos.y = this.stage.height() - padding - 10;
+    this.horizontalScrollBar = new HorizontalScrollBar(
+      this.stage,
+      this.mainLayer,
+      this.sheetDimensions,
+      this.verticalScrollBar.getBoundingClientRect
+    );
 
-        return pos;
-      },
-    });
-
-    this.scrollLayer.add(this.horizontalScrollBar);
-
-    this.horizontalScrollBar.on('dragmove', () => {
-      const availableWidth =
-        this.stage.width() - padding * 2 - this.horizontalScrollBar.width();
-
-      var delta = (this.horizontalScrollBar.x() - padding) / availableWidth;
-
-      this.mainLayer.x(
-        -(this.sheetDimensions.width - this.stage.width()) * delta
-      );
-    });
-  }
-
-  drawVerticalScrollBar() {
-    this.verticalScrollBar = new Rect({
-      width: 10,
-      height: 100,
-      fill: 'grey',
-      opacity: 0.8,
-      x: this.stage.width() - padding - 10,
-      y: padding,
-      draggable: true,
-      dragBoundFunc: (pos) => {
-        pos.x = this.stage.width() - padding - 10;
-        pos.y = Math.max(
-          Math.min(
-            pos.y,
-            this.stage.height() - this.verticalScrollBar.height() - padding
-          ),
-          padding
-        );
-        return pos;
-      },
-    });
-
-    this.scrollLayer.add(this.verticalScrollBar);
-
-    this.verticalScrollBar.on('dragmove', () => {
-      const availableHeight =
-        this.stage.height() - padding * 2 - this.verticalScrollBar.height();
-      const delta = (this.verticalScrollBar.y() - padding) / availableHeight;
-
-      this.mainLayer.y(
-        -(this.sheetDimensions.height - this.stage.height()) * delta
-      );
-    });
+    this.container.appendChild(this.horizontalScrollBar.scrollBar);
+    this.container.appendChild(this.verticalScrollBar.scrollBar);
   }
 
   destroy() {

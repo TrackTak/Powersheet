@@ -1,56 +1,84 @@
 import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
-import { prefix } from '../../../utils';
-import { ISheetDimensions } from '../Canvas';
-import styles from './ScrollBar.module.scss';
+import { IHeaderDimensions, ISheetDimensions } from '../Canvas';
+import { KonvaEventObject } from 'konva/lib/Node';
+import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
-  private scroll!: HTMLDivElement;
+  scroll!: HTMLDivElement;
+  private scrollBarBuilder: IBuildScroll;
 
-  constructor(stage: Stage, layer: Layer, sheetDimensions: ISheetDimensions) {
-    this.create(stage, layer, sheetDimensions);
+  constructor(
+    private stage: Stage,
+    private mainLayer: Layer,
+    private horizontallyStickyLayer: Layer,
+    private sheetDimensions: ISheetDimensions,
+    private colHeaderDimensions: IHeaderDimensions,
+    private getHorizontalScrollBarBoundingClientRect: () => DOMRect
+  ) {
+    this.stage = stage;
+    this.mainLayer = mainLayer;
+    this.horizontallyStickyLayer = horizontallyStickyLayer;
+    this.sheetDimensions = sheetDimensions;
+    this.colHeaderDimensions = colHeaderDimensions;
+    this.getHorizontalScrollBarBoundingClientRect =
+      getHorizontalScrollBarBoundingClientRect;
+    this.scrollBarBuilder = buildScrollBar('vertical');
+
+    this.create();
   }
 
   getBoundingClientRect = () => {
     return this.scrollBar.getBoundingClientRect();
   };
 
-  create(stage: Stage, mainLayer: Layer, sheetDimensions: ISheetDimensions) {
-    this.scrollBar = document.createElement('div');
-    this.scrollBar.classList.add(
-      `${prefix}-vertical-scroll-bar`,
-      styles.verticalScrollBar
-    );
+  private create() {
+    const onLoad = () => {
+      this.scrollBar.style.height = `${
+        this.stage.height() -
+        this.getHorizontalScrollBarBoundingClientRect().height -
+        this.colHeaderDimensions.height
+      }px`;
+      this.scrollBar.style.bottom = `${
+        this.getHorizontalScrollBarBoundingClientRect().height
+      }px`;
+    };
 
-    this.scroll = document.createElement('div');
-    this.scroll.classList.add(
-      `${prefix}-vertical-scroll`,
-      styles.verticalScroll
-    );
-    this.scroll.style.height = `${sheetDimensions.height}px`;
-
-    this.scrollBar.appendChild(this.scroll);
-
-    window.addEventListener('load', () => {
-      this.scrollBar.style.height = `${stage.height()}px`;
-    });
-
-    this.scrollBar.addEventListener('scroll', (e: Event) => {
-      const { scrollTop, offsetHeight } = e.target! as any;
-
-      const availableHeight = sheetDimensions.height - offsetHeight - 38;
-
-      const delta = scrollTop / availableHeight;
-
-      mainLayer.y(-(sheetDimensions.height - stage.height()) * delta);
-    });
-
-    stage.on('wheel', (e) => {
+    const onWheel = (e: KonvaEventObject<WheelEvent>) => {
       e.evt.preventDefault();
 
-      this.scrollBar.scrollBy(0, 50);
-    });
+      this.scrollBar.scrollBy(0, e.evt.deltaY);
+    };
+
+    const { scrollBar, scroll } = this.scrollBarBuilder.create(
+      this.stage,
+      onLoad,
+      this.onScroll,
+      onWheel
+    );
+
+    this.scrollBar = scrollBar;
+    this.scroll = scroll;
+
+    scroll.style.height = `${this.sheetDimensions.height}px`;
+  }
+
+  onScroll = (e: Event) => {
+    const { scrollTop, offsetHeight } = e.target! as any;
+
+    const availableHeight = this.sheetDimensions.height - offsetHeight - 38;
+
+    const delta = scrollTop / availableHeight;
+    const yToMove =
+      -(this.sheetDimensions.height - this.stage.height()) * delta;
+
+    this.mainLayer.y(yToMove);
+    this.horizontallyStickyLayer.y(yToMove);
+  };
+
+  destroy() {
+    this.scrollBarBuilder.destroy();
   }
 }
 

@@ -1,7 +1,3 @@
-const events = {
-  canvas: {
-    throttledScroll: 'c-throttledScroll',
-  },
-};
+const events = {};
 
 export default events;

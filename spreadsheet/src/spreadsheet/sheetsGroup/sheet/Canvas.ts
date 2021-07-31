@@ -48,15 +48,18 @@ interface IColHeaderConfig {
 
 interface IGridLineConfig extends LineConfig {}
 
+interface ITopLeftRectConfig extends RectConfig {}
+
 interface ICanvasStyles {
   backgroundColor: string;
   horizontalGridLine: IGridLineConfig;
   verticalGridLine: IGridLineConfig;
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
+  topLeftRect: ITopLeftRectConfig;
 }
 
-interface IHeaderDimensions {
+export interface IHeaderDimensions {
   width: number;
   height: number;
 }
@@ -116,6 +119,12 @@ const defaultCanvasStyles: ICanvasStyles = {
       ...sharedCanvasStyles.headerText,
     },
   },
+  topLeftRect: {
+    fill: sharedCanvasStyles.headerRect.fill,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
+    perfectDrawEnabled: false,
+  },
 };
 
 const getHeaderMidPoints = (rect: Rect, text: Text) => {
@@ -139,6 +148,8 @@ class Canvas {
   container!: HTMLDivElement;
   stage!: Stage;
   mainLayer!: Layer;
+  verticallyStickyLayer!: Layer;
+  horizontallyStickyLayer!: Layer;
   private horizontalScrollBar!: HorizontalScrollBar;
   private verticalScrollBar!: VerticalScrollBar;
   private styles: ICanvasStyles;
@@ -173,6 +184,7 @@ class Canvas {
 
     this.create(params.stageConfig);
     this.createScrollBars();
+    this.drawTopLeftOffsetRect();
     this.drawHeaders(params.rows, params.cols);
     this.drawGridLines(params.rows, params.cols);
   }
@@ -185,7 +197,7 @@ class Canvas {
     return row.height ? row.height : this.rowHeaderDimensions.height;
   }
 
-  create(stageConfig: ICreateStageConfig = {}) {
+  private create(stageConfig: ICreateStageConfig = {}) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -202,22 +214,32 @@ class Canvas {
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
     this.mainLayer = new Layer();
+    this.verticallyStickyLayer = new Layer();
+    this.horizontallyStickyLayer = new Layer();
 
+    // row headers should be behind column headers
+    // so we put verticallyStickyLayer last
     this.stage.add(this.mainLayer);
+    this.stage.add(this.horizontallyStickyLayer);
+    this.stage.add(this.verticallyStickyLayer);
   }
 
   createScrollBars() {
-    this.verticalScrollBar = new VerticalScrollBar(
-      this.stage,
-      this.mainLayer,
-      this.sheetDimensions
-    );
-
     this.horizontalScrollBar = new HorizontalScrollBar(
       this.stage,
       this.mainLayer,
+      this.verticallyStickyLayer,
       this.sheetDimensions,
-      this.verticalScrollBar.getBoundingClientRect
+      this.rowHeaderDimensions
+    );
+
+    this.verticalScrollBar = new VerticalScrollBar(
+      this.stage,
+      this.mainLayer,
+      this.horizontallyStickyLayer,
+      this.sheetDimensions,
+      this.colHeaderDimensions,
+      this.horizontalScrollBar.getBoundingClientRect
     );
 
     this.container.appendChild(this.horizontalScrollBar.scrollBar);
@@ -226,6 +248,16 @@ class Canvas {
 
   destroy() {
     this.stage.destroy();
+  }
+
+  drawTopLeftOffsetRect() {
+    const rect = new Rect({
+      width: this.rowHeaderDimensions.width,
+      height: this.colHeaderDimensions.height,
+      ...this.styles.topLeftRect,
+    });
+
+    this.verticallyStickyLayer.add(rect);
   }
 
   drawHeaders(rows: Row[], cols: Col[]) {
@@ -265,8 +297,8 @@ class Canvas {
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.mainLayer.add(clone);
-      this.mainLayer.add(text);
+      this.horizontallyStickyLayer.add(clone);
+      this.horizontallyStickyLayer.add(text);
     });
   }
 
@@ -303,8 +335,8 @@ class Canvas {
       text.x(midPoints.x);
       text.y(midPoints.y);
 
-      this.mainLayer.add(clone);
-      this.mainLayer.add(text);
+      this.verticallyStickyLayer.add(clone);
+      this.verticallyStickyLayer.add(text);
     });
   }
 

@@ -1,31 +1,36 @@
-.verticalScrollBar {
-  bottom: 15px;
-  overflow-x: hidden;
-  overflow-y: scroll;
+@mixin scroll {
+  background: #ddd;
+}
+
+@mixin scrollBar {
   position: absolute;
+  z-index: 12;
   bottom: 0;
   right: 0;
   background-color: #f4f5f8;
-  z-index: 12;
-  height: 932px;
+}
+
+.verticalScrollBar {
+  @include scrollBar();
+
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 .verticalScroll {
+  @include scroll();
   width: 1px;
-  background: #ddd;
 }
 
 .horizontalScrollBar {
-  position: sticky;
+  @include scrollBar();
+
   overflow-x: scroll;
   overflow-y: hidden;
-  bottom: 0;
-  right: 0;
-  background-color: #f4f5f8;
-  z-index: 12;
 }
 
 .horizontalScroll {
+  @include scroll();
+
   height: 1px;
-  background: #ddd;
 }

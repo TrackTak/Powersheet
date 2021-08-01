@@ -137,7 +137,7 @@ class VerticalScrollBar {
 
       this.totalUnusedScrollHeight = totalUnusedScrollHeight;
 
-      console.log(totalUnusedScrollHeight);
+      console.log('totalUnusedScrollHeight', totalUnusedScrollHeight);
 
       const aggregatedHeightOfRows = rows.reduce((totalHeight, row) => {
         return (totalHeight += row.height);

@@ -1,27 +1,30 @@
+import EventEmitter from 'eventemitter3';
 import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
+import events from '../../../events';
 import { IHeaderDimensions, ISheetDimensions } from '../Canvas';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 
 class HorizontalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
-  private scrollBarBuilder: IBuildScroll;
+  private scrollBarBuilder!: IBuildScroll;
 
   constructor(
     private stage: Stage,
     private mainLayer: Layer,
     private verticallyStickyLayer: Layer,
     private sheetDimensions: ISheetDimensions,
-    private rowHeaderDimensions: IHeaderDimensions
+    private rowHeaderDimensions: IHeaderDimensions,
+    private eventEmitter: EventEmitter
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
     this.verticallyStickyLayer = verticallyStickyLayer;
     this.sheetDimensions = sheetDimensions;
     this.rowHeaderDimensions = rowHeaderDimensions;
-    this.scrollBarBuilder = buildScrollBar('horizontal');
+    this.eventEmitter = eventEmitter;
 
     this.create();
   }
@@ -37,36 +40,42 @@ class HorizontalScrollBar {
       }px`;
     };
 
-    const onWheel = (e: KonvaEventObject<WheelEvent>) => {
-      e.evt.preventDefault();
+    this.eventEmitter.on(
+      events.scrollWheel.horizontal,
+      (e: KonvaEventObject<WheelEvent>) => {
+        this.scrollBar.scrollBy(e.evt.deltaX, 0);
+      }
+    );
 
-      this.scrollBar.scrollBy(e.evt.deltaX, 0);
-    };
+    this.eventEmitter.on(events.scroll.horizontal, (e: Event) => {
+      const { scrollLeft, offsetWidth } = e.target! as any;
 
-    const { scrollBar, scroll } = this.scrollBarBuilder.create(
+      const availableWidth = this.sheetDimensions.width - offsetWidth - 42;
+
+      const delta = scrollLeft / availableWidth;
+      const f = this.sheetDimensions.width;
+      const p = this.stage.width();
+      const xToMove =
+        -(this.sheetDimensions.width - this.stage.width()) * delta;
+
+      this.mainLayer.x(xToMove);
+      this.verticallyStickyLayer.x(xToMove);
+    });
+
+    this.scrollBarBuilder = buildScrollBar(
+      'horizontal',
       this.stage,
       onLoad,
-      this.onScroll,
-      onWheel
+      this.eventEmitter
     );
+
+    const { scrollBar, scroll } = this.scrollBarBuilder.create();
 
     this.scrollBar = scrollBar;
     this.scroll = scroll;
 
     scroll.style.width = `${this.sheetDimensions.width}px`;
   }
-
-  onScroll = (e: Event) => {
-    const { scrollLeft, offsetWidth } = e.target! as any;
-
-    const availableWidth = this.sheetDimensions.width - offsetWidth - 42;
-
-    const delta = scrollLeft / availableWidth;
-    const xToMove = -(this.sheetDimensions.width - this.stage.width()) * delta;
-
-    this.mainLayer.x(xToMove);
-    this.verticallyStickyLayer.x(xToMove);
-  };
 
   destroy() {
     this.scrollBarBuilder.destroy();

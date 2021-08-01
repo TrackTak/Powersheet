@@ -1,16 +1,13 @@
+import EventEmitter from 'eventemitter3';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import { DebouncedFunc, throttle } from 'lodash';
+import events from '../../../events';
 import { prefix } from '../../../utils';
 import styles from './ScrollBar.module.scss';
 
 export interface IBuildScroll {
-  create: (
-    stage: Stage,
-    onLoad: (e: Event) => void,
-    onScroll: (e: Event) => void,
-    onWheel: (e: KonvaEventObject<WheelEvent>) => void
-  ) => {
+  create: () => {
     scrollBar: HTMLDivElement;
     scroll: HTMLDivElement;
   };
@@ -19,17 +16,30 @@ export interface IBuildScroll {
 
 type ScrollBarType = 'vertical' | 'horizontal';
 
-const buildScrollBar = (scrollBarType: ScrollBarType): IBuildScroll => {
+const buildScrollBar = (
+  scrollBarType: ScrollBarType,
+  stage: Stage,
+  onLoad: (e: Event) => void,
+  eventEmitter: EventEmitter
+): IBuildScroll => {
   let scrollBar: HTMLDivElement;
   let scroll: HTMLDivElement;
   let throttledScroll: DebouncedFunc<(e: Event) => void>;
 
-  const create = (
-    stage: Stage,
-    onLoad: (e: Event) => void,
-    onScroll: (e: Event) => void,
-    onWheel: (e: KonvaEventObject<WheelEvent>) => void
-  ) => {
+  const onWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    eventEmitter.emit(events.scrollWheel[scrollBarType], e);
+  };
+
+  const onScroll = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    eventEmitter.emit(events.scroll[scrollBarType], e);
+  };
+
+  const create = () => {
     scrollBar = document.createElement('div');
 
     scrollBar.classList.add(
@@ -47,7 +57,7 @@ const buildScrollBar = (scrollBarType: ScrollBarType): IBuildScroll => {
     window.addEventListener('load', onLoad);
 
     // 60 fps: (1000ms / 60fps = 16ms);
-    throttledScroll = throttle(onScroll, 16);
+    throttledScroll = throttle(onScroll, 0);
 
     scrollBar.addEventListener('scroll', throttledScroll);
 
@@ -61,6 +71,8 @@ const buildScrollBar = (scrollBarType: ScrollBarType): IBuildScroll => {
 
   const destroy = () => {
     scrollBar.removeEventListener('scroll', throttledScroll);
+    window.removeEventListener('load', onLoad);
+    stage.off('wheel', onWheel);
   };
 
   return {

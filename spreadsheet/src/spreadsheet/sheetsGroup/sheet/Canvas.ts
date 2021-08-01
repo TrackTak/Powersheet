@@ -69,6 +69,22 @@ export interface ISheetDimensions {
   height: number;
 }
 
+export interface ISheetViewport {
+  width: number;
+  height: number;
+}
+
+export interface ISheetViewportPositions {
+  row: {
+    top: number;
+    bottom: number;
+  };
+  col: {
+    left: number;
+    right: number;
+  };
+}
+
 const sharedCanvasStyles = {
   gridLine: {
     stroke: '#c6c6c6',
@@ -150,12 +166,16 @@ class Canvas {
   mainLayer!: Layer;
   verticallyStickyLayer!: Layer;
   horizontallyStickyLayer!: Layer;
-  private horizontalScrollBar!: HorizontalScrollBar;
-  private verticalScrollBar!: VerticalScrollBar;
+  horizontalScrollBar!: HorizontalScrollBar;
+  verticalScrollBar!: VerticalScrollBar;
   private styles: ICanvasStyles;
+  private rows: Row[];
+  private cols: Col[];
   private sheetDimensions!: ISheetDimensions;
   private rowHeaderDimensions: IHeaderDimensions;
   private colHeaderDimensions: IHeaderDimensions;
+  private sheetViewport: ISheetViewport;
+  private sheetViewportPositions: ISheetViewportPositions;
   private eventEmitter: EventEmitter;
 
   constructor(params: IConstructor) {
@@ -166,35 +186,80 @@ class Canvas {
       width: this.styles.rowHeader.rect.width,
       height: params.defaultRowHeight,
     };
+
     this.colHeaderDimensions = {
-      width: params.defaultColWidth,
-      height: this.styles.colHeader.rect.height,
+      width: 0, //params.defaultColWidth,
+      height: 0,
+      // height: this.styles.colHeader.rect.height,
     };
 
     this.sheetDimensions = {
       width: params.cols.reduce(
-        (currentWidth, col) => this.getWidthFromCol(col) + currentWidth,
+        (currentWidth, col) => col.width + currentWidth,
         0
       ),
-      height: params.rows.reduce(
-        (currentHeight, row) => this.getHeightFromRow(row) + currentHeight,
-        0
-      ),
+      height:
+        params.rows.reduce(
+          (currentHeight, row) => row.height + currentHeight,
+          0
+        ) - this.colHeaderDimensions.height,
+    };
+
+    const that = this;
+
+    this.sheetViewport = {
+      get height() {
+        return that.stage.height(); // - that.colHeaderDimensions.height
+        // that.horizontalScrollBar.getBoundingClientRect().height
+      },
+      get width() {
+        return (
+          that.stage.width() - that.rowHeaderDimensions.width - 18
+          // that.verticalScrollBar.getBoundingClientRect().width
+        );
+      },
     };
 
     this.create(params.stageConfig);
+
+    this.rows = params.rows;
+    this.cols = params.cols;
+
+    this.sheetViewportPositions = {
+      // Based on the y 100 axis of the row
+      row: {
+        top: 1,
+        bottom: 1,
+      },
+      // Based the x 100 axis of the row
+      col: {
+        left: 1,
+        right: 1,
+      },
+    };
+
+    let sumOfRowHeights = this.sheetViewport.height;
+    let i = this.sheetViewportPositions.row.bottom - 1;
+    let currentRow = this.rows[i];
+
+    while (sumOfRowHeights >= currentRow?.height) {
+      currentRow = this.rows[i];
+      const rowHeight = currentRow.height;
+
+      this.sheetViewportPositions.row.bottom = currentRow.number;
+
+      i++;
+      sumOfRowHeights -= rowHeight;
+    }
+
     this.createScrollBars();
-    this.drawTopLeftOffsetRect();
-    this.drawHeaders(params.rows, params.cols);
-    this.drawGridLines(params.rows, params.cols);
+    // this.drawTopLeftOffsetRect();
+    this.drawHeaders();
+    this.drawGridLines();
   }
 
-  getWidthFromCol(col: Col) {
-    return col.width ? col.width : this.colHeaderDimensions.width;
-  }
-
-  getHeightFromRow(row: Row) {
-    return row.height ? row.height : this.rowHeaderDimensions.height;
+  setSheetViewportPositions(sheetViewportPositions: ISheetViewportPositions) {
+    this.sheetViewportPositions = sheetViewportPositions;
   }
 
   private create(stageConfig: ICreateStageConfig = {}) {
@@ -225,28 +290,36 @@ class Canvas {
   }
 
   createScrollBars() {
-    this.horizontalScrollBar = new HorizontalScrollBar(
-      this.stage,
-      this.mainLayer,
-      this.verticallyStickyLayer,
-      this.sheetDimensions,
-      this.rowHeaderDimensions
-    );
+    // this.horizontalScrollBar = new HorizontalScrollBar(
+    //   this.stage,
+    //   this.mainLayer,
+    //   this.verticallyStickyLayer,
+    //   this.sheetDimensions,
+    //   this.rowHeaderDimensions,
+    //   this.eventEmitter
+    // );
 
     this.verticalScrollBar = new VerticalScrollBar(
       this.stage,
       this.mainLayer,
       this.horizontallyStickyLayer,
       this.sheetDimensions,
+      this.sheetViewport,
+      this.sheetViewportPositions,
+      this.setSheetViewportPositions,
       this.colHeaderDimensions,
-      this.horizontalScrollBar.getBoundingClientRect
+      // this.horizontalScrollBar.getBoundingClientRect,
+      this.rows,
+      this.eventEmitter
     );
 
-    this.container.appendChild(this.horizontalScrollBar.scrollBar);
+    //   this.container.appendChild(this.horizontalScrollBar.scrollBar);
     this.container.appendChild(this.verticalScrollBar.scrollBar);
   }
 
   destroy() {
+    this.horizontalScrollBar.destroy();
+    this.verticalScrollBar.destroy();
     this.stage.destroy();
   }
 
@@ -260,14 +333,12 @@ class Canvas {
     this.verticallyStickyLayer.add(rect);
   }
 
-  drawHeaders(rows: Row[], cols: Col[]) {
-    this.drawRowHeaders(rows);
-    this.drawColHeaders(cols);
+  drawHeaders() {
+    this.drawRowHeaders();
+    // this.drawColHeaders();
   }
 
-  drawRowHeaders(rows: Row[]) {
-    const startOffset = this.colHeaderDimensions.height;
-
+  drawRowHeaders() {
     const rect = new Rect({
       ...this.rowHeaderDimensions,
       ...this.styles.rowHeader.rect,
@@ -277,9 +348,9 @@ class Canvas {
 
     let clone;
 
-    rows.forEach((row, i) => {
-      const height = this.getHeightFromRow(row);
-      const y = i * height + startOffset;
+    this.rows.forEach((row, i) => {
+      const height = row.height;
+      const y = i * height + this.colHeaderDimensions.height;
 
       clone = rect.clone({
         y,
@@ -302,8 +373,7 @@ class Canvas {
     });
   }
 
-  drawColHeaders(cols: Col[]) {
-    const startOffset = this.rowHeaderDimensions.width;
+  drawColHeaders() {
     const rect = new Rect({
       ...this.colHeaderDimensions,
       ...this.styles.colHeader.rect,
@@ -313,11 +383,11 @@ class Canvas {
 
     let clone;
 
-    cols.forEach((col, i) => {
-      const width = this.getWidthFromCol(col);
+    this.cols.forEach((col, i) => {
+      const width = col.width;
       const startCharCode = 'A'.charCodeAt(0);
       const colLetter = String.fromCharCode(startCharCode + i);
-      const x = i * width + startOffset;
+      const x = i * width + this.rowHeaderDimensions.width;
 
       clone = rect.clone({
         x,
@@ -340,26 +410,26 @@ class Canvas {
     });
   }
 
-  drawGridLines(rows: Row[], cols: Col[]) {
-    this.drawHorizontalGridLines(rows);
-    this.drawVerticalGridLines(cols);
+  drawGridLines() {
+    this.drawHorizontalGridLines();
+    this.drawVerticalGridLines();
   }
 
-  drawHorizontalGridLines(rows: Row[]) {
+  drawHorizontalGridLines() {
     const line = new Line({
       ...this.styles.horizontalGridLine,
       points: [
         this.rowHeaderDimensions.width,
         this.colHeaderDimensions.height,
-        this.stage.width(),
+        this.sheetDimensions.width,
         this.colHeaderDimensions.height,
       ],
     });
 
     let clone;
 
-    rows.forEach((row) => {
-      const height = this.getHeightFromRow(row);
+    this.rows.forEach((row) => {
+      const height = row.height;
 
       clone = line.clone({
         y: row.number * height,
@@ -369,21 +439,21 @@ class Canvas {
     });
   }
 
-  drawVerticalGridLines(cols: Col[]) {
+  drawVerticalGridLines() {
     const line = new Line({
       ...this.styles.verticalGridLine,
       points: [
         this.rowHeaderDimensions.width,
         this.colHeaderDimensions.height,
         this.rowHeaderDimensions.width,
-        this.stage.height(),
+        this.sheetDimensions.height,
       ],
     });
 
     let clone;
 
-    cols.forEach((col) => {
-      const width = this.getWidthFromCol(col);
+    this.cols.forEach((col) => {
+      const width = col.width;
 
       clone = line.clone({
         x: col.number * width,

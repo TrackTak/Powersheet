@@ -173,7 +173,7 @@ class VerticalScrollBar {
       }
 
       if (hasUserScrolledToTop) {
-        totalAggregatedHeightOfRows += this.totalUnusedScrollHeight;
+        totalAggregatedHeightOfRows = 0;
         this.totalUnusedScrollHeight = 0;
       }
 

@@ -3,7 +3,6 @@ import Canvas from './Canvas';
 import Col from './Col';
 import Row from './Row';
 import EventEmitter from 'eventemitter3';
-import events from '../../events';
 
 export default {
   title: 'spreadsheet/sheetsGroup/sheet/Canvas',
@@ -26,15 +25,6 @@ const Template: Story<{}> = () => {
   for (let index = 0; index < columnNumber; index++) {
     cols.push(new Col(index + 1, 60, defaultColWidth));
   }
-
-  eventEmitter.on(events.scroll.vertical, () => {
-    const bottomScrollOffset = 300;
-    const scrollBar = canvas.verticalScrollBar.scrollBar;
-
-    const hasUserScrolledNearBottom =
-      scrollBar.scrollHeight - scrollBar.scrollTop - bottomScrollOffset <=
-      scrollBar.clientHeight;
-  });
 
   const canvas = new Canvas({
     rows,

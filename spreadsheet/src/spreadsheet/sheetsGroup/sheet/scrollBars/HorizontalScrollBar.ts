@@ -72,6 +72,8 @@ class HorizontalScrollBar {
           }
         );
 
+      console.log(newSheetViewportPositions);
+
       this.setSheetViewportPositions({
         ...this.sheetViewportPositions,
         col: {

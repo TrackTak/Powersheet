@@ -13,7 +13,7 @@ const getNextItemsForScroll = (
 
   const itemsToGet = [];
 
-  while (newTotalUnusedScroll > currentItem?.[property]) {
+  while (newTotalUnusedScroll >= currentItem?.[property]) {
     const value = currentItem[property];
 
     itemsToGet.push(currentItem);

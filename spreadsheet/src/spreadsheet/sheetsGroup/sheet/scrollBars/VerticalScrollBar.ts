@@ -47,8 +47,8 @@ class VerticalScrollBar {
 
   private create() {
     const onLoad = () => {
-      this.scrollBar.style.height = `${
-        this.stage.height() +
+      this.scrollBar.style.height = `${this.stage.height()}px`;
+      this.scrollBar.style.bottom = `${
         this.getHorizontalScrollBarBoundingClientRect().height
       }px`;
     };
@@ -77,6 +77,8 @@ class VerticalScrollBar {
             y: this.sheetViewportPositions.row.bottom,
           }
         );
+
+      console.log(newSheetViewportPositions);
 
       this.setSheetViewportPositions({
         ...this.sheetViewportPositions,

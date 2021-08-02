@@ -150,6 +150,30 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
   };
 };
 
+const calculateSheetViewportEndPosition = (
+  sheetViewportDimensionSize: number,
+  sheetViewportStartYPosition: number,
+  items: any[],
+  property: 'width' | 'height'
+) => {
+  let newSheetViewportYPosition = sheetViewportStartYPosition;
+  let sumOfSizes = sheetViewportDimensionSize;
+  let i = newSheetViewportYPosition - 1;
+  let currentItem = items[i];
+
+  while (sumOfSizes >= currentItem?.[property]) {
+    currentItem = items[i];
+    const rowHeight = currentItem[property];
+
+    newSheetViewportYPosition = currentItem.number;
+
+    i++;
+    sumOfSizes -= rowHeight;
+  }
+
+  return newSheetViewportYPosition;
+};
+
 class Canvas {
   container!: HTMLDivElement;
   stage!: Stage;
@@ -197,12 +221,10 @@ class Canvas {
 
     this.sheetViewportDimensions = {
       get height() {
-        return that.stage.height();
-        // that.horizontalScrollBar.getBoundingClientRect().height
+        return that.stage.height() - that.colHeaderDimensions.height;
       },
       get width() {
-        return that.stage.width(); // - that.rowHeaderDimensions.width - 18
-        // that.verticalScrollBar.getBoundingClientRect().width
+        return that.stage.width() - that.rowHeaderDimensions.width;
       },
     };
 
@@ -212,31 +234,32 @@ class Canvas {
     this.cols = params.cols;
 
     this.sheetViewportPositions = {
-      // Based on the y 100 axis of the row
+      // Based on the y 100% axis of the row
       row: {
         top: 1,
-        bottom: 1,
+        get bottom() {
+          // Minus headers
+          return calculateSheetViewportEndPosition(
+            that.sheetViewportDimensions.height,
+            1,
+            that.rows,
+            'height'
+          );
+        },
       },
       // Based the x 100 axis of the row
       col: {
         left: 1,
-        right: 1,
+        get right() {
+          return calculateSheetViewportEndPosition(
+            that.sheetViewportDimensions.width,
+            1,
+            that.cols,
+            'width'
+          );
+        },
       },
     };
-
-    let sumOfRowHeights = this.sheetViewportDimensions.height;
-    let i = this.sheetViewportPositions.row.bottom - 1;
-    let currentRow = this.rows[i];
-
-    while (sumOfRowHeights >= currentRow?.height) {
-      currentRow = this.rows[i];
-      const rowHeight = currentRow.height;
-
-      this.sheetViewportPositions.row.bottom = currentRow.number;
-
-      i++;
-      sumOfRowHeights -= rowHeight;
-    }
 
     this.createScrollBars();
     this.drawTopLeftOffsetRect();

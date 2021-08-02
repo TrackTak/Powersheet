@@ -1,4 +1,6 @@
-class Row {
+import { IRowColSize } from './IRowColSize';
+
+class Row implements IRowColSize {
   constructor(
     public number: number,
     public minHeight: number,
@@ -7,6 +9,10 @@ class Row {
     this.number = number;
     this.minHeight = minHeight;
     this.height = height;
+  }
+
+  getSize() {
+    return this.height;
   }
 }
 

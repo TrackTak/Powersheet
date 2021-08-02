@@ -1,4 +1,6 @@
-class Col {
+import { IRowColSize } from './IRowColSize';
+
+class Col implements IRowColSize {
   constructor(
     public number: number,
     public minWidth: number,
@@ -7,6 +9,10 @@ class Col {
     this.number = number;
     this.minWidth = minWidth;
     this.width = width;
+  }
+
+  getSize() {
+    return this.width;
   }
 }
 

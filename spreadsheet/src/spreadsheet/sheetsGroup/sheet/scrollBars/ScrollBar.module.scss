@@ -1,0 +1,37 @@
+@mixin scroll {
+  background: #ddd;
+}
+
+@mixin scrollBar {
+  position: absolute;
+  z-index: 12;
+  bottom: 0;
+  right: 0;
+  background-color: #f4f5f8;
+}
+
+.verticalScrollBar {
+  @include scrollBar();
+
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.verticalScroll {
+  @include scroll();
+  width: 1px;
+}
+
+.horizontalScrollBar {
+  @include scrollBar();
+
+  left: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+.horizontalScroll {
+  @include scroll();
+
+  height: 1px;
+}

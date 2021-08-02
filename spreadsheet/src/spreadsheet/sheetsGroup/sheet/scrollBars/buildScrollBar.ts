@@ -34,7 +34,6 @@ const buildScrollBar = (
 
   const onScroll = (e: Event) => {
     e.preventDefault();
-    e.stopPropagation();
 
     eventEmitter.emit(events.scroll[scrollBarType], e);
   };
@@ -57,7 +56,7 @@ const buildScrollBar = (
     window.addEventListener('load', onLoad);
 
     // 60 fps: (1000ms / 60fps = 16ms);
-    throttledScroll = throttle(onScroll, 0);
+    throttledScroll = throttle(onScroll, 16);
 
     scrollBar.addEventListener('scroll', throttledScroll);
 

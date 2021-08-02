@@ -3,27 +3,36 @@ import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import events from '../../../events';
-import { IDimensions } from '../Canvas';
+import { IDimensions, ISheetViewportPositions } from '../Canvas';
+import Col from '../Col';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
+import buildScrollDelta, { IBuildScrollDelta } from './buildScrollDelta';
 
 class HorizontalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   private scrollBarBuilder!: IBuildScroll;
+  private deltaBuilder!: IBuildScrollDelta;
 
   constructor(
     private stage: Stage,
     private mainLayer: Layer,
     private verticallyStickyLayer: Layer,
     private sheetDimensions: IDimensions,
-    private rowHeaderDimensions: IDimensions,
+    private sheetViewportPositions: ISheetViewportPositions,
+    private setSheetViewportPositions: (
+      sheetViewportPositions: ISheetViewportPositions
+    ) => void,
+    private cols: Col[],
     private eventEmitter: EventEmitter
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
     this.verticallyStickyLayer = verticallyStickyLayer;
     this.sheetDimensions = sheetDimensions;
-    this.rowHeaderDimensions = rowHeaderDimensions;
+    this.setSheetViewportPositions = setSheetViewportPositions;
+    this.sheetViewportPositions = sheetViewportPositions;
+    this.cols = cols;
     this.eventEmitter = eventEmitter;
 
     this.create();
@@ -35,9 +44,7 @@ class HorizontalScrollBar {
 
   private create() {
     const onLoad = () => {
-      this.scrollBar.style.width = `${
-        this.stage.width() - this.rowHeaderDimensions.width
-      }px`;
+      this.scrollBar.style.width = `${this.stage.width()}px`;
     };
 
     this.eventEmitter.on(
@@ -48,13 +55,31 @@ class HorizontalScrollBar {
     );
 
     this.eventEmitter.on(events.scroll.horizontal, (e: Event) => {
-      const { scrollLeft, offsetWidth } = e.target! as any;
+      const { scrollLeft, offsetWidth, scrollWidth, clientWidth } =
+        e.target! as any;
 
-      const availableWidth = this.sheetDimensions.width - offsetWidth - 42;
+      const { delta, newSheetViewportPositions } =
+        this.deltaBuilder.getScrollDelta(
+          this.cols,
+          offsetWidth,
+          scrollLeft,
+          scrollWidth,
+          clientWidth,
+          'width',
+          {
+            x: this.sheetViewportPositions.col.left,
+            y: this.sheetViewportPositions.col.right,
+          }
+        );
 
-      const delta = scrollLeft / availableWidth;
-      const f = this.sheetDimensions.width;
-      const p = this.stage.width();
+      this.setSheetViewportPositions({
+        ...this.sheetViewportPositions,
+        col: {
+          left: newSheetViewportPositions.x,
+          right: newSheetViewportPositions.y,
+        },
+      });
+
       const xToMove =
         -(this.sheetDimensions.width - this.stage.width()) * delta;
 
@@ -68,6 +93,7 @@ class HorizontalScrollBar {
       onLoad,
       this.eventEmitter
     );
+    this.deltaBuilder = buildScrollDelta(this.sheetDimensions.width);
 
     const { scrollBar, scroll } = this.scrollBarBuilder.create();
 

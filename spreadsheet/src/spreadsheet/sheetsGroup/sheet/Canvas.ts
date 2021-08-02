@@ -201,10 +201,8 @@ class Canvas {
         // that.horizontalScrollBar.getBoundingClientRect().height
       },
       get width() {
-        return (
-          that.stage.width() - that.rowHeaderDimensions.width - 18
-          // that.verticalScrollBar.getBoundingClientRect().width
-        );
+        return that.stage.width(); // - that.rowHeaderDimensions.width - 18
+        // that.verticalScrollBar.getBoundingClientRect().width
       },
     };
 
@@ -246,21 +244,26 @@ class Canvas {
     this.drawGridLines();
   }
 
+  onLoad = () => {
+    this.stage.width(
+      window.innerWidth - this.verticalScrollBar.getBoundingClientRect().width
+    );
+    this.stage.height(
+      window.innerHeight -
+        this.horizontalScrollBar.getBoundingClientRect().height
+    );
+  };
+
   setSheetViewportPositions(sheetViewportPositions: ISheetViewportPositions) {
     this.sheetViewportPositions = sheetViewportPositions;
   }
 
   private create(stageConfig: ICreateStageConfig = {}) {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
     this.container = document.createElement('div');
     this.container.classList.add(`${prefix}-canvas`, styles.canvas);
 
     this.stage = new Stage({
       container: this.container,
-      width,
-      height,
       ...stageConfig,
     });
 
@@ -275,17 +278,21 @@ class Canvas {
     this.stage.add(this.mainLayer);
     this.stage.add(this.horizontallyStickyLayer);
     this.stage.add(this.verticallyStickyLayer);
+
+    window.addEventListener('load', this.onLoad);
   }
 
   createScrollBars() {
-    // this.horizontalScrollBar = new HorizontalScrollBar(
-    //   this.stage,
-    //   this.mainLayer,
-    //   this.verticallyStickyLayer,
-    //   this.sheetDimensions,
-    //   this.rowHeaderDimensions,
-    //   this.eventEmitter
-    // );
+    this.horizontalScrollBar = new HorizontalScrollBar(
+      this.stage,
+      this.mainLayer,
+      this.verticallyStickyLayer,
+      this.sheetDimensions,
+      this.sheetViewportPositions,
+      this.setSheetViewportPositions,
+      this.cols,
+      this.eventEmitter
+    );
 
     this.verticalScrollBar = new VerticalScrollBar(
       this.stage,
@@ -294,17 +301,17 @@ class Canvas {
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.setSheetViewportPositions,
-      this.colHeaderDimensions,
-      // this.horizontalScrollBar.getBoundingClientRect,
+      this.horizontalScrollBar.getBoundingClientRect,
       this.rows,
       this.eventEmitter
     );
 
-    //   this.container.appendChild(this.horizontalScrollBar.scrollBar);
+    this.container.appendChild(this.horizontalScrollBar.scrollBar);
     this.container.appendChild(this.verticalScrollBar.scrollBar);
   }
 
   destroy() {
+    window.removeEventListener('load', this.onLoad);
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.stage.destroy();

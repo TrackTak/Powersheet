@@ -56,7 +56,7 @@ class VerticalScrollBar {
     this.eventEmitter.on(
       events.scrollWheel.vertical,
       (e: KonvaEventObject<WheelEvent>) => {
-        // this.scrollBar.scrollBy(0, e.evt.deltaY);
+        this.scrollBar.scrollBy(0, e.evt.deltaY);
       }
     );
 

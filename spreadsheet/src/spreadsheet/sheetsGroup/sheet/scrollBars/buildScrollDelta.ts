@@ -1,18 +1,14 @@
+import { ISheetViewportPosition } from '../Canvas';
+import { IRowColSize } from '../IRowColSize';
 import getNextItemsForScroll from './getNextItemsForScroll';
-
-interface ISheetViewportPosition {
-  x: number;
-  y: number;
-}
 
 export interface IBuildScrollDelta {
   getScrollDelta: (
-    items: any[],
+    items: IRowColSize[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,
     clientSize: number,
-    property: 'height' | 'width',
     sheetViewPortPosition: ISheetViewportPosition
   ) => {
     delta: number;
@@ -26,12 +22,11 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
   let totalAggregatedSizeOfItems = 0;
 
   const getScrollDelta = (
-    items: any[],
+    items: IRowColSize[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,
     clientSize: number,
-    property: 'height' | 'width',
     sheetViewPortPosition: ISheetViewportPosition
   ) => {
     const availableSpace = sheetDimensionSpace - offset;
@@ -48,14 +43,13 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
         ? sheetViewPortPosition.y
         : sheetViewPortPosition.x - 2,
       totalUnusedScroll,
-      property,
       items
     );
 
     totalUnusedScroll = newTotalUnusedScroll;
 
     const aggregatedSizeOfItems = newItems.reduce((totalSize, item) => {
-      return (totalSize += item[property]);
+      return (totalSize += item.getSize());
     }, 0);
 
     const newSheetViewportPositions = {

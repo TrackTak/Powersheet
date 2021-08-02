@@ -11,6 +11,7 @@ import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import VerticalScrollBar from './scrollBars/VerticalScrollBar';
+import { IRowColSize } from './IRowColSize';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -64,15 +65,14 @@ export interface IDimensions {
   height: number;
 }
 
+export interface ISheetViewportPosition {
+  x: number;
+  y: number;
+}
+
 export interface ISheetViewportPositions {
-  row: {
-    top: number;
-    bottom: number;
-  };
-  col: {
-    left: number;
-    right: number;
-  };
+  row: ISheetViewportPosition;
+  col: ISheetViewportPosition;
 }
 
 const sharedCanvasStyles = {
@@ -153,22 +153,21 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
 const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYPosition: number,
-  items: any[],
-  property: 'width' | 'height'
+  items: IRowColSize[]
 ) => {
   let newSheetViewportYPosition = sheetViewportStartYPosition;
   let sumOfSizes = sheetViewportDimensionSize;
   let i = newSheetViewportYPosition - 1;
   let currentItem = items[i];
 
-  while (sumOfSizes >= currentItem?.[property]) {
+  while (sumOfSizes >= currentItem?.getSize()) {
     currentItem = items[i];
-    const rowHeight = currentItem[property];
+    const size = currentItem.getSize();
 
     newSheetViewportYPosition = currentItem.number;
 
     i++;
-    sumOfSizes -= rowHeight;
+    sumOfSizes -= size;
   }
 
   return newSheetViewportYPosition;
@@ -236,26 +235,24 @@ class Canvas {
     this.sheetViewportPositions = {
       // Based on the y 100% axis of the row
       row: {
-        top: 1,
-        get bottom() {
+        x: 1,
+        get y() {
           // Minus headers
           return calculateSheetViewportEndPosition(
             that.sheetViewportDimensions.height,
             1,
-            that.rows,
-            'height'
+            that.rows
           );
         },
       },
       // Based the x 100 axis of the row
       col: {
-        left: 1,
-        get right() {
+        x: 1,
+        get y() {
           return calculateSheetViewportEndPosition(
             that.sheetViewportDimensions.width,
             1,
-            that.cols,
-            'width'
+            that.cols
           );
         },
       },

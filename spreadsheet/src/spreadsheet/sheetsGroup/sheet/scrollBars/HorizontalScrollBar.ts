@@ -65,19 +65,12 @@ class HorizontalScrollBar {
           scrollLeft,
           scrollWidth,
           clientWidth,
-          'width',
-          {
-            x: this.sheetViewportPositions.col.left,
-            y: this.sheetViewportPositions.col.right,
-          }
+          this.sheetViewportPositions.col
         );
 
       this.setSheetViewportPositions({
         ...this.sheetViewportPositions,
-        col: {
-          left: newSheetViewportPositions.x,
-          right: newSheetViewportPositions.y,
-        },
+        col: newSheetViewportPositions,
       });
 
       const xToMove =

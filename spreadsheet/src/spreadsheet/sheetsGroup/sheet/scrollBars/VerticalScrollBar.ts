@@ -71,19 +71,12 @@ class VerticalScrollBar {
           scrollTop,
           scrollHeight,
           clientHeight,
-          'height',
-          {
-            x: this.sheetViewportPositions.row.top,
-            y: this.sheetViewportPositions.row.bottom,
-          }
+          this.sheetViewportPositions.row
         );
 
       this.setSheetViewportPositions({
         ...this.sheetViewportPositions,
-        row: {
-          top: newSheetViewportPositions.x,
-          bottom: newSheetViewportPositions.y,
-        },
+        row: newSheetViewportPositions,
       });
 
       const yToMove =

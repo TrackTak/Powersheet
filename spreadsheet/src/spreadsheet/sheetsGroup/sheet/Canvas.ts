@@ -12,6 +12,7 @@ import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 import { IRowColSize } from './IRowColSize';
+import { IOptions } from '../../IOptions';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -24,8 +25,7 @@ interface IConstructor {
   colHeaderConfig?: IColHeaderConfig;
   rows: Row[];
   cols: Col[];
-  defaultRowHeight: number;
-  defaultColWidth: number;
+  options: IOptions;
   eventEmitter: EventEmitter;
 }
 
@@ -152,25 +152,25 @@ const getHeaderMidPoints = (rect: Rect, text: Text) => {
 
 const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
-  sheetViewportStartYPosition: number,
+  sheetViewportStartYIndex: number,
   items: IRowColSize[]
 ) => {
-  let newSheetViewportYPosition = sheetViewportStartYPosition;
+  let newSheetViewportYIndex = sheetViewportStartYIndex;
   let sumOfSizes = sheetViewportDimensionSize;
-  let i = newSheetViewportYPosition - 1;
+  let i = newSheetViewportYIndex;
   let currentItem = items[i];
 
   while (sumOfSizes >= currentItem?.getSize()) {
     currentItem = items[i];
     const size = currentItem.getSize();
 
-    newSheetViewportYPosition = currentItem.number;
+    newSheetViewportYIndex = i;
 
     i++;
     sumOfSizes -= size;
   }
 
-  return newSheetViewportYPosition;
+  return newSheetViewportYIndex;
 };
 
 class Canvas {
@@ -197,11 +197,11 @@ class Canvas {
 
     this.rowHeaderDimensions = {
       width: this.styles.rowHeader.rect.width,
-      height: params.defaultRowHeight,
+      height: params.options.defaultRowHeight,
     };
 
     this.colHeaderDimensions = {
-      width: params.defaultColWidth,
+      width: params.options.defaultColWidth,
       height: this.styles.colHeader.rect.height,
     };
 
@@ -235,23 +235,23 @@ class Canvas {
     this.sheetViewportPositions = {
       // Based on the y 100% axis of the row
       row: {
-        x: 1,
+        x: 0,
         get y() {
           // Minus headers
           return calculateSheetViewportEndPosition(
             that.sheetViewportDimensions.height,
-            1,
+            0,
             that.rows
           );
         },
       },
       // Based the x 100 axis of the row
       col: {
-        x: 1,
+        x: 0,
         get y() {
           return calculateSheetViewportEndPosition(
             that.sheetViewportDimensions.width,
-            1,
+            0,
             that.cols
           );
         },
@@ -399,8 +399,6 @@ class Canvas {
 
     this.cols.forEach((col, i) => {
       const width = col.width;
-      const startCharCode = 'A'.charCodeAt(0);
-      const colLetter = String.fromCharCode(startCharCode + i);
       const x = i * width + this.rowHeaderDimensions.width;
 
       clone = rect.clone({
@@ -410,7 +408,7 @@ class Canvas {
 
       const text = new Text({
         x,
-        text: colLetter,
+        text: col.letter,
         ...this.styles.colHeader.text,
       });
 
@@ -442,11 +440,11 @@ class Canvas {
 
     let clone;
 
-    this.rows.forEach((row) => {
+    this.rows.forEach((row, i) => {
       const height = row.height;
 
       clone = line.clone({
-        y: row.number * height,
+        y: (i + 1) * height,
       });
 
       this.mainLayer.add(clone);
@@ -466,11 +464,11 @@ class Canvas {
 
     let clone;
 
-    this.cols.forEach((col) => {
+    this.cols.forEach((col, i) => {
       const width = col.width;
 
       clone = line.clone({
-        x: col.number * width,
+        x: (i + 1) * width,
       });
 
       this.mainLayer.add(clone);

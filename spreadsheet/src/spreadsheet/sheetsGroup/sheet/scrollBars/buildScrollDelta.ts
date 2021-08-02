@@ -40,8 +40,8 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
     const { newItems, newTotalUnusedScroll } = getNextItemsForScroll(
       isIncrementingScroll,
       isIncrementingScroll
-        ? sheetViewPortPosition.y
-        : sheetViewPortPosition.x - 2,
+        ? sheetViewPortPosition.y + 1
+        : sheetViewPortPosition.x - 1,
       totalUnusedScroll,
       items
     );
@@ -59,9 +59,9 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
     if (newItems.length) {
       if (isIncrementingScroll) {
         newSheetViewportPositions.x += newItems.length;
-        newSheetViewportPositions.y = newItems[newItems.length - 1].number;
+        newSheetViewportPositions.y = newItems[newItems.length - 1].index;
       } else {
-        newSheetViewportPositions.x = newItems[newItems.length - 1].number;
+        newSheetViewportPositions.x = newItems[newItems.length - 1].index;
         newSheetViewportPositions.y -= newItems.length;
       }
     }

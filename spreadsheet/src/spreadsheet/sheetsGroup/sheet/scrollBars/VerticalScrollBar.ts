@@ -78,8 +78,6 @@ class VerticalScrollBar {
           }
         );
 
-      console.log(newSheetViewportPositions);
-
       this.setSheetViewportPositions({
         ...this.sheetViewportPositions,
         row: {

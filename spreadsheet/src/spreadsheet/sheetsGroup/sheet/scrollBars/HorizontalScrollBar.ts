@@ -3,7 +3,7 @@ import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import events from '../../../events';
-import { IHeaderDimensions, ISheetDimensions } from '../Canvas';
+import { IDimensions } from '../Canvas';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 
 class HorizontalScrollBar {
@@ -15,8 +15,8 @@ class HorizontalScrollBar {
     private stage: Stage,
     private mainLayer: Layer,
     private verticallyStickyLayer: Layer,
-    private sheetDimensions: ISheetDimensions,
-    private rowHeaderDimensions: IHeaderDimensions,
+    private sheetDimensions: IDimensions,
+    private rowHeaderDimensions: IDimensions,
     private eventEmitter: EventEmitter
   ) {
     this.stage = stage;

@@ -1,11 +1,6 @@
 import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
-import {
-  IHeaderDimensions,
-  ISheetDimensions,
-  ISheetViewport,
-  ISheetViewportPositions,
-} from '../Canvas';
+import { IDimensions, ISheetViewportPositions } from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
@@ -61,13 +56,12 @@ class VerticalScrollBar {
     private stage: Stage,
     private mainLayer: Layer,
     private horizontallyStickyLayer: Layer,
-    private sheetDimensions: ISheetDimensions,
-    private sheetViewport: ISheetViewport,
+    private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private setSheetViewportPositions: (
       sheetViewportPositions: ISheetViewportPositions
     ) => void,
-    private colHeaderDimensions: IHeaderDimensions,
+    private colHeaderDimensions: IDimensions,
     // private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
     private rows: Row[],
     private eventEmitter: EventEmitter
@@ -79,7 +73,6 @@ class VerticalScrollBar {
     this.colHeaderDimensions = colHeaderDimensions;
     // this.getHorizontalScrollBarBoundingClientRect =
     //   getHorizontalScrollBarBoundingClientRect;
-    this.sheetViewport = sheetViewport;
     this.setSheetViewportPositions = setSheetViewportPositions;
     this.sheetViewportPositions = sheetViewportPositions;
     this.rows = rows;
@@ -99,8 +92,7 @@ class VerticalScrollBar {
     const onLoad = () => {
       this.scrollBar.style.height = `${
         this.stage.height()
-        // this.getHorizontalScrollBarBoundingClientRect().height -
-        // this.colHeaderDimensions.height
+        // this.getHorizontalScrollBarBoundingClientRect().height
       }px`;
       // this.scrollBar.style.bottom = `${
       //   this.getHorizontalScrollBarBoundingClientRect().height
@@ -137,8 +129,6 @@ class VerticalScrollBar {
 
       this.totalUnusedScrollHeight = totalUnusedScrollHeight;
 
-      console.log('totalUnusedScrollHeight', totalUnusedScrollHeight);
-
       const aggregatedHeightOfRows = rows.reduce((totalHeight, row) => {
         return (totalHeight += row.height);
       }, 0);
@@ -166,7 +156,7 @@ class VerticalScrollBar {
         ? (this.totalAggregatedHeightOfRows += aggregatedHeightOfRows)
         : (this.totalAggregatedHeightOfRows -= aggregatedHeightOfRows);
 
-      // // Use the remaining unused scroll leftovers
+      //  Use the remaining unused scroll leftovers
       if (hasUserScrolledToBottom) {
         totalAggregatedHeightOfRows += this.totalUnusedScrollHeight;
         this.totalUnusedScrollHeight = 0;
@@ -202,22 +192,6 @@ class VerticalScrollBar {
     this.scroll = scroll;
 
     scroll.style.height = `${this.sheetDimensions.height}px`;
-  }
-
-  scrollToNextRow(scrollTop: number) {
-    // const scrollDirection: ScrollDirection =
-    //   scrollTop > this.previousScrollTop ? 'down' : 'up';
-    // const increment = scrollDirection === 'up' ? -1 : 1;
-    // const index = this.sheetViewportIndexes.row.bottom + increment;
-    // const nextRow = this.rows[index];
-    // const height = nextRow.height;
-    // const vector = {
-    //   x: 0,
-    //   y: scrollDirection === 'down' ? height : -height,
-    // };
-    // this.mainLayer.move(vector);
-    // this.horizontallyStickyLayer.move(vector);
-    // this.previousScrollTop = scrollTop;
   }
 
   destroy() {

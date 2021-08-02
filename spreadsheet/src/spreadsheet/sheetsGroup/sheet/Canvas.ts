@@ -59,17 +59,7 @@ interface ICanvasStyles {
   topLeftRect: ITopLeftRectConfig;
 }
 
-export interface IHeaderDimensions {
-  width: number;
-  height: number;
-}
-
-export interface ISheetDimensions {
-  width: number;
-  height: number;
-}
-
-export interface ISheetViewport {
+export interface IDimensions {
   width: number;
   height: number;
 }
@@ -171,10 +161,10 @@ class Canvas {
   private styles: ICanvasStyles;
   private rows: Row[];
   private cols: Col[];
-  private sheetDimensions!: ISheetDimensions;
-  private rowHeaderDimensions: IHeaderDimensions;
-  private colHeaderDimensions: IHeaderDimensions;
-  private sheetViewport: ISheetViewport;
+  private sheetDimensions: IDimensions;
+  private rowHeaderDimensions: IDimensions;
+  private colHeaderDimensions: IDimensions;
+  private sheetViewportDimensions: IDimensions;
   private sheetViewportPositions: ISheetViewportPositions;
   private eventEmitter: EventEmitter;
 
@@ -188,28 +178,26 @@ class Canvas {
     };
 
     this.colHeaderDimensions = {
-      width: 0, //params.defaultColWidth,
-      height: 0,
-      // height: this.styles.colHeader.rect.height,
+      width: params.defaultColWidth,
+      height: this.styles.colHeader.rect.height,
     };
 
     this.sheetDimensions = {
-      width: params.cols.reduce(
-        (currentWidth, col) => col.width + currentWidth,
-        0
-      ),
+      width:
+        params.cols.reduce((currentWidth, col) => col.width + currentWidth, 0) +
+        this.rowHeaderDimensions.width,
       height:
         params.rows.reduce(
           (currentHeight, row) => row.height + currentHeight,
           0
-        ) - this.colHeaderDimensions.height,
+        ) + this.colHeaderDimensions.height,
     };
 
     const that = this;
 
-    this.sheetViewport = {
+    this.sheetViewportDimensions = {
       get height() {
-        return that.stage.height(); // - that.colHeaderDimensions.height
+        return that.stage.height();
         // that.horizontalScrollBar.getBoundingClientRect().height
       },
       get width() {
@@ -238,7 +226,7 @@ class Canvas {
       },
     };
 
-    let sumOfRowHeights = this.sheetViewport.height;
+    let sumOfRowHeights = this.sheetViewportDimensions.height;
     let i = this.sheetViewportPositions.row.bottom - 1;
     let currentRow = this.rows[i];
 
@@ -253,7 +241,7 @@ class Canvas {
     }
 
     this.createScrollBars();
-    // this.drawTopLeftOffsetRect();
+    this.drawTopLeftOffsetRect();
     this.drawHeaders();
     this.drawGridLines();
   }
@@ -304,7 +292,6 @@ class Canvas {
       this.mainLayer,
       this.horizontallyStickyLayer,
       this.sheetDimensions,
-      this.sheetViewport,
       this.sheetViewportPositions,
       this.setSheetViewportPositions,
       this.colHeaderDimensions,
@@ -335,7 +322,7 @@ class Canvas {
 
   drawHeaders() {
     this.drawRowHeaders();
-    // this.drawColHeaders();
+    this.drawColHeaders();
   }
 
   drawRowHeaders() {

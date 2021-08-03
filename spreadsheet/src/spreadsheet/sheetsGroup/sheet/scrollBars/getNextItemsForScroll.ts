@@ -1,10 +1,10 @@
-import { IRowColSize } from '../IRowColSize';
+import { IRowCol } from '../IRowCol';
 
 const getNextItemsForScroll = (
   incrementingScroll: boolean,
   startIndex: number,
   totalUnusedScroll: number,
-  items: IRowColSize[]
+  items: IRowCol[]
 ) => {
   let newTotalUnusedScroll = incrementingScroll
     ? totalUnusedScroll

@@ -17,7 +17,7 @@ class VerticalScrollBar {
   constructor(
     private stage: Stage,
     private mainLayer: Layer,
-    private horizontallyStickyLayer: Layer,
+    private xStickyLayer: Layer,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private setSheetViewportPositions: (
@@ -29,7 +29,7 @@ class VerticalScrollBar {
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
-    this.horizontallyStickyLayer = horizontallyStickyLayer;
+    this.xStickyLayer = xStickyLayer;
     this.sheetDimensions = sheetDimensions;
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
@@ -83,7 +83,7 @@ class VerticalScrollBar {
         -(this.sheetDimensions.height - this.stage.height()) * delta;
 
       this.mainLayer.y(yToMove);
-      this.horizontallyStickyLayer.y(yToMove);
+      this.xStickyLayer.y(yToMove);
     });
 
     this.scrollBarBuilder = buildScrollBar(

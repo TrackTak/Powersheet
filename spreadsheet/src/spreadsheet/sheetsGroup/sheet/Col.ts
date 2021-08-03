@@ -1,18 +1,20 @@
-import { IRowColSize } from './IRowColSize';
+import { IRowCol } from './IRowCol';
 
-class Col implements IRowColSize {
+class Col implements IRowCol {
+  public isFrozen: boolean;
+
   constructor(
     public letter: string,
     public index: number,
     public minWidth: number,
     public width: number,
-    public isFrozen?: boolean
+    isFrozen?: boolean
   ) {
     this.letter = letter;
     this.index = index;
     this.minWidth = minWidth;
     this.width = width;
-    this.isFrozen ?? false;
+    this.isFrozen = isFrozen ?? false;
   }
 
   getSize() {

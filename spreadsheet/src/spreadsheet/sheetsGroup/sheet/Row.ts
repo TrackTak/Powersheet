@@ -1,12 +1,14 @@
-import { IRowColSize } from './IRowColSize';
+import { IRowCol } from './IRowCol';
 
-class Row implements IRowColSize {
+class Row implements IRowCol {
+  public isFrozen: boolean;
+
   constructor(
     public number: number,
     public index: number,
     public minHeight: number,
     public height: number,
-    public isFrozen?: boolean
+    isFrozen?: boolean
   ) {
     this.number = number;
     this.index = index;

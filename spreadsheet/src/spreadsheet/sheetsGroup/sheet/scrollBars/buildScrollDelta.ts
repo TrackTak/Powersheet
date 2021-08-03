@@ -1,10 +1,10 @@
 import { ISheetViewportPosition } from '../Canvas';
-import { IRowColSize } from '../IRowColSize';
+import { IRowCol } from '../IRowCol';
 import getNextItemsForScroll from './getNextItemsForScroll';
 
 export interface IBuildScrollDelta {
   getScrollDelta: (
-    items: IRowColSize[],
+    items: IRowCol[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,
@@ -22,7 +22,7 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
   let totalAggregatedSizeOfItems = 0;
 
   const getScrollDelta = (
-    items: IRowColSize[],
+    items: IRowCol[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,

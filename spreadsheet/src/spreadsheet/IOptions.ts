@@ -1,18 +1,22 @@
 export interface IFrozenCells {
-  start: {
-    row: number;
-    col: number;
-  };
-  end: {
-    row?: number;
-    col?: number;
-  };
+  row: number[];
+  col: number[];
+}
+
+export interface IRowOptions {
+  minHeight: number;
+  defaultHeight: number;
+}
+
+export interface IColOptions {
+  minWidth: number;
+  defaultWidth: number;
 }
 
 export interface IOptions {
   numberOfRows: number;
   numberOfCols: number;
-  defaultRowHeight: number;
-  defaultColWidth: number;
-  frozenCells?: IFrozenCells;
+  row: IRowOptions;
+  col: IColOptions;
+  frozenCells: IFrozenCells;
 }

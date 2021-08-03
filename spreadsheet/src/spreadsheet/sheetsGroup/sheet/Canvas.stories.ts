@@ -15,27 +15,50 @@ const Template: Story<{}> = () => {
   const options: IOptions = {
     numberOfRows: 100,
     numberOfCols: 26,
-    defaultRowHeight: 25,
-    defaultColWidth: 100,
-    // frozenCells: {
-    //   start: {
-    //     row: 1,
-    //     col: 1
-    //   },
-    // },
+    row: {
+      minHeight: 25,
+      defaultHeight: 25,
+    },
+    col: {
+      minWidth: 60,
+      defaultWidth: 100,
+    },
+    frozenCells: {
+      row: [0],
+      col: [0],
+    },
   };
   const rows: Row[] = [];
   const cols: Col[] = [];
 
   for (let index = 0; index < options.numberOfRows; index++) {
-    rows.push(new Row(index + 1, index, 25, options.defaultRowHeight));
+    const isFrozen = options.frozenCells.row.includes(index);
+
+    const row = new Row(
+      index + 1,
+      index,
+      options.row.minHeight,
+      options.row.defaultHeight,
+      isFrozen
+    );
+
+    rows.push(row);
   }
 
   for (let index = 0; index < options.numberOfCols; index++) {
     const startCharCode = 'A'.charCodeAt(0);
     const letter = String.fromCharCode(startCharCode + index);
+    const isFrozen = options.frozenCells.col.includes(index);
 
-    cols.push(new Col(letter, index, 60, options.defaultColWidth));
+    cols.push(
+      new Col(
+        letter,
+        index,
+        options.col.minWidth,
+        options.col.defaultWidth,
+        isFrozen
+      )
+    );
   }
 
   const canvas = new Canvas({

@@ -3,34 +3,45 @@ import Canvas from './Canvas';
 import Col from './Col';
 import Row from './Row';
 import EventEmitter from 'eventemitter3';
+import { IOptions } from '../../IOptions';
 
 export default {
-  title: 'spreadsheet/sheetsGroup/sheet/Canvas',
-  argTypes: {},
+  title: 'Canvas',
 } as Meta;
 
-const Template: Story<{}> = () => {
+const Template: Story<IOptions> = (args) => {
   const eventEmitter = new EventEmitter();
-  const rowNumber = 100;
-  const columnNumber = 26;
-  const defaultRowHeight = 25;
-  const defaultColWidth = 100;
   const rows: Row[] = [];
   const cols: Col[] = [];
 
-  for (let index = 0; index < rowNumber; index++) {
-    rows.push(new Row(index + 1, 25, defaultRowHeight));
+  for (let index = 0; index < args.numberOfRows; index++) {
+    const isFrozen = index <= args.frozenCells?.row;
+
+    const row = new Row(
+      index + 1,
+      index,
+      args.row.minHeight,
+      args.row.defaultHeight,
+      isFrozen
+    );
+
+    rows.push(row);
   }
 
-  for (let index = 0; index < columnNumber; index++) {
-    cols.push(new Col(index + 1, 60, defaultColWidth));
+  for (let index = 0; index < args.numberOfCols; index++) {
+    const startCharCode = 'A'.charCodeAt(0);
+    const letter = String.fromCharCode(startCharCode + index);
+    const isFrozen = index <= args.frozenCells?.col;
+
+    cols.push(
+      new Col(letter, index, args.col.minWidth, args.col.defaultWidth, isFrozen)
+    );
   }
 
   const canvas = new Canvas({
     rows,
     cols,
-    defaultRowHeight,
-    defaultColWidth,
+    options: args,
     eventEmitter,
   });
 
@@ -39,4 +50,27 @@ const Template: Story<{}> = () => {
 
 export const Default = Template.bind({});
 
-Default.args = {};
+const defaultArgs = {
+  numberOfRows: 100,
+  numberOfCols: 26,
+  row: {
+    minHeight: 25,
+    defaultHeight: 25,
+  },
+  col: {
+    minWidth: 60,
+    defaultWidth: 100,
+  },
+};
+
+Default.args = defaultArgs;
+
+export const FreezeCells = Template.bind({});
+
+FreezeCells.args = {
+  ...defaultArgs,
+  frozenCells: {
+    row: 0,
+    col: 0,
+  },
+};

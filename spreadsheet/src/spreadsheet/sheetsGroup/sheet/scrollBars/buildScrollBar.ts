@@ -53,7 +53,7 @@ const buildScrollBar = (
 
     scrollBar.appendChild(scroll);
 
-    window.addEventListener('load', onLoad);
+    window.addEventListener('DOMContentLoaded', onLoad);
 
     // 60 fps: (1000ms / 60fps = 16ms);
     throttledScroll = throttle(onScroll, 16);
@@ -70,7 +70,7 @@ const buildScrollBar = (
 
   const destroy = () => {
     scrollBar.removeEventListener('scroll', throttledScroll);
-    window.removeEventListener('load', onLoad);
+    window.removeEventListener('DOMContentLoaded', onLoad);
     stage.off('wheel', onWheel);
   };
 

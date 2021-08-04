@@ -43,14 +43,7 @@ class HorizontalScrollBar {
       this.scrollBar.style.width = `${this.stage.width()}px`;
     };
 
-    this.eventEmitter.on(
-      events.scrollWheel.horizontal,
-      (e: KonvaEventObject<WheelEvent>) => {
-        this.scrollBar.scrollBy(e.evt.deltaX, 0);
-      }
-    );
-
-    this.eventEmitter.on(events.scroll.horizontal, (e: Event) => {
+    const onScroll = (e: Event) => {
       const { scrollLeft, offsetWidth, scrollWidth, clientWidth } =
         e.target! as any;
 
@@ -71,12 +64,18 @@ class HorizontalScrollBar {
 
       this.mainLayer.x(xToMove);
       this.yStickyLayer.x(xToMove);
-    });
+    };
+
+    const onWheel = (e: KonvaEventObject<WheelEvent>) => {
+      this.scrollBar.scrollBy(e.evt.deltaX, 0);
+    };
 
     this.scrollBarBuilder = buildScrollBar(
       'horizontal',
       this.stage,
       onLoad,
+      onScroll,
+      onWheel,
       this.eventEmitter
     );
     this.deltaBuilder = buildScrollDelta(this.sheetDimensions.width);

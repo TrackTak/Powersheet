@@ -5,7 +5,6 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
 import Row from '../Row';
-import events from '../../../events';
 import buildScrollDelta, { IBuildScrollDelta } from './buildScrollDelta';
 
 class VerticalScrollBar {
@@ -49,14 +48,7 @@ class VerticalScrollBar {
       }px`;
     };
 
-    this.eventEmitter.on(
-      events.scrollWheel.vertical,
-      (e: KonvaEventObject<WheelEvent>) => {
-        this.scrollBar.scrollBy(0, e.evt.deltaY);
-      }
-    );
-
-    this.eventEmitter.on(events.scroll.vertical, (e: Event) => {
+    const onScroll = (e: Event) => {
       const { scrollTop, offsetHeight, scrollHeight, clientHeight } =
         e.target! as any;
 
@@ -77,12 +69,18 @@ class VerticalScrollBar {
 
       this.mainLayer.y(yToMove);
       this.xStickyLayer.y(yToMove);
-    });
+    };
+
+    const onWheel = (e: KonvaEventObject<WheelEvent>) => {
+      this.scrollBar.scrollBy(0, e.evt.deltaY);
+    };
 
     this.scrollBarBuilder = buildScrollBar(
       'vertical',
       this.stage,
       onLoad,
+      onScroll,
+      onWheel,
       this.eventEmitter
     );
     this.deltaBuilder = buildScrollDelta(this.sheetDimensions.height);

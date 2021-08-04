@@ -1,6 +1,6 @@
-export interface IFrozenCells {
-  row: number[];
-  col: number[];
+export interface IFrozenRowCols {
+  row: number;
+  col: number;
 }
 
 export interface IRowOptions {
@@ -18,5 +18,5 @@ export interface IOptions {
   numberOfCols: number;
   row: IRowOptions;
   col: IColOptions;
-  frozenCells: IFrozenCells;
+  frozenCells: IFrozenRowCols;
 }

@@ -20,9 +20,6 @@ class VerticalScrollBar {
     private xStickyLayer: Layer,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
-    private setSheetViewportPositions: (
-      sheetViewportPositions: ISheetViewportPositions
-    ) => void,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
     private rows: Row[],
     private eventEmitter: EventEmitter
@@ -33,7 +30,6 @@ class VerticalScrollBar {
     this.sheetDimensions = sheetDimensions;
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
-    this.setSheetViewportPositions = setSheetViewportPositions;
     this.sheetViewportPositions = sheetViewportPositions;
     this.rows = rows;
     this.eventEmitter = eventEmitter;
@@ -74,10 +70,7 @@ class VerticalScrollBar {
           this.sheetViewportPositions.row
         );
 
-      this.setSheetViewportPositions({
-        ...this.sheetViewportPositions,
-        row: newSheetViewportPositions,
-      });
+      this.sheetViewportPositions.row = newSheetViewportPositions;
 
       const yToMove =
         -(this.sheetDimensions.height - this.stage.height()) * delta;

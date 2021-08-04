@@ -20,9 +20,6 @@ class HorizontalScrollBar {
     private yStickyLayer: Layer,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
-    private setSheetViewportPositions: (
-      sheetViewportPositions: ISheetViewportPositions
-    ) => void,
     private cols: Col[],
     private eventEmitter: EventEmitter
   ) {
@@ -30,7 +27,6 @@ class HorizontalScrollBar {
     this.mainLayer = mainLayer;
     this.yStickyLayer = yStickyLayer;
     this.sheetDimensions = sheetDimensions;
-    this.setSheetViewportPositions = setSheetViewportPositions;
     this.sheetViewportPositions = sheetViewportPositions;
     this.cols = cols;
     this.eventEmitter = eventEmitter;
@@ -68,10 +64,7 @@ class HorizontalScrollBar {
           this.sheetViewportPositions.col
         );
 
-      this.setSheetViewportPositions({
-        ...this.sheetViewportPositions,
-        col: newSheetViewportPositions,
-      });
+      this.sheetViewportPositions.col = newSheetViewportPositions;
 
       const xToMove =
         -(this.sheetDimensions.width - this.stage.width()) * delta;

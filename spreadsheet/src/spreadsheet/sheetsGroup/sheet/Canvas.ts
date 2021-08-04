@@ -57,8 +57,8 @@ interface ITopLeftRectConfig extends RectConfig {}
 
 interface ICanvasStyles {
   backgroundColor: string;
-  horizontalGridLine: IGridLineConfig;
-  verticalGridLine: IGridLineConfig;
+  xGridLine: IGridLineConfig;
+  yGridLine: IGridLineConfig;
   cellRect: ICellRect;
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
@@ -111,8 +111,8 @@ const sharedCanvasStyles = {
 
 const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
-  horizontalGridLine: sharedCanvasStyles.gridLine,
-  verticalGridLine: sharedCanvasStyles.gridLine,
+  xGridLine: sharedCanvasStyles.gridLine,
+  yGridLine: sharedCanvasStyles.gridLine,
   cellRect: {
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
@@ -196,6 +196,8 @@ class Canvas {
   private styles: ICanvasStyles;
   private rows: Row[];
   private cols: Col[];
+  private xGridLines: Line[];
+  private yGridLines: Line[];
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
   private colHeaderDimensions: IDimensions;
@@ -229,6 +231,9 @@ class Canvas {
           0
         ) + this.colHeaderDimensions.height,
     };
+
+    this.xGridLines = [];
+    this.yGridLines = [];
 
     const that = this;
 
@@ -289,10 +294,6 @@ class Canvas {
     );
   };
 
-  setSheetViewportPositions(sheetViewportPositions: ISheetViewportPositions) {
-    this.sheetViewportPositions = sheetViewportPositions;
-  }
-
   private create(stageConfig: ICreateStageConfig = {}) {
     this.container = document.createElement('div');
     this.container.classList.add(`${prefix}-canvas`, styles.canvas);
@@ -315,7 +316,7 @@ class Canvas {
     this.stage.add(this.yStickyLayer);
     this.stage.add(this.xyStickyLayer);
 
-    window.addEventListener('load', this.onLoad);
+    window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
   createScrollBars() {
@@ -325,7 +326,6 @@ class Canvas {
       this.yStickyLayer,
       this.sheetDimensions,
       this.sheetViewportPositions,
-      this.setSheetViewportPositions,
       this.cols,
       this.eventEmitter
     );
@@ -336,7 +336,6 @@ class Canvas {
       this.xStickyLayer,
       this.sheetDimensions,
       this.sheetViewportPositions,
-      this.setSheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
       this.rows,
       this.eventEmitter
@@ -347,7 +346,7 @@ class Canvas {
   }
 
   destroy() {
-    window.removeEventListener('load', this.onLoad);
+    window.removeEventListener('DOMContentLoaded', this.onLoad);
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.stage.destroy();
@@ -484,13 +483,13 @@ class Canvas {
   }
 
   drawGridLines() {
-    this.drawHorizontalGridLines();
-    this.drawVerticalGridLines();
+    this.drawXGridLines();
+    this.drawYGridLines();
   }
 
-  drawHorizontalGridLines() {
+  drawXGridLines() {
     const line = new Line({
-      ...this.styles.horizontalGridLine,
+      ...this.styles.xGridLine,
       points: [
         this.rowHeaderDimensions.width,
         this.colHeaderDimensions.height,
@@ -501,15 +500,19 @@ class Canvas {
 
     let clone;
 
-    this.rows.forEach((row, i) => {
+    this.rows.forEach((row) => {
       const height = row.height;
 
       clone = line.clone({
-        y: (i + 1) * height,
+        y: (row.index + 1) * height,
       }) as Line;
 
+      this.xGridLines.push(clone);
+
       if (row.isFrozen) {
-        clone.stroke(this.styles.horizontalGridLine.frozenStroke);
+        if (this.options.frozenCells.row === row.index) {
+          clone.stroke(this.styles.xGridLine.frozenStroke);
+        }
         this.xyStickyLayer.add(clone);
       } else {
         this.mainLayer.add(clone);
@@ -517,9 +520,9 @@ class Canvas {
     });
   }
 
-  drawVerticalGridLines() {
+  drawYGridLines() {
     const line = new Line({
-      ...this.styles.verticalGridLine,
+      ...this.styles.yGridLine,
       points: [
         this.rowHeaderDimensions.width,
         this.colHeaderDimensions.height,
@@ -530,15 +533,19 @@ class Canvas {
 
     let clone;
 
-    this.cols.forEach((col, i) => {
+    this.cols.forEach((col) => {
       const width = col.width;
 
       clone = line.clone({
-        x: (i + 1) * width,
+        x: (col.index + 1) * width,
       }) as Line;
 
+      this.yGridLines.push(clone);
+
       if (col.isFrozen) {
-        clone.stroke(this.styles.verticalGridLine.frozenStroke);
+        if (this.options.frozenCells.col === col.index) {
+          clone.stroke(this.styles.yGridLine.frozenStroke);
+        }
         this.xyStickyLayer.add(clone);
       } else {
         this.mainLayer.add(clone);

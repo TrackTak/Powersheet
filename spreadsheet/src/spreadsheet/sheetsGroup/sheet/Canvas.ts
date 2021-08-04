@@ -510,7 +510,7 @@ class Canvas {
       this.xGridLines.push(clone);
 
       if (row.isFrozen) {
-        if (this.options.frozenCells.row === row.index) {
+        if (this.options.frozenCells?.row === row.index) {
           clone.stroke(this.styles.xGridLine.frozenStroke);
         }
         this.xyStickyLayer.add(clone);
@@ -543,7 +543,7 @@ class Canvas {
       this.yGridLines.push(clone);
 
       if (col.isFrozen) {
-        if (this.options.frozenCells.col === col.index) {
+        if (this.options.frozenCells?.col === col.index) {
           clone.stroke(this.styles.yGridLine.frozenStroke);
         }
         this.xyStickyLayer.add(clone);

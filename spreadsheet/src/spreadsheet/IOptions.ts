@@ -18,5 +18,5 @@ export interface IOptions {
   numberOfCols: number;
   row: IRowOptions;
   col: IColOptions;
-  frozenCells: IFrozenRowCols;
+  frozenCells?: IFrozenRowCols;
 }

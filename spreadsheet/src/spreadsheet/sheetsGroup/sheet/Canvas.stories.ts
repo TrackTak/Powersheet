@@ -6,7 +6,7 @@ import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../IOptions';
 
 export default {
-  title: 'spreadsheet/sheetsGroup/sheet/Canvas',
+  title: 'Canvas',
 } as Meta;
 
 const Template: Story<IOptions> = (args) => {
@@ -15,7 +15,7 @@ const Template: Story<IOptions> = (args) => {
   const cols: Col[] = [];
 
   for (let index = 0; index < args.numberOfRows; index++) {
-    const isFrozen = index <= args.frozenCells.row;
+    const isFrozen = index <= args.frozenCells?.row;
 
     const row = new Row(
       index + 1,
@@ -31,7 +31,7 @@ const Template: Story<IOptions> = (args) => {
   for (let index = 0; index < args.numberOfCols; index++) {
     const startCharCode = 'A'.charCodeAt(0);
     const letter = String.fromCharCode(startCharCode + index);
-    const isFrozen = index <= args.frozenCells.col;
+    const isFrozen = index <= args.frozenCells?.col;
 
     cols.push(
       new Col(letter, index, args.col.minWidth, args.col.defaultWidth, isFrozen)
@@ -50,7 +50,7 @@ const Template: Story<IOptions> = (args) => {
 
 export const Default = Template.bind({});
 
-Default.args = {
+const defaultArgs = {
   numberOfRows: 100,
   numberOfCols: 26,
   row: {
@@ -61,6 +61,14 @@ Default.args = {
     minWidth: 60,
     defaultWidth: 100,
   },
+};
+
+Default.args = defaultArgs;
+
+export const FreezeCells = Template.bind({});
+
+FreezeCells.args = {
+  ...defaultArgs,
   frozenCells: {
     row: 0,
     col: 0,

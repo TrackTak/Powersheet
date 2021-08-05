@@ -15,7 +15,7 @@ const Template: Story<IOptions> = (args) => {
   const cols: Col[] = [];
 
   for (let index = 0; index < args.numberOfRows; index++) {
-    const isFrozen = index <= args.frozenCells?.row;
+    const isFrozen = args.frozenCells ? index <= args.frozenCells.row : false;
 
     const row = new Row(
       index + 1,
@@ -31,7 +31,7 @@ const Template: Story<IOptions> = (args) => {
   for (let index = 0; index < args.numberOfCols; index++) {
     const startCharCode = 'A'.charCodeAt(0);
     const letter = String.fromCharCode(startCharCode + index);
-    const isFrozen = index <= args.frozenCells?.col;
+    const isFrozen = args.frozenCells ? index <= args.frozenCells.col : false;
 
     cols.push(
       new Col(letter, index, args.col.minWidth, args.col.defaultWidth, isFrozen)
@@ -70,7 +70,7 @@ export const FreezeCells = Template.bind({});
 FreezeCells.args = {
   ...defaultArgs,
   frozenCells: {
-    row: 0,
+    row: 1,
     col: 0,
   },
 };

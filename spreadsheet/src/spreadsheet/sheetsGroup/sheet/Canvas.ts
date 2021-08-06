@@ -469,10 +469,10 @@ class Canvas {
   hasOverlap(rectOne: IRect, rectTwo: IRect, offset: number = 0) {
     const diff = {
       x: Math.abs(
-        rectOne.x + rectOne.width / 2 - (rectTwo.x + rectTwo.width / 2)
+        rectOne.x + (rectOne.width - 2) / 2 - (rectTwo.x + rectTwo.width / 2)
       ),
       y: Math.abs(
-        rectOne.y + rectOne.height / 2 - (rectTwo.y + rectTwo.height / 2)
+        rectOne.y + (rectOne.height - 2) / 2 - (rectTwo.y + rectTwo.height / 2)
       ),
     };
     const compWidth = (rectOne.width + rectTwo.width) / 2;
@@ -515,17 +515,22 @@ class Canvas {
   }
 
   destroyOutOfViewportShapes() {
+    console.log('count', this.rowGroups);
+    console.log(this.rowGroups.filter(x => !!x).length);
     this.rowGroups.forEach((rowGroup, index) => {
       if (
-        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
+        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions, 1)
       ) {
+        // console.log('delete', rowGroup.index);
         rowGroup.destroy();
         delete this.rowGroups[index];
+      } else {
+        // console.log('overlap', rowGroup);
       }
     });
     this.colGroups.forEach((colGroup, index) => {
       if (
-        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
+        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions, 1)
       ) {
         colGroup.destroy();
         delete this.colGroups[index];

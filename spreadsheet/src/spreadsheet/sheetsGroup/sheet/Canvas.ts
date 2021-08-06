@@ -50,16 +50,14 @@ interface IColHeaderConfig {
   text: TextConfig;
 }
 
-interface IFrozenGridLine extends LineConfig {}
-
-interface ICellRect extends RectConfig {}
+interface IGridLineConfig extends LineConfig {}
 
 interface ITopLeftRectConfig extends RectConfig {}
 
 interface ICanvasStyles {
   backgroundColor: string;
-  frozenGridLine: IFrozenGridLine;
-  cellRect: ICellRect;
+  gridLine: IGridLineConfig;
+  frozenGridLine: IGridLineConfig;
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
   topLeftRect: ITopLeftRectConfig;
@@ -81,13 +79,21 @@ export interface ISheetViewportPositions {
 }
 
 interface IShapes {
-  cellRect: Rect;
   rowHeaderRect: Rect;
   colHeaderRect: Rect;
   frozenGridLine: Line;
+  xGridLine: Line;
+  yGridLine: Line;
 }
 
 const sharedCanvasStyles = {
+  gridLine: {
+    strokeWidth: 0.6,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
+    listening: false,
+    perfectDrawEnabled: false,
+  },
   headerRect: {
     fill: '#f4f5f8',
     stroke: '#E6E6E6',
@@ -107,25 +113,15 @@ const sharedCanvasStyles = {
   },
 };
 
-const strokeWidth = 0.6;
-
 const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
   frozenGridLine: {
+    ...sharedCanvasStyles.gridLine,
     stroke: 'blue',
-    strokeWidth,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    listening: false,
-    perfectDrawEnabled: false,
   },
-  cellRect: {
-    fill: '#fff',
+  gridLine: {
+    ...sharedCanvasStyles.gridLine,
     stroke: '#c6c6c6',
-    strokeWidth,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    perfectDrawEnabled: false,
   },
   rowHeader: {
     rect: {
@@ -180,7 +176,7 @@ const calculateSheetViewportEndPosition = (
   let i = newSheetViewportYIndex;
   let currentItem = items[i];
 
-  while (sumOfSizes >= currentItem?.getSize()) {
+  while (sumOfSizes > 0) {
     currentItem = items[i];
     const size = currentItem.getSize();
 
@@ -205,9 +201,8 @@ class Canvas {
   private styles: ICanvasStyles;
   private rows: Row[];
   private cols: Col[];
-  private cells: Rect[][];
-  private rowHeaders: Group[];
-  private colHeaders: Group[];
+  private rowGroups: Group[];
+  private colGroups: Group[];
   private shapes!: IShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
@@ -244,20 +239,19 @@ class Canvas {
         ) + this.colHeaderDimensions.height,
     };
 
-    this.cells = [];
-    this.rowHeaders = [];
-    this.colHeaders = [];
+    this.rowGroups = [];
+    this.colGroups = [];
 
     const that = this;
 
     this.sheetViewportDimensions = {
       x: that.rowHeaderDimensions.width,
       y: that.colHeaderDimensions.height,
-      get height() {
-        return that.stage.height() - that.colHeaderDimensions.height;
-      },
       get width() {
         return that.stage.width() - that.rowHeaderDimensions.width;
+      },
+      get height() {
+        return that.stage.height() - that.colHeaderDimensions.height;
       },
     };
 
@@ -351,11 +345,6 @@ class Canvas {
     );
 
     this.shapes = {
-      cellRect: new Rect({
-        ...this.styles.cellRect,
-        width: this.options.col.defaultWidth,
-        height: this.options.row.defaultHeight,
-      }),
       rowHeaderRect: new Rect({
         ...this.rowHeaderDimensions,
         ...this.styles.rowHeader.rect,
@@ -364,14 +353,21 @@ class Canvas {
         ...this.colHeaderDimensions,
         ...this.styles.colHeader.rect,
       }),
+      xGridLine: new Line({
+        ...this.styles.gridLine,
+      }),
+      yGridLine: new Line({
+        ...this.styles.gridLine,
+      }),
       frozenGridLine: new Line({
         ...this.styles.frozenGridLine,
       }),
     };
 
-    this.shapes.cellRect.cache();
     this.shapes.rowHeaderRect.cache();
     this.shapes.colHeaderRect.cache();
+    this.shapes.xGridLine.cache();
+    this.shapes.yGridLine.cache();
     this.shapes.frozenGridLine.cache();
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
@@ -434,7 +430,7 @@ class Canvas {
 
   // Use center-center distance check for non-rotated rects.
   // https://longviewcoder.com/2021/02/04/html5-canvas-viewport-optimisation-with-konva/
-  hasOverlap(rectOne: IRect, rectTwo: IRect) {
+  hasOverlap(rectOne: IRect, rectTwo: IRect, offset: number = 0) {
     const diff = {
       x: Math.abs(
         rectOne.x + rectOne.width / 2 - (rectTwo.x + rectTwo.width / 2)
@@ -445,7 +441,8 @@ class Canvas {
     };
     const compWidth = (rectOne.width + rectTwo.width) / 2;
     const compHeight = (rectOne.height + rectTwo.height) / 2;
-    const hasOverlap = diff.x <= compWidth && diff.y <= compHeight;
+    const hasOverlap =
+      diff.x <= compWidth - offset && diff.y <= compHeight - offset;
 
     return hasOverlap;
   }
@@ -453,8 +450,6 @@ class Canvas {
   initializeViewport() {
     let frozenRow: Row | null = null;
     let frozenCol: Col | null = null;
-    let sumOfRowHeights = 0;
-    let sumOfColWidths = 0;
 
     for (
       let ri = this.sheetViewportPositions.row.x;
@@ -463,41 +458,25 @@ class Canvas {
     ) {
       const row = this.rows[ri];
 
-      sumOfRowHeights += row.height;
-
       if (row.isFrozen && this.options.frozenCells?.row === row.index) {
         frozenRow = row;
       }
 
-      this.drawRowHeader(this.shapes.rowHeaderRect, row);
+      this.drawRow(row);
+    }
 
-      for (
-        let ci = this.sheetViewportPositions.col.x;
-        ci <= this.sheetViewportPositions.col.y;
-        ci++
-      ) {
-        const col = this.cols[ci];
+    for (
+      let ci = this.sheetViewportPositions.col.x;
+      ci <= this.sheetViewportPositions.col.y;
+      ci++
+    ) {
+      const col = this.cols[ci];
 
-        if (ri === 0) {
-          sumOfColWidths += col.width;
-
-          if (col.isFrozen && this.options.frozenCells?.col === col.index) {
-            frozenCol = col;
-          }
-
-          this.drawColHeader(this.shapes.colHeaderRect, col);
-        }
-
-        this.drawCell(this.shapes.cellRect, row, col);
+      if (col.isFrozen && this.options.frozenCells?.col === col.index) {
+        frozenCol = col;
       }
-    }
 
-    if (frozenRow) {
-      this.drawXFrozenGridLine(frozenRow, sumOfColWidths);
-    }
-
-    if (frozenCol) {
-      this.drawYFrozenGridLine(frozenCol, sumOfRowHeights);
+      this.drawCol(col);
     }
 
     this.setPreviousSheetViewportPositions();
@@ -511,62 +490,25 @@ class Canvas {
   }
 
   destroyOutOfViewportShapes() {
-    this.cells.forEach((row, ri) => {
-      const rowHeader = this.rowHeaders[ri];
-
+    this.rowGroups.forEach((rowGroup, index) => {
       if (
-        rowHeader &&
-        !this.hasOverlap(
-          rowHeader.getClientRect(),
-          this.sheetViewportDimensions
-        )
+        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
       ) {
-        rowHeader.destroy();
-        delete this.rowHeaders[ri];
+        rowGroup.destroy();
+        delete this.rowGroups[index];
       }
-
-      row.forEach((cell, ci) => {
-        if (
-          !this.hasOverlap(cell.getClientRect(), this.sheetViewportDimensions)
-        ) {
-          cell.destroy();
-
-          // this.colHeaders[ci].destroy();
-
-          //  delete this.colHeaders[ci];
-          delete this.cells[ri][ci];
-        }
-      });
+    });
+    this.colGroups.forEach((colGroup, index) => {
+      if (
+        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
+      ) {
+        colGroup.destroy();
+        delete this.colGroups[index];
+      }
     });
   }
 
   drawViewportShapes() {
-    const drawCellsForRow = (row: Row) => {
-      this.drawRowHeader(this.shapes.rowHeaderRect, row);
-
-      for (
-        let ci = this.sheetViewportPositions.col.x;
-        ci <= this.sheetViewportPositions.col.y;
-        ci++
-      ) {
-        const col = this.cols[ci];
-        this.drawCell(this.shapes.cellRect, row, col);
-      }
-    };
-
-    const drawCellsForCol = (col: Col) => {
-      this.drawColHeader(this.shapes.colHeaderRect, col);
-
-      for (
-        let ri = this.sheetViewportPositions.row.x;
-        ri <= this.sheetViewportPositions.row.y;
-        ri++
-      ) {
-        const row = this.rows[ri];
-        this.drawCell(this.shapes.cellRect, row, col);
-      }
-    };
-
     // Scrolling down
     for (
       let ri = this.sheetViewportPositions.row.y;
@@ -575,9 +517,8 @@ class Canvas {
     ) {
       const row = this.rows[ri];
 
-      drawCellsForRow(row);
+      this.drawRow(row);
     }
-
     // Scrolling up
     for (
       let ri = this.sheetViewportPositions.row.x;
@@ -586,9 +527,8 @@ class Canvas {
     ) {
       const row = this.rows[ri];
 
-      drawCellsForRow(row);
+      this.drawRow(row);
     }
-
     // Scrolling right
     for (
       let ci = this.sheetViewportPositions.col.y;
@@ -597,9 +537,8 @@ class Canvas {
     ) {
       const col = this.cols[ci];
 
-      drawCellsForCol(col);
+      this.drawCol(col);
     }
-
     // Scrolling left
     for (
       let ci = this.sheetViewportPositions.col.x;
@@ -608,39 +547,48 @@ class Canvas {
     ) {
       const col = this.cols[ci];
 
-      drawCellsForCol(col);
+      this.drawCol(col);
     }
   }
 
-  drawCell(rect: Rect, row: Row, col: Col) {
-    const clone = rect.clone({
-      x: this.rowHeaderDimensions.width + col.width * col.index,
-      y: this.colHeaderDimensions.height + row.height * row.index,
-    }) as Rect;
+  drawRow(row: Row) {
+    const rowHeader = this.drawRowHeader(this.shapes.rowHeaderRect, row);
+    const xGridLine =
+      row.isFrozen && this.options.frozenCells?.row === row.index
+        ? this.drawXGridLine(row, this.shapes.frozenGridLine)
+        : this.drawXGridLine(row);
 
-    if (col.width !== this.options.col.defaultWidth) {
-      clone.width(col.width);
-    }
+    const group = new Group();
 
-    if (row.height !== this.options.row.defaultHeight) {
-      clone.width(row.height);
-    }
+    group.add(rowHeader, xGridLine);
 
-    if (row.isFrozen && col.isFrozen) {
-      this.xyStickyLayer.add(clone);
-    } else if (row.isFrozen) {
-      this.yStickyLayer.add(clone);
-    } else if (col.isFrozen) {
-      this.xStickyLayer.add(clone);
+    this.rowGroups[row.index] = group;
+
+    if (row.isFrozen) {
+      this.xyStickyLayer.add(group);
     } else {
-      this.mainLayer.add(clone);
+      this.xStickyLayer.add(group);
     }
+  }
 
-    if (!this.cells[row.index]) {
-      this.cells[row.index] = [];
+  drawCol(col: Col) {
+    const colHeader = this.drawColHeader(this.shapes.colHeaderRect, col);
+    const yGridLine =
+      col.isFrozen && this.options.frozenCells?.col === col.index
+        ? this.drawYGridLine(col, this.shapes.frozenGridLine)
+        : this.drawYGridLine(col);
+
+    const group = new Group();
+
+    group.add(colHeader, yGridLine);
+
+    this.colGroups[col.index] = group;
+
+    if (col.isFrozen) {
+      this.xyStickyLayer.add(group);
+    } else {
+      this.yStickyLayer.add(group);
     }
-
-    this.cells[row.index][col.index] = clone;
   }
 
   drawRowHeader(rect: Rect, row: Row) {
@@ -666,17 +614,7 @@ class Canvas {
 
     group.add(clone, text);
 
-    if (row.isFrozen) {
-      const frozenGroup = new Group();
-
-      frozenGroup.add(clone, text);
-
-      this.xyStickyLayer.add(frozenGroup);
-    } else {
-      this.xStickyLayer.add(group);
-    }
-
-    this.rowHeaders[row.index] = group;
+    return group;
   }
 
   drawColHeader(rect: Rect, col: Col) {
@@ -703,49 +641,37 @@ class Canvas {
 
     group.add(clone, text);
 
-    if (col.isFrozen) {
-      const frozenGroup = new Group();
-
-      frozenGroup.add(clone, text);
-
-      this.xyStickyLayer.add(frozenGroup);
-    } else {
-      this.yStickyLayer.add(group);
-    }
-
-    this.colHeaders[col.index] = group;
+    return group;
   }
 
-  drawXFrozenGridLine(row: Row, sumOfColWidths: number) {
-    const line = new Line({
-      ...this.styles.frozenGridLine,
+  drawXGridLine(row: Row, gridLine = this.shapes.xGridLine) {
+    const clone = gridLine.clone({
       points: [
-        this.rowHeaderDimensions.width,
-        this.colHeaderDimensions.height,
-        sumOfColWidths + this.rowHeaderDimensions.width,
-        this.colHeaderDimensions.height,
+        this.sheetViewportDimensions.x,
+        this.sheetViewportDimensions.y,
+        this.stage.width(),
+        this.sheetViewportDimensions.y,
       ],
-    });
+    }) as Line;
 
-    line.y((row.index + 1) * row.height);
+    clone.y((row.index + 1) * row.height);
 
-    this.xyStickyLayer.add(line);
+    return clone;
   }
 
-  drawYFrozenGridLine(col: Col, sumOfRowHeights: number) {
-    const line = new Line({
-      ...this.styles.frozenGridLine,
+  drawYGridLine(col: Col, gridLine = this.shapes.yGridLine) {
+    const clone = gridLine.clone({
       points: [
-        this.rowHeaderDimensions.width,
-        this.colHeaderDimensions.height,
-        this.rowHeaderDimensions.width,
-        sumOfRowHeights + this.colHeaderDimensions.height,
+        this.sheetViewportDimensions.x,
+        this.sheetViewportDimensions.y,
+        this.sheetViewportDimensions.x,
+        this.stage.height(),
       ],
-    });
+    }) as Line;
 
-    line.x((col.index + 1) * col.width);
+    clone.x((col.index + 1) * col.width);
 
-    this.xyStickyLayer.add(line);
+    return clone;
   }
 }
 

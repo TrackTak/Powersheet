@@ -448,19 +448,12 @@ class Canvas {
   }
 
   initializeViewport() {
-    let frozenRow: Row | null = null;
-    let frozenCol: Col | null = null;
-
     for (
       let ri = this.sheetViewportPositions.row.x;
       ri <= this.sheetViewportPositions.row.y;
       ri++
     ) {
       const row = this.rows[ri];
-
-      if (row.isFrozen && this.options.frozenCells?.row === row.index) {
-        frozenRow = row;
-      }
 
       this.drawRow(row);
     }
@@ -471,10 +464,6 @@ class Canvas {
       ci++
     ) {
       const col = this.cols[ci];
-
-      if (col.isFrozen && this.options.frozenCells?.col === col.index) {
-        frozenCol = col;
-      }
 
       this.drawCol(col);
     }

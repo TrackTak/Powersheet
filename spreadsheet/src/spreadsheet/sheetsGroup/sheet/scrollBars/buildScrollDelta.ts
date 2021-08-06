@@ -70,15 +70,6 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
       ? (totalAggregatedSizeOfItems += aggregatedSizeOfItems)
       : (totalAggregatedSizeOfItems -= aggregatedSizeOfItems);
 
-    //  Use the remaining unused scroll leftovers
-    if (hasUserScrolledToMax) {
-      totalUnusedScroll = 0;
-    }
-
-    if (hasUserScrolledToMin) {
-      totalUnusedScroll = 0;
-    }
-
     const delta = totalAggregatedSizeOfItems / availableSpace;
 
     previousScrollAmount = scrollAmount;

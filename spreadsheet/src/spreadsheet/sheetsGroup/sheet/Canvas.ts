@@ -16,6 +16,7 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
 import { IRect } from 'konva/lib/types';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -50,17 +51,15 @@ interface IColHeaderConfig {
   text: TextConfig;
 }
 
-interface IGridLineConfig extends LineConfig {}
-
-interface ITopLeftRectConfig extends RectConfig {}
-
 interface ICanvasStyles {
   backgroundColor: string;
-  gridLine: IGridLineConfig;
-  frozenGridLine: IGridLineConfig;
+  sheet: RectConfig;
+  gridLine: LineConfig;
+  frozenGridLine: LineConfig;
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
-  topLeftRect: ITopLeftRectConfig;
+  topLeftRect: RectConfig;
+  selector: RectConfig;
 }
 
 export interface IDimensions {
@@ -79,11 +78,13 @@ export interface ISheetViewportPositions {
 }
 
 interface IShapes {
+  sheet: Rect;
   rowHeaderRect: Rect;
   colHeaderRect: Rect;
   frozenGridLine: Line;
   xGridLine: Line;
   yGridLine: Line;
+  selector: Rect;
 }
 
 const sharedCanvasStyles = {
@@ -115,6 +116,12 @@ const sharedCanvasStyles = {
 
 const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
+  sheet: {
+    opacity: 0,
+  },
+  selector: {
+    stroke: 'blue',
+  },
   frozenGridLine: {
     ...sharedCanvasStyles.gridLine,
     stroke: 'blue',
@@ -311,6 +318,9 @@ class Canvas {
       this.cols
     );
 
+    this.shapes.sheet.width(this.sheetViewportDimensions.width);
+    this.shapes.sheet.height(this.sheetViewportDimensions.height);
+
     this.initializeViewport();
   };
 
@@ -345,6 +355,10 @@ class Canvas {
     );
 
     this.shapes = {
+      sheet: new Rect({
+        ...this.sheetViewportDimensions,
+        ...this.styles.sheet,
+      }),
       rowHeaderRect: new Rect({
         ...this.rowHeaderDimensions,
         ...this.styles.rowHeader.rect,
@@ -362,7 +376,12 @@ class Canvas {
       frozenGridLine: new Line({
         ...this.styles.frozenGridLine,
       }),
+      selector: new Rect({
+        ...this.styles.selector,
+      }),
     };
+
+    this.xyStickyLayer.add(this.shapes.sheet);
 
     this.shapes.rowHeaderRect.cache();
     this.shapes.colHeaderRect.cache();
@@ -371,7 +390,22 @@ class Canvas {
     this.shapes.frozenGridLine.cache();
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+
+    this.shapes.sheet.on('click', this.onSheetClick);
   }
+
+  onSheetClick = (e: KonvaEventObject<MouseEvent>) => {
+    debugger;
+    const pos = this.shapes.sheet.getRelativePointerPosition();
+    // let colIndex = ???
+    let colGroups = this.colGroups;
+    let widthOfSheet = this.sheetViewportDimensions.width;
+
+    this.mainLayer.add(this.shapes.selector);
+
+    // e.target is a clicked Konva.Shape or current stage if you clicked on empty space
+    console.log('clicked on', e.target);
+  };
 
   onHorizontalScroll = () => {
     this.updateViewport();
@@ -409,6 +443,7 @@ class Canvas {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
+    this.shapes.sheet.off('click', this.onSheetClick);
     this.eventEmitter.off(events.scroll.vertical, this.onVerticalScroll);
     this.eventEmitter.off(events.scrollWheel.vertical, this.onVerticalScroll);
     this.eventEmitter.off(events.scroll.horizontal, this.onHorizontalScroll);

@@ -399,6 +399,7 @@ class Canvas {
     const pos = this.shapes.sheet.getRelativePointerPosition();
     // let colIndex = ???
     let colGroups = this.colGroups;
+    let cols = this.cols;
     let widthOfSheet = this.sheetViewportDimensions.width;
 
     this.mainLayer.add(this.shapes.selector);

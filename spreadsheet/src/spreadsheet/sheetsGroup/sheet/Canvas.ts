@@ -15,6 +15,7 @@ import { IOptions } from '../../IOptions';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
+import { IRect } from 'konva/lib/types';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -79,6 +80,13 @@ export interface ISheetViewportPositions {
   col: ISheetViewportPosition;
 }
 
+interface IShapes {
+  cellRect: Rect;
+  rowHeaderRect: Rect;
+  colHeaderRect: Rect;
+  frozenGridLine: Line;
+}
+
 const sharedCanvasStyles = {
   headerRect: {
     fill: '#f4f5f8',
@@ -112,6 +120,7 @@ const defaultCanvasStyles: ICanvasStyles = {
     perfectDrawEnabled: false,
   },
   cellRect: {
+    fill: '#fff',
     stroke: '#c6c6c6',
     strokeWidth,
     shadowForStrokeEnabled: false,
@@ -199,10 +208,11 @@ class Canvas {
   private cells: Rect[][];
   private rowHeaders: Group[];
   private colHeaders: Group[];
+  private shapes!: IShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
   private colHeaderDimensions: IDimensions;
-  private sheetViewportDimensions: IDimensions;
+  private sheetViewportDimensions: IRect;
   private sheetViewportPositions: ISheetViewportPositions;
   private previousSheetViewportPositions!: ISheetViewportPositions;
   private eventEmitter: EventEmitter;
@@ -241,6 +251,8 @@ class Canvas {
     const that = this;
 
     this.sheetViewportDimensions = {
+      x: that.rowHeaderDimensions.width,
+      y: that.colHeaderDimensions.height,
       get height() {
         return that.stage.height() - that.colHeaderDimensions.height;
       },
@@ -266,6 +278,8 @@ class Canvas {
         y: 0,
       },
     };
+
+    this.setPreviousSheetViewportPositions();
 
     this.createScrollBars();
     this.drawTopLeftOffsetRect();
@@ -303,28 +317,7 @@ class Canvas {
       this.cols
     );
 
-    this.setPreviousSheetViewportPositions();
-
-    const rows = [];
-    const cols = [];
-
-    for (
-      let index = this.sheetViewportPositions.row.x;
-      index <= this.sheetViewportPositions.row.y;
-      index++
-    ) {
-      rows.push(this.rows[index]);
-    }
-
-    for (
-      let index = this.sheetViewportPositions.col.x;
-      index <= this.sheetViewportPositions.col.y;
-      index++
-    ) {
-      cols.push(this.cols[index]);
-    }
-
-    this.drawViewport(rows, cols);
+    this.initializeViewport();
   };
 
   private create(stageConfig: ICreateStageConfig = {}) {
@@ -356,6 +349,30 @@ class Canvas {
       events.scrollWheel.horizontal,
       this.onHorizontalScroll
     );
+
+    this.shapes = {
+      cellRect: new Rect({
+        ...this.styles.cellRect,
+        width: this.options.col.defaultWidth,
+        height: this.options.row.defaultHeight,
+      }),
+      rowHeaderRect: new Rect({
+        ...this.rowHeaderDimensions,
+        ...this.styles.rowHeader.rect,
+      }),
+      colHeaderRect: new Rect({
+        ...this.colHeaderDimensions,
+        ...this.styles.colHeader.rect,
+      }),
+      frozenGridLine: new Line({
+        ...this.styles.frozenGridLine,
+      }),
+    };
+
+    this.shapes.cellRect.cache();
+    this.shapes.rowHeaderRect.cache();
+    this.shapes.colHeaderRect.cache();
+    this.shapes.frozenGridLine.cache();
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
@@ -415,6 +432,77 @@ class Canvas {
     this.xyStickyLayer.add(rect);
   }
 
+  // Use center-center distance check for non-rotated rects.
+  // https://longviewcoder.com/2021/02/04/html5-canvas-viewport-optimisation-with-konva/
+  hasOverlap(rectOne: IRect, rectTwo: IRect) {
+    const diff = {
+      x: Math.abs(
+        rectOne.x + rectOne.width / 2 - (rectTwo.x + rectTwo.width / 2)
+      ),
+      y: Math.abs(
+        rectOne.y + rectOne.height / 2 - (rectTwo.y + rectTwo.height / 2)
+      ),
+    };
+    const compWidth = (rectOne.width + rectTwo.width) / 2;
+    const compHeight = (rectOne.height + rectTwo.height) / 2;
+    const hasOverlap = diff.x <= compWidth && diff.y <= compHeight;
+
+    return hasOverlap;
+  }
+
+  initializeViewport() {
+    let frozenRow: Row | null = null;
+    let frozenCol: Col | null = null;
+    let sumOfRowHeights = 0;
+    let sumOfColWidths = 0;
+
+    for (
+      let ri = this.sheetViewportPositions.row.x;
+      ri <= this.sheetViewportPositions.row.y;
+      ri++
+    ) {
+      const row = this.rows[ri];
+
+      sumOfRowHeights += row.height;
+
+      if (row.isFrozen && this.options.frozenCells?.row === row.index) {
+        frozenRow = row;
+      }
+
+      this.drawRowHeader(this.shapes.rowHeaderRect, row);
+
+      for (
+        let ci = this.sheetViewportPositions.col.x;
+        ci <= this.sheetViewportPositions.col.y;
+        ci++
+      ) {
+        const col = this.cols[ci];
+
+        if (ri === 0) {
+          sumOfColWidths += col.width;
+
+          if (col.isFrozen && this.options.frozenCells?.col === col.index) {
+            frozenCol = col;
+          }
+
+          this.drawColHeader(this.shapes.colHeaderRect, col);
+        }
+
+        this.drawCell(this.shapes.cellRect, row, col);
+      }
+    }
+
+    if (frozenRow) {
+      this.drawXFrozenGridLine(frozenRow, sumOfColWidths);
+    }
+
+    if (frozenCol) {
+      this.drawYFrozenGridLine(frozenCol, sumOfRowHeights);
+    }
+
+    this.setPreviousSheetViewportPositions();
+  }
+
   updateViewport() {
     this.destroyOutOfViewportShapes();
     this.drawViewportShapes();
@@ -423,144 +511,61 @@ class Canvas {
   }
 
   destroyOutOfViewportShapes() {
-    // If the amount scrolled is more than the current viewport cells
-    if (
-      this.sheetViewportPositions.row.x -
-        this.previousSheetViewportPositions.row.x >
-        this.cells.length ||
-      this.previousSheetViewportPositions.row.y -
-        this.sheetViewportPositions.row.y >
-        this.cells.length
-    ) {
-      this.cells.forEach((row) => {
-        row.forEach((cell) => {
-          cell.destroy();
-        });
-      });
+    this.cells.forEach((row, ri) => {
+      const rowHeader = this.rowHeaders[ri];
 
-      this.rowHeaders.forEach((rowHeader) => {
+      if (
+        rowHeader &&
+        !this.hasOverlap(
+          rowHeader.getClientRect(),
+          this.sheetViewportDimensions
+        )
+      ) {
         rowHeader.destroy();
-      });
-
-      this.rowHeaders = [];
-      this.cells = [];
-
-      return;
-    }
-
-    if (
-      this.sheetViewportPositions.col.x -
-        this.previousSheetViewportPositions.col.x >
-        this.cells?.[0]?.length ||
-      this.previousSheetViewportPositions.col.y -
-        this.sheetViewportPositions.col.y >
-        this.cells?.[0]?.length
-    ) {
-      this.cells.forEach((row) => {
-        row.forEach((cell) => {
-          cell.destroy();
-        });
-      });
-
-      this.colHeaders.forEach((colHeader) => {
-        colHeader.destroy();
-      });
-
-      this.colHeaders = [];
-      this.cells = [];
-
-      return;
-    }
-
-    // Scrolling down
-    for (
-      let index = this.previousSheetViewportPositions.row.x;
-      index < this.sheetViewportPositions.row.x;
-      index++
-    ) {
-      this.cells[index].forEach((cell) => {
-        cell.destroy();
-      });
-      this.rowHeaders[index].destroy();
-
-      delete this.rowHeaders[index];
-      delete this.cells[index];
-    }
-
-    // Scrolling up
-    for (
-      let index = this.previousSheetViewportPositions.row.y;
-      index > this.sheetViewportPositions.row.y;
-      index--
-    ) {
-      this.cells[index].forEach((cell) => {
-        cell.destroy();
-      });
-      this.rowHeaders[index].destroy();
-
-      delete this.rowHeaders[index];
-      delete this.cells[index];
-    }
-
-    // Scrolling right
-    for (
-      let index = this.previousSheetViewportPositions.col.x;
-      index < this.sheetViewportPositions.col.x;
-      index++
-    ) {
-      try {
-        this.colHeaders[index].destroy();
-      } catch (error) {
-        debugger;
+        delete this.rowHeaders[ri];
       }
-      delete this.colHeaders[index];
 
-      this.cells.forEach((row) => {
-        const colCell = row[index];
+      row.forEach((cell, ci) => {
+        if (
+          !this.hasOverlap(cell.getClientRect(), this.sheetViewportDimensions)
+        ) {
+          cell.destroy();
 
-        colCell.destroy();
+          // this.colHeaders[ci].destroy();
 
-        delete row[index];
+          //  delete this.colHeaders[ci];
+          delete this.cells[ri][ci];
+        }
       });
-    }
-
-    // Scrolling left
-    for (
-      let index = this.previousSheetViewportPositions.col.y;
-      index > this.sheetViewportPositions.col.y;
-      index--
-    ) {
-      this.colHeaders[index].destroy();
-      delete this.colHeaders[index];
-
-      this.cells.forEach((row) => {
-        const colCell = row[index];
-
-        colCell.destroy();
-
-        delete row[index];
-      });
-    }
+    });
   }
 
-  drawViewportShapes = () => {
-    const cellRect = new Rect({
-      ...this.styles.cellRect,
-      width: this.options.col.defaultWidth,
-      height: this.options.row.defaultHeight,
-    });
-    const rowHeaderRect = new Rect({
-      ...this.rowHeaderDimensions,
-      ...this.styles.rowHeader.rect,
-    });
-    const colHeaderRect = new Rect({
-      ...this.colHeaderDimensions,
-      ...this.styles.colHeader.rect,
-    });
+  drawViewportShapes() {
+    const drawCellsForRow = (row: Row) => {
+      this.drawRowHeader(this.shapes.rowHeaderRect, row);
 
-    cellRect.cache();
-    rowHeaderRect.cache();
-    colHeaderRect.cache();
+      for (
+        let ci = this.sheetViewportPositions.col.x;
+        ci <= this.sheetViewportPositions.col.y;
+        ci++
+      ) {
+        const col = this.cols[ci];
+        this.drawCell(this.shapes.cellRect, row, col);
+      }
+    };
+
+    const drawCellsForCol = (col: Col) => {
+      this.drawColHeader(this.shapes.colHeaderRect, col);
+
+      for (
+        let ri = this.sheetViewportPositions.row.x;
+        ri <= this.sheetViewportPositions.row.y;
+        ri++
+      ) {
+        const row = this.rows[ri];
+        this.drawCell(this.shapes.cellRect, row, col);
+      }
+    };
 
     // Scrolling down
     for (
@@ -570,24 +575,7 @@ class Canvas {
     ) {
       const row = this.rows[ri];
 
-      const rowHeader = this.drawRowHeader(rowHeaderRect, row);
-
-      this.rowHeaders[ri] = rowHeader;
-
-      const cells: Rect[] = [];
-
-      for (
-        let ci = this.sheetViewportPositions.col.x;
-        ci <= this.sheetViewportPositions.col.y;
-        ci++
-      ) {
-        const col = this.cols[ci];
-        const cell = this.drawCell(cellRect, row, col);
-
-        cells[ci] = cell;
-      }
-
-      this.cells[ri] = cells;
+      drawCellsForRow(row);
     }
 
     // Scrolling up
@@ -598,24 +586,7 @@ class Canvas {
     ) {
       const row = this.rows[ri];
 
-      const rowHeader = this.drawRowHeader(rowHeaderRect, row);
-
-      this.rowHeaders[ri] = rowHeader;
-
-      const cells: Rect[] = [];
-
-      for (
-        let ci = this.sheetViewportPositions.col.x;
-        ci <= this.sheetViewportPositions.col.y;
-        ci++
-      ) {
-        const col = this.cols[ci];
-        const cell = this.drawCell(cellRect, row, col);
-
-        cells[ci] = cell;
-      }
-
-      this.cells[ri] = cells;
+      drawCellsForRow(row);
     }
 
     // Scrolling right
@@ -626,20 +597,7 @@ class Canvas {
     ) {
       const col = this.cols[ci];
 
-      const colHeader = this.drawColHeader(colHeaderRect, col);
-
-      this.colHeaders[ci] = colHeader;
-
-      for (
-        let ri = this.sheetViewportPositions.row.x;
-        ri <= this.sheetViewportPositions.row.y;
-        ri++
-      ) {
-        const row = this.rows[ri];
-        const cell = this.drawCell(cellRect, row, col);
-
-        this.cells[ri][ci] = cell;
-      }
+      drawCellsForCol(col);
     }
 
     // Scrolling left
@@ -650,92 +608,7 @@ class Canvas {
     ) {
       const col = this.cols[ci];
 
-      const colHeader = this.drawColHeader(colHeaderRect, col);
-
-      this.colHeaders[ci] = colHeader;
-
-      for (
-        let ri = this.sheetViewportPositions.row.x;
-        ri <= this.sheetViewportPositions.row.y;
-        ri++
-      ) {
-        const row = this.rows[ri];
-        const cell = this.drawCell(cellRect, row, col);
-
-        this.cells[ri][ci] = cell;
-      }
-    }
-  };
-
-  drawViewport(rows: Row[], cols: Col[]) {
-    const cellRect = new Rect({
-      ...this.styles.cellRect,
-      width: this.options.col.defaultWidth,
-      height: this.options.row.defaultHeight,
-    });
-    const line = new Line({
-      ...this.styles.frozenGridLine,
-    });
-    const rowHeaderRect = new Rect({
-      ...this.rowHeaderDimensions,
-      ...this.styles.rowHeader.rect,
-    });
-    const colHeaderRect = new Rect({
-      ...this.colHeaderDimensions,
-      ...this.styles.colHeader.rect,
-    });
-
-    cellRect.cache();
-    rowHeaderRect.cache();
-    colHeaderRect.cache();
-    line.cache();
-
-    let sumOfRowHeights = 0;
-    let sumOfColWidths = 0;
-
-    let frozenRow: Row | null = null;
-    let frozenCol: Col | null = null;
-
-    cols.forEach((col) => {
-      const colHeader = this.drawColHeader(colHeaderRect, col);
-
-      this.colHeaders.push(colHeader);
-
-      sumOfColWidths += col.width;
-
-      if (col.isFrozen && this.options.frozenCells?.col === col.index) {
-        frozenCol = col;
-      }
-    });
-
-    rows.forEach((row) => {
-      const rowHeader = this.drawRowHeader(rowHeaderRect, row);
-
-      this.rowHeaders.push(rowHeader);
-
-      sumOfRowHeights += row.height;
-
-      if (row.isFrozen && this.options.frozenCells?.row === row.index) {
-        frozenRow = row;
-      }
-
-      const rowCells: Rect[] = [];
-
-      cols.forEach((col) => {
-        const cell = this.drawCell(cellRect, row, col);
-
-        rowCells.push(cell);
-      });
-
-      this.cells.push(rowCells);
-    });
-
-    if (frozenRow) {
-      this.drawXFrozenGridLine(frozenRow, sumOfColWidths);
-    }
-
-    if (frozenCol) {
-      this.drawYFrozenGridLine(frozenCol, sumOfRowHeights);
+      drawCellsForCol(col);
     }
   }
 
@@ -753,7 +626,9 @@ class Canvas {
       clone.width(row.height);
     }
 
-    if (row.isFrozen) {
+    if (row.isFrozen && col.isFrozen) {
+      this.xyStickyLayer.add(clone);
+    } else if (row.isFrozen) {
       this.yStickyLayer.add(clone);
     } else if (col.isFrozen) {
       this.xStickyLayer.add(clone);
@@ -761,7 +636,11 @@ class Canvas {
       this.mainLayer.add(clone);
     }
 
-    return clone;
+    if (!this.cells[row.index]) {
+      this.cells[row.index] = [];
+    }
+
+    this.cells[row.index][col.index] = clone;
   }
 
   drawRowHeader(rect: Rect, row: Row) {
@@ -788,12 +667,16 @@ class Canvas {
     group.add(clone, text);
 
     if (row.isFrozen) {
-      this.xyStickyLayer.add(group);
+      const frozenGroup = new Group();
+
+      frozenGroup.add(clone, text);
+
+      this.xyStickyLayer.add(frozenGroup);
     } else {
       this.xStickyLayer.add(group);
     }
 
-    return group;
+    this.rowHeaders[row.index] = group;
   }
 
   drawColHeader(rect: Rect, col: Col) {
@@ -821,12 +704,16 @@ class Canvas {
     group.add(clone, text);
 
     if (col.isFrozen) {
-      this.xyStickyLayer.add(group);
+      const frozenGroup = new Group();
+
+      frozenGroup.add(clone, text);
+
+      this.xyStickyLayer.add(frozenGroup);
     } else {
       this.yStickyLayer.add(group);
     }
 
-    return group;
+    this.colHeaders[col.index] = group;
   }
 
   drawXFrozenGridLine(row: Row, sumOfColWidths: number) {

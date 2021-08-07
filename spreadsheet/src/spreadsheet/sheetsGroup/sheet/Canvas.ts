@@ -16,7 +16,6 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
 import { IRect } from 'konva/lib/types';
-import { KonvaEventObject } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -118,9 +117,17 @@ const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
   sheet: {
     opacity: 0,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
+    perfectDrawEnabled: false,
   },
   selector: {
     stroke: 'blue',
+    strokeWidth: 1,
+    shadowForStrokeEnabled: false,
+    hitStrokeWidth: 0,
+    listening: false,
+    perfectDrawEnabled: false,
   },
   frozenGridLine: {
     ...sharedCanvasStyles.gridLine,
@@ -340,11 +347,11 @@ class Canvas {
     this.yStickyLayer = new Layer();
     this.xyStickyLayer = new Layer();
 
-    // The order here matters. xy should take precedence above all others
-    this.stage.add(this.mainLayer);
+    // The order here matters
     this.stage.add(this.xStickyLayer);
     this.stage.add(this.yStickyLayer);
     this.stage.add(this.xyStickyLayer);
+    this.stage.add(this.mainLayer);
 
     this.eventEmitter.on(events.scroll.vertical, this.onVerticalScroll);
     this.eventEmitter.on(events.scrollWheel.vertical, this.onVerticalScroll);
@@ -394,19 +401,50 @@ class Canvas {
     this.shapes.sheet.on('click', this.onSheetClick);
   }
 
-  onSheetClick = (e: KonvaEventObject<MouseEvent>) => {
-    debugger;
-    const pos = this.shapes.sheet.getRelativePointerPosition();
-    // let colIndex = ???
-    let colGroups = this.colGroups;
-    let cols = this.cols;
-    let widthOfSheet = this.sheetViewportDimensions.width;
-
-    this.mainLayer.add(this.shapes.selector);
-
-    // e.target is a clicked Konva.Shape or current stage if you clicked on empty space
-    console.log('clicked on', e.target);
+  onSheetClick = () => {
+    this.setCellSelected();
   };
+
+  setCellSelected() {
+    const pos = this.shapes.sheet.getRelativePointerPosition();
+    const xSheetPos = Math.floor(pos.x / this.options.col.defaultWidth);
+    const ySheetPos = Math.floor(pos.y / this.options.row.defaultHeight);
+    const rowXPosition = this.sheetViewportPositions.row.x + ySheetPos;
+    const colXPosition = this.sheetViewportPositions.col.x + xSheetPos;
+
+    const x = colXPosition * this.options.col.defaultWidth;
+    const y = rowXPosition * this.options.row.defaultHeight;
+
+    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
+    this.shapes.selector.y(y + this.colHeaderDimensions.height);
+
+    const isFrozenRowClicked =
+      this.options.frozenCells && ySheetPos <= this.options.frozenCells?.row;
+    const isFrozenColClicked =
+      this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
+
+    const rowIndex = isFrozenRowClicked ? ySheetPos : rowXPosition;
+    const colIndex = isFrozenColClicked ? xSheetPos : colXPosition;
+
+    const row = this.rows[rowIndex];
+    const col = this.cols[colIndex];
+
+    this.shapes.selector.height(row.height);
+    this.shapes.selector.width(col.width);
+
+    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
+    this.shapes.selector.y(y + this.colHeaderDimensions.height);
+
+    if (isFrozenRowClicked && isFrozenColClicked) {
+      this.xyStickyLayer.add(this.shapes.selector);
+    } else if (isFrozenRowClicked) {
+      this.yStickyLayer.add(this.shapes.selector);
+    } else if (isFrozenColClicked) {
+      this.xStickyLayer.add(this.shapes.selector);
+    } else {
+      this.mainLayer.add(this.shapes.selector);
+    }
+  }
 
   onHorizontalScroll = () => {
     this.updateViewport();
@@ -469,10 +507,10 @@ class Canvas {
   hasOverlap(rectOne: IRect, rectTwo: IRect, offset: number = 0) {
     const diff = {
       x: Math.abs(
-        rectOne.x + (rectOne.width - 2) / 2 - (rectTwo.x + rectTwo.width / 2)
+        rectOne.x + rectOne.width / 2 - (rectTwo.x + rectTwo.width / 2)
       ),
       y: Math.abs(
-        rectOne.y + (rectOne.height - 2) / 2 - (rectTwo.y + rectTwo.height / 2)
+        rectOne.y + rectOne.height / 2 - (rectTwo.y + rectTwo.height / 2)
       ),
     };
     const compWidth = (rectOne.width + rectTwo.width) / 2;
@@ -515,22 +553,19 @@ class Canvas {
   }
 
   destroyOutOfViewportShapes() {
-    console.log('count', this.rowGroups);
-    console.log(this.rowGroups.filter(x => !!x).length);
+    console.log(this.rowGroups.filter((x) => !!x).length);
+
     this.rowGroups.forEach((rowGroup, index) => {
       if (
-        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions, 1)
+        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
       ) {
-        // console.log('delete', rowGroup.index);
         rowGroup.destroy();
         delete this.rowGroups[index];
-      } else {
-        // console.log('overlap', rowGroup);
       }
     });
     this.colGroups.forEach((colGroup, index) => {
       if (
-        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions, 1)
+        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
       ) {
         colGroup.destroy();
         delete this.colGroups[index];

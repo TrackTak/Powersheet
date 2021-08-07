@@ -116,13 +116,15 @@ const sharedCanvasStyles = {
 const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
   sheet: {
+    fill: 'white',
     opacity: 0,
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
     perfectDrawEnabled: false,
   },
   selector: {
-    stroke: 'blue',
+    stroke: '#0057ff',
+    fill: '#EDF3FF',
     strokeWidth: 1,
     shadowForStrokeEnabled: false,
     hitStrokeWidth: 0,
@@ -342,10 +344,10 @@ class Canvas {
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
-    this.mainLayer = new Layer();
     this.xStickyLayer = new Layer();
     this.yStickyLayer = new Layer();
     this.xyStickyLayer = new Layer();
+    this.mainLayer = new Layer();
 
     // The order here matters
     this.stage.add(this.xStickyLayer);

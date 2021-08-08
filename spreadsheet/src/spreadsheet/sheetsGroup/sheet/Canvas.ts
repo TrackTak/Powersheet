@@ -432,8 +432,8 @@ class Canvas {
       }),
     };
     this.shapes.sheetGroup.add(this.shapes.sheet);
-    this.shapes.sheetGroup.add(this.shapes.resizeGuideLine);
 
+    this.mainLayer.add(this.shapes.resizeGuideLine);
     this.xyStickyLayer.add(this.shapes.sheetGroup);
 
     this.shapes.rowGroup.cache(this.rowHeaderDimensions);
@@ -468,7 +468,6 @@ class Canvas {
   }
 
   rowHeaderResizeLineOnMouseover = (e: KonvaEventObject<MouseEvent>) => {
-    // const rowIndex = e.target.parent.index;
     const target = e.target as Line;
 
     document.body.style.cursor = 'row-resize';
@@ -476,11 +475,9 @@ class Canvas {
     target.strokeWidth(resizeLineStrokeHitWidth);
     target.stroke(this.styles.resizeLine.onHoverStroke);
 
-    this.shapes.resizeGuideLine.y(
-      target.parent!.y() + target.y() - this.shapes.resizeGuideLine.parent!.y()
-    );
+    this.shapes.resizeGuideLine.y(target.parent!.y() + target.y());
     this.shapes.resizeGuideLine.points([
-      0,
+      this.sheetViewportDimensions.x,
       0,
       this.sheetViewportDimensions.width,
       0,
@@ -511,12 +508,10 @@ class Canvas {
     target.strokeWidth(resizeLineStrokeHitWidth);
     target.stroke(this.styles.resizeLine.onHoverStroke);
 
-    this.shapes.resizeGuideLine.x(
-      target.parent!.x() + target.x() - this.shapes.resizeGuideLine.parent!.x()
-    );
+    this.shapes.resizeGuideLine.x(target.parent!.x() + target.x());
     this.shapes.resizeGuideLine.points([
       0,
-      0,
+      this.sheetViewportDimensions.y,
       0,
       this.sheetViewportDimensions.height,
     ]);

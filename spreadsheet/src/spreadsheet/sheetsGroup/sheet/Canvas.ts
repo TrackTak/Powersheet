@@ -12,8 +12,8 @@ import { IOptions } from '../../IOptions';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
-import { IRect } from 'konva/lib/types';
-import { KonvaEventObject, NodeConfig } from 'konva/lib/Node';
+import { IRect, Vector2d } from 'konva/lib/types';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -46,18 +46,14 @@ interface IColHeaderConfig {
   text: TextConfig;
 }
 
-interface IResizeLineConfig extends LineConfig {
-  onHoverStroke: string;
-  strokeWidth: number;
-  stroke: string;
-}
-
 interface ICanvasStyles {
   backgroundColor: string;
-  resizeLine: IResizeLineConfig;
+  resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   gridLine: LineConfig;
   frozenGridLine: LineConfig;
+  rowResizeMarker: RectConfig;
+  colResizeMarker: RectConfig;
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
   topLeftRect: RectConfig;
@@ -82,11 +78,13 @@ export interface ISheetViewportPositions {
 interface IShapes {
   sheetGroup: Group;
   sheet: Rect;
-  rowHeaderResizeLine: Line;
   resizeGuideLine: Line;
+  rowHeaderResizeLine: Line;
+  rowResizeMarker: Rect;
   rowGroup: Group;
   rowHeaderRect: Rect;
   colHeaderResizeLine: Line;
+  colResizeMarker: Rect;
   colGroup: Group;
   colHeaderRect: Rect;
   frozenGridLine: Line;
@@ -95,7 +93,7 @@ interface IShapes {
   selector: Rect;
 }
 
-const resizeLineStrokeHitWidth = 15;
+const resizeLineStrokeHitWidth = 8;
 const optimizedProperties = {
   shadowForStrokeEnabled: false,
   hitStrokeWidth: 0,
@@ -108,6 +106,12 @@ const sharedCanvasStyles = {
     ...optimizedProperties,
     stroke: '#c6c6c6',
     strokeWidth: 0.6,
+  },
+  resizeMarker: {
+    ...optimizedProperties,
+    fill: '#0057ff',
+    opacity: 0.3,
+    visible: false,
   },
   headerRect: {
     ...optimizedProperties,
@@ -138,12 +142,20 @@ const defaultCanvasStyles: ICanvasStyles = {
     ...sharedCanvasStyles.gridLine,
     stroke: 'blue',
   },
+  rowResizeMarker: {
+    ...sharedCanvasStyles.resizeMarker,
+    height: resizeLineStrokeHitWidth,
+  },
+  colResizeMarker: {
+    ...sharedCanvasStyles.resizeMarker,
+    width: resizeLineStrokeHitWidth,
+  },
   resizeLine: {
     ...sharedCanvasStyles.gridLine,
-    onHoverStroke: '#0057ff',
     hitStrokeWidth: resizeLineStrokeHitWidth,
     listening: true,
-    opacity: 0.3,
+    draggable: true,
+    opacity: 0.7,
   },
   gridLine: {
     ...sharedCanvasStyles.gridLine,
@@ -217,6 +229,8 @@ class Canvas {
   xyStickyLayer!: Layer;
   horizontalScrollBar!: HorizontalScrollBar;
   verticalScrollBar!: VerticalScrollBar;
+  private rowResizeStartPos: Vector2d;
+  private rowResizePosition: Vector2d;
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
@@ -275,6 +289,16 @@ class Canvas {
           that.colHeaderDimensions.height
         );
       },
+    };
+
+    this.rowResizeStartPos = {
+      x: 0,
+      y: 0,
+    };
+
+    this.rowResizePosition = {
+      x: 0,
+      y: 0,
     };
 
     this.rowGroups = [];
@@ -399,6 +423,10 @@ class Canvas {
         listening: true,
         opacity: 0,
       }),
+      rowResizeMarker: new Rect({
+        width: this.rowHeaderDimensions.width,
+        ...this.styles.rowResizeMarker,
+      }),
       resizeGuideLine: new Line({
         ...this.styles.resizeGuideLine,
       }),
@@ -410,6 +438,10 @@ class Canvas {
         ...this.styles.rowHeader.rect,
       }),
       rowGroup: new Group(),
+      colResizeMarker: new Rect({
+        height: this.colHeaderDimensions.height,
+        ...this.styles.rowResizeMarker,
+      }),
       colHeaderResizeLine: new Line({
         ...this.styles.resizeLine,
       }),
@@ -433,6 +465,8 @@ class Canvas {
     };
     this.shapes.sheetGroup.add(this.shapes.sheet);
 
+    this.mainLayer.add(this.shapes.rowResizeMarker);
+    this.mainLayer.add(this.shapes.colResizeMarker);
     this.mainLayer.add(this.shapes.resizeGuideLine);
     this.xyStickyLayer.add(this.shapes.sheetGroup);
 
@@ -450,87 +484,152 @@ class Canvas {
 
     this.shapes.sheetGroup.on('click', this.sheetOnClick);
     this.shapes.rowHeaderResizeLine.on(
+      'dragstart',
+      this.rowHeaderResizeLineDragStart
+    );
+    this.shapes.rowHeaderResizeLine.on(
+      'dragmove',
+      this.rowHeaderResizeLineDragMove
+    );
+    this.shapes.rowHeaderResizeLine.on(
+      'dragend',
+      this.rowHeaderResizeLineDragEnd
+    );
+    this.shapes.rowHeaderResizeLine.on(
+      'mousedown',
+      this.rowHeaderResizeLineOnMousedown
+    );
+    this.shapes.rowHeaderResizeLine.on(
       'mouseover',
       this.rowHeaderResizeLineOnMouseover
-    );
-    this.shapes.colHeaderResizeLine.on(
-      'mouseover',
-      this.colHeaderResizeLineOnMouseOver
     );
     this.shapes.rowHeaderResizeLine.on(
       'mouseout',
       this.rowHeaderResizeLineOnMouseout
     );
-    this.shapes.colHeaderResizeLine.on(
-      'mouseout',
-      this.colHeaderResizeLineOnMouseout
+    this.shapes.rowHeaderResizeLine.on(
+      'mouseup',
+      this.rowHeaderResizeLineOnMouseup
     );
   }
 
-  rowHeaderResizeLineOnMouseover = (e: KonvaEventObject<MouseEvent>) => {
-    const target = e.target as Line;
-
+  showRowResizeMarker(target: Line) {
     document.body.style.cursor = 'row-resize';
 
-    target.strokeWidth(resizeLineStrokeHitWidth);
-    target.stroke(this.styles.resizeLine.onHoverStroke);
+    this.shapes.rowResizeMarker.y(
+      target.parent!.y() + target.y() - this.shapes.rowResizeMarker.height()
+    );
+    this.shapes.rowResizeMarker.show();
+  }
 
+  hideRowResizeMarker() {
+    this.shapes.rowResizeMarker.hide();
+  }
+
+  showRowGuideLine(target: Line) {
     this.shapes.resizeGuideLine.y(target.parent!.y() + target.y());
     this.shapes.resizeGuideLine.points([
       this.sheetViewportDimensions.x,
       0,
-      this.sheetViewportDimensions.width,
+      this.stage.width(),
       0,
     ]);
     this.shapes.resizeGuideLine.show();
+  }
+
+  hideRowGuideLine() {
+    this.shapes.resizeGuideLine.hide();
+  }
+
+  resizeRow(ri: number, newHeight: number) {
+    const height =
+      this.options.row.heights?.[ri] ?? this.options.row.defaultHeight;
+    const heightChange = newHeight - height;
+
+    if (heightChange !== 0) {
+      this.options.row.heights = {
+        ...this.options.row.heights,
+        [ri]: newHeight,
+      };
+
+      this.drawRow(ri);
+
+      for (let index = ri + 1; index < this.rowGroups.length; index++) {
+        const row = this.rowGroups[index];
+        const newY = row.y() + heightChange;
+
+        row.y(newY);
+      }
+    }
+  }
+
+  rowHeaderResizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
+    this.rowResizeStartPos = e.target.getPosition();
   };
 
-  rowHeaderResizeLineOnMouseout = (e: any) => {
+  rowHeaderResizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
+    const { x, y } = target.getPosition();
+    const minHeight = this.options.row.minHeight;
+    let newY = y;
 
+    if (y <= minHeight) {
+      newY = minHeight;
+      target.setPosition({
+        y: newY,
+        x,
+      });
+    }
+
+    this.rowResizePosition = {
+      x,
+      y: newY,
+    };
+
+    this.showRowResizeMarker(target);
+    this.showRowGuideLine(target);
+
+    // Stops moving this element completely
+    target.setPosition(this.rowResizeStartPos);
+  };
+
+  rowHeaderResizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
     document.body.style.cursor = 'default';
 
-    target.strokeWidth(this.styles.resizeLine.strokeWidth);
-    target.stroke(this.styles.resizeLine.stroke);
+    const target = e.target as Line;
+    const ri = target.parent!.attrs.index;
 
-    this.shapes.resizeGuideLine.setPosition({
-      x: 0,
-      y: 0,
-    });
-    this.shapes.resizeGuideLine.hide();
+    const { y } = this.rowResizePosition;
+    const minHeight = this.options.row.minHeight;
+
+    this.hideRowGuideLine();
+    this.hideRowResizeMarker();
+
+    if (y >= minHeight) {
+      this.resizeRow(ri, y);
+    }
   };
 
-  colHeaderResizeLineOnMouseOver = (e: any) => {
+  rowHeaderResizeLineOnMousedown = (e: KonvaEventObject<Event>) => {
     const target = e.target as Line;
 
-    document.body.style.cursor = 'col-resize';
-
-    target.strokeWidth(resizeLineStrokeHitWidth);
-    target.stroke(this.styles.resizeLine.onHoverStroke);
-
-    this.shapes.resizeGuideLine.x(target.parent!.x() + target.x());
-    this.shapes.resizeGuideLine.points([
-      0,
-      this.sheetViewportDimensions.y,
-      0,
-      this.sheetViewportDimensions.height,
-    ]);
-    this.shapes.resizeGuideLine.show();
+    this.showRowGuideLine(target);
   };
 
-  colHeaderResizeLineOnMouseout = (e: any) => {
+  rowHeaderResizeLineOnMouseup = () => {
+    this.hideRowGuideLine();
+  };
+
+  rowHeaderResizeLineOnMouseover = (e: KonvaEventObject<Event>) => {
     const target = e.target as Line;
 
+    this.showRowResizeMarker(target);
+  };
+
+  rowHeaderResizeLineOnMouseout = () => {
     document.body.style.cursor = 'default';
 
-    target.strokeWidth(this.styles.resizeLine.strokeWidth);
-    target.stroke(this.styles.resizeLine.stroke);
-
-    this.shapes.resizeGuideLine.setPosition({
-      x: 0,
-      y: 0,
-    });
-    this.shapes.resizeGuideLine.hide();
+    this.hideRowResizeMarker();
   };
 
   sheetOnClick = () => {
@@ -555,11 +654,11 @@ class Canvas {
     const isFrozenColClicked =
       this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
 
-    const rowIndex = isFrozenRowClicked ? ySheetPos : rowXPosition;
-    const colIndex = isFrozenColClicked ? xSheetPos : colXPosition;
+    const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
+    const ci = isFrozenColClicked ? xSheetPos : colXPosition;
 
-    this.shapes.selector.height(this.getRowHeight(rowIndex));
-    this.shapes.selector.width(this.getColWidth(colIndex));
+    this.shapes.selector.height(this.getRowHeight(ri));
+    this.shapes.selector.width(this.getColWidth(ci));
 
     this.shapes.selector.x(x + this.rowHeaderDimensions.width);
     this.shapes.selector.y(y + this.colHeaderDimensions.height);
@@ -611,23 +710,6 @@ class Canvas {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
-    this.shapes.sheetGroup.off('click', this.sheetOnClick);
-    this.shapes.rowHeaderResizeLine.off(
-      'mouseover',
-      this.rowHeaderResizeLineOnMouseover
-    );
-    this.shapes.colHeaderResizeLine.off(
-      'mouseover',
-      this.colHeaderResizeLineOnMouseOver
-    );
-    this.shapes.rowHeaderResizeLine.off(
-      'mouseout',
-      this.rowHeaderResizeLineOnMouseout
-    );
-    this.shapes.colHeaderResizeLine.off(
-      'mouseout',
-      this.colHeaderResizeLineOnMouseout
-    );
 
     this.eventEmitter.off(events.scroll.vertical, this.onVerticalScroll);
     this.eventEmitter.off(events.scrollWheel.vertical, this.onVerticalScroll);
@@ -763,12 +845,17 @@ class Canvas {
   }
 
   drawRow(ri: number) {
+    if (this.rowGroups[ri]) {
+      this.rowGroups[ri].destroy();
+    }
+
     const rowHeight = this.getRowHeight(ri);
     const prevRow = this.rowGroups[ri - 1];
     const y = prevRow
       ? prevRow.y() + prevRow.height()
       : this.sheetViewportDimensions.y;
     const group = this.shapes.rowGroup.clone({
+      index: ri,
       height: rowHeight,
       y,
     }) as Group;
@@ -796,6 +883,7 @@ class Canvas {
       ? prevCol.x() + prevCol.width()
       : this.sheetViewportDimensions.x;
     const group = this.shapes.colGroup.clone({
+      index: ci,
       width: colWidth,
       x: x,
     }) as Group;

@@ -1,7 +1,5 @@
 import { Story, Meta } from '@storybook/html';
 import Canvas from './Canvas';
-import Col from './Col';
-import Row from './Row';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../IOptions';
 
@@ -11,36 +9,8 @@ export default {
 
 const Template: Story<IOptions> = (args) => {
   const eventEmitter = new EventEmitter();
-  const rows: Row[] = [];
-  const cols: Col[] = [];
-
-  for (let index = 0; index < args.numberOfRows; index++) {
-    const isFrozen = args.frozenCells ? index <= args.frozenCells.row : false;
-
-    const row = new Row(
-      index + 1,
-      index,
-      args.row.minHeight,
-      args.row.defaultHeight,
-      isFrozen
-    );
-
-    rows.push(row);
-  }
-
-  for (let index = 0; index < args.numberOfCols; index++) {
-    const startCharCode = 'A'.charCodeAt(0);
-    const letter = String.fromCharCode(startCharCode + index);
-    const isFrozen = args.frozenCells ? index <= args.frozenCells.col : false;
-
-    cols.push(
-      new Col(letter, index, args.col.minWidth, args.col.defaultWidth, isFrozen)
-    );
-  }
 
   const canvas = new Canvas({
-    rows,
-    cols,
     options: args,
     eventEmitter,
   });
@@ -54,12 +24,19 @@ const defaultArgs = {
   numberOfRows: 100,
   numberOfCols: 26,
   row: {
+    heights: {
+      '10': 35,
+      '12': 250,
+    },
     minHeight: 25,
     defaultHeight: 25,
   },
   col: {
     minWidth: 60,
     defaultWidth: 100,
+    widths: {
+      '3': 70,
+    },
   },
 };
 

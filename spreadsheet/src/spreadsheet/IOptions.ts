@@ -3,14 +3,20 @@ export interface IFrozenRowCols {
   col: number;
 }
 
+export interface ISizes {
+  [index: string]: number;
+}
+
 export interface IRowOptions {
   minHeight: number;
   defaultHeight: number;
+  heights?: ISizes;
 }
 
 export interface IColOptions {
   minWidth: number;
   defaultWidth: number;
+  widths?: ISizes;
 }
 
 export interface IOptions {

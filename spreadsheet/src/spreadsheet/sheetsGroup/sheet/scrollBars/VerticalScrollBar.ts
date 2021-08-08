@@ -4,8 +4,8 @@ import { IDimensions, ISheetViewportPositions } from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
-import Row from '../Row';
 import buildScrollDelta, { IBuildScrollDelta } from './buildScrollDelta';
+import { IOptions } from '../../../IOptions';
 
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
@@ -20,8 +20,8 @@ class VerticalScrollBar {
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
-    private rows: Row[],
-    private eventEmitter: EventEmitter
+    private eventEmitter: EventEmitter,
+    private options: IOptions
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
@@ -30,8 +30,8 @@ class VerticalScrollBar {
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
     this.sheetViewportPositions = sheetViewportPositions;
-    this.rows = rows;
     this.eventEmitter = eventEmitter;
+    this.options = options;
 
     this.create();
   }
@@ -54,12 +54,13 @@ class VerticalScrollBar {
 
       const { delta, newSheetViewportPositions } =
         this.deltaBuilder.getScrollDelta(
-          this.rows,
           offsetHeight,
           scrollTop,
           scrollHeight,
           clientHeight,
-          this.sheetViewportPositions.row
+          this.sheetViewportPositions.row,
+          this.options.row.heights,
+          this.options.row.defaultHeight
         );
 
       this.sheetViewportPositions.row = newSheetViewportPositions;

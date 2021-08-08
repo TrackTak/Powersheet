@@ -2,9 +2,8 @@ import EventEmitter from 'eventemitter3';
 import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
-import events from '../../../events';
+import { IOptions } from '../../../IOptions';
 import { IDimensions, ISheetViewportPositions } from '../Canvas';
-import Col from '../Col';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import buildScrollDelta, { IBuildScrollDelta } from './buildScrollDelta';
 
@@ -20,16 +19,16 @@ class HorizontalScrollBar {
     private yStickyLayer: Layer,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
-    private cols: Col[],
-    private eventEmitter: EventEmitter
+    private eventEmitter: EventEmitter,
+    private options: IOptions
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
     this.yStickyLayer = yStickyLayer;
     this.sheetDimensions = sheetDimensions;
     this.sheetViewportPositions = sheetViewportPositions;
-    this.cols = cols;
     this.eventEmitter = eventEmitter;
+    this.options = options;
 
     this.create();
   }
@@ -49,12 +48,13 @@ class HorizontalScrollBar {
 
       const { delta, newSheetViewportPositions } =
         this.deltaBuilder.getScrollDelta(
-          this.cols,
           offsetWidth,
           scrollLeft,
           scrollWidth,
           clientWidth,
-          this.sheetViewportPositions.col
+          this.sheetViewportPositions.col,
+          this.options.col.widths,
+          this.options.col.defaultWidth
         );
 
       this.sheetViewportPositions.col = newSheetViewportPositions;

@@ -1,25 +1,24 @@
-import { IRowCol } from '../IRowCol';
+import { ISizes } from '../../../IOptions';
 
 const getNextItemsForScroll = (
   incrementingScroll: boolean,
   startIndex: number,
   totalUnusedScroll: number,
-  items: IRowCol[]
+  sizes: ISizes | undefined,
+  defaultSize: number
 ) => {
   let newTotalUnusedScroll = incrementingScroll
     ? totalUnusedScroll
     : Math.abs(totalUnusedScroll);
   let i = startIndex;
-  let currentItem = items[i];
+  const getCurrentSize = () => sizes?.[i] ?? defaultSize;
+  let currentSize = getCurrentSize();
+  const newSizes = [];
 
-  const itemsToGet = [];
+  while (newTotalUnusedScroll >= currentSize) {
+    newTotalUnusedScroll -= currentSize;
 
-  while (newTotalUnusedScroll >= currentItem?.getSize()) {
-    const value = currentItem.getSize();
-
-    itemsToGet.push(currentItem);
-
-    newTotalUnusedScroll -= value;
+    newSizes.push(currentSize);
 
     if (incrementingScroll) {
       i++;
@@ -27,11 +26,11 @@ const getNextItemsForScroll = (
       i--;
     }
 
-    currentItem = items[i];
+    currentSize = getCurrentSize();
   }
 
   return {
-    newItems: itemsToGet,
+    newSizes,
     newTotalUnusedScroll: incrementingScroll
       ? newTotalUnusedScroll
       : -Math.abs(newTotalUnusedScroll),

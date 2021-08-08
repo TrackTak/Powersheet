@@ -1,15 +1,16 @@
+import { ISizes } from '../../../IOptions';
 import { ISheetViewportPosition } from '../Canvas';
-import { IRowCol } from '../IRowCol';
 import getNextItemsForScroll from './getNextItemsForScroll';
 
 export interface IBuildScrollDelta {
   getScrollDelta: (
-    items: IRowCol[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,
     clientSize: number,
-    sheetViewPortPosition: ISheetViewportPosition
+    sheetViewPortPosition: ISheetViewportPosition,
+    sizes: ISizes | undefined,
+    defaultSize: number
   ) => {
     delta: number;
     newSheetViewportPositions: ISheetViewportPosition;
@@ -22,12 +23,13 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
   let totalAggregatedSizeOfItems = 0;
 
   const getScrollDelta = (
-    items: IRowCol[],
     offset: number,
     scrollAmount: number,
     scrollSize: number,
     clientSize: number,
-    sheetViewPortPosition: ISheetViewportPosition
+    sheetViewPortPosition: ISheetViewportPosition,
+    sizes: ISizes | undefined,
+    defaultSize: number
   ) => {
     const availableSpace = sheetDimensionSpace - offset;
     const changeInScrollAmount = scrollAmount - previousScrollAmount;
@@ -37,32 +39,35 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
 
     totalUnusedScroll += changeInScrollAmount;
 
-    const { newItems, newTotalUnusedScroll } = getNextItemsForScroll(
+    const index = isIncrementingScroll
+      ? sheetViewPortPosition.y + 1
+      : sheetViewPortPosition.x - 1;
+
+    const { newSizes, newTotalUnusedScroll } = getNextItemsForScroll(
       isIncrementingScroll,
-      isIncrementingScroll
-        ? sheetViewPortPosition.y + 1
-        : sheetViewPortPosition.x - 1,
+      index,
       totalUnusedScroll,
-      items
+      sizes,
+      defaultSize
     );
 
-    totalUnusedScroll = newTotalUnusedScroll;
-
-    const aggregatedSizeOfItems = newItems.reduce((totalSize, item) => {
-      return (totalSize += item.getSize());
+    const aggregatedSizeOfItems = newSizes.reduce((totalSize, size) => {
+      return (totalSize += size);
     }, 0);
+
+    totalUnusedScroll = newTotalUnusedScroll;
 
     const newSheetViewportPositions = {
       ...sheetViewPortPosition,
     };
 
-    if (newItems.length) {
+    if (newSizes.length) {
       if (isIncrementingScroll) {
-        newSheetViewportPositions.x += newItems.length;
-        newSheetViewportPositions.y = newItems[newItems.length - 1].index;
+        newSheetViewportPositions.x += length;
+        newSheetViewportPositions.y += length;
       } else {
-        newSheetViewportPositions.x = newItems[newItems.length - 1].index;
-        newSheetViewportPositions.y -= newItems.length;
+        newSheetViewportPositions.x -= length;
+        newSheetViewportPositions.y -= length;
       }
     }
 

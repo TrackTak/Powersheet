@@ -25,8 +25,8 @@ const defaultArgs = {
   numberOfCols: 26,
   row: {
     heights: {
+      '1': 250,
       '10': 35,
-      '12': 250,
     },
     minHeight: 25,
     defaultHeight: 25,

@@ -1,9 +1,11 @@
+import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
 import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
+import events from '../../events';
 import { ISizes } from '../../IOptions';
 import { IDimensions } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
@@ -40,7 +42,8 @@ class Resizer {
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,
     private groups: Group[],
-    private draw: (index: number) => void
+    private draw: (index: number) => void,
+    private eventEmitter: EventEmitter
   ) {
     this.layer = layer;
     this.type = type;
@@ -61,6 +64,7 @@ class Resizer {
     this.sizeOptions = sizeOptions;
     this.groups = groups;
     this.draw = draw;
+    this.eventEmitter = eventEmitter;
 
     this.resizeStartPos = {
       x: 0,
@@ -156,6 +160,8 @@ class Resizer {
 
   resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
     this.resizeStartPos = e.target.getPosition();
+
+    this.eventEmitter.emit(events.resize[this.type].start, e);
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -189,6 +195,8 @@ class Resizer {
 
     // Stops moving this element completely
     target.setPosition(this.resizeStartPos);
+
+    this.eventEmitter.emit(events.resize[this.type].move, e, newAxis);
   };
 
   resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
@@ -208,6 +216,8 @@ class Resizer {
     if (axis >= minSize) {
       this.resize(index, axis);
     }
+
+    this.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
   };
 
   resizeLineOnMousedown = (e: KonvaEventObject<Event>) => {

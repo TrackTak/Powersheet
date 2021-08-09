@@ -50,6 +50,11 @@ export interface ISheetViewportPositions {
   col: ISheetViewportPosition;
 }
 
+export interface ISelectedCell {
+  ri: number;
+  ci: number;
+}
+
 interface IShapes {
   sheetGroup: Group;
   sheet: Rect;
@@ -110,6 +115,7 @@ class Canvas {
   verticalScrollBar!: VerticalScrollBar;
   rowResizer!: Resizer;
   colResizer!: Resizer;
+  private selectedCell?: ISelectedCell;
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
@@ -282,6 +288,10 @@ class Canvas {
       events.scrollWheel.horizontal,
       this.onHorizontalScroll
     );
+    this.eventEmitter.on(events.resize.row.start, this.onResizeRowStart);
+    this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
+    this.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
+    this.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
 
     this.shapes = {
       sheetGroup: new Group({
@@ -293,7 +303,6 @@ class Canvas {
         listening: true,
         opacity: 0,
       }),
-
       rowHeaderRect: new Rect({
         ...this.rowHeaderDimensions,
         ...this.styles.rowHeader.rect,
@@ -334,46 +343,93 @@ class Canvas {
     this.shapes.sheetGroup.on('click', this.sheetOnClick);
   }
 
-  sheetOnClick = () => {
-    this.setCellSelected();
+  onResizeRowStart = () => {
+    this.rowResizer.shapes.resizeGuideLine.zIndex(
+      this.shapes.selector.zIndex()
+    );
+    console.log(this.rowResizer.shapes.resizeGuideLine.zIndex());
+
+    console.log(this.shapes.selector.zIndex());
   };
 
-  setCellSelected() {
-    const pos = this.shapes.sheet.getRelativePointerPosition();
-    const xSheetPos = Math.floor(pos.x / this.options.col.defaultWidth);
-    const ySheetPos = Math.floor(pos.y / this.options.row.defaultHeight);
-    const rowXPosition = this.sheetViewportPositions.row.x + ySheetPos;
-    const colXPosition = this.sheetViewportPositions.col.x + xSheetPos;
+  onResizeColStart = () => {
+    this.colResizer.shapes.resizeGuideLine.zIndex(
+      this.shapes.selector.zIndex()
+    );
+  };
 
-    const x = colXPosition * this.options.col.defaultWidth;
-    const y = rowXPosition * this.options.row.defaultHeight;
-
-    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
-    this.shapes.selector.y(y + this.colHeaderDimensions.height);
-
-    const isFrozenRowClicked =
-      this.options.frozenCells && ySheetPos <= this.options.frozenCells?.row;
-    const isFrozenColClicked =
-      this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
-
-    const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
-    const ci = isFrozenColClicked ? xSheetPos : colXPosition;
-
-    this.shapes.selector.height(this.getRowHeight(ri));
-    this.shapes.selector.width(this.getColWidth(ci));
-
-    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
-    this.shapes.selector.y(y + this.colHeaderDimensions.height);
-
-    if (isFrozenRowClicked && isFrozenColClicked) {
-      this.xyStickyLayer.add(this.shapes.selector);
-    } else if (isFrozenRowClicked) {
-      this.yStickyLayer.add(this.shapes.selector);
-    } else if (isFrozenColClicked) {
-      this.xStickyLayer.add(this.shapes.selector);
-    } else {
-      this.mainLayer.add(this.shapes.selector);
+  onResizeRowEnd = () => {
+    if (this.selectedCell) {
+      this.setCellSelected(this.selectedCell);
     }
+  };
+
+  onResizeColEnd = () => {
+    if (this.selectedCell) {
+      this.setCellSelected(this.selectedCell);
+      this.rowResizer.shapes.resizeGuideLine.zIndex(
+        this.shapes.selector.zIndex()
+      );
+    }
+  };
+
+  sheetOnClick = () => {
+    const pos = this.shapes.sheet.getRelativePointerPosition();
+    let ri = this.sheetViewportPositions.row.x;
+    let sumOfHeights = this.rowGroups[ri].height();
+
+    while (sumOfHeights < pos.y) {
+      ri++;
+      sumOfHeights += this.rowGroups[ri].height();
+    }
+
+    let ci = this.sheetViewportPositions.col.x;
+    let sumOfWidths = this.colGroups[ci].width();
+
+    while (sumOfWidths < pos.x) {
+      ci++;
+
+      sumOfWidths += this.colGroups[ci].width();
+    }
+
+    this.selectedCell = { ri, ci };
+    this.setCellSelected(this.selectedCell);
+  };
+
+  setCellSelected({ ri, ci }: ISelectedCell) {
+    const row = this.rowGroups[ri];
+    const col = this.colGroups[ci];
+
+    // const x = colXPosition * this.options.col.defaultWidth;
+
+    // this.shapes.selector.y(y + this.colHeaderDimensions.height);
+    this.shapes.selector.y(row.y());
+    this.shapes.selector.x(col.x());
+
+    // const isFrozenRowClicked =
+    //   this.options.frozenCells && ySheetPos <= this.options.frozenCells?.row;
+
+    // const isFrozenColClicked =
+    //   this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
+
+    // const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
+    //const ci = isFrozenColClicked ? xSheetPos : colXPosition;
+
+    this.shapes.selector.height(row.height());
+    this.shapes.selector.width(col.width());
+    this.mainLayer.add(this.shapes.selector);
+
+    //this.shapes.selector.width(this.getColWidth(ci));
+
+    // if (isFrozenRowClicked && isFrozenColClicked) {
+    //   this.xyStickyLayer.add(this.shapes.selector);
+    // } else if (isFrozenRowClicked) {
+    //   this.yStickyLayer.add(this.shapes.selector);
+    // } else if (isFrozenColClicked) {
+    //   this.xStickyLayer.add(this.shapes.selector);
+    // } else {
+    //   this.mainLayer.add(this.shapes.selector);
+    // }
   }
 
   onHorizontalScroll = () => {
@@ -402,7 +458,8 @@ class Canvas {
         sizes: this.options.row.heights ?? {},
       },
       this.rowGroups,
-      this.drawRow
+      this.drawRow,
+      this.eventEmitter
     );
 
     this.colResizer = new Resizer(
@@ -422,7 +479,8 @@ class Canvas {
         sizes: this.options.col.widths ?? {},
       },
       this.colGroups,
-      this.drawCol
+      this.drawCol,
+      this.eventEmitter
     );
   }
 
@@ -459,6 +517,10 @@ class Canvas {
     this.eventEmitter.off(events.scrollWheel.vertical, this.onVerticalScroll);
     this.eventEmitter.off(events.scroll.horizontal, this.onHorizontalScroll);
     this.eventEmitter.off(events.scrollWheel.vertical, this.onHorizontalScroll);
+    this.eventEmitter.off(events.resize.row.start, this.onResizeRowStart);
+    this.eventEmitter.off(events.resize.col.start, this.onResizeColStart);
+    this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
+    this.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.stage.destroy();

@@ -34,7 +34,7 @@ export interface ICanvasStyles {
   selector: RectConfig;
 }
 
-export const resizeMarkerSize = 13;
+export const resizeMarkerSize = 7;
 export const performanceProperties = {
   shadowForStrokeEnabled: false,
   hitStrokeWidth: 0,
@@ -94,7 +94,7 @@ export const defaultCanvasStyles: ICanvasStyles = {
   },
   resizeLine: {
     ...sharedCanvasStyles.gridLine,
-    hitStrokeWidth: 30,
+    hitStrokeWidth: 15,
     listening: true,
     draggable: true,
     opacity: 0.7,

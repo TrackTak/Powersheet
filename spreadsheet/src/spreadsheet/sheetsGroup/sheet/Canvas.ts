@@ -154,8 +154,7 @@ class Canvas {
 
         return (
           that.options.numberOfCols * that.options.col.defaultWidth +
-          totalWidthsDifference +
-          that.rowHeaderDimensions.width
+          totalWidthsDifference
         );
       },
       get height() {
@@ -170,8 +169,7 @@ class Canvas {
 
         return (
           that.options.numberOfRows * that.options.row.defaultHeight +
-          totalHeightsDifference +
-          that.colHeaderDimensions.height
+          totalHeightsDifference
         );
       },
     };
@@ -210,7 +208,7 @@ class Canvas {
     this.setPreviousSheetViewportPositions();
 
     this.createScrollBars();
-    this.drawTopLeftOffsetRect();
+    //   this.drawTopLeftOffsetRect();
   }
 
   setPreviousSheetViewportPositions() {
@@ -225,13 +223,21 @@ class Canvas {
   }
 
   onLoad = () => {
+    const height =
+      window.innerHeight -
+      this.horizontalScrollBar.getBoundingClientRect().height;
+
+    const rowHeight = this.options.row.defaultHeight;
+    let sumOfHeights = 0;
+
+    while (sumOfHeights + rowHeight <= height) {
+      sumOfHeights += rowHeight;
+    }
+
     this.stage.width(
       window.innerWidth - this.verticalScrollBar.getBoundingClientRect().width
     );
-    this.stage.height(
-      window.innerHeight -
-        this.horizontalScrollBar.getBoundingClientRect().height
-    );
+    this.stage.height(sumOfHeights);
 
     this.sheetViewportPositions.row.y = 100;
 
@@ -649,9 +655,7 @@ class Canvas {
 
     const rowHeight = this.getRowHeight(ri);
     const prevRow = this.rowGroups[ri - 1];
-    const y = prevRow
-      ? prevRow.y() + prevRow.height()
-      : this.sheetViewportDimensions.y;
+    const y = prevRow ? prevRow.y() + prevRow.height() : 0; // this.sheetViewportDimensions.y;
     const group = this.shapes.rowGroup.clone({
       index: ri,
       height: rowHeight,
@@ -689,14 +693,14 @@ class Canvas {
       width: colWidth,
       x: x,
     }) as Group;
-    const colHeader = this.drawColHeader(ci);
+    // const colHeader = this.drawColHeader(ci);
     const isFrozen = this.options.frozenCells?.col === ci;
     const yGridLine = isFrozen
       ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
       : this.drawYGridLine(ci);
 
-    group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
-
+    // group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
+    group.add(yGridLine);
     this.colGroups[ci] = group;
 
     if (isFrozen) {
@@ -763,7 +767,8 @@ class Canvas {
   drawXGridLine(ri: number, gridLine = this.shapes.xGridLine) {
     const rowHeight = this.getRowHeight(ri);
     const clone = gridLine.clone({
-      points: [this.sheetViewportDimensions.x, 0, this.stage.width(), 0],
+      // points: [this.sheetViewportDimensions.x, 0, this.stage.width(), 0],
+      points: [0, 0, this.stage.width(), 0],
       y: rowHeight,
     }) as Line;
 
@@ -782,7 +787,8 @@ class Canvas {
   drawYGridLine(ci: number, gridLine = this.shapes.yGridLine) {
     const colWidth = this.getColWidth(ci);
     const clone = gridLine.clone({
-      points: [0, this.sheetViewportDimensions.y, 0, this.stage.height()],
+      // points: [0, this.sheetViewportDimensions.y, 0, this.stage.height()],
+      points: [0, 0, 0, this.stage.height()],
       x: colWidth,
     }) as Line;
 

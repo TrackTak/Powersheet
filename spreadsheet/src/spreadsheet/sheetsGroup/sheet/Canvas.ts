@@ -347,9 +347,6 @@ class Canvas {
     this.rowResizer.shapes.resizeGuideLine.zIndex(
       this.shapes.selector.zIndex()
     );
-    console.log(this.rowResizer.shapes.resizeGuideLine.zIndex());
-
-    console.log(this.shapes.selector.zIndex());
   };
 
   onResizeColStart = () => {
@@ -406,30 +403,27 @@ class Canvas {
     this.shapes.selector.y(row.y());
     this.shapes.selector.x(col.x());
 
-    // const isFrozenRowClicked =
-    //   this.options.frozenCells && ySheetPos <= this.options.frozenCells?.row;
+    const isFrozenRowClicked =
+      this.options.frozenCells && ri <= this.options.frozenCells.row;
 
-    // const isFrozenColClicked =
-    //   this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
+    const isFrozenColClicked =
+      this.options.frozenCells && ci <= this.options.frozenCells?.col;
 
     // const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
     //const ci = isFrozenColClicked ? xSheetPos : colXPosition;
 
     this.shapes.selector.height(row.height());
     this.shapes.selector.width(col.width());
-    this.mainLayer.add(this.shapes.selector);
 
-    //this.shapes.selector.width(this.getColWidth(ci));
-
-    // if (isFrozenRowClicked && isFrozenColClicked) {
-    //   this.xyStickyLayer.add(this.shapes.selector);
-    // } else if (isFrozenRowClicked) {
-    //   this.yStickyLayer.add(this.shapes.selector);
-    // } else if (isFrozenColClicked) {
-    //   this.xStickyLayer.add(this.shapes.selector);
-    // } else {
-    //   this.mainLayer.add(this.shapes.selector);
-    // }
+    if (isFrozenRowClicked && isFrozenColClicked) {
+      this.xyStickyLayer.add(this.shapes.selector);
+    } else if (isFrozenRowClicked) {
+      this.yStickyLayer.add(this.shapes.selector);
+    } else if (isFrozenColClicked) {
+      this.xStickyLayer.add(this.shapes.selector);
+    } else {
+      this.mainLayer.add(this.shapes.selector);
+    }
   }
 
   onHorizontalScroll = () => {

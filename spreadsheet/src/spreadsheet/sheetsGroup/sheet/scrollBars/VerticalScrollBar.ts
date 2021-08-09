@@ -6,12 +6,15 @@ import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
 import buildScrollDelta, { IBuildScrollDelta } from './buildScrollDelta';
 import { IOptions } from '../../../IOptions';
+import { Group } from 'konva/lib/Group';
+import { IRect } from 'konva/lib/types';
 
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   private scrollBarBuilder!: IBuildScroll;
   private deltaBuilder!: IBuildScrollDelta;
+  private prevRowIndex: number;
 
   constructor(
     private stage: Stage,
@@ -21,7 +24,9 @@ class VerticalScrollBar {
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
     private eventEmitter: EventEmitter,
-    private options: IOptions
+    private options: IOptions,
+    private rowGroups: Group[],
+    private sheetViewportDimensions: IRect
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
@@ -32,6 +37,9 @@ class VerticalScrollBar {
     this.sheetViewportPositions = sheetViewportPositions;
     this.eventEmitter = eventEmitter;
     this.options = options;
+    this.rowGroups = rowGroups;
+    this.sheetViewportDimensions = sheetViewportDimensions;
+    this.prevRowIndex = 0;
 
     this.create();
   }
@@ -49,27 +57,52 @@ class VerticalScrollBar {
     };
 
     const onScroll = (e: Event) => {
-      const { scrollTop, offsetHeight, scrollHeight, clientHeight } =
-        e.target! as any;
+      e.preventDefault();
 
-      const { delta, newSheetViewportPositions } =
-        this.deltaBuilder.getScrollDelta(
-          offsetHeight,
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          this.sheetViewportPositions.row,
-          this.options.row.heights,
-          this.options.row.defaultHeight
-        );
+      const { scrollTop } = e.target! as any;
 
-      this.sheetViewportPositions.row = newSheetViewportPositions;
+      const scrollPercent =
+        scrollTop /
+        (this.sheetDimensions.height - this.sheetViewportDimensions.y);
+      const ri = Math.round(this.options.numberOfRows * scrollPercent);
+      const scrollAmount = scrollTop * -1;
+      const row = this.rowGroups[ri];
+      const rowPos = row.y() - this.sheetViewportDimensions.y;
 
-      const yToMove =
-        -(this.sheetDimensions.height - this.stage.height()) * delta;
+      const differenceInScroll = scrollTop - rowPos;
 
-      this.mainLayer.y(yToMove);
-      this.xStickyLayer.y(yToMove);
+      if (differenceInScroll !== 0) {
+        this.scrollBar.scrollBy(0, -differenceInScroll);
+      } else {
+        this.mainLayer.y(scrollAmount);
+        this.xStickyLayer.y(scrollAmount);
+      }
+
+      if (ri !== this.prevRowIndex) {
+        this.mainLayer.y(scrollAmount);
+        this.xStickyLayer.y(scrollAmount);
+      }
+
+      this.prevRowIndex = ri;
+
+      // const { delta, newSheetViewportPositions } =
+      //   this.deltaBuilder.getScrollDelta(
+      //     offsetHeight,
+      //     scrollTop,
+      //     scrollHeight,
+      //     clientHeight,
+      //     this.sheetViewportPositions.row,
+      //     this.options.row.heights,
+      //     this.options.row.defaultHeight
+      //   );
+
+      // this.sheetViewportPositions.row = newSheetViewportPositions;
+
+      // const yToMove =
+      //   -(this.sheetDimensions.height - this.stage.height()) * delta;
+
+      // this.mainLayer.y(yToMove);
+      // this.xStickyLayer.y(yToMove);
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

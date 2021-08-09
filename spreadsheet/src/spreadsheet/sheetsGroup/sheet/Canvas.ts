@@ -233,11 +233,7 @@ class Canvas {
         this.horizontalScrollBar.getBoundingClientRect().height
     );
 
-    this.sheetViewportPositions.row.y = calculateSheetViewportEndPosition(
-      this.sheetViewportDimensions.height,
-      0,
-      this.options.row.defaultHeight
-    );
+    this.sheetViewportPositions.row.y = 100;
 
     this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
       this.sheetViewportDimensions.width,
@@ -497,7 +493,9 @@ class Canvas {
       this.sheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
       this.eventEmitter,
-      this.options
+      this.options,
+      this.rowGroups,
+      this.sheetViewportDimensions
     );
 
     this.container.appendChild(this.horizontalScrollBar.scrollBar);

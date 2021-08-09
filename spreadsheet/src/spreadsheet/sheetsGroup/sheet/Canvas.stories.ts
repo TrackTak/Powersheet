@@ -24,19 +24,19 @@ const defaultArgs = {
   numberOfRows: 100,
   numberOfCols: 26,
   row: {
-    heights: {
-      '1': 250,
-      '10': 35,
-    },
+    // heights: {
+    //   '1': 250,
+    //   '10': 35,
+    // },
     minHeight: 25,
     defaultHeight: 25,
   },
   col: {
     minWidth: 60,
     defaultWidth: 100,
-    widths: {
-      '3': 70,
-    },
+    // widths: {
+    //   '3': 70,
+    // },
   },
 };
 

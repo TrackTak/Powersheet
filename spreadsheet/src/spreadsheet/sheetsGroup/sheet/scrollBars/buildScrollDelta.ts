@@ -1,6 +1,5 @@
 import { ISizes } from '../../../IOptions';
 import { ISheetViewportPosition } from '../Canvas';
-import getNextItemsForScroll from './getNextItemsForScroll';
 
 export interface IBuildScrollDelta {
   getScrollDelta: (
@@ -33,65 +32,83 @@ const buildScrollDelta = (sheetDimensionSpace: number): IBuildScrollDelta => {
   ) => {
     const availableSpace = sheetDimensionSpace - offset;
     const changeInScrollAmount = scrollAmount - previousScrollAmount;
-    const isIncrementingScroll = changeInScrollAmount > 0;
-    const hasUserScrolledToMin = scrollAmount === 0;
-    const hasUserScrolledToMax = scrollSize - scrollAmount <= clientSize;
+    console.log(scrollAmount);
+    // const isIncrementingScroll = changeInScrollAmount > 0;
+    // const hasUserScrolledToMin = scrollAmount === 0;
+    // const hasUserScrolledToMax = scrollSize - scrollAmount <= clientSize;
 
-    totalUnusedScroll += changeInScrollAmount;
+    // totalUnusedScroll += changeInScrollAmount;
 
-    const index = isIncrementingScroll
-      ? sheetViewPortPosition.y + 1
-      : sheetViewPortPosition.x - 1;
+    // const index = sheetViewPortPosition.y + 1;
 
-    const { newSizes, newTotalUnusedScroll } = getNextItemsForScroll(
-      isIncrementingScroll,
-      index,
-      totalUnusedScroll,
-      sizes,
-      defaultSize
-    );
+    // const index = isIncrementingScroll
+    //   ? sheetViewPortPosition.y + 1
+    //   : sheetViewPortPosition.x - 1;
 
-    const aggregatedSizeOfItems = newSizes.reduce((totalSize, size) => {
-      return (totalSize += size);
-    }, 0);
+    // let newTotalUnusedScroll = isIncrementingScroll
+    //   ? totalUnusedScroll
+    //   : Math.abs(totalUnusedScroll);
 
-    totalUnusedScroll = newTotalUnusedScroll;
+    // let i = index;
+    // const getCurrentSize = () => sizes?.[i] ?? defaultSize;
+    // let currentSize = getCurrentSize();
+    // const newSizes = [];
 
-    const newSheetViewportPositions = {
-      ...sheetViewPortPosition,
-    };
+    // while (newTotalUnusedScroll >= currentSize) {
+    //   newTotalUnusedScroll -= currentSize;
 
-    if (newSizes.length) {
-      if (isIncrementingScroll) {
-        newSheetViewportPositions.x += length;
-        newSheetViewportPositions.y += length;
-      } else {
-        newSheetViewportPositions.x -= length;
-        newSheetViewportPositions.y -= length;
-      }
-    }
+    //   newSizes.push(currentSize);
 
-    totalAggregatedSizeOfItems = isIncrementingScroll
-      ? (totalAggregatedSizeOfItems += aggregatedSizeOfItems)
-      : (totalAggregatedSizeOfItems -= aggregatedSizeOfItems);
+    //   if (isIncrementingScroll) {
+    //     i++;
+    //   } else {
+    //     i--;
+    //   }
 
-    //  Use the remaining unused scroll leftovers
-    if (hasUserScrolledToMax) {
-      totalUnusedScroll = 0;
-    }
+    //   currentSize = getCurrentSize();
+    // }
 
-    if (hasUserScrolledToMin) {
-      totalUnusedScroll = 0;
-    }
+    // const aggregatedSizeOfItems = newSizes.reduce((totalSize, size) => {
+    //   return (totalSize += size);
+    // }, 0);
 
-    const delta = totalAggregatedSizeOfItems / availableSpace;
+    // totalUnusedScroll = newTotalUnusedScroll;
 
-    previousScrollAmount = scrollAmount;
-    totalAggregatedSizeOfItems = totalAggregatedSizeOfItems;
+    // const newSheetViewportPositions = {
+    //   ...sheetViewPortPosition,
+    // };
+
+    // if (newSizes.length) {
+    //   if (isIncrementingScroll) {
+    //     newSheetViewportPositions.x += length;
+    //     newSheetViewportPositions.y += length;
+    //   } else {
+    //     newSheetViewportPositions.x -= length;
+    //     newSheetViewportPositions.y -= length;
+    //   }
+    // }
+
+    // totalAggregatedSizeOfItems = isIncrementingScroll
+    //   ? (totalAggregatedSizeOfItems += aggregatedSizeOfItems)
+    //   : (totalAggregatedSizeOfItems -= aggregatedSizeOfItems);
+
+    // //  Use the remaining unused scroll leftovers
+    // if (hasUserScrolledToMax) {
+    //   totalUnusedScroll = 0;
+    // }
+
+    // if (hasUserScrolledToMin) {
+    //   totalUnusedScroll = 0;
+    // }
+
+    // const delta = totalAggregatedSizeOfItems / availableSpace;
+
+    // previousScrollAmount = scrollAmount;
+    // totalAggregatedSizeOfItems = totalAggregatedSizeOfItems;
 
     return {
-      delta,
-      newSheetViewportPositions,
+      delta: 0,
+      newSheetViewportPositions: 0,
     };
   };
 

@@ -208,7 +208,7 @@ class Canvas {
     this.setPreviousSheetViewportPositions();
 
     this.createScrollBars();
-    //   this.drawTopLeftOffsetRect();
+    this.drawTopLeftOffsetRect();
   }
 
   setPreviousSheetViewportPositions() {
@@ -225,6 +225,7 @@ class Canvas {
   onLoad = () => {
     const height =
       window.innerHeight -
+      this.sheetViewportDimensions.y -
       this.horizontalScrollBar.getBoundingClientRect().height;
 
     const rowHeight = this.options.row.defaultHeight;
@@ -237,7 +238,7 @@ class Canvas {
     this.stage.width(
       window.innerWidth - this.verticalScrollBar.getBoundingClientRect().width
     );
-    this.stage.height(sumOfHeights);
+    this.stage.height(sumOfHeights + this.sheetViewportDimensions.y);
 
     this.sheetViewportPositions.row.y = 100;
 
@@ -251,6 +252,8 @@ class Canvas {
       x: this.sheetViewportDimensions.x,
       y: this.sheetViewportDimensions.y,
     });
+
+    console.log(this.shapes.sheetGroup.y());
 
     this.shapes.sheet.setAttrs({
       width: this.sheetViewportDimensions.width,
@@ -331,6 +334,7 @@ class Canvas {
 
     this.shapes.rowGroup.cache(this.rowHeaderDimensions);
     this.shapes.colGroup.cache(this.colHeaderDimensions);
+
     this.shapes.rowHeaderRect.cache();
     this.shapes.colHeaderRect.cache();
     this.shapes.xGridLine.cache();
@@ -655,7 +659,9 @@ class Canvas {
 
     const rowHeight = this.getRowHeight(ri);
     const prevRow = this.rowGroups[ri - 1];
-    const y = prevRow ? prevRow.y() + prevRow.height() : 0; // this.sheetViewportDimensions.y;
+    const y = prevRow
+      ? prevRow.y() + prevRow.height()
+      : this.sheetViewportDimensions.y;
     const group = this.shapes.rowGroup.clone({
       index: ri,
       height: rowHeight,
@@ -693,14 +699,14 @@ class Canvas {
       width: colWidth,
       x: x,
     }) as Group;
-    // const colHeader = this.drawColHeader(ci);
+    const colHeader = this.drawColHeader(ci);
     const isFrozen = this.options.frozenCells?.col === ci;
     const yGridLine = isFrozen
       ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
       : this.drawYGridLine(ci);
 
-    // group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
-    group.add(yGridLine);
+    group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
+
     this.colGroups[ci] = group;
 
     if (isFrozen) {

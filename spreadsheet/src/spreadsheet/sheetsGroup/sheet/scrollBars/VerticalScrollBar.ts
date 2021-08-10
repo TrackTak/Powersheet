@@ -65,7 +65,7 @@ class VerticalScrollBar {
       const ri = Math.round(this.options.numberOfRows * scrollPercent);
       const scrollAmount = scrollTop * -1;
       const row = this.rowGroups[ri];
-      const rowPos = row.y();
+      const rowPos = row.y() - this.sheetViewportDimensions.y;
 
       const differenceInScroll = scrollTop - rowPos;
 
@@ -122,7 +122,9 @@ class VerticalScrollBar {
     this.scrollBar = scrollBar;
     this.scroll = scroll;
 
-    scroll.style.height = `${this.sheetDimensions.height}px`;
+    scroll.style.height = `${
+      this.sheetDimensions.height + +this.sheetViewportDimensions.y
+    }px`;
   }
 
   destroy() {

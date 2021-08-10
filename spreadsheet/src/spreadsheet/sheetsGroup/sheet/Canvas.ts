@@ -235,25 +235,29 @@ class Canvas {
       sumOfHeights += rowHeight;
     }
 
-    this.stage.width(
-      window.innerWidth - this.verticalScrollBar.getBoundingClientRect().width
-    );
+    const width =
+      window.innerWidth -
+      this.sheetViewportDimensions.x -
+      this.verticalScrollBar.getBoundingClientRect().width;
+
+    const colWidth = this.options.col.defaultWidth;
+    let sumOfWidths = 0;
+
+    while (sumOfWidths + colWidth <= width) {
+      sumOfWidths += colWidth;
+    }
+
+    this.stage.width(sumOfWidths + this.sheetViewportDimensions.x);
     this.stage.height(sumOfHeights + this.sheetViewportDimensions.y);
 
     this.sheetViewportPositions.row.y = 100;
 
-    this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
-      this.sheetViewportDimensions.width,
-      0,
-      this.options.col.defaultWidth
-    );
+    this.sheetViewportPositions.col.y = 26;
 
     this.shapes.sheetGroup.setAttrs({
       x: this.sheetViewportDimensions.x,
       y: this.sheetViewportDimensions.y,
     });
-
-    console.log(this.shapes.sheetGroup.y());
 
     this.shapes.sheet.setAttrs({
       width: this.sheetViewportDimensions.width,
@@ -492,7 +496,9 @@ class Canvas {
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.eventEmitter,
-      this.options
+      this.options,
+      this.colGroups,
+      this.sheetViewportDimensions
     );
 
     this.verticalScrollBar = new VerticalScrollBar(

@@ -26,7 +26,7 @@ const defaultArgs = {
   row: {
     // heights: {
     //   '1': 250,
-    //   '10': 35,
+    //   '5': 100,
     // },
     minHeight: 25,
     defaultHeight: 25,

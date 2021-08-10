@@ -6,6 +6,7 @@ export interface IBottomBar {}
 
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
+  button!: HTMLButtonElement;
 
   constructor() {
     this.create();
@@ -15,6 +16,28 @@ class BottomBar implements IBottomBar {
     this.element = document.createElement('div');
 
     this.element.className = 'navbar';
+
+    // const container = document.createElement('div');
+    // this.element.className = 'wrapper';
+
+    // this.element.appendChild(container);
+
+    const buttonPlus = document.createElement('button');
+
+    buttonPlus.addEventListener('click', () => {
+      console.log('click1');
+    });
+
+    this.element.appendChild(buttonPlus);
+
+    const buttonSheet = document.createElement('button');
+
+    buttonSheet.addEventListener('click', () => {
+      console.log('click2');
+    });
+
+    this.element.appendChild(buttonPlus);
+    this.element.appendChild(buttonSheet);
 
     const plusImage = document.createElement('img');
     const sheetImage = document.createElement('img');
@@ -27,8 +50,8 @@ class BottomBar implements IBottomBar {
     sheetImage.alt = 'sheet';
     sheetImage.className = 'sheet-icon';
 
-    this.element.appendChild(plusImage);
-    this.element.appendChild(sheetImage);
+    buttonPlus.appendChild(plusImage);
+    buttonSheet.appendChild(sheetImage);
   }
 }
 

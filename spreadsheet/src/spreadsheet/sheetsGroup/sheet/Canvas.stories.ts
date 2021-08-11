@@ -1,7 +1,5 @@
 import { Story, Meta } from '@storybook/html';
 import Canvas from './Canvas';
-import Col from './Col';
-import Row from './Row';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../IOptions';
 
@@ -11,36 +9,8 @@ export default {
 
 const Template: Story<IOptions> = (args) => {
   const eventEmitter = new EventEmitter();
-  const rows: Row[] = [];
-  const cols: Col[] = [];
-
-  for (let index = 0; index < args.numberOfRows; index++) {
-    const isFrozen = index <= args.frozenCells?.row;
-
-    const row = new Row(
-      index + 1,
-      index,
-      args.row.minHeight,
-      args.row.defaultHeight,
-      isFrozen
-    );
-
-    rows.push(row);
-  }
-
-  for (let index = 0; index < args.numberOfCols; index++) {
-    const startCharCode = 'A'.charCodeAt(0);
-    const letter = String.fromCharCode(startCharCode + index);
-    const isFrozen = index <= args.frozenCells?.col;
-
-    cols.push(
-      new Col(letter, index, args.col.minWidth, args.col.defaultWidth, isFrozen)
-    );
-  }
 
   const canvas = new Canvas({
-    rows,
-    cols,
     options: args,
     eventEmitter,
   });
@@ -70,7 +40,28 @@ export const FreezeCells = Template.bind({});
 FreezeCells.args = {
   ...defaultArgs,
   frozenCells: {
-    row: 0,
+    row: 1,
     col: 0,
+  },
+};
+
+export const DifferentSizeCells = Template.bind({});
+
+DifferentSizeCells.args = {
+  ...defaultArgs,
+  col: {
+    minWidth: 60,
+    defaultWidth: 100,
+    widths: {
+      '3': 70,
+    },
+  },
+  row: {
+    heights: {
+      '1': 250,
+      '5': 100,
+    },
+    minHeight: 25,
+    defaultHeight: 25,
   },
 };

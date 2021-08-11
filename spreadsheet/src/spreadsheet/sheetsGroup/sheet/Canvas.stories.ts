@@ -21,7 +21,7 @@ const Template: Story<IOptions> = (args) => {
 export const Default = Template.bind({});
 
 const defaultArgs = {
-  numberOfRows: 10000,
+  numberOfRows: 100,
   numberOfCols: 26,
   row: {
     minHeight: 25,

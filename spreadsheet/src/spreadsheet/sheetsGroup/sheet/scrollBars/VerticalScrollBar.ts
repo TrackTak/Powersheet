@@ -11,12 +11,18 @@ import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../../IOptions';
 import { IRect } from 'konva/lib/types';
+import { Group } from 'konva/lib/Group';
+
+export interface IScrollOffset {
+  index: number;
+  size: number;
+}
 
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   customHeightPositions: ICustomSizePosition[];
-  customSizeChanges: ICustomSizePosition[];
+  scrollOffset: IScrollOffset;
   private scrollBarBuilder!: IBuildScroll;
 
   constructor(
@@ -26,6 +32,7 @@ class VerticalScrollBar {
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
+    private rowGroups: Group[],
     private eventEmitter: EventEmitter,
     private options: IOptions,
     private sheetViewportDimensions: IRect
@@ -37,11 +44,15 @@ class VerticalScrollBar {
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
     this.sheetViewportPositions = sheetViewportPositions;
+    this.rowGroups = rowGroups;
     this.eventEmitter = eventEmitter;
     this.options = options;
     this.sheetViewportDimensions = sheetViewportDimensions;
     this.customHeightPositions = [];
-    this.customSizeChanges = [];
+    this.scrollOffset = {
+      size: 0,
+      index: 0,
+    };
 
     const heights = this.options.row.heights ?? {};
 
@@ -78,7 +89,8 @@ class VerticalScrollBar {
     const onScroll = (e: Event) => {
       const { scrollTop } = e.target! as any;
 
-      this.customSizeChanges = this.customHeightPositions.map(
+      // TODO: Remove when we have scrollbar snapping
+      const customSizeChanges = this.customHeightPositions.map(
         ({ axis, size }) => {
           let sizeChange = 0;
 
@@ -95,7 +107,7 @@ class VerticalScrollBar {
         }
       );
 
-      const totalSizeDifference = this.customSizeChanges.reduce(
+      const totalSizeDifference = customSizeChanges.reduce(
         (totalSize, { axis, size }) => {
           let newSize = size;
 
@@ -113,18 +125,35 @@ class VerticalScrollBar {
         (scrollTop - totalSizeDifference) /
         (this.sheetDimensions.height - totalSizeDifference);
       const ri = Math.trunc(this.options.numberOfRows * scrollPercent);
+      const row = this.rowGroups[ri];
 
-      //  const row = this.rowGroups[ri];
-      //const rowPos = row.y() - this.sheetViewportDimensions.y;
+      //console.log(row.y());
+      // console.log(this.customSizeChanges);
+
+      this.scrollOffset = {
+        index: ri,
+        size: scrollTop + this.sheetViewportDimensions.y - row.y(),
+      };
+      // console.log(ri * this.options.row.defaultHeight);
+      // this.scrollOffset = Math.min(
+      //   scrollTop - ri * this.options.row.defaultHeight,
+      //   this.options.row.defaultHeight
+      // );
+
+      console.log(this.scrollOffset);
+
+      // const row = this.rowGroups[ri];
+      // const rowPos = row.y() - this.sheetViewportDimensions.y;
 
       // const differenceInScroll = scrollTop - rowPos;
 
       // if (differenceInScroll !== 0) {
       //   this.scrollBar.scrollBy(0, -differenceInScroll);
       // } else {
-      //  this.mainLayer.y(scrollAmount);
-      //  this.xStickyLayer.y(scrollAmount);
+      //   this.mainLayer.y(scrollAmount);
+      //   this.xStickyLayer.y(scrollAmount);
       // }
+
       // if (ri !== this.sheetViewportPositions.row.x) {
       //   this.mainLayer.y(scrollAmount);
       //   this.xStickyLayer.y(scrollAmount);
@@ -139,8 +168,10 @@ class VerticalScrollBar {
         this.sheetViewportPositions.row.x,
         this.options.row.defaultHeight,
         this.options.row.heights,
-        this.customSizeChanges
+        customSizeChanges
       );
+
+      // console.log(this.sheetViewportPositions.row.x);
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

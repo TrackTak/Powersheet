@@ -7,7 +7,9 @@ import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import VerticalScrollBar from './scrollBars/VerticalScrollBar';
+import VerticalScrollBar, {
+  IScrollOffset,
+} from './scrollBars/VerticalScrollBar';
 import { IOptions, ISizes } from '../../IOptions';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
@@ -90,6 +92,35 @@ export interface ICustomSizePosition {
   size: number;
 }
 
+export const calculateSheetViewportEndPosition2 = (
+  sheetViewportDimensionSize: number,
+  sheetViewportStartYIndex: number,
+  defaultSize: number,
+  sizes?: ISizes,
+  topOffset?: IScrollOffset
+) => {
+  let sumOfSizes = 0;
+  let i = sheetViewportStartYIndex;
+
+  const getSize = () => {
+    // TODO: Remove when we have snapping to row/col for scroll
+    let topOffsetSize = 0;
+
+    if (topOffset && i === topOffset.index) {
+      topOffsetSize = topOffset.size;
+    }
+
+    return (sizes?.[i] ?? defaultSize) - topOffsetSize;
+  };
+
+  while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
+    sumOfSizes += getSize();
+    i += 1;
+  }
+
+  return i;
+};
+
 export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
@@ -102,7 +133,7 @@ export const calculateSheetViewportEndPosition = (
 
   const getSize = () => {
     // TODO: Remove when we have snapping to row/col for scroll
-    if (sizes?.[i] && customSizeChanges?.[i].size) {
+    if (sizes?.[i] && customSizeChanges?.[i]?.size) {
       return sizes[i] - customSizeChanges[i].size;
     }
 
@@ -407,22 +438,21 @@ class Canvas {
 
   sheetOnClick = () => {
     const pos = this.shapes.sheet.getRelativePointerPosition();
-    let ri = this.sheetViewportPositions.row.x;
-    let sumOfHeights = this.rowGroups[ri].height();
+    let ri = calculateSheetViewportEndPosition2(
+      pos.y,
+      this.sheetViewportPositions.row.x,
+      this.options.row.defaultHeight,
+      this.options.row.heights,
+      this.verticalScrollBar.scrollOffset
+    );
 
-    while (sumOfHeights < pos.y) {
-      ri++;
-      sumOfHeights += this.rowGroups[ri].height();
-    }
-
-    let ci = this.sheetViewportPositions.col.x;
-    let sumOfWidths = this.colGroups[ci].width();
-
-    while (sumOfWidths < pos.x) {
-      ci++;
-
-      sumOfWidths += this.colGroups[ci].width();
-    }
+    let ci = calculateSheetViewportEndPosition2(
+      pos.x,
+      this.sheetViewportPositions.col.x,
+      this.options.col.defaultWidth,
+      this.options.col.widths,
+      this.horizontalScrollBar.scrollOffset
+    );
 
     this.selectedCell = { ri, ci };
     this.setCellSelected(this.selectedCell);
@@ -520,6 +550,7 @@ class Canvas {
       this.yStickyLayer,
       this.sheetDimensions,
       this.sheetViewportPositions,
+      this.colGroups,
       this.eventEmitter,
       this.options,
       this.sheetViewportDimensions
@@ -532,6 +563,7 @@ class Canvas {
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
+      this.rowGroups,
       this.eventEmitter,
       this.options,
       this.sheetViewportDimensions

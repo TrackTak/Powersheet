@@ -140,8 +140,6 @@ class VerticalScrollBar {
       this.mainLayer.y(scrollAmount);
       this.xStickyLayer.y(scrollAmount);
 
-      console.log(this.sheetViewportPositions);
-
       this.onScroll(e);
 
       const row = this.rowGroups[ri];

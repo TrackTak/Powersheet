@@ -7,7 +7,9 @@ import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import VerticalScrollBar from './scrollBars/VerticalScrollBar';
+import VerticalScrollBar, {
+  ICustomHeightPosition,
+} from './scrollBars/VerticalScrollBar';
 import { IOptions, ISizes } from '../../IOptions';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
@@ -85,15 +87,29 @@ const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   };
 };
 
+export interface ICustomSizePosition {
+  axis: number;
+  size: number;
+}
+
 export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
   defaultSize: number,
-  sizes?: ISizes
+  sizes?: ISizes,
+  customSizeChanges?: ICustomSizePosition[]
 ) => {
   let sumOfSizes = sheetViewportDimensionSize;
   let i = sheetViewportStartYIndex;
-  const getSize = () => sizes?.[i] ?? defaultSize;
+
+  const getSize = () => {
+    // TODO: Remove when we have snapping to row/col for scroll
+    if (sizes?.[i] && customSizeChanges?.[i].size) {
+      return sizes[i] - (customSizeChanges[i].size + defaultSize);
+    }
+
+    return sizes?.[i] ?? defaultSize;
+  };
 
   while (sumOfSizes - getSize() > 0) {
     sumOfSizes -= getSize();
@@ -264,8 +280,6 @@ class Canvas {
 
     this.sheetViewportPositions.row.y = rowYIndex;
     this.sheetViewportPositions.col.y = colYIndex;
-
-    console.log(this.sheetViewportPositions.row.y);
 
     this.shapes.sheetGroup.setAttrs({
       x: this.sheetViewportDimensions.x,

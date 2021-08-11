@@ -2,6 +2,7 @@ import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
 import {
   calculateSheetViewportEndPosition,
+  ICustomSizePosition,
   IDimensions,
   ISheetViewportPositions,
 } from '../Canvas';
@@ -11,17 +12,11 @@ import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../../IOptions';
 import { IRect } from 'konva/lib/types';
 
-interface ICustomHeightPosition {
-  y: number;
-  height: number;
-  index: number;
-}
-
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   private scrollBarBuilder!: IBuildScroll;
-  private customHeightPositions: ICustomHeightPosition[];
+  private customHeightPositions: ICustomSizePosition[];
 
   constructor(
     private stage: Stage,
@@ -57,11 +52,10 @@ class VerticalScrollBar {
 
       customHeightDifference += height - this.options.row.defaultHeight;
 
-      this.customHeightPositions.push({
-        y,
-        height,
-        index,
-      });
+      this.customHeightPositions[index] = {
+        axis: y,
+        size: height,
+      };
     });
 
     this.create();
@@ -82,21 +76,34 @@ class VerticalScrollBar {
     const onScroll = (e: Event) => {
       const { scrollTop } = e.target! as any;
 
-      const previousCustomHeightsChange = this.customHeightPositions.reduce(
-        (totalHeight, { y, height }) => {
-          if (y < scrollTop) {
-            const change = Math.min(scrollTop - y, height);
+      const customSizeChanges = this.customHeightPositions.map(
+        ({ axis, size }) => {
+          let sizeChange = 0;
 
-            return totalHeight + change - this.options.row.defaultHeight;
+          if (axis < scrollTop) {
+            const change = Math.min(scrollTop - axis, size);
+
+            sizeChange = change - this.options.row.defaultHeight;
           }
-          return totalHeight;
+
+          return {
+            axis,
+            size: sizeChange,
+          };
+        }
+      );
+
+      const totalSizeChange = customSizeChanges.reduce(
+        (totalSize, { size }) => {
+          return totalSize + size;
         },
         0
       );
+
       const scrollAmount = scrollTop * -1;
       const scrollPercent =
-        (scrollTop - previousCustomHeightsChange) /
-        (this.sheetDimensions.height - previousCustomHeightsChange);
+        (scrollTop - totalSizeChange) /
+        (this.sheetDimensions.height - totalSizeChange);
       const ri = Math.trunc(this.options.numberOfRows * scrollPercent);
 
       //  const row = this.rowGroups[ri];
@@ -127,8 +134,11 @@ class VerticalScrollBar {
         this.stage.height(),
         this.sheetViewportPositions.row.x,
         this.options.row.defaultHeight,
-        this.options.row.heights
+        this.options.row.heights,
+        customSizeChanges
       );
+      // console.log(this.sheetViewportPositions.row.x);
+      //  console.log(this.sheetViewportPositions.row.y);
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

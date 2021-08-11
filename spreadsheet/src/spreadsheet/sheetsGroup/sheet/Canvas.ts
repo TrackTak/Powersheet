@@ -1,21 +1,28 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
-import Col from './Col';
-import Row from './Row';
 import { merge } from 'lodash';
-import { Text, TextConfig } from 'konva/lib/shapes/Text';
+import { Text } from 'konva/lib/shapes/Text';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import VerticalScrollBar from './scrollBars/VerticalScrollBar';
-import { IRowCol } from './IRowCol';
-import { IOptions } from '../../IOptions';
-import { Line, LineConfig } from 'konva/lib/shapes/Line';
+import VerticalScrollBar, {
+  IScrollOffset,
+} from './scrollBars/VerticalScrollBar';
+import { IOptions, ISizes } from '../../IOptions';
+import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
 import { IRect } from 'konva/lib/types';
+import {
+  defaultCanvasStyles,
+  ICanvasStyles,
+  IColHeaderConfig,
+  IRowHeaderConfig,
+  performanceProperties,
+} from './canvasStyles';
+import Resizer from './Resizer';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -26,39 +33,8 @@ interface IConstructor {
   styles?: Partial<ICanvasStyles>;
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
-  rows: Row[];
-  cols: Col[];
   options: IOptions;
   eventEmitter: EventEmitter;
-}
-
-interface IRowHeaderRectConfig extends RectConfig {
-  width: number;
-}
-
-interface IColHeaderRectConfig extends RectConfig {
-  height: number;
-}
-
-interface IRowHeaderConfig {
-  rect: IRowHeaderRectConfig;
-  text: TextConfig;
-}
-
-interface IColHeaderConfig {
-  rect: IColHeaderRectConfig;
-  text: TextConfig;
-}
-
-interface ICanvasStyles {
-  backgroundColor: string;
-  sheet: RectConfig;
-  gridLine: LineConfig;
-  frozenGridLine: LineConfig;
-  rowHeader: IRowHeaderConfig;
-  colHeader: IColHeaderConfig;
-  topLeftRect: RectConfig;
-  selector: RectConfig;
 }
 
 export interface IDimensions {
@@ -76,9 +52,17 @@ export interface ISheetViewportPositions {
   col: ISheetViewportPosition;
 }
 
+export interface ISelectedCell {
+  ri: number;
+  ci: number;
+}
+
 interface IShapes {
+  sheetGroup: Group;
   sheet: Rect;
+  rowGroup: Group;
   rowHeaderRect: Rect;
+  colGroup: Group;
   colHeaderRect: Rect;
   frozenGridLine: Line;
   xGridLine: Line;
@@ -86,123 +70,82 @@ interface IShapes {
   selector: Rect;
 }
 
-const sharedCanvasStyles = {
-  gridLine: {
-    strokeWidth: 0.6,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    listening: false,
-    perfectDrawEnabled: false,
-  },
-  headerRect: {
-    fill: '#f4f5f8',
-    stroke: '#E6E6E6',
-    strokeWidth: 0.6,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    perfectDrawEnabled: false,
-  },
-  headerText: {
-    fontSize: 12,
-    fontFamily: 'Source Sans Pro',
-    fill: '#585757',
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    listening: false,
-    perfectDrawEnabled: false,
-  },
-};
-
-const defaultCanvasStyles: ICanvasStyles = {
-  backgroundColor: 'white',
-  sheet: {
-    fill: 'white',
-    opacity: 0,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    perfectDrawEnabled: false,
-  },
-  selector: {
-    stroke: '#0057ff',
-    fill: '#EDF3FF',
-    strokeWidth: 1,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    listening: false,
-    perfectDrawEnabled: false,
-  },
-  frozenGridLine: {
-    ...sharedCanvasStyles.gridLine,
-    stroke: 'blue',
-  },
-  gridLine: {
-    ...sharedCanvasStyles.gridLine,
-    stroke: '#c6c6c6',
-  },
-  rowHeader: {
-    rect: {
-      ...sharedCanvasStyles.headerRect,
-      width: 25,
-    },
-    text: {
-      ...sharedCanvasStyles.headerText,
-    },
-  },
-  colHeader: {
-    rect: {
-      ...sharedCanvasStyles.headerRect,
-      height: 20,
-    },
-    text: {
-      ...sharedCanvasStyles.headerText,
-    },
-  },
-  topLeftRect: {
-    fill: sharedCanvasStyles.headerRect.fill,
-    shadowForStrokeEnabled: false,
-    hitStrokeWidth: 0,
-    perfectDrawEnabled: false,
-  },
-};
-
-const getHeaderMidPoints = (rect: Rect, text: Text) => {
-  const rectMidPoint = {
-    x: rect.x() + rect.width() / 2,
-    y: rect.y() + rect.height() / 2,
+const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
+  const rectOneMidPoint = {
+    x: rectOne.x + rectOne.width / 2,
+    y: rectOne.y + rectOne.height / 2,
   };
 
-  const textMidPoint = {
-    x: text.width() / 2,
-    y: text.height() / 2,
+  const rectTwoMidPoint = {
+    x: rectTwo.width / 2,
+    y: rectTwo.height / 2,
   };
 
   return {
-    x: rectMidPoint.x - textMidPoint.x,
-    y: rectMidPoint.y - textMidPoint.y,
+    x: rectOneMidPoint.x - rectTwoMidPoint.x,
+    y: rectOneMidPoint.y - rectTwoMidPoint.y,
   };
 };
 
-const calculateSheetViewportEndPosition = (
+export interface ICustomSizePosition {
+  axis: number;
+  size: number;
+}
+
+export const calculateSheetViewportEndPosition2 = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
-  items: IRowCol[]
+  defaultSize: number,
+  sizes?: ISizes,
+  topOffset?: IScrollOffset
 ) => {
-  let newSheetViewportYIndex = sheetViewportStartYIndex;
-  let sumOfSizes = sheetViewportDimensionSize;
-  let i = newSheetViewportYIndex;
-  let currentItem = items[i];
+  let sumOfSizes = 0;
+  let i = sheetViewportStartYIndex;
 
-  while (sumOfSizes > 0) {
-    currentItem = items[i];
-    const size = currentItem.getSize();
+  const getSize = () => {
+    // TODO: Remove when we have snapping to row/col for scroll
+    let topOffsetSize = 0;
 
-    newSheetViewportYIndex = i;
+    if (topOffset && i === topOffset.index) {
+      topOffsetSize = topOffset.size;
+    }
 
-    i++;
-    sumOfSizes -= size;
+    return (sizes?.[i] ?? defaultSize) - topOffsetSize;
+  };
+
+  while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
+    sumOfSizes += getSize();
+    i += 1;
   }
 
-  return newSheetViewportYIndex;
+  return i;
+};
+
+export const calculateSheetViewportEndPosition = (
+  sheetViewportDimensionSize: number,
+  sheetViewportStartYIndex: number,
+  defaultSize: number,
+  sizes?: ISizes,
+  customSizeChanges?: ICustomSizePosition[]
+) => {
+  let sumOfSizes = sheetViewportDimensionSize;
+  let i = sheetViewportStartYIndex;
+
+  const getSize = () => {
+    // TODO: Remove when we have snapping to row/col for scroll
+    if (sizes?.[i] && customSizeChanges?.[i]?.size) {
+      return sizes[i] - customSizeChanges[i].size;
+    }
+
+    return sizes?.[i] ?? defaultSize;
+  };
+
+  while (sumOfSizes - getSize() > 0) {
+    sumOfSizes -= getSize();
+    i += 1;
+  }
+
+  return i;
 };
 
 class Canvas {
@@ -214,9 +157,10 @@ class Canvas {
   xyStickyLayer!: Layer;
   horizontalScrollBar!: HorizontalScrollBar;
   verticalScrollBar!: VerticalScrollBar;
+  rowResizer!: Resizer;
+  colResizer!: Resizer;
+  private selectedCell?: ISelectedCell;
   private styles: ICanvasStyles;
-  private rows: Row[];
-  private cols: Col[];
   private rowGroups: Group[];
   private colGroups: Group[];
   private shapes!: IShapes;
@@ -245,14 +189,33 @@ class Canvas {
     };
 
     this.sheetDimensions = {
-      width:
-        params.cols.reduce((currentWidth, col) => col.width + currentWidth, 0) +
-        this.rowHeaderDimensions.width,
-      height:
-        params.rows.reduce(
-          (currentHeight, row) => row.height + currentHeight,
+      get width() {
+        const widths = Object.values(that.options.col.widths ?? {});
+
+        const totalWidthsDifference = widths.reduce((currentWidth, width) => {
+          return width - that.options.col.defaultWidth + currentWidth;
+        }, 0);
+
+        return (
+          that.options.numberOfCols * that.options.col.defaultWidth +
+          totalWidthsDifference
+        );
+      },
+      get height() {
+        const heights = Object.values(that.options.row.heights ?? {});
+
+        const totalHeightsDifference = heights.reduce(
+          (currentHeight, height) => {
+            return height - that.options.row.defaultHeight + currentHeight;
+          },
           0
-        ) + this.colHeaderDimensions.height,
+        );
+
+        return (
+          that.options.numberOfRows * that.options.row.defaultHeight +
+          totalHeightsDifference
+        );
+      },
     };
 
     this.rowGroups = [];
@@ -272,9 +235,6 @@ class Canvas {
     };
 
     this.create(params.stageConfig);
-
-    this.rows = params.rows;
-    this.cols = params.cols;
 
     this.sheetViewportPositions = {
       // Based on the y 100% axis of the row
@@ -307,29 +267,60 @@ class Canvas {
   }
 
   onLoad = () => {
-    this.stage.width(
-      window.innerWidth - this.verticalScrollBar.getBoundingClientRect().width
-    );
-    this.stage.height(
+    const availableRowHeight =
       window.innerHeight -
-        this.horizontalScrollBar.getBoundingClientRect().height
-    );
+      this.sheetViewportDimensions.y -
+      this.horizontalScrollBar.getBoundingClientRect().height;
 
-    this.sheetViewportPositions.row.y = calculateSheetViewportEndPosition(
-      this.sheetViewportDimensions.height,
-      0,
-      this.rows
-    );
+    const availableColWidth =
+      window.innerWidth -
+      this.sheetViewportDimensions.x -
+      this.verticalScrollBar.getBoundingClientRect().width;
 
-    this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
-      this.sheetViewportDimensions.width,
-      0,
-      this.cols
-    );
+    const rowYIndex = (this.sheetViewportPositions.row.y =
+      calculateSheetViewportEndPosition(
+        availableRowHeight,
+        0,
+        this.options.row.defaultHeight,
+        this.options.row.heights
+      ));
 
-    this.shapes.sheet.width(this.sheetViewportDimensions.width);
-    this.shapes.sheet.height(this.sheetViewportDimensions.height);
+    const colYIndex = (this.sheetViewportPositions.col.y =
+      calculateSheetViewportEndPosition(
+        availableColWidth,
+        0,
+        this.options.col.defaultWidth,
+        this.options.col.widths
+      ));
 
+    let sumOfRowHeights = 0;
+    let sumOfColWidths = 0;
+
+    for (let ri = 0; ri < rowYIndex; ri++) {
+      sumOfRowHeights += this.getRowHeight(ri);
+    }
+
+    for (let ci = 0; ci < colYIndex; ci++) {
+      sumOfColWidths += this.getColWidth(ci);
+    }
+
+    this.stage.width(sumOfColWidths + this.sheetViewportDimensions.x);
+    this.stage.height(sumOfRowHeights + this.sheetViewportDimensions.y);
+
+    this.sheetViewportPositions.row.y = rowYIndex;
+    this.sheetViewportPositions.col.y = colYIndex;
+
+    this.shapes.sheetGroup.setAttrs({
+      x: this.sheetViewportDimensions.x,
+      y: this.sheetViewportDimensions.y,
+    });
+
+    this.shapes.sheet.setAttrs({
+      width: this.sheetViewportDimensions.width,
+      height: this.sheetViewportDimensions.height,
+    });
+
+    this.createResizer();
     this.initializeViewport();
   };
 
@@ -355,27 +346,31 @@ class Canvas {
     this.stage.add(this.xyStickyLayer);
     this.stage.add(this.mainLayer);
 
-    this.eventEmitter.on(events.scroll.vertical, this.onVerticalScroll);
-    this.eventEmitter.on(events.scrollWheel.vertical, this.onVerticalScroll);
-    this.eventEmitter.on(events.scroll.horizontal, this.onHorizontalScroll);
-    this.eventEmitter.on(
-      events.scrollWheel.horizontal,
-      this.onHorizontalScroll
-    );
+    this.eventEmitter.on(events.resize.row.start, this.onResizeRowStart);
+    this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
+    this.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
+    this.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
 
     this.shapes = {
+      sheetGroup: new Group({
+        ...performanceProperties,
+        listening: true,
+      }),
       sheet: new Rect({
-        ...this.sheetViewportDimensions,
-        ...this.styles.sheet,
+        ...performanceProperties,
+        listening: true,
+        opacity: 0,
       }),
       rowHeaderRect: new Rect({
         ...this.rowHeaderDimensions,
         ...this.styles.rowHeader.rect,
       }),
+      rowGroup: new Group(),
       colHeaderRect: new Rect({
         ...this.colHeaderDimensions,
         ...this.styles.colHeader.rect,
       }),
+      colGroup: new Group(),
       xGridLine: new Line({
         ...this.styles.gridLine,
       }),
@@ -390,7 +385,8 @@ class Canvas {
       }),
     };
 
-    this.xyStickyLayer.add(this.shapes.sheet);
+    this.shapes.rowGroup.cache(this.rowHeaderDimensions);
+    this.shapes.colGroup.cache(this.colHeaderDimensions);
 
     this.shapes.rowHeaderRect.cache();
     this.shapes.colHeaderRect.cache();
@@ -398,44 +394,84 @@ class Canvas {
     this.shapes.yGridLine.cache();
     this.shapes.frozenGridLine.cache();
 
+    this.shapes.sheetGroup.add(this.shapes.sheet);
+    this.xyStickyLayer.add(this.shapes.sheetGroup);
+
     window.addEventListener('DOMContentLoaded', this.onLoad);
 
-    this.shapes.sheet.on('click', this.onSheetClick);
+    this.shapes.sheetGroup.on('click', this.sheetOnClick);
   }
 
-  onSheetClick = () => {
-    this.setCellSelected();
+  onResizeRowStart = () => {
+    this.rowResizer.shapes.resizeGuideLine.zIndex(
+      this.shapes.selector.zIndex()
+    );
   };
 
-  setCellSelected() {
+  onResizeColStart = () => {
+    this.colResizer.shapes.resizeGuideLine.zIndex(
+      this.shapes.selector.zIndex()
+    );
+  };
+
+  onResizeRowEnd = () => {
+    if (this.selectedCell) {
+      this.setCellSelected(this.selectedCell);
+    }
+  };
+
+  onResizeColEnd = () => {
+    if (this.selectedCell) {
+      this.setCellSelected(this.selectedCell);
+      this.rowResizer.shapes.resizeGuideLine.zIndex(
+        this.shapes.selector.zIndex()
+      );
+    }
+  };
+
+  sheetOnClick = () => {
     const pos = this.shapes.sheet.getRelativePointerPosition();
-    const xSheetPos = Math.floor(pos.x / this.options.col.defaultWidth);
-    const ySheetPos = Math.floor(pos.y / this.options.row.defaultHeight);
-    const rowXPosition = this.sheetViewportPositions.row.x + ySheetPos;
-    const colXPosition = this.sheetViewportPositions.col.x + xSheetPos;
+    let ri = calculateSheetViewportEndPosition2(
+      pos.y,
+      this.sheetViewportPositions.row.x,
+      this.options.row.defaultHeight,
+      this.options.row.heights,
+      this.verticalScrollBar.scrollOffset
+    );
 
-    const x = colXPosition * this.options.col.defaultWidth;
-    const y = rowXPosition * this.options.row.defaultHeight;
+    let ci = calculateSheetViewportEndPosition2(
+      pos.x,
+      this.sheetViewportPositions.col.x,
+      this.options.col.defaultWidth,
+      this.options.col.widths,
+      this.horizontalScrollBar.scrollOffset
+    );
 
-    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
-    this.shapes.selector.y(y + this.colHeaderDimensions.height);
+    this.selectedCell = { ri, ci };
+    this.setCellSelected(this.selectedCell);
+  };
+
+  setCellSelected({ ri, ci }: ISelectedCell) {
+    const row = this.rowGroups[ri];
+    const col = this.colGroups[ci];
+
+    // const x = colXPosition * this.options.col.defaultWidth;
+
+    // this.shapes.selector.y(y + this.colHeaderDimensions.height);
+    this.shapes.selector.y(row.y());
+    this.shapes.selector.x(col.x());
 
     const isFrozenRowClicked =
-      this.options.frozenCells && ySheetPos <= this.options.frozenCells?.row;
+      this.options.frozenCells && ri <= this.options.frozenCells.row;
+
     const isFrozenColClicked =
-      this.options.frozenCells && xSheetPos <= this.options.frozenCells?.col;
+      this.options.frozenCells && ci <= this.options.frozenCells?.col;
 
-    const rowIndex = isFrozenRowClicked ? ySheetPos : rowXPosition;
-    const colIndex = isFrozenColClicked ? xSheetPos : colXPosition;
+    // const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
+    //const ci = isFrozenColClicked ? xSheetPos : colXPosition;
 
-    const row = this.rows[rowIndex];
-    const col = this.cols[colIndex];
-
-    this.shapes.selector.height(row.height);
-    this.shapes.selector.width(col.width);
-
-    this.shapes.selector.x(x + this.rowHeaderDimensions.width);
-    this.shapes.selector.y(y + this.colHeaderDimensions.height);
+    this.shapes.selector.height(row.height());
+    this.shapes.selector.width(col.width());
 
     if (isFrozenRowClicked && isFrozenColClicked) {
       this.xyStickyLayer.add(this.shapes.selector);
@@ -456,6 +492,50 @@ class Canvas {
     this.updateViewport();
   };
 
+  createResizer() {
+    this.rowResizer = new Resizer(
+      this.mainLayer,
+      'row',
+      this.rowHeaderDimensions,
+      this.styles,
+      {
+        points: [this.sheetViewportDimensions.x, 0, this.stage.width(), 0],
+      },
+      {
+        points: [0, 0, this.rowHeaderDimensions.width, 0],
+      },
+      {
+        minSize: this.options.row.minHeight,
+        defaultSize: this.options.row.defaultHeight,
+        sizes: this.options.row.heights ?? {},
+      },
+      this.rowGroups,
+      this.drawRow,
+      this.eventEmitter
+    );
+
+    this.colResizer = new Resizer(
+      this.mainLayer,
+      'col',
+      this.colHeaderDimensions,
+      this.styles,
+      {
+        points: [0, this.sheetViewportDimensions.y, 0, this.stage.height()],
+      },
+      {
+        points: [0, 0, 0, this.colHeaderDimensions.height],
+      },
+      {
+        minSize: this.options.col.minWidth,
+        defaultSize: this.options.col.defaultWidth,
+        sizes: this.options.col.widths ?? {},
+      },
+      this.colGroups,
+      this.drawCol,
+      this.eventEmitter
+    );
+  }
+
   createScrollBars() {
     this.horizontalScrollBar = new HorizontalScrollBar(
       this.stage,
@@ -463,8 +543,11 @@ class Canvas {
       this.yStickyLayer,
       this.sheetDimensions,
       this.sheetViewportPositions,
-      this.cols,
-      this.eventEmitter
+      this.colGroups,
+      this.eventEmitter,
+      this.options,
+      this.sheetViewportDimensions,
+      this.onHorizontalScroll
     );
 
     this.verticalScrollBar = new VerticalScrollBar(
@@ -474,8 +557,11 @@ class Canvas {
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
-      this.rows,
-      this.eventEmitter
+      this.rowGroups,
+      this.eventEmitter,
+      this.options,
+      this.sheetViewportDimensions,
+      this.onVerticalScroll
     );
 
     this.container.appendChild(this.horizontalScrollBar.scrollBar);
@@ -484,11 +570,11 @@ class Canvas {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
-    this.shapes.sheet.off('click', this.onSheetClick);
-    this.eventEmitter.off(events.scroll.vertical, this.onVerticalScroll);
-    this.eventEmitter.off(events.scrollWheel.vertical, this.onVerticalScroll);
-    this.eventEmitter.off(events.scroll.horizontal, this.onHorizontalScroll);
-    this.eventEmitter.off(events.scrollWheel.vertical, this.onHorizontalScroll);
+
+    this.eventEmitter.off(events.resize.row.start, this.onResizeRowStart);
+    this.eventEmitter.off(events.resize.col.start, this.onResizeColStart);
+    this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
+    this.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.stage.destroy();
@@ -529,9 +615,7 @@ class Canvas {
       ri <= this.sheetViewportPositions.row.y;
       ri++
     ) {
-      const row = this.rows[ri];
-
-      this.drawRow(row);
+      this.drawRow(ri);
     }
 
     for (
@@ -539,24 +623,20 @@ class Canvas {
       ci <= this.sheetViewportPositions.col.y;
       ci++
     ) {
-      const col = this.cols[ci];
-
-      this.drawCol(col);
+      this.drawCol(ci);
     }
 
     this.setPreviousSheetViewportPositions();
   }
 
   updateViewport() {
-    this.destroyOutOfViewportShapes();
     this.drawViewportShapes();
+    this.destroyOutOfViewportShapes();
 
     this.setPreviousSheetViewportPositions();
   }
 
   destroyOutOfViewportShapes() {
-    console.log(this.rowGroups.filter((x) => !!x).length);
-
     this.rowGroups.forEach((rowGroup, index) => {
       if (
         !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
@@ -578,165 +658,218 @@ class Canvas {
   drawViewportShapes() {
     // Scrolling down
     for (
-      let ri = this.sheetViewportPositions.row.y;
-      ri > this.previousSheetViewportPositions.row.y;
-      ri--
+      let ri = this.previousSheetViewportPositions.row.y;
+      ri < this.sheetViewportPositions.row.y;
+      ri++
     ) {
-      const row = this.rows[ri];
-
-      this.drawRow(row);
+      this.drawRow(ri);
     }
     // Scrolling up
     for (
-      let ri = this.sheetViewportPositions.row.x;
-      ri < this.previousSheetViewportPositions.row.x;
-      ri++
+      let ri = this.previousSheetViewportPositions.row.x;
+      ri > this.sheetViewportPositions.row.x;
+      ri--
     ) {
-      const row = this.rows[ri];
-
-      this.drawRow(row);
+      this.drawRow(ri - 1, true);
     }
     // Scrolling right
     for (
-      let ci = this.sheetViewportPositions.col.y;
-      ci > this.previousSheetViewportPositions.col.y;
-      ci--
+      let ci = this.previousSheetViewportPositions.col.y;
+      ci < this.sheetViewportPositions.col.y;
+      ci++
     ) {
-      const col = this.cols[ci];
-
-      this.drawCol(col);
+      this.drawCol(ci);
     }
     // Scrolling left
     for (
-      let ci = this.sheetViewportPositions.col.x;
-      ci < this.previousSheetViewportPositions.col.x;
-      ci++
+      let ci = this.previousSheetViewportPositions.col.x;
+      ci > this.sheetViewportPositions.col.x;
+      ci--
     ) {
-      const col = this.cols[ci];
-
-      this.drawCol(col);
+      this.drawCol(ci - 1, true);
     }
   }
 
-  drawRow(row: Row) {
-    const rowHeader = this.drawRowHeader(this.shapes.rowHeaderRect, row);
-    const xGridLine =
-      row.isFrozen && this.options.frozenCells?.row === row.index
-        ? this.drawXGridLine(row, this.shapes.frozenGridLine)
-        : this.drawXGridLine(row);
+  getRowHeight(ri: number) {
+    const rowHeight =
+      this.options.row.heights?.[ri] ?? this.options.row.defaultHeight;
 
-    const group = new Group();
+    return rowHeight;
+  }
 
-    group.add(rowHeader, xGridLine);
+  getColWidth(ci: number) {
+    const colWidth =
+      this.options.col.widths?.[ci] ?? this.options.col.defaultWidth;
 
-    this.rowGroups[row.index] = group;
+    return colWidth;
+  }
 
-    if (row.isFrozen) {
+  drawRow = (ri: number, drawingAtTop = false) => {
+    const prevRi = drawingAtTop ? ri + 1 : ri - 1;
+
+    if (this.rowGroups[ri]) {
+      this.rowGroups[ri].destroy();
+    }
+
+    const rowHeight = this.getRowHeight(ri);
+    const prevRow = this.rowGroups[prevRi];
+
+    const y = prevRow
+      ? drawingAtTop
+        ? this.rowGroups[prevRi].y() - rowHeight
+        : prevRow.y() + prevRow.height()
+      : this.sheetViewportDimensions.y;
+
+    const group = this.shapes.rowGroup.clone({
+      index: ri,
+      height: rowHeight,
+      y,
+    }) as Group;
+    const rowHeader = this.drawRowHeader(ri);
+    const isFrozen = this.options.frozenCells?.row === ri;
+    const xGridLine = isFrozen
+      ? this.drawXGridLine(ri, this.shapes.frozenGridLine)
+      : this.drawXGridLine(ri);
+
+    group.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine, xGridLine);
+
+    this.rowGroups[ri] = group;
+
+    if (isFrozen) {
       this.xyStickyLayer.add(group);
     } else {
       this.xStickyLayer.add(group);
     }
-  }
+  };
 
-  drawCol(col: Col) {
-    const colHeader = this.drawColHeader(this.shapes.colHeaderRect, col);
-    const yGridLine =
-      col.isFrozen && this.options.frozenCells?.col === col.index
-        ? this.drawYGridLine(col, this.shapes.frozenGridLine)
-        : this.drawYGridLine(col);
+  drawCol = (ci: number, drawingAtLeft = false) => {
+    const prevCi = drawingAtLeft ? ci + 1 : ci - 1;
 
-    const group = new Group();
+    if (this.colGroups[ci]) {
+      this.colGroups[ci].destroy();
+    }
 
-    group.add(colHeader, yGridLine);
+    const colWidth = this.getColWidth(ci);
+    const prevCol = this.colGroups[prevCi];
 
-    this.colGroups[col.index] = group;
+    const x = prevCol
+      ? drawingAtLeft
+        ? this.colGroups[prevCi].x() - colWidth
+        : prevCol.x() + prevCol.width()
+      : this.sheetViewportDimensions.x;
 
-    if (col.isFrozen) {
+    const group = this.shapes.colGroup.clone({
+      index: ci,
+      width: colWidth,
+      x: x,
+    }) as Group;
+    const colHeader = this.drawColHeader(ci);
+    const isFrozen = this.options.frozenCells?.col === ci;
+    const yGridLine = isFrozen
+      ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
+      : this.drawYGridLine(ci);
+
+    group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
+
+    this.colGroups[ci] = group;
+
+    if (isFrozen) {
       this.xyStickyLayer.add(group);
     } else {
       this.yStickyLayer.add(group);
     }
-  }
+  };
 
-  drawRowHeader(rect: Rect, row: Row) {
-    const height = row.height;
-    const y = row.index * height + this.colHeaderDimensions.height;
-    const clone = rect.clone({
-      y,
-      height,
+  drawRowHeader(ri: number) {
+    const rowHeight = this.getRowHeight(ri);
+    const rect = this.shapes.rowHeaderRect.clone({
+      height: rowHeight,
     }) as Rect;
-
     const text = new Text({
-      y,
-      text: row.number.toString(),
+      text: (ri + 1).toString(),
       ...this.styles.rowHeader.text,
     });
+    const resizeLine = this.drawRowHeaderResizeLine(ri);
 
-    const midPoints = getHeaderMidPoints(clone, text);
+    const midPoints = centerRectTwoInRectOne(
+      rect.getClientRect(),
+      text.getClientRect()
+    );
 
     text.x(midPoints.x);
     text.y(midPoints.y);
 
-    const group = new Group();
-
-    group.add(clone, text);
-
-    return group;
+    return {
+      rect,
+      text,
+      resizeLine,
+    };
   }
 
-  drawColHeader(rect: Rect, col: Col) {
-    const width = col.width;
-    const x = col.index * width + this.rowHeaderDimensions.width;
-
+  drawColHeader(ci: number) {
+    const colWidth = this.getColWidth(ci);
+    const startCharCode = 'A'.charCodeAt(0);
+    const letter = String.fromCharCode(startCharCode + ci);
+    const rect = this.shapes.colHeaderRect.clone({
+      width: colWidth,
+    }) as Rect;
     const text = new Text({
-      x,
-      text: col.letter,
+      text: letter,
       ...this.styles.colHeader.text,
     });
+    const resizeLine = this.drawColHeaderResizeLine(ci);
 
-    const clone = rect.clone({
-      x,
-      width,
-    }) as Rect;
-
-    const midPoints = getHeaderMidPoints(clone, text);
+    const midPoints = centerRectTwoInRectOne(
+      rect.getClientRect(),
+      text.getClientRect()
+    );
 
     text.x(midPoints.x);
     text.y(midPoints.y);
 
-    const group = new Group();
-
-    group.add(clone, text);
-
-    return group;
+    return {
+      rect,
+      text,
+      resizeLine,
+    };
   }
 
-  drawXGridLine(row: Row, gridLine = this.shapes.xGridLine) {
+  drawXGridLine(ri: number, gridLine = this.shapes.xGridLine) {
+    const rowHeight = this.getRowHeight(ri);
     const clone = gridLine.clone({
-      points: [
-        this.sheetViewportDimensions.x,
-        this.sheetViewportDimensions.y,
-        this.stage.width(),
-        this.sheetViewportDimensions.y,
-      ],
+      // points: [this.sheetViewportDimensions.x, 0, this.stage.width(), 0],
+      points: [0, 0, this.stage.width(), 0],
+      y: rowHeight,
     }) as Line;
-
-    clone.y((row.index + 1) * row.height);
 
     return clone;
   }
 
-  drawYGridLine(col: Col, gridLine = this.shapes.yGridLine) {
-    const clone = gridLine.clone({
-      points: [
-        this.sheetViewportDimensions.x,
-        this.sheetViewportDimensions.y,
-        this.sheetViewportDimensions.x,
-        this.stage.height(),
-      ],
+  drawRowHeaderResizeLine(ri: number) {
+    const rowHeight = this.getRowHeight(ri);
+    const clone = this.rowResizer.shapes.resizeLine.clone({
+      y: rowHeight,
     }) as Line;
 
-    clone.x((col.index + 1) * col.width);
+    return clone;
+  }
+
+  drawYGridLine(ci: number, gridLine = this.shapes.yGridLine) {
+    const colWidth = this.getColWidth(ci);
+    const clone = gridLine.clone({
+      // points: [0, this.sheetViewportDimensions.y, 0, this.stage.height()],
+      points: [0, 0, 0, this.stage.height()],
+      x: colWidth,
+    }) as Line;
+
+    return clone;
+  }
+
+  drawColHeaderResizeLine(ci: number) {
+    const colWidth = this.getColWidth(ci);
+    const clone = this.colResizer.shapes.resizeLine.clone({
+      x: colWidth,
+    }) as Line;
 
     return clone;
   }

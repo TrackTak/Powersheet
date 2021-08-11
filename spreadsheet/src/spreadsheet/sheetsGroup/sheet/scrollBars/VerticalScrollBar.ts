@@ -1,17 +1,27 @@
 import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
-import { IDimensions, ISheetViewportPositions } from '../Canvas';
+import {
+  calculateSheetViewportEndPosition,
+  IDimensions,
+  ISheetViewportPositions,
+} from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../../../IOptions';
-import { Group } from 'konva/lib/Group';
 import { IRect } from 'konva/lib/types';
+
+interface ICustomHeightPosition {
+  y: number;
+  height: number;
+  index: number;
+}
 
 class VerticalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   private scrollBarBuilder!: IBuildScroll;
+  private customHeightPositions: ICustomHeightPosition[];
 
   constructor(
     private stage: Stage,
@@ -22,7 +32,6 @@ class VerticalScrollBar {
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
     private eventEmitter: EventEmitter,
     private options: IOptions,
-    private rowGroups: Group[],
     private sheetViewportDimensions: IRect
   ) {
     this.stage = stage;
@@ -34,8 +43,26 @@ class VerticalScrollBar {
     this.sheetViewportPositions = sheetViewportPositions;
     this.eventEmitter = eventEmitter;
     this.options = options;
-    this.rowGroups = rowGroups;
     this.sheetViewportDimensions = sheetViewportDimensions;
+    this.customHeightPositions = [];
+
+    const heights = this.options.row.heights ?? {};
+
+    let customHeightDifference = 0;
+
+    Object.keys(heights).forEach((key) => {
+      const index = parseInt(key, 10);
+      const height = heights[key];
+      const y = index * this.options.row.defaultHeight + customHeightDifference;
+
+      customHeightDifference += height - this.options.row.defaultHeight;
+
+      this.customHeightPositions.push({
+        y,
+        height,
+        index,
+      });
+    });
 
     this.create();
   }
@@ -55,32 +82,53 @@ class VerticalScrollBar {
     const onScroll = (e: Event) => {
       const { scrollTop } = e.target! as any;
 
-      const scrollPercent = scrollTop / this.sheetDimensions.height;
-      const ri = Math.round(this.options.numberOfRows * scrollPercent);
+      const previousCustomHeightsChange = this.customHeightPositions.reduce(
+        (totalHeight, { y, height }) => {
+          if (y < scrollTop) {
+            const change = Math.min(scrollTop - y, height);
+
+            return totalHeight + change - this.options.row.defaultHeight;
+          }
+          return totalHeight;
+        },
+        0
+      );
       const scrollAmount = scrollTop * -1;
-      const row = this.rowGroups[ri];
-      const rowPos = row.y() - this.sheetViewportDimensions.y;
+      const scrollPercent =
+        (scrollTop - previousCustomHeightsChange) /
+        (this.sheetDimensions.height - previousCustomHeightsChange);
+      const ri = Math.trunc(this.options.numberOfRows * scrollPercent);
 
-      const differenceInScroll = scrollTop - rowPos;
+      //  const row = this.rowGroups[ri];
+      //const rowPos = row.y() - this.sheetViewportDimensions.y;
 
-      if (differenceInScroll !== 0) {
-        this.scrollBar.scrollBy(0, -differenceInScroll);
-      } else {
-        this.mainLayer.y(scrollAmount);
-        this.xStickyLayer.y(scrollAmount);
-      }
+      // const differenceInScroll = scrollTop - rowPos;
 
-      if (ri !== this.sheetViewportPositions.row.x) {
-        this.mainLayer.y(scrollAmount);
-        this.xStickyLayer.y(scrollAmount);
-      }
+      //  console.log(this.customHeightPositions);
+      //  console.log(scrollTop);
+      // console.log(previousCustomHeights);
 
-      const elementsInView =
-        (this.stage.height() - this.sheetViewportDimensions.y) /
-        this.options.row.defaultHeight;
+      // if (differenceInScroll !== 0) {
+      //   this.scrollBar.scrollBy(0, -differenceInScroll);
+      // } else {
+      //  this.mainLayer.y(scrollAmount);
+      //  this.xStickyLayer.y(scrollAmount);
+      // }
+      // if (ri !== this.sheetViewportPositions.row.x) {
+      //   this.mainLayer.y(scrollAmount);
+      //   this.xStickyLayer.y(scrollAmount);
+      // }
+
+      this.mainLayer.y(scrollAmount);
+      this.xStickyLayer.y(scrollAmount);
 
       this.sheetViewportPositions.row.x = ri;
-      this.sheetViewportPositions.row.y = ri + elementsInView - 1;
+      this.sheetViewportPositions.row.y = calculateSheetViewportEndPosition(
+        this.stage.height(),
+        this.sheetViewportPositions.row.x,
+        this.options.row.defaultHeight,
+        this.options.row.heights
+      );
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

@@ -8,7 +8,7 @@ import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import VerticalScrollBar from './scrollBars/VerticalScrollBar';
-import { IOptions } from '../../IOptions';
+import { IOptions, ISizes } from '../../IOptions';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
@@ -85,23 +85,22 @@ const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   };
 };
 
-const calculateSheetViewportEndPosition = (
+export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
-  defaultSize: number
+  defaultSize: number,
+  sizes?: ISizes
 ) => {
-  let newSheetViewportYIndex = sheetViewportStartYIndex;
   let sumOfSizes = sheetViewportDimensionSize;
-  let i = newSheetViewportYIndex;
+  let i = sheetViewportStartYIndex;
+  const getSize = () => sizes?.[i] ?? defaultSize;
 
-  while (sumOfSizes > 0) {
-    newSheetViewportYIndex = i;
-
-    i++;
-    sumOfSizes -= defaultSize;
+  while (sumOfSizes - getSize() > 0) {
+    sumOfSizes -= getSize();
+    i += 1;
   }
 
-  return newSheetViewportYIndex;
+  return i;
 };
 
 class Canvas {
@@ -223,36 +222,50 @@ class Canvas {
   }
 
   onLoad = () => {
-    const height =
+    const availableRowHeight =
       window.innerHeight -
       this.sheetViewportDimensions.y -
       this.horizontalScrollBar.getBoundingClientRect().height;
 
-    const rowHeight = this.options.row.defaultHeight;
-    let sumOfHeights = 0;
-
-    while (sumOfHeights + rowHeight <= height) {
-      sumOfHeights += rowHeight;
-    }
-
-    const width =
+    const availableColWidth =
       window.innerWidth -
       this.sheetViewportDimensions.x -
       this.verticalScrollBar.getBoundingClientRect().width;
 
-    const colWidth = this.options.col.defaultWidth;
-    let sumOfWidths = 0;
+    const rowYIndex = (this.sheetViewportPositions.row.y =
+      calculateSheetViewportEndPosition(
+        availableRowHeight,
+        0,
+        this.options.row.defaultHeight,
+        this.options.row.heights
+      ));
 
-    while (sumOfWidths + colWidth <= width) {
-      sumOfWidths += colWidth;
+    const colYIndex = (this.sheetViewportPositions.col.y =
+      calculateSheetViewportEndPosition(
+        availableColWidth,
+        0,
+        this.options.col.defaultWidth,
+        this.options.col.widths
+      ));
+
+    let sumOfRowHeights = 0;
+    let sumOfColWidths = 0;
+
+    for (let ri = 0; ri < rowYIndex; ri++) {
+      sumOfRowHeights += this.getRowHeight(ri);
     }
 
-    this.stage.width(sumOfWidths + this.sheetViewportDimensions.x);
-    this.stage.height(sumOfHeights + this.sheetViewportDimensions.y);
+    for (let ci = 0; ci < colYIndex; ci++) {
+      sumOfColWidths += this.getColWidth(ci);
+    }
 
-    this.sheetViewportPositions.row.y = 100;
+    this.stage.width(sumOfColWidths + this.sheetViewportDimensions.x);
+    this.stage.height(sumOfRowHeights + this.sheetViewportDimensions.y);
 
-    this.sheetViewportPositions.col.y = 26;
+    this.sheetViewportPositions.row.y = rowYIndex;
+    this.sheetViewportPositions.col.y = colYIndex;
+
+    console.log(this.sheetViewportPositions.row.y);
 
     this.shapes.sheetGroup.setAttrs({
       x: this.sheetViewportDimensions.x,
@@ -497,7 +510,6 @@ class Canvas {
       this.sheetViewportPositions,
       this.eventEmitter,
       this.options,
-      this.colGroups,
       this.sheetViewportDimensions
     );
 
@@ -510,7 +522,6 @@ class Canvas {
       this.horizontalScrollBar.getBoundingClientRect,
       this.eventEmitter,
       this.options,
-      this.rowGroups,
       this.sheetViewportDimensions
     );
 
@@ -584,63 +595,63 @@ class Canvas {
   }
 
   updateViewport() {
-    this.destroyOutOfViewportShapes();
     this.drawViewportShapes();
+    this.destroyOutOfViewportShapes();
 
     this.setPreviousSheetViewportPositions();
   }
 
   destroyOutOfViewportShapes() {
-    // this.rowGroups.forEach((rowGroup, index) => {
-    //   if (
-    //     !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
-    //   ) {
-    //     rowGroup.destroy();
-    //     delete this.rowGroups[index];
-    //   }
-    // });
-    // this.colGroups.forEach((colGroup, index) => {
-    //   if (
-    //     !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
-    //   ) {
-    //     colGroup.destroy();
-    //     delete this.colGroups[index];
-    //   }
-    // });
+    this.rowGroups.forEach((rowGroup, index) => {
+      if (
+        !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
+      ) {
+        rowGroup.destroy();
+        delete this.rowGroups[index];
+      }
+    });
+    this.colGroups.forEach((colGroup, index) => {
+      if (
+        !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
+      ) {
+        colGroup.destroy();
+        delete this.colGroups[index];
+      }
+    });
   }
 
   drawViewportShapes() {
     // Scrolling down
     for (
-      let ri = this.sheetViewportPositions.row.y;
-      ri > this.previousSheetViewportPositions.row.y;
-      ri--
+      let ri = this.previousSheetViewportPositions.row.y;
+      ri <= this.sheetViewportPositions.row.y;
+      ri++
     ) {
       this.drawRow(ri);
     }
     // Scrolling up
     for (
-      let ri = this.sheetViewportPositions.row.x;
-      ri < this.previousSheetViewportPositions.row.x;
-      ri++
+      let ri = this.previousSheetViewportPositions.row.x;
+      ri >= this.sheetViewportPositions.row.x;
+      ri--
     ) {
-      this.drawRow(ri);
+      this.drawRow(ri, true);
     }
     // Scrolling right
     for (
-      let ci = this.sheetViewportPositions.col.y;
-      ci > this.previousSheetViewportPositions.col.y;
-      ci--
+      let ci = this.previousSheetViewportPositions.col.y;
+      ci <= this.sheetViewportPositions.col.y;
+      ci++
     ) {
       this.drawCol(ci);
     }
     // Scrolling left
     for (
-      let ci = this.sheetViewportPositions.col.x;
-      ci < this.previousSheetViewportPositions.col.x;
-      ci++
+      let ci = this.previousSheetViewportPositions.col.x;
+      ci >= this.sheetViewportPositions.col.x;
+      ci--
     ) {
-      this.drawCol(ci);
+      this.drawCol(ci, true);
     }
   }
 
@@ -658,16 +669,22 @@ class Canvas {
     return colWidth;
   }
 
-  drawRow = (ri: number) => {
+  drawRow = (ri: number, drawingAtTop = false) => {
+    const prevRi = drawingAtTop ? ri + 1 : ri - 1;
+
     if (this.rowGroups[ri]) {
       this.rowGroups[ri].destroy();
     }
 
     const rowHeight = this.getRowHeight(ri);
-    const prevRow = this.rowGroups[ri - 1];
+    const prevRow = this.rowGroups[prevRi];
+
     const y = prevRow
-      ? prevRow.y() + prevRow.height()
+      ? drawingAtTop
+        ? this.rowGroups[prevRi].y() - rowHeight
+        : prevRow.y() + prevRow.height()
       : this.sheetViewportDimensions.y;
+
     const group = this.shapes.rowGroup.clone({
       index: ri,
       height: rowHeight,
@@ -690,16 +707,22 @@ class Canvas {
     }
   };
 
-  drawCol = (ci: number) => {
+  drawCol = (ci: number, drawingAtLeft = false) => {
+    const prevCi = drawingAtLeft ? ci + 1 : ci - 1;
+
     if (this.colGroups[ci]) {
       this.colGroups[ci].destroy();
     }
 
     const colWidth = this.getColWidth(ci);
-    const prevCol = this.colGroups[ci - 1];
+    const prevCol = this.colGroups[prevCi];
+
     const x = prevCol
-      ? prevCol.x() + prevCol.width()
+      ? drawingAtLeft
+        ? this.colGroups[prevCi].x() - colWidth
+        : prevCol.x() + prevCol.width()
       : this.sheetViewportDimensions.x;
+
     const group = this.shapes.colGroup.clone({
       index: ci,
       width: colWidth,

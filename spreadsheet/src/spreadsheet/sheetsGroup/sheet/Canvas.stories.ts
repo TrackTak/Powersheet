@@ -21,22 +21,15 @@ const Template: Story<IOptions> = (args) => {
 export const Default = Template.bind({});
 
 const defaultArgs = {
-  numberOfRows: 100,
+  numberOfRows: 10000,
   numberOfCols: 26,
   row: {
-    // heights: {
-    //   '1': 250,
-    //   '5': 100,
-    // },
     minHeight: 25,
     defaultHeight: 25,
   },
   col: {
     minWidth: 60,
     defaultWidth: 100,
-    // widths: {
-    //   '3': 70,
-    // },
   },
 };
 
@@ -49,5 +42,26 @@ FreezeCells.args = {
   frozenCells: {
     row: 1,
     col: 0,
+  },
+};
+
+export const DifferentSizeCells = Template.bind({});
+
+DifferentSizeCells.args = {
+  ...defaultArgs,
+  col: {
+    minWidth: 60,
+    defaultWidth: 100,
+    widths: {
+      '3': 70,
+    },
+  },
+  row: {
+    heights: {
+      '1': 250,
+      '5': 100,
+    },
+    minHeight: 25,
+    defaultHeight: 25,
   },
 };

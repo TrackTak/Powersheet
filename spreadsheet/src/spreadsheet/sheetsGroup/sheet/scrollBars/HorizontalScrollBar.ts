@@ -1,17 +1,27 @@
 import EventEmitter from 'eventemitter3';
-import { Group } from 'konva/lib/Group';
 import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import { IRect } from 'konva/lib/types';
 import { IOptions } from '../../../IOptions';
-import { IDimensions, ISheetViewportPositions } from '../Canvas';
+import {
+  calculateSheetViewportEndPosition,
+  IDimensions,
+  ISheetViewportPositions,
+} from '../Canvas';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
+
+interface ICustomWidthPosition {
+  x: number;
+  width: number;
+  index: number;
+}
 
 class HorizontalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
   private scrollBarBuilder!: IBuildScroll;
+  private customWidthPositions: ICustomWidthPosition[];
 
   constructor(
     private stage: Stage,
@@ -21,7 +31,6 @@ class HorizontalScrollBar {
     private sheetViewportPositions: ISheetViewportPositions,
     private eventEmitter: EventEmitter,
     private options: IOptions,
-    private colGroups: Group[],
     private sheetViewportDimensions: IRect
   ) {
     this.stage = stage;
@@ -31,8 +40,26 @@ class HorizontalScrollBar {
     this.sheetViewportPositions = sheetViewportPositions;
     this.eventEmitter = eventEmitter;
     this.options = options;
-    this.colGroups = colGroups;
     this.sheetViewportDimensions = sheetViewportDimensions;
+    this.customWidthPositions = [];
+
+    const widths = this.options.col.widths ?? {};
+
+    let customWidthDifference = 0;
+
+    Object.keys(widths).forEach((key) => {
+      const index = parseInt(key, 10);
+      const width = widths[key];
+      const x = index * this.options.col.defaultWidth + customWidthDifference;
+
+      customWidthDifference += width - this.options.col.defaultWidth;
+
+      this.customWidthPositions.push({
+        x,
+        width,
+        index,
+      });
+    });
 
     this.create();
   }
@@ -49,32 +76,49 @@ class HorizontalScrollBar {
     const onScroll = (e: Event) => {
       const { scrollLeft } = e.target! as any;
 
-      const scrollPercent = scrollLeft / this.sheetDimensions.width;
-      const ci = Math.round(this.options.numberOfCols * scrollPercent);
+      const previousCustomWidthsChange = this.customWidthPositions.reduce(
+        (totalWidth, { x, width }) => {
+          if (x < scrollLeft) {
+            const change = Math.min(scrollLeft - x, width);
+
+            return totalWidth + change - this.options.col.defaultWidth;
+          }
+          return totalWidth;
+        },
+        0
+      );
       const scrollAmount = scrollLeft * -1;
-      const col = this.colGroups[ci];
-      const colPos = col.x() - this.sheetViewportDimensions.x;
+      const scrollPercent =
+        (scrollLeft - previousCustomWidthsChange) /
+        (this.sheetDimensions.width - previousCustomWidthsChange);
+      const ci = Math.trunc(this.options.numberOfCols * scrollPercent);
+      // const col = this.colGroups[ci];
+      // const colPos = col.x() - this.sheetViewportDimensions.x;
 
-      const differenceInScroll = scrollLeft - colPos;
+      // const differenceInScroll = scrollLeft - colPos;
 
-      if (differenceInScroll !== 0) {
-        this.scrollBar.scrollBy(-differenceInScroll, 0);
-      } else {
-        this.mainLayer.x(scrollAmount);
-        this.yStickyLayer.x(scrollAmount);
-      }
+      // if (differenceInScroll !== 0) {
+      //   this.scrollBar.scrollBy(-differenceInScroll, 0);
+      // } else {
+      //   this.mainLayer.x(scrollAmount);
+      //   this.yStickyLayer.x(scrollAmount);
+      // }
 
-      if (ci !== this.sheetViewportPositions.col.x) {
-        this.mainLayer.x(scrollAmount);
-        this.yStickyLayer.x(scrollAmount);
-      }
+      // if (ci !== this.sheetViewportPositions.col.x) {
+      //   this.mainLayer.x(scrollAmount);
+      //   this.yStickyLayer.x(scrollAmount);
+      // }
 
-      const elementsInView =
-        (this.stage.width() - this.sheetViewportDimensions.x) /
-        this.options.col.defaultWidth;
+      this.mainLayer.x(scrollAmount);
+      this.yStickyLayer.x(scrollAmount);
 
       this.sheetViewportPositions.col.x = ci;
-      this.sheetViewportPositions.col.y = ci + elementsInView - 1;
+      this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
+        this.stage.width(),
+        this.sheetViewportPositions.col.x,
+        this.options.col.defaultWidth,
+        this.options.col.widths
+      );
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

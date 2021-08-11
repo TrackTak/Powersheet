@@ -7,9 +7,7 @@ import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import VerticalScrollBar, {
-  ICustomHeightPosition,
-} from './scrollBars/VerticalScrollBar';
+import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 import { IOptions, ISizes } from '../../IOptions';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
@@ -105,7 +103,7 @@ export const calculateSheetViewportEndPosition = (
   const getSize = () => {
     // TODO: Remove when we have snapping to row/col for scroll
     if (sizes?.[i] && customSizeChanges?.[i].size) {
-      return sizes[i] - (customSizeChanges[i].size + defaultSize);
+      return sizes[i] - customSizeChanges[i].size;
     }
 
     return sizes?.[i] ?? defaultSize;

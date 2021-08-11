@@ -15,8 +15,9 @@ import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 class HorizontalScrollBar {
   scrollBar!: HTMLDivElement;
   scroll!: HTMLDivElement;
+  customWidthPositions: ICustomSizePosition[];
+  customSizeChanges: ICustomSizePosition[];
   private scrollBarBuilder!: IBuildScroll;
-  private customWidthPositions: ICustomSizePosition[];
 
   constructor(
     private stage: Stage,
@@ -37,6 +38,7 @@ class HorizontalScrollBar {
     this.options = options;
     this.sheetViewportDimensions = sheetViewportDimensions;
     this.customWidthPositions = [];
+    this.customSizeChanges = [];
 
     const widths = this.options.col.widths ?? {};
 
@@ -70,14 +72,14 @@ class HorizontalScrollBar {
     const onScroll = (e: Event) => {
       const { scrollLeft } = e.target! as any;
 
-      const customSizeChanges = this.customWidthPositions.map(
+      this.customSizeChanges = this.customWidthPositions.map(
         ({ axis, size }) => {
           let sizeChange = 0;
 
           if (axis < scrollLeft) {
             const change = Math.min(scrollLeft - axis, size);
 
-            sizeChange = change - this.options.col.defaultWidth;
+            sizeChange = change;
           }
           return {
             axis,
@@ -86,17 +88,23 @@ class HorizontalScrollBar {
         }
       );
 
-      const totalSizeChange = customSizeChanges.reduce(
-        (totalSize, { size }) => {
-          return totalSize + size;
+      const totalSizeDifference = this.customSizeChanges.reduce(
+        (totalSize, { axis, size }) => {
+          let newSize = size;
+
+          if (axis < scrollLeft) {
+            newSize -= this.options.col.defaultWidth;
+          }
+
+          return totalSize + newSize;
         },
         0
       );
 
       const scrollAmount = scrollLeft * -1;
       const scrollPercent =
-        (scrollLeft - totalSizeChange) /
-        (this.sheetDimensions.width - totalSizeChange);
+        (scrollLeft - totalSizeDifference) /
+        (this.sheetDimensions.width - totalSizeDifference);
       const ci = Math.trunc(this.options.numberOfCols * scrollPercent);
       // const col = this.colGroups[ci];
       // const colPos = col.x() - this.sheetViewportDimensions.x;
@@ -124,7 +132,7 @@ class HorizontalScrollBar {
         this.sheetViewportPositions.col.x,
         this.options.col.defaultWidth,
         this.options.col.widths,
-        customSizeChanges
+        this.customSizeChanges
       );
     };
 

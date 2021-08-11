@@ -346,13 +346,6 @@ class Canvas {
     this.stage.add(this.xyStickyLayer);
     this.stage.add(this.mainLayer);
 
-    this.eventEmitter.on(events.scroll.vertical, this.onVerticalScroll);
-    this.eventEmitter.on(events.scrollWheel.vertical, this.onVerticalScroll);
-    this.eventEmitter.on(events.scroll.horizontal, this.onHorizontalScroll);
-    this.eventEmitter.on(
-      events.scrollWheel.horizontal,
-      this.onHorizontalScroll
-    );
     this.eventEmitter.on(events.resize.row.start, this.onResizeRowStart);
     this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
     this.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
@@ -553,7 +546,8 @@ class Canvas {
       this.colGroups,
       this.eventEmitter,
       this.options,
-      this.sheetViewportDimensions
+      this.sheetViewportDimensions,
+      this.onHorizontalScroll
     );
 
     this.verticalScrollBar = new VerticalScrollBar(
@@ -566,7 +560,8 @@ class Canvas {
       this.rowGroups,
       this.eventEmitter,
       this.options,
-      this.sheetViewportDimensions
+      this.sheetViewportDimensions,
+      this.onVerticalScroll
     );
 
     this.container.appendChild(this.horizontalScrollBar.scrollBar);
@@ -576,10 +571,6 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.eventEmitter.off(events.scroll.vertical, this.onVerticalScroll);
-    this.eventEmitter.off(events.scrollWheel.vertical, this.onVerticalScroll);
-    this.eventEmitter.off(events.scroll.horizontal, this.onHorizontalScroll);
-    this.eventEmitter.off(events.scrollWheel.vertical, this.onHorizontalScroll);
     this.eventEmitter.off(events.resize.row.start, this.onResizeRowStart);
     this.eventEmitter.off(events.resize.col.start, this.onResizeColStart);
     this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
@@ -668,7 +659,7 @@ class Canvas {
     // Scrolling down
     for (
       let ri = this.previousSheetViewportPositions.row.y;
-      ri <= this.sheetViewportPositions.row.y;
+      ri < this.sheetViewportPositions.row.y;
       ri++
     ) {
       this.drawRow(ri);
@@ -676,15 +667,15 @@ class Canvas {
     // Scrolling up
     for (
       let ri = this.previousSheetViewportPositions.row.x;
-      ri >= this.sheetViewportPositions.row.x;
+      ri > this.sheetViewportPositions.row.x;
       ri--
     ) {
-      this.drawRow(ri, true);
+      this.drawRow(ri - 1, true);
     }
     // Scrolling right
     for (
       let ci = this.previousSheetViewportPositions.col.y;
-      ci <= this.sheetViewportPositions.col.y;
+      ci < this.sheetViewportPositions.col.y;
       ci++
     ) {
       this.drawCol(ci);
@@ -692,10 +683,10 @@ class Canvas {
     // Scrolling left
     for (
       let ci = this.previousSheetViewportPositions.col.x;
-      ci >= this.sheetViewportPositions.col.x;
+      ci > this.sheetViewportPositions.col.x;
       ci--
     ) {
-      this.drawCol(ci, true);
+      this.drawCol(ci - 1, true);
     }
   }
 

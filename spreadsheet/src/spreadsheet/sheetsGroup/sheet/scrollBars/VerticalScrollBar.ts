@@ -35,7 +35,8 @@ class VerticalScrollBar {
     private rowGroups: Group[],
     private eventEmitter: EventEmitter,
     private options: IOptions,
-    private sheetViewportDimensions: IRect
+    private sheetViewportDimensions: IRect,
+    private onScroll: (e: Event) => void
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
@@ -53,6 +54,7 @@ class VerticalScrollBar {
       size: 0,
       index: 0,
     };
+    this.onScroll = onScroll;
 
     const heights = this.options.row.heights ?? {};
 
@@ -125,22 +127,29 @@ class VerticalScrollBar {
         (scrollTop - totalSizeDifference) /
         (this.sheetDimensions.height - totalSizeDifference);
       const ri = Math.trunc(this.options.numberOfRows * scrollPercent);
-      const row = this.rowGroups[ri];
 
-      //console.log(row.y());
-      // console.log(this.customSizeChanges);
+      this.sheetViewportPositions.row.x = ri;
+      this.sheetViewportPositions.row.y = calculateSheetViewportEndPosition(
+        this.stage.height(),
+        this.sheetViewportPositions.row.x,
+        this.options.row.defaultHeight,
+        this.options.row.heights,
+        customSizeChanges
+      );
+
+      this.mainLayer.y(scrollAmount);
+      this.xStickyLayer.y(scrollAmount);
+
+      console.log(this.sheetViewportPositions);
+
+      this.onScroll(e);
+
+      const row = this.rowGroups[ri];
 
       this.scrollOffset = {
         index: ri,
         size: scrollTop + this.sheetViewportDimensions.y - row.y(),
       };
-      // console.log(ri * this.options.row.defaultHeight);
-      // this.scrollOffset = Math.min(
-      //   scrollTop - ri * this.options.row.defaultHeight,
-      //   this.options.row.defaultHeight
-      // );
-
-      console.log(this.scrollOffset);
 
       // const row = this.rowGroups[ri];
       // const rowPos = row.y() - this.sheetViewportDimensions.y;
@@ -158,18 +167,6 @@ class VerticalScrollBar {
       //   this.mainLayer.y(scrollAmount);
       //   this.xStickyLayer.y(scrollAmount);
       // }
-
-      this.mainLayer.y(scrollAmount);
-      this.xStickyLayer.y(scrollAmount);
-
-      this.sheetViewportPositions.row.x = ri;
-      this.sheetViewportPositions.row.y = calculateSheetViewportEndPosition(
-        this.stage.height(),
-        this.sheetViewportPositions.row.x,
-        this.options.row.defaultHeight,
-        this.options.row.heights,
-        customSizeChanges
-      );
 
       // console.log(this.sheetViewportPositions.row.x);
     };

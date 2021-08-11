@@ -30,7 +30,8 @@ class HorizontalScrollBar {
     private colGroups: Group[],
     private eventEmitter: EventEmitter,
     private options: IOptions,
-    private sheetViewportDimensions: IRect
+    private sheetViewportDimensions: IRect,
+    private onScroll: (e: Event) => void
   ) {
     this.stage = stage;
     this.mainLayer = mainLayer;
@@ -46,6 +47,7 @@ class HorizontalScrollBar {
       size: 0,
       index: 0,
     };
+    this.onScroll = onScroll;
 
     const widths = this.options.col.widths ?? {};
 
@@ -113,6 +115,21 @@ class HorizontalScrollBar {
         (scrollLeft - totalSizeDifference) /
         (this.sheetDimensions.width - totalSizeDifference);
       const ci = Math.trunc(this.options.numberOfCols * scrollPercent);
+
+      this.sheetViewportPositions.col.x = ci;
+      this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
+        this.stage.width(),
+        this.sheetViewportPositions.col.x,
+        this.options.col.defaultWidth,
+        this.options.col.widths,
+        customSizeChanges
+      );
+
+      this.mainLayer.x(scrollAmount);
+      this.yStickyLayer.x(scrollAmount);
+
+      this.onScroll(e);
+
       const col = this.colGroups[ci];
 
       this.scrollOffset = {
@@ -135,18 +152,6 @@ class HorizontalScrollBar {
       //   this.mainLayer.x(scrollAmount);
       //   this.yStickyLayer.x(scrollAmount);
       // }
-
-      this.mainLayer.x(scrollAmount);
-      this.yStickyLayer.x(scrollAmount);
-
-      this.sheetViewportPositions.col.x = ci;
-      this.sheetViewportPositions.col.y = calculateSheetViewportEndPosition(
-        this.stage.width(),
-        this.sheetViewportPositions.col.x,
-        this.options.col.defaultWidth,
-        this.options.col.widths,
-        customSizeChanges
-      );
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

@@ -72,7 +72,6 @@ interface IShapes {
   frozenGridLine: Line;
   xGridLine: Line;
   yGridLine: Line;
-  selectionGroup: Group;
   selection: Rect;
   selectionBorder: Rect;
 }
@@ -171,7 +170,6 @@ class Canvas {
   verticalScrollBar!: VerticalScrollBar;
   rowResizer!: Resizer;
   colResizer!: Resizer;
-  private selectedCell?: ISelectedCell;
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
@@ -187,6 +185,7 @@ class Canvas {
   private isInSelectionMode: boolean;
   private selectionArea: ISelectionArea;
   private selectedCells: ICell[][];
+  private selectedRects: Rect[];
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -247,6 +246,7 @@ class Canvas {
     this.rowGroups = [];
     this.colGroups = [];
     this.selectedCells = [];
+    this.selectedRects = [];
 
     const that = this;
 
@@ -402,7 +402,6 @@ class Canvas {
       frozenGridLine: new Line({
         ...this.styles.frozenGridLine,
       }),
-      selectionGroup: new Group(),
       selectionBorder: new Rect({
         ...this.styles.selectionBorder,
       }),
@@ -423,8 +422,6 @@ class Canvas {
 
     this.shapes.sheetGroup.add(this.shapes.sheet);
 
-    this.mainLayer.add(this.shapes.selectionGroup);
-
     this.xyStickyLayer.add(this.shapes.sheetGroup);
 
     this.eventEmitter.on(events.resize.row.start, this.onResizeRowStart);
@@ -440,29 +437,22 @@ class Canvas {
   }
 
   onResizeRowStart = () => {
-    this.rowResizer.shapes.resizeGuideLine.zIndex(
-      this.shapes.selection.zIndex()
-    );
+    this.rowResizer.shapes.resizeGuideLine.moveToTop();
   };
 
   onResizeColStart = () => {
-    this.colResizer.shapes.resizeGuideLine.zIndex(
-      this.shapes.selection.zIndex()
-    );
+    this.colResizer.shapes.resizeGuideLine.moveToTop();
   };
 
   onResizeRowEnd = () => {
-    if (this.selectedCell) {
-      this.setCellSelected(this.selectedCell);
+    if (this.selectedCells) {
+      this.removeSelectedCells();
     }
   };
 
   onResizeColEnd = () => {
-    if (this.selectedCell) {
-      this.setCellSelected(this.selectedCell);
-      this.rowResizer.shapes.resizeGuideLine.zIndex(
-        this.shapes.selection.zIndex()
-      );
+    if (this.selectedCells) {
+      this.removeSelectedCells();
     }
   };
 
@@ -502,13 +492,13 @@ class Canvas {
       height: totalHeight,
     };
 
-    this.shapes.selectionGroup.add(this.shapes.selectionBorder);
-
     this.shapes.selectionBorder.setAttrs(config);
+
+    this.mainLayer.add(this.shapes.selectionBorder);
   };
 
   onSheetMouseDown = () => {
-    this.shapes.selectionGroup.destroyChildren();
+    this.removeSelectedCells();
     this.isInSelectionMode = true;
 
     const { x, y } = this.shapes.sheet.getRelativePointerPosition();
@@ -526,12 +516,12 @@ class Canvas {
 
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
-      const selectionChildren = this.shapes.selectionGroup.children!.filter(
+      const selectedRects = this.selectedRects!.filter(
         (cell) => !cell.attrs.strokeWidth
       );
 
-      selectionChildren.forEach((child) => {
-        child.destroy();
+      selectedRects.forEach((rect) => {
+        rect.destroy();
       });
 
       const { x, y } = this.shapes.sheet.getRelativePointerPosition();
@@ -546,7 +536,12 @@ class Canvas {
         y: y + 1,
       };
 
-      const firstSelectedCell = this.shapes.selectionGroup.children!.find(
+      this.selectionArea.end = {
+        x,
+        y,
+      };
+
+      const firstSelectedCell = this.selectedRects.find(
         (x) => x.attrs.strokeWidth
       )!;
 
@@ -558,11 +553,26 @@ class Canvas {
     }
   };
 
+  removeSelectedCells() {
+    this.shapes.selectionBorder.destroy();
+    this.selectedRects.forEach((rect) => rect.destroy());
+
+    this.selectedRects = [];
+  }
+
   selectCells(start: Vector2d, end: Vector2d, selectionConfig?: RectConfig) {
     this.selectedCells = this.getCellsBetweenVectors(start, end);
 
     this.selectedCells.forEach((row) => {
       row.forEach(({ rowGroup, colGroup }) => {
+        const isFrozenRow =
+          this.options.frozenCells &&
+          rowGroup.attrs.index <= this.options.frozenCells.row;
+
+        const isFrozenCol =
+          this.options.frozenCells &&
+          colGroup.attrs.index <= this.options.frozenCells?.col;
+
         const config: RectConfig = {
           ...selectionConfig,
           x: colGroup.x(),
@@ -572,7 +582,17 @@ class Canvas {
         };
         const clone = this.shapes.selection.clone(config) as Rect;
 
-        this.shapes.selectionGroup.add(clone);
+        this.selectedRects.push(clone);
+
+        if (isFrozenRow && isFrozenCol) {
+          this.xyStickyLayer.add(clone);
+        } else if (isFrozenRow) {
+          this.yStickyLayer.add(clone);
+        } else if (isFrozenCol) {
+          this.xStickyLayer.add(clone);
+        } else {
+          this.mainLayer.add(clone);
+        }
       });
     });
   }
@@ -659,29 +679,6 @@ class Canvas {
 
     return cells;
   }
-
-  onSheetClick = () => {
-    const pos = this.shapes.sheet.getRelativePointerPosition();
-
-    let ri = calculateSheetViewportEndPosition2(
-      pos.y,
-      this.sheetViewportPositions.row.x,
-      this.options.row.defaultHeight,
-      this.options.row.heights,
-      this.verticalScrollBar.scrollOffset
-    );
-
-    let ci = calculateSheetViewportEndPosition2(
-      pos.x,
-      this.sheetViewportPositions.col.x,
-      this.options.col.defaultWidth,
-      this.options.col.widths,
-      this.horizontalScrollBar.scrollOffset
-    );
-
-    this.selectedCell = { ri, ci };
-    this.setCellSelected(this.selectedCell);
-  };
 
   setCellSelected({ ri, ci }: ISelectedCell) {
     const row = this.rowGroups[ri];

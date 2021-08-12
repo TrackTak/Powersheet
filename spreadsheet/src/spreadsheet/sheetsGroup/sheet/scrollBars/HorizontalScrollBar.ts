@@ -122,7 +122,7 @@ class HorizontalScrollBar {
         this.sheetViewportPositions.col.x,
         this.options.col.defaultWidth,
         this.options.col.widths,
-        customSizeChanges
+        this.scrollOffset
       );
 
       this.mainLayer.x(scrollAmount);

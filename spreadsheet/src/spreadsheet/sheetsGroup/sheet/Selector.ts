@@ -149,13 +149,16 @@ class Selector {
     this.isInSelectionMode = true;
 
     const { x, y } = this.canvasShapes.sheet.getRelativePointerPosition();
-    const vector = {
-      x,
-      y,
-    };
+
     this.selectionArea = {
-      start: vector,
-      end: vector,
+      start: {
+        x,
+        y,
+      },
+      end: {
+        x,
+        y,
+      },
     };
 
     this.selectCells(this.selectionArea.start, this.selectionArea.end);

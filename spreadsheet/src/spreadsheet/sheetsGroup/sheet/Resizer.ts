@@ -6,7 +6,7 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import { ISizes } from '../../IOptions';
+import { ISizes } from '../../options';
 import { IDimensions } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
 

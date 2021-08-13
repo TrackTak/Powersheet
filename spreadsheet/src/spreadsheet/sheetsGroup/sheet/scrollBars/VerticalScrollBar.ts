@@ -9,9 +9,9 @@ import {
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
-import { IOptions } from '../../../IOptions';
 import { IRect } from 'konva/lib/types';
 import { Group } from 'konva/lib/Group';
+import { IOptions } from '../../../options';
 
 export interface IScrollOffset {
   index: number;
@@ -56,13 +56,11 @@ class VerticalScrollBar {
     };
     this.onScroll = onScroll;
 
-    const heights = this.options.row.heights ?? {};
-
     let customHeightDifference = 0;
 
-    Object.keys(heights).forEach((key) => {
+    Object.keys(this.options.row.heights).forEach((key) => {
       const index = parseInt(key, 10);
-      const height = heights[key];
+      const height = this.options.row.heights[key];
       const y = index * this.options.row.defaultHeight + customHeightDifference;
 
       customHeightDifference += height - this.options.row.defaultHeight;

@@ -1,7 +1,7 @@
 import { Story, Meta } from '@storybook/html';
 import Canvas from './Canvas';
 import EventEmitter from 'eventemitter3';
-import { IOptions } from '../../IOptions';
+import { defaultOptions, IOptions } from '../../options';
 
 export default {
   title: 'Canvas',
@@ -20,25 +20,12 @@ const Template: Story<IOptions> = (args) => {
 
 export const Default = Template.bind({});
 
-const defaultArgs = {
-  numberOfRows: 100,
-  numberOfCols: 26,
-  row: {
-    minHeight: 25,
-    defaultHeight: 25,
-  },
-  col: {
-    minWidth: 60,
-    defaultWidth: 100,
-  },
-};
-
-Default.args = defaultArgs;
+Default.args = defaultOptions;
 
 export const FreezeCells = Template.bind({});
 
 FreezeCells.args = {
-  ...defaultArgs,
+  ...defaultOptions,
   frozenCells: {
     row: 1,
     col: 0,
@@ -48,7 +35,7 @@ FreezeCells.args = {
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
-  ...defaultArgs,
+  ...defaultOptions,
   col: {
     minWidth: 60,
     defaultWidth: 100,

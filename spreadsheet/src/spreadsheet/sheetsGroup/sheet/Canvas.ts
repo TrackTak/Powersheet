@@ -1,7 +1,7 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import { Text } from 'konva/lib/shapes/Text';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
@@ -10,7 +10,6 @@ import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import VerticalScrollBar, {
   IScrollOffset,
 } from './scrollBars/VerticalScrollBar';
-import { IOptions, ISizes } from '../../IOptions';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
@@ -23,6 +22,7 @@ import {
   performanceProperties,
 } from './canvasStyles';
 import Resizer from './Resizer';
+import { IOptions, ISizes } from '../../options';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -136,7 +136,7 @@ export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
   defaultSize: number,
-  sizes?: ISizes,
+  sizes: ISizes,
   customSizeChanges?: ICustomSizePosition[]
 ) => {
   let sumOfSizes = sheetViewportDimensionSize;
@@ -144,11 +144,11 @@ export const calculateSheetViewportEndPosition = (
 
   const getSize = () => {
     // TODO: Remove when we have snapping to row/col for scroll
-    if (sizes?.[i] && customSizeChanges?.[i]?.size) {
+    if (sizes[i] && customSizeChanges?.[i]?.size) {
       return sizes[i] - customSizeChanges[i].size;
     }
 
-    return sizes?.[i] ?? defaultSize;
+    return sizes[i] ?? defaultSize;
   };
 
   while (sumOfSizes - getSize() > 0) {
@@ -215,7 +215,7 @@ class Canvas {
 
     this.sheetDimensions = {
       get width() {
-        const widths = Object.values(that.options.col.widths ?? {});
+        const widths = Object.values(that.options.col.widths);
 
         const totalWidthsDifference = widths.reduce((currentWidth, width) => {
           return width - that.options.col.defaultWidth + currentWidth;
@@ -227,7 +227,7 @@ class Canvas {
         );
       },
       get height() {
-        const heights = Object.values(that.options.row.heights ?? {});
+        const heights = Object.values(that.options.row.heights);
 
         const totalHeightsDifference = heights.reduce(
           (currentHeight, height) => {
@@ -560,18 +560,25 @@ class Canvas {
     this.selectedRects = [];
   }
 
+  isFrozenRow(ri: number) {
+    return isNil(this.options.frozenCells.row)
+      ? false
+      : ri <= this.options.frozenCells.row;
+  }
+
+  isFrozenCol(ci: number) {
+    return isNil(this.options.frozenCells.col)
+      ? false
+      : ci <= this.options.frozenCells.col;
+  }
+
   selectCells(start: Vector2d, end: Vector2d, selectionConfig?: RectConfig) {
     this.selectedCells = this.getCellsBetweenVectors(start, end);
 
     this.selectedCells.forEach((row) => {
       row.forEach(({ rowGroup, colGroup }) => {
-        const isFrozenRow =
-          this.options.frozenCells &&
-          rowGroup.attrs.index <= this.options.frozenCells.row;
-
-        const isFrozenCol =
-          this.options.frozenCells &&
-          colGroup.attrs.index <= this.options.frozenCells?.col;
+        const isFrozenRow = this.isFrozenRow(rowGroup.attrs.index);
+        const isFrozenCol = this.isFrozenCol(colGroup.attrs.index);
 
         const config: RectConfig = {
           ...selectionConfig,
@@ -680,39 +687,6 @@ class Canvas {
     return cells;
   }
 
-  setCellSelected({ ri, ci }: ISelectedCell) {
-    const row = this.rowGroups[ri];
-    const col = this.colGroups[ci];
-
-    // const x = colXPosition * this.options.col.defaultWidth;
-
-    // this.shapes.selection.y(y + this.colHeaderDimensions.height);
-    this.shapes.selection.y(row.y());
-    this.shapes.selection.x(col.x());
-
-    const isFrozenRowClicked =
-      this.options.frozenCells && ri <= this.options.frozenCells.row;
-
-    const isFrozenColClicked =
-      this.options.frozenCells && ci <= this.options.frozenCells?.col;
-
-    // const ri = isFrozenRowClicked ? ySheetPos : rowXPosition;
-    //const ci = isFrozenColClicked ? xSheetPos : colXPosition;
-
-    this.shapes.selection.height(row.height());
-    this.shapes.selection.width(col.width());
-
-    if (isFrozenRowClicked && isFrozenColClicked) {
-      this.xyStickyLayer.add(this.shapes.selection);
-    } else if (isFrozenRowClicked) {
-      this.yStickyLayer.add(this.shapes.selection);
-    } else if (isFrozenColClicked) {
-      this.xStickyLayer.add(this.shapes.selection);
-    } else {
-      this.mainLayer.add(this.shapes.selection);
-    }
-  }
-
   onHorizontalScroll = () => {
     this.updateViewport();
   };
@@ -736,7 +710,7 @@ class Canvas {
       {
         minSize: this.options.row.minHeight,
         defaultSize: this.options.row.defaultHeight,
-        sizes: this.options.row.heights ?? {},
+        sizes: this.options.row.heights,
       },
       this.rowGroups,
       this.drawRow,
@@ -757,7 +731,7 @@ class Canvas {
       {
         minSize: this.options.col.minWidth,
         defaultSize: this.options.col.defaultWidth,
-        sizes: this.options.col.widths ?? {},
+        sizes: this.options.col.widths,
       },
       this.colGroups,
       this.drawCol,
@@ -920,14 +894,14 @@ class Canvas {
 
   getRowHeight(ri: number) {
     const rowHeight =
-      this.options.row.heights?.[ri] ?? this.options.row.defaultHeight;
+      this.options.row.heights[ri] ?? this.options.row.defaultHeight;
 
     return rowHeight;
   }
 
   getColWidth(ci: number) {
     const colWidth =
-      this.options.col.widths?.[ci] ?? this.options.col.defaultWidth;
+      this.options.col.widths[ci] ?? this.options.col.defaultWidth;
 
     return colWidth;
   }
@@ -954,10 +928,12 @@ class Canvas {
       y,
     }) as Group;
     const rowHeader = this.drawRowHeader(ri);
-    const isFrozen = this.options.frozenCells?.row === ri;
-    const xGridLine = isFrozen
-      ? this.drawXGridLine(ri, this.shapes.frozenGridLine)
-      : this.drawXGridLine(ri);
+    const isFrozen = this.isFrozenRow(ri);
+
+    const xGridLine =
+      ri === this.options.frozenCells.row
+        ? this.drawXGridLine(ri, this.shapes.frozenGridLine)
+        : this.drawXGridLine(ri);
 
     group.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine, xGridLine);
 
@@ -992,10 +968,12 @@ class Canvas {
       x: x,
     }) as Group;
     const colHeader = this.drawColHeader(ci);
-    const isFrozen = this.options.frozenCells?.col === ci;
-    const yGridLine = isFrozen
-      ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
-      : this.drawYGridLine(ci);
+    const isFrozen = this.isFrozenCol(ci);
+
+    const yGridLine =
+      ci === this.options.frozenCells.col
+        ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
+        : this.drawYGridLine(ci);
 
     group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
 

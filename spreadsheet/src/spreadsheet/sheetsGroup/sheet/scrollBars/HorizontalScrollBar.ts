@@ -4,7 +4,7 @@ import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import { IRect } from 'konva/lib/types';
-import { IOptions } from '../../../IOptions';
+import { IOptions } from '../../../options';
 import {
   calculateSheetViewportEndPosition,
   ICustomSizePosition,
@@ -49,13 +49,11 @@ class HorizontalScrollBar {
     };
     this.onScroll = onScroll;
 
-    const widths = this.options.col.widths ?? {};
-
     let customWidthDifference = 0;
 
-    Object.keys(widths).forEach((key) => {
+    Object.keys(this.options.col.widths).forEach((key) => {
       const index = parseInt(key, 10);
-      const width = widths[key];
+      const width = this.options.col.widths[key];
       const x = index * this.options.col.defaultWidth + customWidthDifference;
 
       customWidthDifference += width - this.options.col.defaultWidth;
@@ -122,7 +120,7 @@ class HorizontalScrollBar {
         this.sheetViewportPositions.col.x,
         this.options.col.defaultWidth,
         this.options.col.widths,
-        this.scrollOffset
+        customSizeChanges
       );
 
       this.mainLayer.x(scrollAmount);

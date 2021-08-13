@@ -221,12 +221,10 @@ class Selector {
     let totalWidth = 0;
     let totalHeight = 0;
 
-    const colsMap: {
-      [index: string]: boolean;
-    } = {};
+    const colsMap: Record<string, boolean> = {};
 
     this.selectedCells.forEach((row) => {
-      let rowGroup = row[0].rowGroup;
+      const rowGroup = row[0].rowGroup;
 
       row.forEach(({ colGroup }) => {
         const ci = colGroup.attrs.index;

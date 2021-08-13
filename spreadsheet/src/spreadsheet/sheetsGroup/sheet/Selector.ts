@@ -107,11 +107,11 @@ class Selector {
 
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
-      const selectedRects = this.selectedRects!.filter(
+      const selectedRectsAfterFirst = this.selectedRects!.filter(
         (cell) => !cell.attrs.strokeWidth
       );
 
-      selectedRects.forEach((rect) => {
+      selectedRectsAfterFirst.forEach((rect) => {
         rect.destroy();
       });
 

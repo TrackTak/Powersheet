@@ -1,16 +1,16 @@
 import EventEmitter from 'eventemitter3';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
-import events from '../events';
-import { IOptions } from '../options';
+import events from '../../events';
+import { IOptions } from '../../options';
 import {
   getIsFrozenCol,
   getIsFrozenRow,
   ICanvasShapes,
   ICell,
   ILayers,
-} from './sheet/Canvas';
-import { ICanvasStyles } from './sheet/canvasStyles';
+} from './Canvas';
+import { ICanvasStyles } from './canvasStyles';
 
 export interface ISelectedCell {
   ri: number;

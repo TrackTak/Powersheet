@@ -21,7 +21,7 @@ import {
 } from './canvasStyles';
 import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
-import Selector from '../Selector';
+import Selector from './Selector';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;

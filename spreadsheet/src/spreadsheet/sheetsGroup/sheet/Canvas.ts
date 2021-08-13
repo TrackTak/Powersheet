@@ -103,56 +103,33 @@ const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   };
 };
 
-export const calculateSheetViewportEndPosition2 = (
+interface ICustomSizes {
+  size: number;
+}
+
+export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
   sheetViewportStartYIndex: number,
   defaultSize: number,
   sizes?: ISizes,
-  topOffset?: IScrollOffset
+  customSizeChanges?: ICustomSizes[]
 ) => {
   let sumOfSizes = 0;
   let i = sheetViewportStartYIndex;
 
   const getSize = () => {
     // TODO: Remove when we have snapping to row/col for scroll
-    let topOffsetSize = 0;
+    let offset = 0;
 
-    if (topOffset && i === topOffset.index) {
-      topOffsetSize = topOffset.size;
+    if (customSizeChanges?.[i]?.size) {
+      offset = customSizeChanges[i].size;
     }
 
-    return (sizes?.[i] ?? defaultSize) - topOffsetSize;
+    return (sizes?.[i] ?? defaultSize) - offset;
   };
 
   while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
     sumOfSizes += getSize();
-    i += 1;
-  }
-
-  return i;
-};
-
-export const calculateSheetViewportEndPosition = (
-  sheetViewportDimensionSize: number,
-  sheetViewportStartYIndex: number,
-  defaultSize: number,
-  sizes: ISizes,
-  customSizeChanges?: ICustomSizePosition[]
-) => {
-  let sumOfSizes = sheetViewportDimensionSize;
-  let i = sheetViewportStartYIndex;
-
-  const getSize = () => {
-    // TODO: Remove when we have snapping to row/col for scroll
-    if (sizes[i] && customSizeChanges?.[i]?.size) {
-      return sizes[i] - customSizeChanges[i].size;
-    }
-
-    return sizes[i] ?? defaultSize;
-  };
-
-  while (sumOfSizes - getSize() > 0) {
-    sumOfSizes -= getSize();
     i += 1;
   }
 
@@ -632,37 +609,49 @@ class Canvas {
     const { start: newStart, end: newEnd } =
       this.reverseVectorsIfStartBiggerThanEnd(start, end);
 
+    const rowCustomSize: ICustomSizes[] = [];
+
+    rowCustomSize[this.verticalScrollBar.scrollOffset.index] = {
+      size: this.verticalScrollBar.scrollOffset.size,
+    };
+
+    const colCustomSize = [];
+
+    colCustomSize[this.horizontalScrollBar.scrollOffset.index] = {
+      size: this.horizontalScrollBar.scrollOffset.size,
+    };
+
     const cellIndexes = {
       start: {
-        ri: calculateSheetViewportEndPosition2(
+        ri: calculateSheetViewportEndPosition(
           newStart.y,
           this.sheetViewportPositions.row.x,
           this.options.row.defaultHeight,
           this.options.row.heights,
-          this.verticalScrollBar.scrollOffset
+          rowCustomSize
         ),
-        ci: calculateSheetViewportEndPosition2(
+        ci: calculateSheetViewportEndPosition(
           newStart.x,
           this.sheetViewportPositions.col.x,
           this.options.col.defaultWidth,
           this.options.col.widths,
-          this.horizontalScrollBar.scrollOffset
+          colCustomSize
         ),
       },
       end: {
-        ri: calculateSheetViewportEndPosition2(
+        ri: calculateSheetViewportEndPosition(
           newEnd.y,
           this.sheetViewportPositions.row.x,
           this.options.row.defaultHeight,
           this.options.row.heights,
-          this.verticalScrollBar.scrollOffset
+          rowCustomSize
         ),
-        ci: calculateSheetViewportEndPosition2(
+        ci: calculateSheetViewportEndPosition(
           newEnd.x,
           this.sheetViewportPositions.col.x,
           this.options.col.defaultWidth,
           this.options.col.widths,
-          this.horizontalScrollBar.scrollOffset
+          colCustomSize
         ),
       },
     };

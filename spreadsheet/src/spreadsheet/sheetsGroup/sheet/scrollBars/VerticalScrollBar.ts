@@ -147,6 +147,7 @@ class VerticalScrollBar {
         size: scrollTop + this.sheetViewportDimensions.y - row.y(),
       };
 
+      console.log(this.sheetViewportPositions.row);
       // const row = this.rowGroups[ri];
       // const rowPos = row.y() - this.sheetViewportDimensions.y;
 

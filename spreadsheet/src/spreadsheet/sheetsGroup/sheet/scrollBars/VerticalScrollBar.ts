@@ -145,7 +145,6 @@ class VerticalScrollBar {
         size: scrollTop + this.sheetViewportDimensions.y - row.y(),
       };
 
-      console.log(this.sheetViewportPositions.row);
       // const row = this.rowGroups[ri];
       // const rowPos = row.y() - this.sheetViewportDimensions.y;
 
@@ -162,8 +161,6 @@ class VerticalScrollBar {
       //   this.mainLayer.y(scrollAmount);
       //   this.xStickyLayer.y(scrollAmount);
       // }
-
-      // console.log(this.sheetViewportPositions.row.x);
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

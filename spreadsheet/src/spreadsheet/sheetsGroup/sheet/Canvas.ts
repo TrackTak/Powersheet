@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { Text } from 'konva/lib/shapes/Text';
@@ -7,9 +7,7 @@ import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import VerticalScrollBar, {
-  IScrollOffset,
-} from './scrollBars/VerticalScrollBar';
+import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 import { Line } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
@@ -23,6 +21,7 @@ import {
 } from './canvasStyles';
 import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
+import Selector from '../Selector';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -37,7 +36,7 @@ interface IConstructor {
   eventEmitter: EventEmitter;
 }
 
-interface ICell {
+export interface ICell {
   rowGroup: Group;
   colGroup: Group;
 }
@@ -57,12 +56,7 @@ export interface ISheetViewportPositions {
   col: ISheetViewportPosition;
 }
 
-export interface ISelectedCell {
-  ri: number;
-  ci: number;
-}
-
-interface IShapes {
+export interface ICanvasShapes {
   sheetGroup: Group;
   sheet: Rect;
   rowGroup: Group;
@@ -72,8 +66,6 @@ interface IShapes {
   frozenGridLine: Line;
   xGridLine: Line;
   yGridLine: Line;
-  selection: Rect;
-  selectionBorder: Rect;
 }
 
 export interface ICustomSizePosition {
@@ -81,9 +73,11 @@ export interface ICustomSizePosition {
   size: number;
 }
 
-interface ISelectionArea {
-  start: Vector2d;
-  end: Vector2d;
+export interface ILayers {
+  mainLayer: Layer;
+  yStickyLayer: Layer;
+  xStickyLayer: Layer;
+  xyStickyLayer: Layer;
 }
 
 const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
@@ -106,6 +100,14 @@ const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
 interface ICustomSizes {
   size: number;
 }
+
+export const getIsFrozenRow = (ri: number, options: IOptions) => {
+  return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
+};
+
+export const getIsFrozenCol = (ci: number, options: IOptions) => {
+  return isNil(options.frozenCells.col) ? false : ci <= options.frozenCells.col;
+};
 
 export const calculateSheetViewportEndPosition = (
   sheetViewportDimensionSize: number,
@@ -139,18 +141,16 @@ export const calculateSheetViewportEndPosition = (
 class Canvas {
   container!: HTMLDivElement;
   stage!: Stage;
-  mainLayer!: Layer;
-  yStickyLayer!: Layer;
-  xStickyLayer!: Layer;
-  xyStickyLayer!: Layer;
+  layers!: ILayers;
   horizontalScrollBar!: HorizontalScrollBar;
   verticalScrollBar!: VerticalScrollBar;
+  selector!: Selector;
   rowResizer!: Resizer;
   colResizer!: Resizer;
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
-  private shapes!: IShapes;
+  private shapes!: ICanvasShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
   private colHeaderDimensions: IDimensions;
@@ -159,10 +159,6 @@ class Canvas {
   private previousSheetViewportPositions!: ISheetViewportPositions;
   private eventEmitter: EventEmitter;
   private options: IOptions;
-  private isInSelectionMode: boolean;
-  private selectionArea: ISelectionArea;
-  private selectedCells: ICell[][];
-  private selectedRects: Rect[];
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -177,17 +173,6 @@ class Canvas {
     this.colHeaderDimensions = {
       width: this.options.col.defaultWidth,
       height: this.styles.colHeader.rect.height,
-    };
-    this.isInSelectionMode = false;
-    this.selectionArea = {
-      start: {
-        x: 0,
-        y: 0,
-      },
-      end: {
-        x: 0,
-        y: 0,
-      },
     };
 
     this.sheetDimensions = {
@@ -222,8 +207,6 @@ class Canvas {
 
     this.rowGroups = [];
     this.colGroups = [];
-    this.selectedCells = [];
-    this.selectedRects = [];
 
     const that = this;
 
@@ -325,6 +308,7 @@ class Canvas {
     });
 
     this.createResizer();
+    this.createSelector();
     this.initializeViewport();
   };
 
@@ -339,16 +323,17 @@ class Canvas {
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
-    this.xStickyLayer = new Layer();
-    this.yStickyLayer = new Layer();
-    this.xyStickyLayer = new Layer();
-    this.mainLayer = new Layer();
-
     // The order here matters
-    this.stage.add(this.mainLayer);
-    this.stage.add(this.xStickyLayer);
-    this.stage.add(this.yStickyLayer);
-    this.stage.add(this.xyStickyLayer);
+    this.layers = {
+      mainLayer: new Layer(),
+      xStickyLayer: new Layer(),
+      yStickyLayer: new Layer(),
+      xyStickyLayer: new Layer(),
+    };
+
+    Object.values(this.layers).forEach((layer) => {
+      this.stage.add(layer);
+    });
 
     this.shapes = {
       sheetGroup: new Group({
@@ -379,18 +364,11 @@ class Canvas {
       frozenGridLine: new Line({
         ...this.styles.frozenGridLine,
       }),
-      selectionBorder: new Rect({
-        ...this.styles.selectionBorder,
-      }),
-      selection: new Rect({
-        ...this.styles.selection,
-      }),
     };
 
     this.shapes.rowGroup.cache(this.rowHeaderDimensions);
     this.shapes.colGroup.cache(this.colHeaderDimensions);
 
-    this.shapes.selection.cache();
     this.shapes.rowHeaderRect.cache();
     this.shapes.colHeaderRect.cache();
     this.shapes.xGridLine.cache();
@@ -399,16 +377,10 @@ class Canvas {
 
     this.shapes.sheetGroup.add(this.shapes.sheet);
 
-    this.xyStickyLayer.add(this.shapes.sheetGroup);
+    this.layers.xyStickyLayer.add(this.shapes.sheetGroup);
 
     this.eventEmitter.on(events.resize.row.start, this.onResizeRowStart);
     this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
-    this.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
-    this.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
-
-    this.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
-    this.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
@@ -420,166 +392,6 @@ class Canvas {
   onResizeColStart = () => {
     this.colResizer.shapes.resizeGuideLine.moveToTop();
   };
-
-  onResizeRowEnd = () => {
-    if (this.selectedCells) {
-      this.removeSelectedCells();
-    }
-  };
-
-  onResizeColEnd = () => {
-    if (this.selectedCells) {
-      this.removeSelectedCells();
-    }
-  };
-
-  onSheetMouseUp = () => {
-    this.isInSelectionMode = false;
-
-    let totalWidth = 0;
-    let totalHeight = 0;
-
-    const colsMap: {
-      [index: string]: boolean;
-    } = {};
-
-    this.selectedCells.forEach((row) => {
-      let rowGroup = row[0].rowGroup;
-
-      row.forEach(({ colGroup }) => {
-        const ci = colGroup.attrs.index;
-
-        if (!colsMap[ci]) {
-          colsMap[ci] = true;
-
-          totalWidth += colGroup.width();
-        }
-      });
-
-      totalHeight += rowGroup.height();
-    });
-
-    const colGroup = this.selectedCells[0][0].colGroup;
-    const rowGroup = this.selectedCells[0][0].rowGroup;
-
-    const config: RectConfig = {
-      x: colGroup.x(),
-      y: rowGroup.y(),
-      width: totalWidth,
-      height: totalHeight,
-    };
-
-    this.shapes.selectionBorder.setAttrs(config);
-
-    this.mainLayer.add(this.shapes.selectionBorder);
-  };
-
-  onSheetMouseDown = () => {
-    this.removeSelectedCells();
-    this.isInSelectionMode = true;
-
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
-    const vector = {
-      x,
-      y,
-    };
-    this.selectionArea = {
-      start: vector,
-      end: vector,
-    };
-
-    this.selectCells(this.selectionArea.start, this.selectionArea.end);
-  };
-
-  onSheetMouseMove = () => {
-    if (this.isInSelectionMode) {
-      const selectedRects = this.selectedRects!.filter(
-        (cell) => !cell.attrs.strokeWidth
-      );
-
-      selectedRects.forEach((rect) => {
-        rect.destroy();
-      });
-
-      const { x, y } = this.shapes.sheet.getRelativePointerPosition();
-
-      const start = {
-        x: this.selectionArea.start.x + 1,
-        y: this.selectionArea.start.y + 1,
-      };
-
-      const end = {
-        x: x + 1,
-        y: y + 1,
-      };
-
-      this.selectionArea.end = {
-        x,
-        y,
-      };
-
-      const firstSelectedCell = this.selectedRects.find(
-        (x) => x.attrs.strokeWidth
-      )!;
-
-      this.selectCells(start, end, {
-        strokeWidth: 0,
-      });
-
-      firstSelectedCell.moveToTop();
-    }
-  };
-
-  removeSelectedCells() {
-    this.shapes.selectionBorder.destroy();
-    this.selectedRects.forEach((rect) => rect.destroy());
-
-    this.selectedRects = [];
-  }
-
-  isFrozenRow(ri: number) {
-    return isNil(this.options.frozenCells.row)
-      ? false
-      : ri <= this.options.frozenCells.row;
-  }
-
-  isFrozenCol(ci: number) {
-    return isNil(this.options.frozenCells.col)
-      ? false
-      : ci <= this.options.frozenCells.col;
-  }
-
-  selectCells(start: Vector2d, end: Vector2d, selectionConfig?: RectConfig) {
-    this.selectedCells = this.getCellsBetweenVectors(start, end);
-
-    this.selectedCells.forEach((row) => {
-      row.forEach(({ rowGroup, colGroup }) => {
-        const isFrozenRow = this.isFrozenRow(rowGroup.attrs.index);
-        const isFrozenCol = this.isFrozenCol(colGroup.attrs.index);
-
-        const config: RectConfig = {
-          ...selectionConfig,
-          x: colGroup.x(),
-          y: rowGroup.y(),
-          width: colGroup.width(),
-          height: rowGroup.height(),
-        };
-        const clone = this.shapes.selection.clone(config) as Rect;
-
-        this.selectedRects.push(clone);
-
-        if (isFrozenRow && isFrozenCol) {
-          this.xyStickyLayer.add(clone);
-        } else if (isFrozenRow) {
-          this.yStickyLayer.add(clone);
-        } else if (isFrozenCol) {
-          this.xStickyLayer.add(clone);
-        } else {
-          this.mainLayer.add(clone);
-        }
-      });
-    });
-  }
 
   reverseVectorsIfStartBiggerThanEnd(start: Vector2d, end: Vector2d) {
     const newStart = { ...start };
@@ -684,10 +496,21 @@ class Canvas {
     this.updateViewport();
   };
 
+  createSelector() {
+    this.selector = new Selector(
+      this.styles,
+      this.eventEmitter,
+      this.shapes,
+      this.layers,
+      this.options,
+      this.getCellsBetweenVectors.bind(this)
+    );
+  }
+
   createResizer() {
     this.rowResizer = new Resizer(
-      this.mainLayer,
       'row',
+      this.layers,
       this.rowHeaderDimensions,
       this.styles,
       {
@@ -707,8 +530,8 @@ class Canvas {
     );
 
     this.colResizer = new Resizer(
-      this.mainLayer,
       'col',
+      this.layers,
       this.colHeaderDimensions,
       this.styles,
       {
@@ -731,8 +554,7 @@ class Canvas {
   createScrollBars() {
     this.horizontalScrollBar = new HorizontalScrollBar(
       this.stage,
-      this.mainLayer,
-      this.yStickyLayer,
+      this.layers,
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.colGroups,
@@ -744,8 +566,7 @@ class Canvas {
 
     this.verticalScrollBar = new VerticalScrollBar(
       this.stage,
-      this.mainLayer,
-      this.xStickyLayer,
+      this.layers,
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
@@ -765,10 +586,9 @@ class Canvas {
 
     this.eventEmitter.off(events.resize.row.start, this.onResizeRowStart);
     this.eventEmitter.off(events.resize.col.start, this.onResizeColStart);
-    this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
-    this.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
+    this.selector.destroy();
     this.stage.destroy();
   }
 
@@ -779,7 +599,7 @@ class Canvas {
       ...this.styles.topLeftRect,
     });
 
-    this.xyStickyLayer.add(rect);
+    this.layers.xyStickyLayer.add(rect);
   }
 
   // Use center-center distance check for non-rotated rects.
@@ -917,7 +737,7 @@ class Canvas {
       y,
     }) as Group;
     const rowHeader = this.drawRowHeader(ri);
-    const isFrozen = this.isFrozenRow(ri);
+    const isFrozen = getIsFrozenRow(ri, this.options);
 
     const xGridLine =
       ri === this.options.frozenCells.row
@@ -929,9 +749,9 @@ class Canvas {
     this.rowGroups[ri] = group;
 
     if (isFrozen) {
-      this.xyStickyLayer.add(group);
+      this.layers.xyStickyLayer.add(group);
     } else {
-      this.xStickyLayer.add(group);
+      this.layers.xStickyLayer.add(group);
     }
   };
 
@@ -957,7 +777,7 @@ class Canvas {
       x: x,
     }) as Group;
     const colHeader = this.drawColHeader(ci);
-    const isFrozen = this.isFrozenCol(ci);
+    const isFrozen = getIsFrozenCol(ci, this.options);
 
     const yGridLine =
       ci === this.options.frozenCells.col
@@ -969,9 +789,9 @@ class Canvas {
     this.colGroups[ci] = group;
 
     if (isFrozen) {
-      this.xyStickyLayer.add(group);
+      this.layers.xyStickyLayer.add(group);
     } else {
-      this.yStickyLayer.add(group);
+      this.layers.yStickyLayer.add(group);
     }
   };
 

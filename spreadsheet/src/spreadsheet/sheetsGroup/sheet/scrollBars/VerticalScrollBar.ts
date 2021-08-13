@@ -1,9 +1,9 @@
-import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
 import {
   calculateSheetViewportEndPosition,
   ICustomSizePosition,
   IDimensions,
+  ILayers,
   ISheetViewportPositions,
 } from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
@@ -27,8 +27,7 @@ class VerticalScrollBar {
 
   constructor(
     private stage: Stage,
-    private mainLayer: Layer,
-    private xStickyLayer: Layer,
+    private layers: ILayers,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
@@ -39,8 +38,7 @@ class VerticalScrollBar {
     private onScroll: (e: Event) => void
   ) {
     this.stage = stage;
-    this.mainLayer = mainLayer;
-    this.xStickyLayer = xStickyLayer;
+    this.layers = layers;
     this.sheetDimensions = sheetDimensions;
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
@@ -135,8 +133,8 @@ class VerticalScrollBar {
         customSizeChanges
       );
 
-      this.mainLayer.y(scrollAmount);
-      this.xStickyLayer.y(scrollAmount);
+      this.layers.mainLayer.y(scrollAmount);
+      this.layers.xStickyLayer.y(scrollAmount);
 
       this.onScroll(e);
 

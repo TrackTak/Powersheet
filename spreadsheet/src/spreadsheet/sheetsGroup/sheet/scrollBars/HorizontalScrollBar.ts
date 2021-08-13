@@ -1,6 +1,5 @@
 import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
-import { Layer } from 'konva/lib/Layer';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
 import { IRect } from 'konva/lib/types';
@@ -9,6 +8,7 @@ import {
   calculateSheetViewportEndPosition,
   ICustomSizePosition,
   IDimensions,
+  ILayers,
   ISheetViewportPositions,
 } from '../Canvas';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
@@ -23,8 +23,7 @@ class HorizontalScrollBar {
 
   constructor(
     private stage: Stage,
-    private mainLayer: Layer,
-    private yStickyLayer: Layer,
+    private layers: ILayers,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private colGroups: Group[],
@@ -34,8 +33,7 @@ class HorizontalScrollBar {
     private onScroll: (e: Event) => void
   ) {
     this.stage = stage;
-    this.mainLayer = mainLayer;
-    this.yStickyLayer = yStickyLayer;
+    this.layers = layers;
     this.sheetDimensions = sheetDimensions;
     this.sheetViewportPositions = sheetViewportPositions;
     this.eventEmitter = eventEmitter;
@@ -123,8 +121,8 @@ class HorizontalScrollBar {
         customSizeChanges
       );
 
-      this.mainLayer.x(scrollAmount);
-      this.yStickyLayer.x(scrollAmount);
+      this.layers.mainLayer.x(scrollAmount);
+      this.layers.yStickyLayer.x(scrollAmount);
 
       this.onScroll(e);
 

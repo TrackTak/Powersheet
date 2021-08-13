@@ -1,4 +1,5 @@
 import EventEmitter from 'eventemitter3';
+import { Node } from 'konva/lib/Node';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
@@ -91,6 +92,13 @@ class Selector {
   destroy() {
     this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
     this.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
+    this.canvasShapes.sheetGroup.off('mouseup', this.onSheetMouseUp);
+    this.canvasShapes.sheetGroup.off('mousedown', this.onSheetMouseDown);
+    this.canvasShapes.sheetGroup.off('mousemove', this.onSheetMouseMove);
+
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
   }
 
   onSheetMouseUp = () => {

@@ -589,6 +589,8 @@ class Canvas {
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.selector.destroy();
+    this.rowResizer.destroy();
+    this.colResizer.destroy();
     this.stage.destroy();
   }
 

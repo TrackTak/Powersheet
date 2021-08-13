@@ -1,5 +1,6 @@
 import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
+import { Node } from 'konva/lib/Node';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -109,6 +110,12 @@ class Resizer {
     this.layers.mainLayer.add(this.shapes.resizeMarker);
     this.layers.mainLayer.add(this.shapes.resizeLine);
     this.layers.mainLayer.add(this.shapes.resizeGuideLine);
+  }
+
+  destroy() {
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
   }
 
   showResizeMarker(target: Line) {

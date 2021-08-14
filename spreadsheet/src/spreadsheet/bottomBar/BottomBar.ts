@@ -7,7 +7,6 @@ export interface IBottomBar extends IConstructorParams {}
 interface IConstructorParams {
   addSheetButton: HTMLButtonElement;
   menuSheetButton: HTMLButtonElement;
-  tabSheetButton: HTMLButtonElement;
   addItem: HTMLUListElement;
 }
 
@@ -56,26 +55,52 @@ const createTabButton = (sheetNumber: number) => {
   const buttonTab = document.createElement('button');
   buttonTab.textContent = `Sheet${sheetNumber}`;
 
-  buttonTab.addEventListener('click', () => {
-    console.log('sheet1');
+  buttonTab.addEventListener('mouseup', (e) => {
+    const buttonPressed = e.button;
+    if (buttonPressed === 2) {
+    }
+    console.log(e.button);
+  });
+
+  buttonTab.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
   });
 
   return buttonTab;
 };
 
+const dropdownMenu = () => {
+  const menu = document.createElement('div');
+  menu.className = 'menu';
+
+  const menuItem = document.createElement('div');
+  menuItem.className = 'menuitem';
+  menuItem.textContent = 'Delete';
+
+  menu.appendChild(menuItem);
+
+  return menu;
+};
+
+// const removeSheetTab = () => {
+//   const removeSheet = document.getElementById('powersheetTab');
+//   removeSheet?.remove();
+// };
+
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetButton: HTMLButtonElement;
   menuSheetButton: HTMLButtonElement;
-  tabSheetButton: HTMLButtonElement;
   addItem: HTMLUListElement;
   buttonTabs: HTMLButtonElement[];
+  dropdownMenuItems: HTMLDivElement;
 
   constructor(params?: IConstructorParams) {
     this.addSheetButton = params?.addSheetButton ?? createAddSheetButton();
     this.menuSheetButton = params?.menuSheetButton ?? createMenuSheetButton();
-    this.tabSheetButton = createTabButton();
     this.addItem = addItem(this.addSheetButton);
+    this.buttonTabs = [createTabButton(1)];
+    this.dropdownMenuItems = dropdownMenu();
 
     this.create();
   }
@@ -98,14 +123,14 @@ class BottomBar implements IBottomBar {
 
     buttonWrapper.appendChild(this.addSheetButton);
     buttonWrapper.appendChild(this.menuSheetButton);
-    tabContainer.appendChild(this.tabSheetButton);
+    tabContainer.appendChild(this.buttonTabs[0]);
+    tabContainer.appendChild(this.dropdownMenuItems);
 
     this.addSheetButton.addEventListener('click', () => {
-      const tabSheetButton = createTabButton(this.buttonTabs.length);
+      const tabSheetButton = createTabButton(this.buttonTabs.length + 1);
 
       this.buttonTabs.push(tabSheetButton);
 
-      //Empty tab container children
       tabContainer.innerHTML = '';
 
       this.buttonTabs.forEach((buttonTab) => {

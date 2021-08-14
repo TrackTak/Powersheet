@@ -19,6 +19,9 @@ const events = {
       end: 'rc-end',
     },
   },
+  selector: {
+    selectCells: 's-selectCells',
+  },
 };
 
 export default events;

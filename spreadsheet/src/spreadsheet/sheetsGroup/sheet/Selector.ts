@@ -213,6 +213,8 @@ class Selector {
         }
       });
     });
+
+    this.eventEmitter.emit(events.selector.selectCells, this.selectedCells);
   }
 
   setSelectionBorder() {

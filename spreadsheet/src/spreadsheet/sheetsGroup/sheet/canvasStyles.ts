@@ -31,7 +31,8 @@ export interface ICanvasStyles {
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
   topLeftRect: RectConfig;
-  selector: RectConfig;
+  selection: RectConfig;
+  selectionBorder: RectConfig;
 }
 
 export const resizeMarkerSize = 7;
@@ -69,12 +70,6 @@ export const sharedCanvasStyles = {
 
 export const defaultCanvasStyles: ICanvasStyles = {
   backgroundColor: 'white',
-  selector: {
-    ...performanceProperties,
-    stroke: '#0057ff',
-    fill: '#EDF3FF',
-    strokeWidth: 1,
-  },
   frozenGridLine: {
     ...sharedCanvasStyles.gridLine,
     stroke: 'blue',
@@ -123,5 +118,16 @@ export const defaultCanvasStyles: ICanvasStyles = {
   topLeftRect: {
     ...performanceProperties,
     fill: sharedCanvasStyles.headerRect.fill,
+  },
+  selectionBorder: {
+    ...performanceProperties,
+    stroke: '#0057ff',
+    strokeWidth: 1,
+  },
+  selection: {
+    ...performanceProperties,
+    stroke: '#0057ff',
+    fill: '#EDF3FF',
+    strokeWidth: 2,
   },
 };

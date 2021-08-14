@@ -1,17 +1,17 @@
-import { Layer } from 'konva/lib/Layer';
 import { Stage } from 'konva/lib/Stage';
 import {
   calculateSheetViewportEndPosition,
   ICustomSizePosition,
   IDimensions,
+  ILayers,
   ISheetViewportPositions,
 } from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import EventEmitter from 'eventemitter3';
-import { IOptions } from '../../../IOptions';
 import { IRect } from 'konva/lib/types';
 import { Group } from 'konva/lib/Group';
+import { IOptions } from '../../../options';
 
 export interface IScrollOffset {
   index: number;
@@ -27,8 +27,7 @@ class VerticalScrollBar {
 
   constructor(
     private stage: Stage,
-    private mainLayer: Layer,
-    private xStickyLayer: Layer,
+    private layers: ILayers,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
@@ -39,8 +38,7 @@ class VerticalScrollBar {
     private onScroll: (e: Event) => void
   ) {
     this.stage = stage;
-    this.mainLayer = mainLayer;
-    this.xStickyLayer = xStickyLayer;
+    this.layers = layers;
     this.sheetDimensions = sheetDimensions;
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
@@ -56,13 +54,11 @@ class VerticalScrollBar {
     };
     this.onScroll = onScroll;
 
-    const heights = this.options.row.heights ?? {};
-
     let customHeightDifference = 0;
 
-    Object.keys(heights).forEach((key) => {
+    Object.keys(this.options.row.heights).forEach((key) => {
       const index = parseInt(key, 10);
-      const height = heights[key];
+      const height = this.options.row.heights[key];
       const y = index * this.options.row.defaultHeight + customHeightDifference;
 
       customHeightDifference += height - this.options.row.defaultHeight;
@@ -137,8 +133,8 @@ class VerticalScrollBar {
         customSizeChanges
       );
 
-      this.mainLayer.y(scrollAmount);
-      this.xStickyLayer.y(scrollAmount);
+      this.layers.mainLayer.y(scrollAmount);
+      this.layers.xStickyLayer.y(scrollAmount);
 
       this.onScroll(e);
 
@@ -165,8 +161,6 @@ class VerticalScrollBar {
       //   this.mainLayer.y(scrollAmount);
       //   this.xStickyLayer.y(scrollAmount);
       // }
-
-      // console.log(this.sheetViewportPositions.row.x);
     };
 
     const onWheel = (e: KonvaEventObject<WheelEvent>) => {

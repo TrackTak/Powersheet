@@ -1,13 +1,13 @@
 import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
-import { Layer } from 'konva/lib/Layer';
+import { Node } from 'konva/lib/Node';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import { ISizes } from '../../IOptions';
-import { IDimensions } from './Canvas';
+import { ISizes } from '../../options';
+import { IDimensions, ILayers } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
 
 interface IShapes {
@@ -34,8 +34,8 @@ class Resizer {
   private functions: IFunctions;
 
   constructor(
-    private layer: Layer,
     private type: 'row' | 'col',
+    private layers: ILayers,
     private headerDimensions: IDimensions,
     private styles: ICanvasStyles,
     private resizeGuideLineConfig: RectConfig,
@@ -45,7 +45,7 @@ class Resizer {
     private draw: (index: number) => void,
     private eventEmitter: EventEmitter
   ) {
-    this.layer = layer;
+    this.layers = layers;
     this.type = type;
     this.functions =
       this.type === 'row'
@@ -107,9 +107,15 @@ class Resizer {
 
     this.shapes.resizeLine.cache();
 
-    this.layer.add(this.shapes.resizeMarker);
-    this.layer.add(this.shapes.resizeLine);
-    this.layer.add(this.shapes.resizeGuideLine);
+    this.layers.mainLayer.add(this.shapes.resizeMarker);
+    this.layers.mainLayer.add(this.shapes.resizeLine);
+    this.layers.mainLayer.add(this.shapes.resizeGuideLine);
+  }
+
+  destroy() {
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
   }
 
   showResizeMarker(target: Line) {
@@ -151,9 +157,12 @@ class Resizer {
 
       for (let i = index + 1; i < this.groups.length; i++) {
         const item = this.groups[i];
-        const newAxis = item[this.functions.axis]() + sizeChange;
 
-        item[this.functions.axis](newAxis);
+        if (item) {
+          const newAxis = item[this.functions.axis]() + sizeChange;
+
+          item[this.functions.axis](newAxis);
+        }
       }
     }
   }

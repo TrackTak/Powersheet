@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { Text } from 'konva/lib/shapes/Text';
@@ -8,7 +8,7 @@ import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import VerticalScrollBar from './scrollBars/VerticalScrollBar';
-import { Line } from 'konva/lib/shapes/Line';
+import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import events from '../../events';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
@@ -22,6 +22,7 @@ import {
 import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
+import { ShapeConfig } from 'konva/lib/Shape';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -34,11 +35,6 @@ interface IConstructor {
   colHeaderConfig?: IColHeaderConfig;
   options: IOptions;
   eventEmitter: EventEmitter;
-}
-
-export interface ICell {
-  rowGroup: Group;
-  colGroup: Group;
 }
 
 export interface IDimensions {
@@ -385,6 +381,27 @@ class Canvas {
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
+  mergeCells() {
+    const selectedRowCols = this.selector.selectedRowCols;
+
+    const destroyGridLine = (group: Group) => {
+      const gridLine = group.children!.find((x) => x.id() === 'gridLine')!;
+      gridLine.destroy();
+    };
+
+    selectedRowCols.rows.forEach((rowGroup, i) => {
+      if (i !== selectedRowCols.rows.length - 1) {
+        destroyGridLine(rowGroup);
+      }
+    });
+
+    selectedRowCols.cols.forEach((colGroup, i) => {
+      if (i !== selectedRowCols.cols.length - 1) {
+        destroyGridLine(colGroup);
+      }
+    });
+  }
+
   onResizeRowStart = () => {
     this.rowResizer.shapes.resizeGuideLine.moveToTop();
   };
@@ -417,7 +434,7 @@ class Canvas {
     };
   }
 
-  getCellsBetweenVectors(start: Vector2d, end: Vector2d) {
+  getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
     const { start: newStart, end: newEnd } =
       this.reverseVectorsIfStartBiggerThanEnd(start, end);
 
@@ -468,24 +485,25 @@ class Canvas {
       },
     };
 
-    const cells = [];
+    const rows = [];
+    const cols = [];
 
     for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
-      const row = [];
       const rowGroup = this.rowGroups[ri];
 
-      for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
-        const colGroup = this.colGroups[ci];
-
-        row.push({
-          rowGroup,
-          colGroup,
-        });
-      }
-      cells.push(row);
+      rows.push(rowGroup);
     }
 
-    return cells;
+    for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
+      const colGroup = this.colGroups[ci];
+
+      cols.push(colGroup);
+    }
+
+    return {
+      rows,
+      cols,
+    };
   }
 
   onHorizontalScroll = () => {
@@ -503,7 +521,7 @@ class Canvas {
       this.shapes,
       this.layers,
       this.options,
-      this.getCellsBetweenVectors.bind(this)
+      this.getRowColsBetweenVectors.bind(this)
     );
   }
 
@@ -586,6 +604,7 @@ class Canvas {
 
     this.eventEmitter.off(events.resize.row.start, this.onResizeRowStart);
     this.eventEmitter.off(events.resize.col.start, this.onResizeColStart);
+
     this.horizontalScrollBar.destroy();
     this.verticalScrollBar.destroy();
     this.selector.destroy();
@@ -733,11 +752,12 @@ class Canvas {
         : prevRow.y() + prevRow.height()
       : this.sheetViewportDimensions.y;
 
-    const group = this.shapes.rowGroup.clone({
+    const groupConfig: ShapeConfig = {
       index: ri,
       height: rowHeight,
       y,
-    }) as Group;
+    };
+    const group = this.shapes.rowGroup.clone(groupConfig) as Group;
     const rowHeader = this.drawRowHeader(ri);
     const isFrozen = getIsFrozenRow(ri, this.options);
 
@@ -773,11 +793,12 @@ class Canvas {
         : prevCol.x() + prevCol.width()
       : this.sheetViewportDimensions.x;
 
-    const group = this.shapes.colGroup.clone({
+    const groupConfig: ShapeConfig = {
       index: ci,
       width: colWidth,
       x: x,
-    }) as Group;
+    };
+    const group = this.shapes.colGroup.clone(groupConfig) as Group;
     const colHeader = this.drawColHeader(ci);
     const isFrozen = getIsFrozenCol(ci, this.options);
 
@@ -799,9 +820,10 @@ class Canvas {
 
   drawRowHeader(ri: number) {
     const rowHeight = this.getRowHeight(ri);
-    const rect = this.shapes.rowHeaderRect.clone({
+    const rectConfig: RectConfig = {
       height: rowHeight,
-    }) as Rect;
+    };
+    const rect = this.shapes.rowHeaderRect.clone(rectConfig) as Rect;
     const text = new Text({
       text: (ri + 1).toString(),
       ...this.styles.rowHeader.text,
@@ -827,9 +849,10 @@ class Canvas {
     const colWidth = this.getColWidth(ci);
     const startCharCode = 'A'.charCodeAt(0);
     const letter = String.fromCharCode(startCharCode + ci);
-    const rect = this.shapes.colHeaderRect.clone({
+    const rectConfig: RectConfig = {
       width: colWidth,
-    }) as Rect;
+    };
+    const rect = this.shapes.colHeaderRect.clone(rectConfig) as Rect;
     const text = new Text({
       text: letter,
       ...this.styles.colHeader.text,
@@ -853,40 +876,46 @@ class Canvas {
 
   drawXGridLine(ri: number, gridLine = this.shapes.xGridLine) {
     const rowHeight = this.getRowHeight(ri);
-    const clone = gridLine.clone({
-      // points: [this.sheetViewportDimensions.x, 0, this.stage.width(), 0],
+    const lineConfig: LineConfig = {
       points: [0, 0, this.stage.width(), 0],
       y: rowHeight,
-    }) as Line;
+      id: 'gridLine',
+    };
+    const clone = gridLine.clone(lineConfig) as Line;
 
     return clone;
   }
 
   drawRowHeaderResizeLine(ri: number) {
     const rowHeight = this.getRowHeight(ri);
-    const clone = this.rowResizer.shapes.resizeLine.clone({
+    const lineConfig: LineConfig = {
       y: rowHeight,
-    }) as Line;
+      id: 'resizeLine',
+    };
+    const clone = this.rowResizer.shapes.resizeLine.clone(lineConfig) as Line;
 
     return clone;
   }
 
   drawYGridLine(ci: number, gridLine = this.shapes.yGridLine) {
     const colWidth = this.getColWidth(ci);
-    const clone = gridLine.clone({
-      // points: [0, this.sheetViewportDimensions.y, 0, this.stage.height()],
+    const lineConfig: LineConfig = {
       points: [0, 0, 0, this.stage.height()],
       x: colWidth,
-    }) as Line;
+      id: 'gridLine',
+    };
+    const clone = gridLine.clone(lineConfig) as Line;
 
     return clone;
   }
 
   drawColHeaderResizeLine(ci: number) {
     const colWidth = this.getColWidth(ci);
-    const clone = this.colResizer.shapes.resizeLine.clone({
+    const lineConfig: LineConfig = {
       x: colWidth,
-    }) as Line;
+      id: 'resizeLine',
+    };
+    const clone = this.colResizer.shapes.resizeLine.clone(lineConfig) as Line;
 
     return clone;
   }

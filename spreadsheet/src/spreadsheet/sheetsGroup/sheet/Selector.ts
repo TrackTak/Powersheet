@@ -1,4 +1,5 @@
 import EventEmitter from 'eventemitter3';
+import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
@@ -8,7 +9,6 @@ import {
   getIsFrozenCol,
   getIsFrozenRow,
   ICanvasShapes,
-  ICell,
   ILayers,
 } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
@@ -16,6 +16,11 @@ import { ICanvasStyles } from './canvasStyles';
 export interface ISelectedCell {
   ri: number;
   ci: number;
+}
+
+export interface ISelectedRowCols {
+  rows: Group[];
+  cols: Group[];
 }
 
 interface ISelectorShapes {
@@ -30,8 +35,8 @@ interface ISelectionArea {
 
 class Selector {
   shapes!: ISelectorShapes;
+  selectedRowCols: ISelectedRowCols;
   private selectionArea: ISelectionArea;
-  private selectedCells: ICell[][];
   private selectedRects: Rect[];
   private isInSelectionMode: boolean;
 
@@ -41,17 +46,20 @@ class Selector {
     private canvasShapes: ICanvasShapes,
     private layers: ILayers,
     private options: IOptions,
-    private getCellsBetweenVectors: (
+    private getRowColsBetweenVectors: (
       start: Vector2d,
       end: Vector2d
-    ) => ICell[][]
+    ) => {
+      rows: Group[];
+      cols: Group[];
+    }
   ) {
     this.styles = styles;
     this.eventEmitter = eventEmitter;
     this.canvasShapes = canvasShapes;
     this.layers = layers;
     this.options = options;
-    this.getCellsBetweenVectors = getCellsBetweenVectors;
+    this.getRowColsBetweenVectors = getRowColsBetweenVectors;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -63,7 +71,10 @@ class Selector {
         y: 0,
       },
     };
-    this.selectedCells = [];
+    this.selectedRowCols = {
+      rows: [],
+      cols: [],
+    };
     this.selectedRects = [];
 
     this.create();
@@ -165,13 +176,13 @@ class Selector {
   };
 
   onResizeRowEnd = () => {
-    if (this.selectedCells) {
+    if (this.selectedRects) {
       this.removeSelectedCells();
     }
   };
 
   onResizeColEnd = () => {
-    if (this.selectedCells) {
+    if (this.selectedRects) {
       this.removeSelectedCells();
     }
   };
@@ -184,10 +195,10 @@ class Selector {
   }
 
   selectCells(start: Vector2d, end: Vector2d, selectionConfig?: RectConfig) {
-    this.selectedCells = this.getCellsBetweenVectors(start, end);
+    this.selectedRowCols = this.getRowColsBetweenVectors(start, end);
 
-    this.selectedCells.forEach((row) => {
-      row.forEach(({ rowGroup, colGroup }) => {
+    this.selectedRowCols.rows.forEach((rowGroup) => {
+      this.selectedRowCols.cols.forEach((colGroup) => {
         const isFrozenRow = getIsFrozenRow(rowGroup.attrs.index, this.options);
         const isFrozenCol = getIsFrozenCol(colGroup.attrs.index, this.options);
 
@@ -214,35 +225,28 @@ class Selector {
       });
     });
 
-    this.eventEmitter.emit(events.selector.selectCells, this.selectedCells);
+    this.eventEmitter.emit(events.selector.selectCells, this.selectedRowCols);
   }
 
   setSelectionBorder() {
     this.isInSelectionMode = false;
 
-    let totalWidth = 0;
-    let totalHeight = 0;
+    const totalHeight = this.selectedRowCols.rows.reduce(
+      (totalHeight, rowGroup) => {
+        return totalHeight + rowGroup.height();
+      },
+      0
+    );
 
-    const colsMap: Record<string, boolean> = {};
+    const totalWidth = this.selectedRowCols.cols.reduce(
+      (totalWidth, colGroup) => {
+        return totalWidth + colGroup.width();
+      },
+      0
+    );
 
-    this.selectedCells.forEach((row) => {
-      const rowGroup = row[0].rowGroup;
-
-      row.forEach(({ colGroup }) => {
-        const ci = colGroup.attrs.index;
-
-        if (!colsMap[ci]) {
-          colsMap[ci] = true;
-
-          totalWidth += colGroup.width();
-        }
-      });
-
-      totalHeight += rowGroup.height();
-    });
-
-    const colGroup = this.selectedCells[0][0].colGroup;
-    const rowGroup = this.selectedCells[0][0].rowGroup;
+    const colGroup = this.selectedRowCols.cols[0];
+    const rowGroup = this.selectedRowCols.rows[0];
 
     const config: RectConfig = {
       x: colGroup.x(),

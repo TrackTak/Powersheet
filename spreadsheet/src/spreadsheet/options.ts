@@ -1,4 +1,9 @@
-export interface IFrozenRowCols {
+export interface IFrozenCells {
+  row?: number;
+  col?: number;
+}
+
+export interface IMergedCells {
   row?: number;
   col?: number;
 }
@@ -24,7 +29,8 @@ export interface IOptions {
   numberOfCols: number;
   row: IRowOptions;
   col: IColOptions;
-  frozenCells: IFrozenRowCols;
+  frozenCells: IFrozenCells;
+  mergedCells: IMergedCells;
 }
 
 export const defaultOptions: IOptions = {
@@ -41,4 +47,5 @@ export const defaultOptions: IOptions = {
     widths: {},
   },
   frozenCells: {},
+  mergedCells: {},
 };

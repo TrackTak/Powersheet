@@ -15,20 +15,43 @@ const Template: Story<IOptions> = (args) => {
     eventEmitter,
   });
 
-  return canvas.container;
+  const container = document.createElement('div');
+  const btn = document.createElement('button');
+
+  btn.innerHTML = 'Merge Cell';
+  btn.onclick = () => canvas.mergeCells();
+
+  container.appendChild(btn);
+  container.appendChild(canvas.container);
+
+  return container;
 };
 
 export const Default = Template.bind({});
 
 Default.args = defaultOptions;
 
-export const FreezeCells = Template.bind({});
+export const FrozenCells = Template.bind({});
 
-FreezeCells.args = {
+FrozenCells.args = {
   ...defaultOptions,
   frozenCells: {
     row: 1,
     col: 0,
+  },
+};
+
+export const MergedCells = Template.bind({});
+
+MergedCells.args = {
+  ...defaultOptions,
+  mergedCells: {
+    // Removes the horizontal lines at index row for each line index
+    row: {
+      0: [0, 4],
+    },
+    // Removes the vertical lines at index col for each index
+    col: {},
   },
 };
 

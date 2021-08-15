@@ -23,6 +23,7 @@ import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import { ShapeConfig } from 'konva/lib/Shape';
+import { flatMap } from 'lodash';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -52,13 +53,20 @@ export interface ISheetViewportPositions {
   col: ISheetViewportPosition;
 }
 
+interface IGridLineParams {
+  line?: Line;
+  config?: LineConfig;
+}
+
 export interface ICanvasShapes {
   sheetGroup: Group;
   sheet: Rect;
   rowGroup: Group;
   rowHeaderRect: Rect;
+  rowCellsGroup: Group;
   colGroup: Group;
   colHeaderRect: Rect;
+  colCellsGroup: Group;
   frozenGridLine: Line;
   xGridLine: Line;
   yGridLine: Line;
@@ -74,6 +82,10 @@ export interface ILayers {
   yStickyLayer: Layer;
   xStickyLayer: Layer;
   xyStickyLayer: Layer;
+}
+
+export interface ICustomSizes {
+  size: number;
 }
 
 const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
@@ -92,10 +104,6 @@ const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
     y: rectOneMidPoint.y - rectTwoMidPoint.y,
   };
 };
-
-interface ICustomSizes {
-  size: number;
-}
 
 export const getIsFrozenRow = (ri: number, options: IOptions) => {
   return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
@@ -203,6 +211,24 @@ class Canvas {
 
     this.rowGroups = [];
     this.colGroups = [];
+    // this.mergedCellsMap = {
+    //   row: {},
+    //   col: {},
+    // };
+
+    // params.options.mergedCells.forEach(({ row, col }) => {
+    //   if (row) {
+    //     this.mergedCellsMap.row[row.start] = row.start;
+    //     this.mergedCellsMap.row[row.end] = row.end;
+    //   }
+
+    //   if (col) {
+    //     this.mergedCellsMap.col[col.start] = [
+
+    //     ];
+    //     this.mergedCellsMap.col[col.end] = col.end;
+    //   }
+    // });
 
     const that = this;
 
@@ -346,11 +372,13 @@ class Canvas {
         ...this.styles.rowHeader.rect,
       }),
       rowGroup: new Group(),
+      rowCellsGroup: new Group(),
       colHeaderRect: new Rect({
         ...this.colHeaderDimensions,
         ...this.styles.colHeader.rect,
       }),
       colGroup: new Group(),
+      colCellsGroup: new Group(),
       xGridLine: new Line({
         ...this.styles.gridLine,
       }),
@@ -363,6 +391,9 @@ class Canvas {
     };
 
     this.shapes.rowGroup.cache(this.rowHeaderDimensions);
+    this.shapes.rowCellsGroup.cache(this.rowHeaderDimensions);
+
+    this.shapes.colCellsGroup.cache(this.colHeaderDimensions);
     this.shapes.colGroup.cache(this.colHeaderDimensions);
 
     this.shapes.rowHeaderRect.cache();
@@ -382,24 +413,49 @@ class Canvas {
   }
 
   mergeCells() {
-    const selectedRowCols = this.selector.selectedRowCols;
-
-    const destroyGridLine = (group: Group) => {
-      const gridLine = group.children!.find((x) => x.id() === 'gridLine')!;
-      gridLine.destroy();
-    };
-
-    selectedRowCols.rows.forEach((rowGroup, i) => {
-      if (i !== selectedRowCols.rows.length - 1) {
-        destroyGridLine(rowGroup);
-      }
-    });
-
-    selectedRowCols.cols.forEach((colGroup, i) => {
-      if (i !== selectedRowCols.cols.length - 1) {
-        destroyGridLine(colGroup);
-      }
-    });
+    // const selectedRowCols = this.selector.selectedRowCols;
+    // if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
+    //   return;
+    // }
+    // const destroyGridLines = (group: Group) => {
+    //   const gridLines = group.children!.filter((x) => x.id() === 'gridLine')!;
+    //   gridLines.forEach((gridLine) => gridLine.destroy());
+    // };
+    // const lastRow = selectedRowCols.rows[selectedRowCols.rows.length - 1];
+    // const lastCol = selectedRowCols.cols[selectedRowCols.cols.length - 1];
+    // selectedRowCols.rows.forEach((rowGroup, i) => {
+    //   if (i !== selectedRowCols.rows.length - 1) {
+    //     destroyGridLines(rowGroup);
+    //   }
+    // });
+    // selectedRowCols.cols.forEach((colGroup, i) => {
+    //   if (i !== selectedRowCols.cols.length - 1) {
+    //     destroyGridLines(colGroup);
+    //     const topGridLine = this.drawYGridLine(colGroup.attrs.index, {
+    //       config: {
+    //         points: [0, this.sheetViewportDimensions.y, 0, lastRow.y()],
+    //       },
+    //     });
+    //     const bottomGridLine = this.drawYGridLine(colGroup.attrs.index, {
+    //       config: {
+    //         points: [0, lastRow.y() + lastRow.height(), 0, this.stage.height()],
+    //       },
+    //     });
+    //     colGroup.add(topGridLine, bottomGridLine);
+    //   }
+    // });
+    // const row: IMergedCells['row'] = {
+    //   start: selectedRowCols.rows[0].attrs.index,
+    //   end: lastRow.attrs.index,
+    // };
+    // const col: IMergedCells['col'] = {
+    //   start: selectedRowCols.cols[0].attrs.index,
+    //   end: lastCol.attrs.index,
+    // };
+    // this.options.mergedCells.push({
+    //   row,
+    //   col,
+    // });
   }
 
   onResizeRowStart = () => {
@@ -658,6 +714,22 @@ class Canvas {
       this.drawCol(ci);
     }
 
+    for (
+      let ri = this.sheetViewportPositions.row.x;
+      ri <= this.sheetViewportPositions.row.y;
+      ri++
+    ) {
+      this.drawRowLines(ri);
+    }
+
+    for (
+      let ci = this.sheetViewportPositions.col.x;
+      ci <= this.sheetViewportPositions.col.y;
+      ci++
+    ) {
+      this.drawColLines(ci);
+    }
+
     this.setPreviousSheetViewportPositions();
   }
 
@@ -720,6 +792,39 @@ class Canvas {
     ) {
       this.drawCol(ci - 1, true);
     }
+
+    // Scrolling down
+    for (
+      let ri = this.previousSheetViewportPositions.row.y;
+      ri < this.sheetViewportPositions.row.y;
+      ri++
+    ) {
+      this.drawRowLines(ri);
+    }
+    // Scrolling up
+    for (
+      let ri = this.previousSheetViewportPositions.row.x;
+      ri > this.sheetViewportPositions.row.x;
+      ri--
+    ) {
+      this.drawRowLines(ri - 1);
+    }
+    // Scrolling right
+    for (
+      let ci = this.previousSheetViewportPositions.col.y;
+      ci < this.sheetViewportPositions.col.y;
+      ci++
+    ) {
+      this.drawColLines(ci);
+    }
+    // Scrolling left
+    for (
+      let ci = this.previousSheetViewportPositions.col.x;
+      ci > this.sheetViewportPositions.col.x;
+      ci--
+    ) {
+      this.drawColLines(ci - 1);
+    }
   }
 
   getRowHeight(ri: number) {
@@ -757,23 +862,18 @@ class Canvas {
       height: rowHeight,
       y,
     };
-    const group = this.shapes.rowGroup.clone(groupConfig) as Group;
+    const rowGroup = this.shapes.rowGroup.clone(groupConfig) as Group;
     const rowHeader = this.drawRowHeader(ri);
     const isFrozen = getIsFrozenRow(ri, this.options);
 
-    const xGridLine =
-      ri === this.options.frozenCells.row
-        ? this.drawXGridLine(ri, this.shapes.frozenGridLine)
-        : this.drawXGridLine(ri);
+    rowGroup.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine);
 
-    group.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine, xGridLine);
-
-    this.rowGroups[ri] = group;
+    this.rowGroups[ri] = rowGroup;
 
     if (isFrozen) {
-      this.layers.xyStickyLayer.add(group);
+      this.layers.xyStickyLayer.add(rowGroup);
     } else {
-      this.layers.xStickyLayer.add(group);
+      this.layers.xStickyLayer.add(rowGroup);
     }
   };
 
@@ -798,23 +898,18 @@ class Canvas {
       width: colWidth,
       x: x,
     };
-    const group = this.shapes.colGroup.clone(groupConfig) as Group;
+    const colGroup = this.shapes.colGroup.clone(groupConfig) as Group;
     const colHeader = this.drawColHeader(ci);
     const isFrozen = getIsFrozenCol(ci, this.options);
 
-    const yGridLine =
-      ci === this.options.frozenCells.col
-        ? this.drawYGridLine(ci, this.shapes.frozenGridLine)
-        : this.drawYGridLine(ci);
+    colGroup.add(colHeader.rect, colHeader.text, colHeader.resizeLine);
 
-    group.add(colHeader.rect, colHeader.text, colHeader.resizeLine, yGridLine);
-
-    this.colGroups[ci] = group;
+    this.colGroups[ci] = colGroup;
 
     if (isFrozen) {
-      this.layers.xyStickyLayer.add(group);
+      this.layers.xyStickyLayer.add(colGroup);
     } else {
-      this.layers.yStickyLayer.add(group);
+      this.layers.yStickyLayer.add(colGroup);
     }
   };
 
@@ -874,46 +969,193 @@ class Canvas {
     };
   }
 
-  drawXGridLine(ri: number, gridLine = this.shapes.xGridLine) {
+  drawRowLines(ri: number) {
+    const groupConfig: ShapeConfig = {
+      index: ri,
+      height: this.rowGroups[ri].height(),
+      y: this.rowGroups[ri].y(),
+    };
+
+    const rowCellsGroup = this.shapes.rowCellsGroup.clone(groupConfig) as Group;
+
+    const xGridLines =
+      ri === this.options.frozenCells.row
+        ? this.drawXGridLines(ri, { line: this.shapes.frozenGridLine })
+        : this.drawXGridLines(ri);
+
+    xGridLines.forEach((xGridLine) => {
+      rowCellsGroup.add(xGridLine);
+    });
+
+    this.layers.mainLayer.add(rowCellsGroup);
+  }
+
+  drawColLines(ci: number) {
+    const groupConfig: ShapeConfig = {
+      index: ci,
+      width: this.colGroups[ci].width(),
+      x: this.colGroups[ci].x(),
+    };
+
+    const colCellsGroup = this.shapes.colCellsGroup.clone(groupConfig) as Group;
+
+    const yGridLines =
+      ci === this.options.frozenCells.col
+        ? this.drawYGridLines(ci, { line: this.shapes.frozenGridLine })
+        : this.drawYGridLines(ci);
+
+    yGridLines.forEach((yGridLine) => {
+      colCellsGroup.add(yGridLine);
+    });
+
+    this.layers.mainLayer.add(colCellsGroup);
+  }
+
+  drawXGridLines(ri: number, gridLineParams?: IGridLineParams) {
+    const { line = this.shapes.xGridLine, config } = gridLineParams ?? {};
     const rowHeight = this.getRowHeight(ri);
     const lineConfig: LineConfig = {
       points: [0, 0, this.stage.width(), 0],
       y: rowHeight,
-      id: 'gridLine',
+      ...config,
     };
-    const clone = gridLine.clone(lineConfig) as Line;
+    const mergedRow = this.options.mergedCells.row[ri];
 
-    return clone;
+    if (mergedRow) {
+      return flatMap(mergedRow, (ci, i) => {
+        const prevColGroupIndex = mergedRow[i - 1];
+        const prevColGroup = !isNil(prevColGroupIndex)
+          ? this.colGroups[prevColGroupIndex]
+          : null;
+
+        const colGroup = this.colGroups[ci];
+
+        const nextColGroupIndex = mergedRow[i + 1];
+        const nextColGroup = !isNil(nextColGroupIndex)
+          ? this.colGroups[nextColGroupIndex]
+          : null;
+
+        const getLeftLine = () => {
+          let x0 = 0;
+          const x1 = colGroup.x();
+
+          if (prevColGroup) {
+            x0 = prevColGroup.x() + prevColGroup.width();
+          }
+
+          const clone = line.clone({
+            ...lineConfig,
+            points: [x0, 0, x1, 0],
+          }) as Line;
+
+          return clone;
+        };
+
+        const getRightLine = () => {
+          const x0 = colGroup.x() + colGroup.width();
+          let x1 = this.stage.width();
+
+          if (nextColGroup) {
+            x1 = nextColGroup.x();
+          }
+
+          const clone = line.clone({
+            ...lineConfig,
+            points: [x0, 0, x1, 0],
+          }) as Line;
+
+          return clone;
+        };
+
+        return [getLeftLine(), getRightLine()];
+      });
+    }
+
+    const clone = line.clone(lineConfig) as Line;
+
+    return [clone];
   }
 
   drawRowHeaderResizeLine(ri: number) {
     const rowHeight = this.getRowHeight(ri);
     const lineConfig: LineConfig = {
       y: rowHeight,
-      id: 'resizeLine',
     };
     const clone = this.rowResizer.shapes.resizeLine.clone(lineConfig) as Line;
 
     return clone;
   }
 
-  drawYGridLine(ci: number, gridLine = this.shapes.yGridLine) {
+  drawYGridLines(ci: number, gridLineParams?: IGridLineParams) {
+    const { line = this.shapes.yGridLine, config } = gridLineParams ?? {};
     const colWidth = this.getColWidth(ci);
     const lineConfig: LineConfig = {
       points: [0, 0, 0, this.stage.height()],
       x: colWidth,
-      id: 'gridLine',
+      ...config,
     };
-    const clone = gridLine.clone(lineConfig) as Line;
 
-    return clone;
+    const mergedCol = this.options.mergedCells.col[ci];
+
+    if (mergedCol) {
+      return flatMap(mergedCol, (ri, i) => {
+        const prevRowGroupIndex = mergedCol[i - 1];
+        const prevRowGroup = !isNil(prevRowGroupIndex)
+          ? this.rowGroups[prevRowGroupIndex]
+          : null;
+
+        const rowGroup = this.rowGroups[ri];
+
+        const nextRowGroupIndex = mergedCol[i + 1];
+        const nextRowGroup = !isNil(nextRowGroupIndex)
+          ? this.rowGroups[nextRowGroupIndex]
+          : null;
+
+        const getTopLine = () => {
+          let y0 = 0;
+          let y1 = rowGroup.y();
+
+          if (prevRowGroup) {
+            y0 = prevRowGroup.y() + prevRowGroup.height();
+          }
+
+          const clone = line.clone({
+            ...lineConfig,
+            points: [0, y0, 0, y1],
+          }) as Line;
+
+          return clone;
+        };
+
+        const getBottomLine = () => {
+          let y0 = rowGroup.y() + rowGroup.height();
+          let y1 = this.stage.height();
+
+          if (nextRowGroup) {
+            y1 = nextRowGroup.y();
+          }
+
+          const clone = line.clone({
+            ...lineConfig,
+            points: [0, y0, 0, y1],
+          }) as Line;
+
+          return clone;
+        };
+
+        return [getTopLine(), getBottomLine()];
+      });
+    }
+
+    const clone = line.clone(lineConfig) as Line;
+
+    return [clone];
   }
 
   drawColHeaderResizeLine(ci: number) {
     const colWidth = this.getColWidth(ci);
     const lineConfig: LineConfig = {
       x: colWidth,
-      id: 'resizeLine',
     };
     const clone = this.colResizer.shapes.resizeLine.clone(lineConfig) as Line;
 

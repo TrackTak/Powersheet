@@ -4,8 +4,8 @@ export interface IFrozenCells {
 }
 
 export interface IMergedCells {
-  row?: number;
-  col?: number;
+  row: Record<string, number[]>;
+  col: Record<string, number[]>;
 }
 
 export interface ISizes {
@@ -47,5 +47,8 @@ export const defaultOptions: IOptions = {
     widths: {},
   },
   frozenCells: {},
-  mergedCells: {},
+  mergedCells: {
+    row: {},
+    col: {},
+  },
 };

@@ -541,8 +541,45 @@ class Canvas {
       },
     };
 
-    const rows = [];
-    const cols = [];
+    const comparer = (a: Group, b: Group) => a.attrs.index - b.attrs.index;
+
+    const mergedRowsGrouping: Record<string, Group[]> = {};
+    const mergedColsGrouping: Record<string, Group[]> = {};
+
+    let rows: Group[] = [];
+    let cols: Group[] = [];
+
+    const setMergedRows = (startRi: number, ci: number, getNext = false) => {
+      let newRi = startRi;
+
+      const doesColExist = () => {
+        return this.options.mergedCells.row[newRi]?.some((x) => x === ci);
+      };
+
+      while (doesColExist()) {
+        const rowGroup = this.rowGroups[newRi];
+
+        mergedRowsGrouping[ci][newRi] = rowGroup;
+
+        newRi = getNext ? newRi + 1 : newRi - 1;
+      }
+    };
+
+    const setMergedCols = (startCi: number, ri: number, getNext = false) => {
+      let newCi = startCi;
+
+      const doesRowExist = () => {
+        return this.options.mergedCells.col[newCi]?.some((x) => x === ri);
+      };
+
+      while (doesRowExist()) {
+        const colGroup = this.colGroups[newCi];
+
+        mergedColsGrouping[ri][newCi] = colGroup;
+
+        newCi = getNext ? newCi + 1 : newCi - 1;
+      }
+    };
 
     for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
       const rowGroup = this.rowGroups[ri];
@@ -556,9 +593,70 @@ class Canvas {
       cols.push(colGroup);
     }
 
+    for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
+      if (!isNil(this.options.mergedCells.row[ri])) {
+        mergedColsGrouping[ri] = [];
+
+        for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
+          mergedRowsGrouping[ci] = [];
+
+          setMergedRows(ri, ci);
+          setMergedRows(ri, ci, true);
+
+          const mergedRow = mergedRowsGrouping[ci];
+
+          if (mergedRow.length) {
+            mergedRow.sort(comparer);
+            rows = rows.filter((row) => !mergedRow.includes(row));
+
+            const totalMergedHeight = mergedRow.reduce((totalHeight, row) => {
+              return totalHeight + row.height();
+            }, 0);
+
+            const firstRow = mergedRow[0];
+
+            const newMergedRowGroup = new Group({
+              y: firstRow.y(),
+              height: totalMergedHeight,
+              index: firstRow.attrs.index,
+            });
+
+            rows.push(newMergedRowGroup);
+          }
+
+          setMergedCols(ci, ri);
+          setMergedCols(ci, ri, true);
+
+          const mergedCol = mergedColsGrouping[ri];
+
+          if (mergedCol.length) {
+            mergedCol.sort(comparer);
+            cols = cols.filter((col) => !mergedCol.includes(col));
+
+            const totalMergedWidth = mergedCol.reduce((totalWidth, col) => {
+              return totalWidth + col.width();
+            }, 0);
+
+            const firstCol = mergedCol[0];
+
+            const newMergedColGroup = new Group({
+              x: firstCol.x(),
+              width: totalMergedWidth,
+              index: firstCol.attrs.index,
+            });
+
+            cols.push(newMergedColGroup);
+          }
+        }
+      }
+    }
+
+    const sortedRows = rows.sort(comparer);
+    const sortedCols = cols.sort(comparer);
+
     return {
-      rows,
-      cols,
+      rows: sortedRows,
+      cols: sortedCols,
     };
   }
 
@@ -1013,10 +1111,8 @@ class Canvas {
 
   drawXGridLines(ri: number, gridLineParams?: IGridLineParams) {
     const { line = this.shapes.xGridLine, config } = gridLineParams ?? {};
-    const rowHeight = this.getRowHeight(ri);
     const lineConfig: LineConfig = {
       points: [0, 0, this.stage.width(), 0],
-      y: rowHeight,
       ...config,
     };
     const mergedRow = this.options.mergedCells.row[ri];
@@ -1088,10 +1184,8 @@ class Canvas {
 
   drawYGridLines(ci: number, gridLineParams?: IGridLineParams) {
     const { line = this.shapes.yGridLine, config } = gridLineParams ?? {};
-    const colWidth = this.getColWidth(ci);
     const lineConfig: LineConfig = {
       points: [0, 0, 0, this.stage.height()],
-      x: colWidth,
       ...config,
     };
 

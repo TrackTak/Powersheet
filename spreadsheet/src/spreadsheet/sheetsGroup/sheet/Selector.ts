@@ -147,6 +147,7 @@ class Selector {
         (x) => x.attrs.strokeWidth
       )!;
 
+      // TODO: Make this func more efficient by only calling when we go to a new cell
       this.selectCells(start, end, {
         strokeWidth: 0,
       });

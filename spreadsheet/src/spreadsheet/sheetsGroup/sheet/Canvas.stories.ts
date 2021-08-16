@@ -48,10 +48,15 @@ MergedCells.args = {
   mergedCells: {
     // Removes the horizontal lines at index row for each line index
     row: {
-      0: [0, 4],
+      0: [0, 1],
+      1: [0, 1],
+      2: [0, 1],
     },
     // Removes the vertical lines at index col for each index
-    col: {},
+    col: {
+      0: [0, 1, 2],
+      1: [0, 1, 2],
+    },
   },
 };
 

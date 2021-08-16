@@ -1,4 +1,3 @@
-import './page.css';
 import { createHeader } from './Header';
 
 export interface PageProps {
@@ -8,7 +7,12 @@ export interface PageProps {
   onCreateAccount: () => void;
 }
 
-export const createPage = ({ user, onLogout, onLogin, onCreateAccount }: PageProps) => {
+export const createPage = ({
+  user,
+  onLogout,
+  onLogin,
+  onCreateAccount,
+}: PageProps) => {
   const article = document.createElement('article');
 
   const header = createHeader({ onLogin, onLogout, onCreateAccount, user });

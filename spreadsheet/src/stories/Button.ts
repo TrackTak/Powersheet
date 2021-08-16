@@ -1,5 +1,3 @@
-import './button.css';
-
 export interface ButtonProps {
   /**
    * Is this the principal call to action on the page?
@@ -38,8 +36,12 @@ export const createButton = ({
   btn.innerText = label;
   btn.addEventListener('click', onClick);
 
-  const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
-  btn.className = ['storybook-button', `storybook-button--${size}`, mode].join(' ');
+  const mode = primary
+    ? 'storybook-button--primary'
+    : 'storybook-button--secondary';
+  btn.className = ['storybook-button', `storybook-button--${size}`, mode].join(
+    ' '
+  );
 
   btn.style.backgroundColor = backgroundColor;
 

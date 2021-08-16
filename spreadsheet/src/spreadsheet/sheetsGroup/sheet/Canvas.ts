@@ -88,6 +88,11 @@ export interface ICustomSizes {
   size: number;
 }
 
+export interface IMergedCellsMap {
+  row: Record<string, number[]>;
+  col: Record<string, number[]>;
+}
+
 const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -154,6 +159,7 @@ class Canvas {
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
+  private mergedCellsMap: IMergedCellsMap;
   private shapes!: ICanvasShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
@@ -211,24 +217,32 @@ class Canvas {
 
     this.rowGroups = [];
     this.colGroups = [];
-    // this.mergedCellsMap = {
-    //   row: {},
-    //   col: {},
-    // };
 
-    // params.options.mergedCells.forEach(({ row, col }) => {
-    //   if (row) {
-    //     this.mergedCellsMap.row[row.start] = row.start;
-    //     this.mergedCellsMap.row[row.end] = row.end;
-    //   }
+    this.mergedCellsMap = {
+      row: {},
+      col: {},
+    };
 
-    //   if (col) {
-    //     this.mergedCellsMap.col[col.start] = [
+    this.options.mergedCells.forEach(({ start, end }) => {
+      const rowsArr: number[] = [];
+      const colsArr: number[] = [];
 
-    //     ];
-    //     this.mergedCellsMap.col[col.end] = col.end;
-    //   }
-    // });
+      for (let index = start.row; index <= end.row; index++) {
+        rowsArr.push(index);
+      }
+
+      for (let index = start.col; index <= end.col; index++) {
+        colsArr.push(index);
+      }
+
+      rowsArr.forEach((index) => {
+        this.mergedCellsMap.row[index] = colsArr;
+      });
+
+      colsArr.forEach((index) => {
+        this.mergedCellsMap.col[index] = rowsArr;
+      });
+    });
 
     const that = this;
 
@@ -452,7 +466,7 @@ class Canvas {
     //   start: selectedRowCols.cols[0].attrs.index,
     //   end: lastCol.attrs.index,
     // };
-    // this.options.mergedCells.push({
+    // this.mergedCellsMap.push({
     //   row,
     //   col,
     // });
@@ -553,7 +567,7 @@ class Canvas {
       let newRi = startRi;
 
       const doesColExist = () => {
-        return this.options.mergedCells.row[newRi]?.some((x) => x === ci);
+        return this.mergedCellsMap.row[newRi]?.some((x) => x === ci);
       };
 
       while (doesColExist()) {
@@ -569,7 +583,7 @@ class Canvas {
       let newCi = startCi;
 
       const doesRowExist = () => {
-        return this.options.mergedCells.col[newCi]?.some((x) => x === ri);
+        return this.mergedCellsMap.col[newCi]?.some((x) => x === ri);
       };
 
       while (doesRowExist()) {
@@ -594,7 +608,7 @@ class Canvas {
     }
 
     for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
-      if (!isNil(this.options.mergedCells.row[ri])) {
+      if (!isNil(this.mergedCellsMap.row[ri])) {
         mergedColsGrouping[ri] = [];
 
         for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
@@ -621,7 +635,9 @@ class Canvas {
               index: firstRow.attrs.index,
             });
 
-            rows.push(newMergedRowGroup);
+            if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
+              rows.push(newMergedRowGroup);
+            }
           }
 
           setMergedCols(ci, ri);
@@ -645,7 +661,9 @@ class Canvas {
               index: firstCol.attrs.index,
             });
 
-            cols.push(newMergedColGroup);
+            if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
+              cols.push(newMergedColGroup);
+            }
           }
         }
       }
@@ -1115,7 +1133,7 @@ class Canvas {
       points: [0, 0, this.stage.width(), 0],
       ...config,
     };
-    const mergedRow = this.options.mergedCells.row[ri];
+    const mergedRow = this.mergedCellsMap.row[ri];
 
     if (mergedRow) {
       return flatMap(mergedRow, (ci, i) => {
@@ -1189,7 +1207,7 @@ class Canvas {
       ...config,
     };
 
-    const mergedCol = this.options.mergedCells.col[ci];
+    const mergedCol = this.mergedCellsMap.col[ci];
 
     if (mergedCol) {
       return flatMap(mergedCol, (ri, i) => {

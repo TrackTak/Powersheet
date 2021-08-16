@@ -45,19 +45,28 @@ export const MergedCells = Template.bind({});
 
 MergedCells.args = {
   ...defaultOptions,
-  mergedCells: {
-    // Removes the horizontal lines at index row for each line index
-    row: {
-      0: [0, 1],
-      1: [0, 1],
-      2: [0, 1],
+  mergedCells: [
+    {
+      start: {
+        row: 0,
+        col: 0,
+      },
+      end: {
+        row: 3,
+        col: 2,
+      },
     },
-    // Removes the vertical lines at index col for each index
-    col: {
-      0: [0, 1, 2],
-      1: [0, 1, 2],
+    {
+      start: {
+        row: 5,
+        col: 4,
+      },
+      end: {
+        row: 6,
+        col: 4,
+      },
     },
-  },
+  ],
 };
 
 export const DifferentSizeCells = Template.bind({});

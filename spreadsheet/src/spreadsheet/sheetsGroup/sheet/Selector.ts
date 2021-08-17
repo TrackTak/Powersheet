@@ -13,11 +13,6 @@ import {
 } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
 
-export interface ISelectedCell {
-  ri: number;
-  ci: number;
-}
-
 export interface ISelectedRowCols {
   rows: Group[];
   cols: Group[];

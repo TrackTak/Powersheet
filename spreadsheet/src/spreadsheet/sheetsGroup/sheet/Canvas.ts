@@ -438,49 +438,28 @@ class Canvas {
   }
 
   mergeCells() {
-    // const selectedRowCols = this.selector.selectedRowCols;
-    // if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
-    //   return;
-    // }
-    // const destroyGridLines = (group: Group) => {
-    //   const gridLines = group.children!.filter((x) => x.id() === 'gridLine')!;
-    //   gridLines.forEach((gridLine) => gridLine.destroy());
-    // };
-    // const lastRow = selectedRowCols.rows[selectedRowCols.rows.length - 1];
-    // const lastCol = selectedRowCols.cols[selectedRowCols.cols.length - 1];
-    // selectedRowCols.rows.forEach((rowGroup, i) => {
-    //   if (i !== selectedRowCols.rows.length - 1) {
-    //     destroyGridLines(rowGroup);
-    //   }
-    // });
-    // selectedRowCols.cols.forEach((colGroup, i) => {
-    //   if (i !== selectedRowCols.cols.length - 1) {
-    //     destroyGridLines(colGroup);
-    //     const topGridLine = this.drawYGridLine(colGroup.attrs.index, {
-    //       config: {
-    //         points: [0, this.sheetViewportDimensions.y, 0, lastRow.y()],
-    //       },
-    //     });
-    //     const bottomGridLine = this.drawYGridLine(colGroup.attrs.index, {
-    //       config: {
-    //         points: [0, lastRow.y() + lastRow.height(), 0, this.stage.height()],
-    //       },
-    //     });
-    //     colGroup.add(topGridLine, bottomGridLine);
-    //   }
-    // });
-    // const row: IMergedCells['row'] = {
-    //   start: selectedRowCols.rows[0].attrs.index,
-    //   end: lastRow.attrs.index,
-    // };
-    // const col: IMergedCells['col'] = {
-    //   start: selectedRowCols.cols[0].attrs.index,
-    //   end: lastCol.attrs.index,
-    // };
-    // this.mergedCellsMap.push({
-    //   row,
-    //   col,
-    // });
+    const selectedRowCols = this.selector.selectedRowCols;
+
+    if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
+      return;
+    }
+
+    const start = {
+      row: selectedRowCols.rows[0].attrs.index,
+      col: selectedRowCols.cols[0].attrs.index,
+    };
+
+    const end = {
+      row: selectedRowCols.rows[selectedRowCols.rows.length - 1].attrs.index,
+      col: selectedRowCols.cols[selectedRowCols.cols.length - 1].attrs.index,
+    };
+
+    this.options.mergedCells.push({
+      start,
+      end,
+    });
+
+    console.log(this.options.mergedCells);
   }
 
   onResizeRowStart = () => {

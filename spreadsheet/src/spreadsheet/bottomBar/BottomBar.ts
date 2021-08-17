@@ -57,16 +57,27 @@ class BottomBar implements IBottomBar {
 
       tabContainer.innerHTML = '';
 
+      this.dropdownMenuTab = this.dropdownMenu();
+
       this.buttonTabs.forEach((buttonTab) => {
         tabContainer.appendChild(buttonTab);
       });
+
+      tabContainer.appendChild(this.dropdownMenuTab);
+      this.dropdownMenuTab.style.display = 'none';
     });
   }
 
   createTabButton(sheetNumber: number) {
     const buttonTab = document.createElement('button');
     buttonTab.className = 'btn-tab';
+
     buttonTab.textContent = `Sheet${sheetNumber}`;
+
+    const containerButtonTab = document.createElement('div');
+    containerButtonTab.className = 'container-btn-tab';
+
+    containerButtonTab.appendChild(buttonTab);
 
     buttonTab.addEventListener('mouseup', (e) => {
       const buttonPressed = e.button;
@@ -75,11 +86,20 @@ class BottomBar implements IBottomBar {
       }
     });
 
+    window.addEventListener('click', (e) => {
+      const isClickInside = this.dropdownMenuTab.contains(e.target);
+      console.log(e.target);
+      if (isClickInside) {
+      } else {
+        this.dropdownMenuTab.style.display = 'none';
+      }
+    });
+
     buttonTab.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
 
-    return buttonTab;
+    return containerButtonTab;
   }
 
   dropdownMenu() {
@@ -93,9 +113,15 @@ class BottomBar implements IBottomBar {
     deleteButton.className = 'btn-menuitem';
     deleteButton.textContent = 'Delete';
 
+    deleteButton.addEventListener('click', (e) => {
+      // if (this.buttonTabs.length - 1 === '') {
+      //   this.buttonTabs.splice(i, 1);
+      // }
+    });
+
     const cloneButton = document.createElement('button');
     cloneButton.className = 'btn-menuitem';
-    cloneButton.textContent = 'Delete';
+    cloneButton.textContent = 'Clone';
 
     menu.appendChild(menuItem);
     menuItem.appendChild(deleteButton);

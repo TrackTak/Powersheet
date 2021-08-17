@@ -24,8 +24,6 @@ class BottomBar implements IBottomBar {
     this.buttonTabs = [this.createTabButton(1)];
     this.dropdownMenuTab = this.dropdownMenu();
 
-    this.dropdownMenuTab.style.display = 'none';
-
     this.create();
   }
 
@@ -48,7 +46,6 @@ class BottomBar implements IBottomBar {
     buttonWrapper.appendChild(this.addSheetButton);
     buttonWrapper.appendChild(this.menuSheetButton);
     tabContainer.appendChild(this.buttonTabs[0]);
-    tabContainer.appendChild(this.dropdownMenuTab);
 
     this.addSheetButton.addEventListener('click', () => {
       const tabSheetButton = this.createTabButton(this.buttonTabs.length + 1);
@@ -57,14 +54,9 @@ class BottomBar implements IBottomBar {
 
       tabContainer.innerHTML = '';
 
-      this.dropdownMenuTab = this.dropdownMenu();
-
       this.buttonTabs.forEach((buttonTab) => {
         tabContainer.appendChild(buttonTab);
       });
-
-      tabContainer.appendChild(this.dropdownMenuTab);
-      this.dropdownMenuTab.style.display = 'none';
     });
   }
 
@@ -82,6 +74,9 @@ class BottomBar implements IBottomBar {
     buttonTab.addEventListener('mouseup', (e) => {
       const buttonPressed = e.button;
       if (buttonPressed === 2) {
+        // e.target is the specific button
+        // appendChild the dropdownMenuTab to the e.targets parent node
+        e.target.parentElement.appendChild(this.dropdownMenuTab);
         this.dropdownMenuTab.style.display = 'block';
       }
     });

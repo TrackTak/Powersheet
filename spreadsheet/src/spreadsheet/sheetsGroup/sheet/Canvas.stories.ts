@@ -48,12 +48,22 @@ MergedCells.args = {
   mergedCells: [
     {
       start: {
-        row: 1,
-        col: 1,
+        row: 9,
+        col: 3,
       },
       end: {
-        row: 2,
-        col: 2,
+        row: 14,
+        col: 4,
+      },
+    },
+    {
+      start: {
+        row: 3,
+        col: 3,
+      },
+      end: {
+        row: 4,
+        col: 4,
       },
     },
   ],

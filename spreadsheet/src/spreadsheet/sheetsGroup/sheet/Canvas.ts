@@ -418,6 +418,16 @@ class Canvas {
   }
 
   setMergedCells(mergedCells: IMergedCells[]) {
+    const mergedCellsMap: IMergedCellsMap = {
+      row: {},
+      col: {},
+    };
+    const gridLinesMergedCellsMap: IMergedCellsMap = {
+      row: {},
+      col: {},
+    };
+    const comparer = (a: number, b: number) => a - b;
+
     mergedCells.forEach(({ start, end }) => {
       const rowsArr: number[] = [];
       const colsArr: number[] = [];
@@ -432,18 +442,40 @@ class Canvas {
 
       rowsArr.forEach((value, i) => {
         if (i !== 0) {
-          this.gridLinesMergedCellsMap.row[value] = colsArr;
+          gridLinesMergedCellsMap.row[value] = [
+            ...(gridLinesMergedCellsMap.row[value] ?? []),
+            ...colsArr,
+          ];
+
+          gridLinesMergedCellsMap.row[value].sort(comparer);
         }
-        this.mergedCellsMap.row[value] = colsArr;
+        mergedCellsMap.row[value] = [
+          ...(mergedCellsMap.row[value] ?? []),
+          ...colsArr,
+        ];
+
+        mergedCellsMap.row[value].sort(comparer);
       });
 
       colsArr.forEach((value, i) => {
         if (i !== 0) {
-          this.gridLinesMergedCellsMap.col[value] = rowsArr;
+          gridLinesMergedCellsMap.col[value] = [
+            ...(gridLinesMergedCellsMap.col[value] ?? []),
+            ...rowsArr,
+          ];
+          gridLinesMergedCellsMap.col[value].sort(comparer);
         }
-        this.mergedCellsMap.col[value] = rowsArr;
+        mergedCellsMap.col[value] = [
+          ...(mergedCellsMap.col[value] ?? []),
+          ...rowsArr,
+        ];
+        mergedCellsMap.col[value].sort(comparer);
       });
     });
+
+    this.options.mergedCells = mergedCells;
+    this.mergedCellsMap = mergedCellsMap;
+    this.gridLinesMergedCellsMap = gridLinesMergedCellsMap;
   }
 
   mergeCells() {

@@ -159,6 +159,7 @@ class Canvas {
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
+  private gridLinesMergedCellsMap: IMergedCellsMap;
   private mergedCellsMap: IMergedCellsMap;
   private shapes!: ICanvasShapes;
   private sheetDimensions: IDimensions;
@@ -222,25 +223,35 @@ class Canvas {
       row: {},
       col: {},
     };
+    this.gridLinesMergedCellsMap = {
+      row: {},
+      col: {},
+    };
 
     this.options.mergedCells.forEach(({ start, end }) => {
       const rowsArr: number[] = [];
       const colsArr: number[] = [];
 
-      for (let index = start.row; index <= end.row; index++) {
+      for (let index = start.row; index < end.row; index++) {
         rowsArr.push(index);
       }
 
-      for (let index = start.col; index <= end.col; index++) {
+      for (let index = start.col; index < end.col; index++) {
         colsArr.push(index);
       }
 
-      rowsArr.forEach((index) => {
-        this.mergedCellsMap.row[index] = colsArr;
+      rowsArr.forEach((value, i) => {
+        if (i !== 0) {
+          this.gridLinesMergedCellsMap.row[value] = colsArr;
+        }
+        this.mergedCellsMap.row[value] = colsArr;
       });
 
-      colsArr.forEach((index) => {
-        this.mergedCellsMap.col[index] = rowsArr;
+      colsArr.forEach((value, i) => {
+        if (i !== 0) {
+          this.gridLinesMergedCellsMap.col[value] = rowsArr;
+        }
+        this.mergedCellsMap.col[value] = rowsArr;
       });
     });
 
@@ -1133,7 +1144,9 @@ class Canvas {
       points: [0, 0, this.stage.width(), 0],
       ...config,
     };
-    const mergedRow = this.mergedCellsMap.row[ri];
+    const mergedRow = this.gridLinesMergedCellsMap.row[ri];
+
+    const clone = line.clone(lineConfig) as Line;
 
     if (mergedRow) {
       return flatMap(mergedRow, (ci, i) => {
@@ -1185,8 +1198,6 @@ class Canvas {
       });
     }
 
-    const clone = line.clone(lineConfig) as Line;
-
     return [clone];
   }
 
@@ -1207,7 +1218,9 @@ class Canvas {
       ...config,
     };
 
-    const mergedCol = this.mergedCellsMap.col[ci];
+    const clone = line.clone(lineConfig) as Line;
+
+    const mergedCol = this.gridLinesMergedCellsMap.col[ci];
 
     if (mergedCol) {
       return flatMap(mergedCol, (ri, i) => {
@@ -1258,8 +1271,6 @@ class Canvas {
         return [getTopLine(), getBottomLine()];
       });
     }
-
-    const clone = line.clone(lineConfig) as Line;
 
     return [clone];
   }

@@ -26,7 +26,7 @@ class HorizontalScrollBar {
     private layers: ILayers,
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
-    private colGroups: Group[],
+    private colHeaderGroups: Group[],
     private eventEmitter: EventEmitter,
     private options: IOptions,
     private sheetViewportDimensions: IRect,
@@ -39,7 +39,7 @@ class HorizontalScrollBar {
     this.eventEmitter = eventEmitter;
     this.options = options;
     this.sheetViewportDimensions = sheetViewportDimensions;
-    this.colGroups = colGroups;
+    this.colHeaderGroups = colHeaderGroups;
     this.customWidthPositions = [];
     this.scrollOffset = {
       size: 0,
@@ -126,13 +126,13 @@ class HorizontalScrollBar {
 
       this.onScroll(e);
 
-      const col = this.colGroups[ci];
+      const col = this.colHeaderGroups[ci];
 
       this.scrollOffset = {
         index: ci,
         size: scrollLeft + this.sheetViewportDimensions.x - col.x(),
       };
-      // const col = this.colGroups[ci];
+      // const col = this.colHeaderGroups[ci];
       // const colPos = col.x() - this.sheetViewportDimensions.x;
 
       // const differenceInScroll = scrollLeft - colPos;

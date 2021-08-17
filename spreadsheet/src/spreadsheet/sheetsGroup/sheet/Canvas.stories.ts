@@ -52,8 +52,8 @@ MergedCells.args = {
         col: 1,
       },
       end: {
-        row: 3,
-        col: 3,
+        row: 2,
+        col: 2,
       },
     },
   ],

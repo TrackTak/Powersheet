@@ -31,7 +31,7 @@ class VerticalScrollBar {
     private sheetDimensions: IDimensions,
     private sheetViewportPositions: ISheetViewportPositions,
     private getHorizontalScrollBarBoundingClientRect: () => DOMRect,
-    private rowGroups: Group[],
+    private rowHeaderGroups: Group[],
     private eventEmitter: EventEmitter,
     private options: IOptions,
     private sheetViewportDimensions: IRect,
@@ -43,7 +43,7 @@ class VerticalScrollBar {
     this.getHorizontalScrollBarBoundingClientRect =
       getHorizontalScrollBarBoundingClientRect;
     this.sheetViewportPositions = sheetViewportPositions;
-    this.rowGroups = rowGroups;
+    this.rowHeaderGroups = rowHeaderGroups;
     this.eventEmitter = eventEmitter;
     this.options = options;
     this.sheetViewportDimensions = sheetViewportDimensions;
@@ -138,14 +138,14 @@ class VerticalScrollBar {
 
       this.onScroll(e);
 
-      const row = this.rowGroups[ri];
+      const row = this.rowHeaderGroups[ri];
 
       this.scrollOffset = {
         index: ri,
         size: scrollTop + this.sheetViewportDimensions.y - row.y(),
       };
 
-      // const row = this.rowGroups[ri];
+      // const row = this.rowHeaderGroups[ri];
       // const rowPos = row.y() - this.sheetViewportDimensions.y;
 
       // const differenceInScroll = scrollTop - rowPos;

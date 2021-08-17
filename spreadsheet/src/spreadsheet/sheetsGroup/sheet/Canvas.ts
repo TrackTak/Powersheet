@@ -20,7 +20,7 @@ import {
   performanceProperties,
 } from './canvasStyles';
 import Resizer from './Resizer';
-import { IOptions, ISizes } from '../../options';
+import { IMergedCells, IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import { ShapeConfig } from 'konva/lib/Shape';
 import { flatMap } from 'lodash';
@@ -62,11 +62,11 @@ export interface ICanvasShapes {
   sheetGroup: Group;
   sheet: Rect;
   rowGroup: Group;
+  rowHeaderGroup: Group;
   rowHeaderRect: Rect;
-  rowCellsGroup: Group;
   colGroup: Group;
+  colHeaderGroup: Group;
   colHeaderRect: Rect;
-  colCellsGroup: Group;
   frozenGridLine: Line;
   xGridLine: Line;
   yGridLine: Line;
@@ -157,6 +157,8 @@ class Canvas {
   rowResizer!: Resizer;
   colResizer!: Resizer;
   private styles: ICanvasStyles;
+  private rowHeaderGroups: Group[];
+  private colHeaderGroups: Group[];
   private rowGroups: Group[];
   private colGroups: Group[];
   private gridLinesMergedCellsMap: IMergedCellsMap;
@@ -216,6 +218,8 @@ class Canvas {
       },
     };
 
+    this.rowHeaderGroups = [];
+    this.colHeaderGroups = [];
     this.rowGroups = [];
     this.colGroups = [];
 
@@ -223,37 +227,13 @@ class Canvas {
       row: {},
       col: {},
     };
+
     this.gridLinesMergedCellsMap = {
       row: {},
       col: {},
     };
 
-    this.options.mergedCells.forEach(({ start, end }) => {
-      const rowsArr: number[] = [];
-      const colsArr: number[] = [];
-
-      for (let index = start.row; index < end.row; index++) {
-        rowsArr.push(index);
-      }
-
-      for (let index = start.col; index < end.col; index++) {
-        colsArr.push(index);
-      }
-
-      rowsArr.forEach((value, i) => {
-        if (i !== 0) {
-          this.gridLinesMergedCellsMap.row[value] = colsArr;
-        }
-        this.mergedCellsMap.row[value] = colsArr;
-      });
-
-      colsArr.forEach((value, i) => {
-        if (i !== 0) {
-          this.gridLinesMergedCellsMap.col[value] = rowsArr;
-        }
-        this.mergedCellsMap.col[value] = rowsArr;
-      });
-    });
+    this.setMergedCells(this.options.mergedCells);
 
     const that = this;
 
@@ -396,14 +376,14 @@ class Canvas {
         ...this.rowHeaderDimensions,
         ...this.styles.rowHeader.rect,
       }),
+      rowHeaderGroup: new Group(),
       rowGroup: new Group(),
-      rowCellsGroup: new Group(),
       colHeaderRect: new Rect({
         ...this.colHeaderDimensions,
         ...this.styles.colHeader.rect,
       }),
       colGroup: new Group(),
-      colCellsGroup: new Group(),
+      colHeaderGroup: new Group(),
       xGridLine: new Line({
         ...this.styles.gridLine,
       }),
@@ -415,10 +395,10 @@ class Canvas {
       }),
     };
 
+    this.shapes.rowHeaderGroup.cache(this.rowHeaderDimensions);
     this.shapes.rowGroup.cache(this.rowHeaderDimensions);
-    this.shapes.rowCellsGroup.cache(this.rowHeaderDimensions);
 
-    this.shapes.colCellsGroup.cache(this.colHeaderDimensions);
+    this.shapes.colHeaderGroup.cache(this.colHeaderDimensions);
     this.shapes.colGroup.cache(this.colHeaderDimensions);
 
     this.shapes.rowHeaderRect.cache();
@@ -435,6 +415,35 @@ class Canvas {
     this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+  }
+
+  setMergedCells(mergedCells: IMergedCells[]) {
+    mergedCells.forEach(({ start, end }) => {
+      const rowsArr: number[] = [];
+      const colsArr: number[] = [];
+
+      for (let index = start.row; index <= end.row; index++) {
+        rowsArr.push(index);
+      }
+
+      for (let index = start.col; index <= end.col; index++) {
+        colsArr.push(index);
+      }
+
+      rowsArr.forEach((value, i) => {
+        if (i !== 0) {
+          this.gridLinesMergedCellsMap.row[value] = colsArr;
+        }
+        this.mergedCellsMap.row[value] = colsArr;
+      });
+
+      colsArr.forEach((value, i) => {
+        if (i !== 0) {
+          this.gridLinesMergedCellsMap.col[value] = rowsArr;
+        }
+        this.mergedCellsMap.col[value] = rowsArr;
+      });
+    });
   }
 
   mergeCells() {
@@ -454,12 +463,17 @@ class Canvas {
       col: selectedRowCols.cols[selectedRowCols.cols.length - 1].attrs.index,
     };
 
-    this.options.mergedCells.push({
-      start,
-      end,
+    const mergedCells = [...this.options.mergedCells, { start, end }];
+
+    this.setMergedCells(mergedCells);
+
+    selectedRowCols.rows.forEach((row) => {
+      this.drawRowLines(row.attrs.index);
     });
 
-    console.log(this.options.mergedCells);
+    selectedRowCols.cols.forEach((col) => {
+      this.drawColLines(col.attrs.index);
+    });
   }
 
   onResizeRowStart = () => {
@@ -561,7 +575,7 @@ class Canvas {
       };
 
       while (doesColExist()) {
-        const rowGroup = this.rowGroups[newRi];
+        const rowGroup = this.rowHeaderGroups[newRi];
 
         mergedRowsGrouping[ci][newRi] = rowGroup;
 
@@ -577,7 +591,7 @@ class Canvas {
       };
 
       while (doesRowExist()) {
-        const colGroup = this.colGroups[newCi];
+        const colGroup = this.colHeaderGroups[newCi];
 
         mergedColsGrouping[ri][newCi] = colGroup;
 
@@ -586,13 +600,13 @@ class Canvas {
     };
 
     for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
-      const rowGroup = this.rowGroups[ri];
+      const rowGroup = this.rowHeaderGroups[ri];
 
       rows.push(rowGroup);
     }
 
     for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
-      const colGroup = this.colGroups[ci];
+      const colGroup = this.colHeaderGroups[ci];
 
       cols.push(colGroup);
     }
@@ -704,7 +718,7 @@ class Canvas {
         defaultSize: this.options.row.defaultHeight,
         sizes: this.options.row.heights,
       },
-      this.rowGroups,
+      this.rowHeaderGroups,
       this.drawRow,
       this.eventEmitter
     );
@@ -725,7 +739,7 @@ class Canvas {
         defaultSize: this.options.col.defaultWidth,
         sizes: this.options.col.widths,
       },
-      this.colGroups,
+      this.colHeaderGroups,
       this.drawCol,
       this.eventEmitter
     );
@@ -737,7 +751,7 @@ class Canvas {
       this.layers,
       this.sheetDimensions,
       this.sheetViewportPositions,
-      this.colGroups,
+      this.colHeaderGroups,
       this.eventEmitter,
       this.options,
       this.sheetViewportDimensions,
@@ -750,7 +764,7 @@ class Canvas {
       this.sheetDimensions,
       this.sheetViewportPositions,
       this.horizontalScrollBar.getBoundingClientRect,
-      this.rowGroups,
+      this.rowHeaderGroups,
       this.eventEmitter,
       this.options,
       this.sheetViewportDimensions,
@@ -847,20 +861,20 @@ class Canvas {
   }
 
   destroyOutOfViewportShapes() {
-    this.rowGroups.forEach((rowGroup, index) => {
+    this.rowHeaderGroups.forEach((rowGroup, index) => {
       if (
         !this.hasOverlap(rowGroup.getClientRect(), this.sheetViewportDimensions)
       ) {
         rowGroup.destroy();
-        delete this.rowGroups[index];
+        delete this.rowHeaderGroups[index];
       }
     });
-    this.colGroups.forEach((colGroup, index) => {
+    this.colHeaderGroups.forEach((colGroup, index) => {
       if (
         !this.hasOverlap(colGroup.getClientRect(), this.sheetViewportDimensions)
       ) {
         colGroup.destroy();
-        delete this.colGroups[index];
+        delete this.colHeaderGroups[index];
       }
     });
   }
@@ -950,16 +964,16 @@ class Canvas {
   drawRow = (ri: number, drawingAtTop = false) => {
     const prevRi = drawingAtTop ? ri + 1 : ri - 1;
 
-    if (this.rowGroups[ri]) {
-      this.rowGroups[ri].destroy();
+    if (this.rowHeaderGroups[ri]) {
+      this.rowHeaderGroups[ri].destroy();
     }
 
     const rowHeight = this.getRowHeight(ri);
-    const prevRow = this.rowGroups[prevRi];
+    const prevRow = this.rowHeaderGroups[prevRi];
 
     const y = prevRow
       ? drawingAtTop
-        ? this.rowGroups[prevRi].y() - rowHeight
+        ? this.rowHeaderGroups[prevRi].y() - rowHeight
         : prevRow.y() + prevRow.height()
       : this.sheetViewportDimensions.y;
 
@@ -968,34 +982,36 @@ class Canvas {
       height: rowHeight,
       y,
     };
-    const rowGroup = this.shapes.rowGroup.clone(groupConfig) as Group;
+    const rowHeaderGroup = this.shapes.rowHeaderGroup.clone(
+      groupConfig
+    ) as Group;
     const rowHeader = this.drawRowHeader(ri);
     const isFrozen = getIsFrozenRow(ri, this.options);
 
-    rowGroup.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine);
+    rowHeaderGroup.add(rowHeader.rect, rowHeader.text, rowHeader.resizeLine);
 
-    this.rowGroups[ri] = rowGroup;
+    this.rowHeaderGroups[ri] = rowHeaderGroup;
 
     if (isFrozen) {
-      this.layers.xyStickyLayer.add(rowGroup);
+      this.layers.xyStickyLayer.add(rowHeaderGroup);
     } else {
-      this.layers.xStickyLayer.add(rowGroup);
+      this.layers.xStickyLayer.add(rowHeaderGroup);
     }
   };
 
   drawCol = (ci: number, drawingAtLeft = false) => {
     const prevCi = drawingAtLeft ? ci + 1 : ci - 1;
 
-    if (this.colGroups[ci]) {
-      this.colGroups[ci].destroy();
+    if (this.colHeaderGroups[ci]) {
+      this.colHeaderGroups[ci].destroy();
     }
 
     const colWidth = this.getColWidth(ci);
-    const prevCol = this.colGroups[prevCi];
+    const prevCol = this.colHeaderGroups[prevCi];
 
     const x = prevCol
       ? drawingAtLeft
-        ? this.colGroups[prevCi].x() - colWidth
+        ? this.colHeaderGroups[prevCi].x() - colWidth
         : prevCol.x() + prevCol.width()
       : this.sheetViewportDimensions.x;
 
@@ -1004,18 +1020,20 @@ class Canvas {
       width: colWidth,
       x: x,
     };
-    const colGroup = this.shapes.colGroup.clone(groupConfig) as Group;
+    const colHeaderGroup = this.shapes.colHeaderGroup.clone(
+      groupConfig
+    ) as Group;
     const colHeader = this.drawColHeader(ci);
     const isFrozen = getIsFrozenCol(ci, this.options);
 
-    colGroup.add(colHeader.rect, colHeader.text, colHeader.resizeLine);
+    colHeaderGroup.add(colHeader.rect, colHeader.text, colHeader.resizeLine);
 
-    this.colGroups[ci] = colGroup;
+    this.colHeaderGroups[ci] = colHeaderGroup;
 
     if (isFrozen) {
-      this.layers.xyStickyLayer.add(colGroup);
+      this.layers.xyStickyLayer.add(colHeaderGroup);
     } else {
-      this.layers.yStickyLayer.add(colGroup);
+      this.layers.yStickyLayer.add(colHeaderGroup);
     }
   };
 
@@ -1076,13 +1094,17 @@ class Canvas {
   }
 
   drawRowLines(ri: number) {
+    if (this.rowGroups[ri]) {
+      this.rowGroups[ri].destroy();
+    }
+
     const groupConfig: ShapeConfig = {
       index: ri,
-      height: this.rowGroups[ri].height(),
-      y: this.rowGroups[ri].y(),
+      height: this.rowHeaderGroups[ri].height(),
+      y: this.rowHeaderGroups[ri].y(),
     };
 
-    const rowCellsGroup = this.shapes.rowCellsGroup.clone(groupConfig) as Group;
+    const rowGroup = this.shapes.rowGroup.clone(groupConfig) as Group;
 
     const xGridLines =
       ri === this.options.frozenCells.row
@@ -1090,20 +1112,26 @@ class Canvas {
         : this.drawXGridLines(ri);
 
     xGridLines.forEach((xGridLine) => {
-      rowCellsGroup.add(xGridLine);
+      rowGroup.add(xGridLine);
     });
 
-    this.layers.mainLayer.add(rowCellsGroup);
+    this.rowGroups[ri] = rowGroup;
+
+    this.layers.mainLayer.add(rowGroup);
   }
 
   drawColLines(ci: number) {
+    if (this.colGroups[ci]) {
+      this.colGroups[ci].destroy();
+    }
+
     const groupConfig: ShapeConfig = {
       index: ci,
-      width: this.colGroups[ci].width(),
-      x: this.colGroups[ci].x(),
+      width: this.colHeaderGroups[ci].width(),
+      x: this.colHeaderGroups[ci].x(),
     };
 
-    const colCellsGroup = this.shapes.colCellsGroup.clone(groupConfig) as Group;
+    const colGroup = this.shapes.colGroup.clone(groupConfig) as Group;
 
     const yGridLines =
       ci === this.options.frozenCells.col
@@ -1111,10 +1139,12 @@ class Canvas {
         : this.drawYGridLines(ci);
 
     yGridLines.forEach((yGridLine) => {
-      colCellsGroup.add(yGridLine);
+      colGroup.add(yGridLine);
     });
 
-    this.layers.mainLayer.add(colCellsGroup);
+    this.colGroups[ci] = colGroup;
+
+    this.layers.mainLayer.add(colGroup);
   }
 
   drawXGridLines(ri: number, gridLineParams?: IGridLineParams) {
@@ -1131,14 +1161,14 @@ class Canvas {
       return flatMap(mergedRow, (ci, i) => {
         const prevColGroupIndex = mergedRow[i - 1];
         const prevColGroup = !isNil(prevColGroupIndex)
-          ? this.colGroups[prevColGroupIndex]
+          ? this.colHeaderGroups[prevColGroupIndex]
           : null;
 
-        const colGroup = this.colGroups[ci];
+        const colGroup = this.colHeaderGroups[ci];
 
         const nextColGroupIndex = mergedRow[i + 1];
         const nextColGroup = !isNil(nextColGroupIndex)
-          ? this.colGroups[nextColGroupIndex]
+          ? this.colHeaderGroups[nextColGroupIndex]
           : null;
 
         const getLeftLine = () => {
@@ -1205,14 +1235,14 @@ class Canvas {
       return flatMap(mergedCol, (ri, i) => {
         const prevRowGroupIndex = mergedCol[i - 1];
         const prevRowGroup = !isNil(prevRowGroupIndex)
-          ? this.rowGroups[prevRowGroupIndex]
+          ? this.rowHeaderGroups[prevRowGroupIndex]
           : null;
 
-        const rowGroup = this.rowGroups[ri];
+        const rowGroup = this.rowHeaderGroups[ri];
 
         const nextRowGroupIndex = mergedCol[i + 1];
         const nextRowGroup = !isNil(nextRowGroupIndex)
-          ? this.rowGroups[nextRowGroupIndex]
+          ? this.rowHeaderGroups[nextRowGroupIndex]
           : null;
 
         const getTopLine = () => {

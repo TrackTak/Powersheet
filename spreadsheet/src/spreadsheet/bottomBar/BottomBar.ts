@@ -15,6 +15,7 @@ class BottomBar implements IBottomBar {
   addItemTab: HTMLUListElement;
   buttonTabs: HTMLButtonElement[];
   dropdownMenuTab: HTMLDivElement;
+  globalSheetIndex: number;
 
   constructor(params?: IConstructorParams) {
     this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
@@ -23,6 +24,7 @@ class BottomBar implements IBottomBar {
     this.addItemTab = this.addItem(this.addSheetButton);
     this.buttonTabs = [this.createTabButton(1)];
     this.dropdownMenuTab = this.dropdownMenu();
+    this.globalSheetIndex = 1;
 
     this.create();
   }
@@ -48,7 +50,8 @@ class BottomBar implements IBottomBar {
     tabContainer.appendChild(this.buttonTabs[0]);
 
     this.addSheetButton.addEventListener('click', () => {
-      const tabSheetButton = this.createTabButton(this.buttonTabs.length + 1);
+      this.globalSheetIndex += 1;
+      const tabSheetButton = this.createTabButton(this.globalSheetIndex);
 
       this.buttonTabs.push(tabSheetButton);
 
@@ -74,8 +77,6 @@ class BottomBar implements IBottomBar {
     buttonTab.addEventListener('mouseup', (e) => {
       const buttonPressed = e.button;
       if (buttonPressed === 2) {
-        // e.target is the specific button
-        // appendChild the dropdownMenuTab to the e.targets parent node
         e.target.parentElement.appendChild(this.dropdownMenuTab);
         this.dropdownMenuTab.style.display = 'block';
       }
@@ -83,7 +84,6 @@ class BottomBar implements IBottomBar {
 
     window.addEventListener('click', (e) => {
       const isClickInside = this.dropdownMenuTab.contains(e.target);
-      console.log(e.target);
       if (isClickInside) {
       } else {
         this.dropdownMenuTab.style.display = 'none';
@@ -109,9 +109,17 @@ class BottomBar implements IBottomBar {
     deleteButton.textContent = 'Delete';
 
     deleteButton.addEventListener('click', (e) => {
-      // if (this.buttonTabs.length - 1 === '') {
-      //   this.buttonTabs.splice(i, 1);
-      // }
+      let element = e.target;
+
+      while (!element.classList.contains('container-btn-tab')) {
+        element = element.parentElement;
+      }
+
+      this.buttonTabs = this.buttonTabs.filter(
+        (buttonTab) => buttonTab !== element
+      );
+
+      element.remove();
     });
 
     const cloneButton = document.createElement('button');
@@ -139,9 +147,7 @@ class BottomBar implements IBottomBar {
     const buttonPlus = document.createElement('button');
     buttonPlus.className = 'btn-img';
 
-    buttonPlus.addEventListener('click', () => {
-      console.log('click1');
-    });
+    buttonPlus.addEventListener('click', () => {});
 
     const plusImage = document.createElement('img');
 

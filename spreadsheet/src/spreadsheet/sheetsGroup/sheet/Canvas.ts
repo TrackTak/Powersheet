@@ -691,13 +691,11 @@ class Canvas {
           cellIndexes.start.ci >= x.start.col &&
           cellIndexes.start.ci <= x.end.col) ||
         (cellIndexes.end.ri >= x.start.row &&
-          cellIndexes.end.ri <= x.end.row &&
+          cellIndexes.start.ri <= x.end.row &&
           cellIndexes.end.ci >= x.start.col &&
-          cellIndexes.end.ci <= x.end.col)
+          cellIndexes.start.ci <= x.end.col)
       );
     });
-
-    console.log(cellIndexes);
 
     if (mergedCell) {
       let totalMergedHeight = 0;

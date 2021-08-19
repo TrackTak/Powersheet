@@ -9,19 +9,30 @@ export default {
 
 const Template: Story<IOptions> = (args) => {
   const eventEmitter = new EventEmitter();
+  const options = args;
 
   const canvas = new Canvas({
-    options: args,
+    options,
     eventEmitter,
   });
 
   const container = document.createElement('div');
-  const btn = document.createElement('button');
+  const merge = document.createElement('button');
 
-  btn.innerHTML = 'Merge Cell';
-  btn.onclick = () => canvas.mergeCells();
+  merge.innerHTML = 'Merge Cell';
+  merge.onclick = () => {
+    canvas.mergeSelectedCells();
+  };
 
-  container.appendChild(btn);
+  const unmerge = document.createElement('button');
+
+  unmerge.innerHTML = 'Unmerge Cell';
+  unmerge.onclick = () => {
+    canvas.unmergeSelectedCells();
+  };
+
+  container.appendChild(merge);
+  container.appendChild(unmerge);
   container.appendChild(canvas.container);
 
   return container;
@@ -46,6 +57,26 @@ export const MergedCells = Template.bind({});
 MergedCells.args = {
   ...defaultOptions,
   mergedCells: [
+    // {
+    //   start: {
+    //     row: 9,
+    //     col: 3,
+    //   },
+    //   end: {
+    //     row: 14,
+    //     col: 4,
+    //   },
+    // },
+    // {
+    //   start: {
+    //     row: 3,
+    //     col: 3,
+    //   },
+    //   end: {
+    //     row: 4,
+    //     col: 4,
+    //   },
+    // },
     {
       start: {
         row: 9,
@@ -53,17 +84,7 @@ MergedCells.args = {
       },
       end: {
         row: 14,
-        col: 4,
-      },
-    },
-    {
-      start: {
-        row: 3,
-        col: 3,
-      },
-      end: {
-        row: 4,
-        col: 4,
+        col: 5,
       },
     },
   ],

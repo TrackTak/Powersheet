@@ -162,7 +162,6 @@ class Canvas {
   private rowGroups: Group[];
   private colGroups: Group[];
   private gridLinesMergedCellsMap: IMergedCellsMap;
-  private mergedCellsMap: IMergedCellsMap;
   private shapes!: ICanvasShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
@@ -222,11 +221,6 @@ class Canvas {
     this.colHeaderGroups = [];
     this.rowGroups = [];
     this.colGroups = [];
-
-    this.mergedCellsMap = {
-      row: {},
-      col: {},
-    };
 
     this.gridLinesMergedCellsMap = {
       row: {},
@@ -418,10 +412,6 @@ class Canvas {
   }
 
   setMergedCells(mergedCells: IMergedCells[]) {
-    const mergedCellsMap: IMergedCellsMap = {
-      row: {},
-      col: {},
-    };
     const gridLinesMergedCellsMap: IMergedCellsMap = {
       row: {},
       col: {},
@@ -449,12 +439,6 @@ class Canvas {
 
           gridLinesMergedCellsMap.row[value].sort(comparer);
         }
-        mergedCellsMap.row[value] = [
-          ...(mergedCellsMap.row[value] ?? []),
-          ...colsArr,
-        ];
-
-        mergedCellsMap.row[value].sort(comparer);
       });
 
       colsArr.forEach((value, i) => {
@@ -465,20 +449,14 @@ class Canvas {
           ];
           gridLinesMergedCellsMap.col[value].sort(comparer);
         }
-        mergedCellsMap.col[value] = [
-          ...(mergedCellsMap.col[value] ?? []),
-          ...rowsArr,
-        ];
-        mergedCellsMap.col[value].sort(comparer);
       });
     });
 
     this.options.mergedCells = mergedCells;
-    this.mergedCellsMap = mergedCellsMap;
     this.gridLinesMergedCellsMap = gridLinesMergedCellsMap;
   }
 
-  mergeCells() {
+  mergeSelectedCells() {
     const selectedRowCols = this.selector.selectedRowCols;
 
     if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
@@ -495,17 +473,115 @@ class Canvas {
       col: selectedRowCols.cols[selectedRowCols.cols.length - 1].attrs.index,
     };
 
-    const mergedCells = [...this.options.mergedCells, { start, end }];
+    const mergedSelectedRow = selectedRowCols.rows.find(
+      (x) => x.attrs.isMerged
+    );
+
+    if (mergedSelectedRow && mergedSelectedRow.attrs.index >= end.row) {
+      let totalRowHeight = this.rowGroups[start.row].height();
+
+      while (totalRowHeight < mergedSelectedRow.height()) {
+        end.row += 1;
+        totalRowHeight += this.rowGroups[end.row].height();
+      }
+    }
+
+    const mergedSelectedCol = selectedRowCols.cols.find(
+      (x) => x.attrs.isMerged
+    );
+
+    if (mergedSelectedCol && mergedSelectedCol.attrs.index >= end.col) {
+      let totalColWidth = this.colGroups[start.col].width();
+
+      while (totalColWidth < mergedSelectedCol.width()) {
+        end.col += 1;
+        totalColWidth += this.colGroups[end.col].width();
+      }
+    }
+
+    this.mergeCells([{ start, end }]);
+  }
+
+  unmergeSelectedCells() {
+    const selectedRowCols = this.selector.selectedRowCols;
+
+    if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
+      return;
+    }
+
+    const areAllRowsMerged = selectedRowCols.rows.every(
+      (row) => row.attrs.isMerged
+    );
+    const areAllColsMerged = selectedRowCols.cols.every(
+      (col) => col.attrs.isMerged
+    );
+
+    if (areAllRowsMerged && areAllColsMerged) {
+      let { index: rowIndex, height } = selectedRowCols.rows[0].attrs;
+
+      const startRowIndex = rowIndex;
+
+      while (height > 0) {
+        height -= this.rowGroups[rowIndex].height();
+        rowIndex += 1;
+      }
+
+      let { index: colIndex, width } = selectedRowCols.cols[0].attrs;
+
+      const startColIndex = colIndex;
+
+      while (width > 0) {
+        width -= this.colGroups[colIndex].width();
+        colIndex += 1;
+      }
+
+      const mergedCellToRemove = this.options.mergedCells.findIndex(
+        (x) => x.start.row === startRowIndex && x.start.col === startColIndex
+      );
+
+      this.options.mergedCells.splice(mergedCellToRemove, 1);
+
+      this.setMergedCells(this.options.mergedCells);
+
+      for (let index = startRowIndex; index < rowIndex; index++) {
+        this.drawRowLines(index);
+      }
+
+      for (let index = startColIndex; index < colIndex; index++) {
+        this.drawColLines(index);
+      }
+    }
+  }
+
+  mergeCells(cells: IMergedCells[]) {
+    const doesOverlapCells = (x: IMergedCells) => {
+      return !cells.some((z) => {
+        return (
+          x.start.row >= z.start.row &&
+          x.end.row <= z.end.row &&
+          x.start.col >= z.start.col &&
+          x.end.col <= z.end.col
+        );
+      });
+    };
+
+    const existingMergedCells =
+      this.options.mergedCells.filter(doesOverlapCells);
+    const mergedCells = [...existingMergedCells, ...cells];
 
     this.setMergedCells(mergedCells);
 
-    selectedRowCols.rows.forEach((row) => {
-      this.drawRowLines(row.attrs.index);
-    });
+    for (let index = 0; index < cells.length; index++) {
+      const { start, end } = cells[index];
 
-    selectedRowCols.cols.forEach((col) => {
-      this.drawColLines(col.attrs.index);
-    });
+      for (let index = start.row; index <= end.row; index++) {
+        this.drawRowLines(index);
+      }
+
+      for (let index = start.col; index <= end.col; index++) {
+        this.drawColLines(index);
+      }
+    }
   }
 
   onResizeRowStart = () => {
@@ -593,43 +669,8 @@ class Canvas {
 
     const comparer = (a: Group, b: Group) => a.attrs.index - b.attrs.index;
 
-    const mergedRowsGrouping: Record<string, Group[]> = {};
-    const mergedColsGrouping: Record<string, Group[]> = {};
-
     let rows: Group[] = [];
     let cols: Group[] = [];
-
-    const setMergedRows = (startRi: number, ci: number, getNext = false) => {
-      let newRi = startRi;
-
-      const doesColExist = () => {
-        return this.mergedCellsMap.row[newRi]?.some((x) => x === ci);
-      };
-
-      while (doesColExist()) {
-        const rowGroup = this.rowHeaderGroups[newRi];
-
-        mergedRowsGrouping[ci][newRi] = rowGroup;
-
-        newRi = getNext ? newRi + 1 : newRi - 1;
-      }
-    };
-
-    const setMergedCols = (startCi: number, ri: number, getNext = false) => {
-      let newCi = startCi;
-
-      const doesRowExist = () => {
-        return this.mergedCellsMap.col[newCi]?.some((x) => x === ri);
-      };
-
-      while (doesRowExist()) {
-        const colGroup = this.colHeaderGroups[newCi];
-
-        mergedColsGrouping[ri][newCi] = colGroup;
-
-        newCi = getNext ? newCi + 1 : newCi - 1;
-      }
-    };
 
     for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
       const rowGroup = this.rowHeaderGroups[ri];
@@ -643,66 +684,73 @@ class Canvas {
       cols.push(colGroup);
     }
 
-    for (let ri = cellIndexes.start.ri; ri <= cellIndexes.end.ri; ri++) {
-      if (!isNil(this.mergedCellsMap.row[ri])) {
-        mergedColsGrouping[ri] = [];
+    const mergedCell = this.options.mergedCells.find((x) => {
+      return (
+        (cellIndexes.start.ri >= x.start.row &&
+          cellIndexes.start.ri <= x.end.row &&
+          cellIndexes.start.ci >= x.start.col &&
+          cellIndexes.start.ci <= x.end.col) ||
+        (cellIndexes.end.ri >= x.start.row &&
+          cellIndexes.end.ri <= x.end.row &&
+          cellIndexes.end.ci >= x.start.col &&
+          cellIndexes.end.ci <= x.end.col)
+      );
+    });
 
-        for (let ci = cellIndexes.start.ci; ci <= cellIndexes.end.ci; ci++) {
-          mergedRowsGrouping[ci] = [];
+    console.log(cellIndexes);
 
-          setMergedRows(ri, ci);
-          setMergedRows(ri, ci, true);
+    if (mergedCell) {
+      let totalMergedHeight = 0;
+      let totalMergedWidth = 0;
 
-          const mergedRow = mergedRowsGrouping[ci];
+      const firstRow = this.rowGroups[mergedCell.start.row];
+      const firstCol = this.colGroups[mergedCell.start.col];
 
-          if (mergedRow.length) {
-            mergedRow.sort(comparer);
-            rows = rows.filter((row) => !mergedRow.includes(row));
+      for (
+        let index = mergedCell.start.row;
+        index <= mergedCell.end.row;
+        index++
+      ) {
+        const rowGroup = this.rowGroups[index];
 
-            const totalMergedHeight = mergedRow.reduce((totalHeight, row) => {
-              return totalHeight + row.height();
-            }, 0);
+        totalMergedHeight += rowGroup.height();
 
-            const firstRow = mergedRow[0];
-
-            const newMergedRowGroup = new Group({
-              y: firstRow.y(),
-              height: totalMergedHeight,
-              index: firstRow.attrs.index,
-            });
-
-            if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
-              rows.push(newMergedRowGroup);
-            }
-          }
-
-          setMergedCols(ci, ri);
-          setMergedCols(ci, ri, true);
-
-          const mergedCol = mergedColsGrouping[ri];
-
-          if (mergedCol.length) {
-            mergedCol.sort(comparer);
-            cols = cols.filter((col) => !mergedCol.includes(col));
-
-            const totalMergedWidth = mergedCol.reduce((totalWidth, col) => {
-              return totalWidth + col.width();
-            }, 0);
-
-            const firstCol = mergedCol[0];
-
-            const newMergedColGroup = new Group({
-              x: firstCol.x(),
-              width: totalMergedWidth,
-              index: firstCol.attrs.index,
-            });
-
-            if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
-              cols.push(newMergedColGroup);
-            }
-          }
-        }
+        rows = rows.filter((x) => x.attrs.index !== index);
       }
+
+      for (
+        let index = mergedCell.start.col;
+        index <= mergedCell.end.col;
+        index++
+      ) {
+        const colGroup = this.colGroups[index];
+
+        totalMergedWidth += colGroup.width();
+
+        cols = cols.filter((x) => x.attrs.index !== index);
+      }
+
+      const newMergedRowGroup = new Group({
+        y: firstRow.y(),
+        height: totalMergedHeight,
+        index: firstRow.attrs.index,
+        isMerged: true,
+      });
+
+      const newMergedColGroup = new Group({
+        x: firstCol.x(),
+        width: totalMergedWidth,
+        index: firstCol.attrs.index,
+        isMerged: true,
+      });
+
+      // if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
+      rows.push(newMergedRowGroup);
+      //  }
+
+      //  if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
+      cols.push(newMergedColGroup);
+      // }
     }
 
     const sortedRows = rows.sort(comparer);

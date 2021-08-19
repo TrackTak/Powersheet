@@ -124,13 +124,13 @@ class Selector {
       const { x, y } = this.canvasShapes.sheet.getRelativePointerPosition();
 
       const start = {
-        x: this.selectionArea.start.x + 1,
-        y: this.selectionArea.start.y + 1,
+        x: this.selectionArea.start.x,
+        y: this.selectionArea.start.y,
       };
 
       const end = {
-        x: x + 1,
-        y: y + 1,
+        x: x,
+        y: y,
       };
 
       this.selectionArea.end = {

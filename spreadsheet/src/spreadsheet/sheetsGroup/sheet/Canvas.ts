@@ -1053,8 +1053,10 @@ class Canvas {
 
   drawXGridLines(ri: number, gridLineParams?: IGridLineParams) {
     const { line = this.shapes.xGridLine, config } = gridLineParams ?? {};
+    const sheetWidth =
+      this.sheetDimensions.width + this.colHeaderDimensions.width;
     const lineConfig: LineConfig = {
-      points: [0, 0, this.stage.width(), 0],
+      points: [0, 0, sheetWidth, 0],
       ...config,
     };
     const mergedRow = this.merger.mergedCellsMap.row[ri];
@@ -1093,7 +1095,7 @@ class Canvas {
 
         const getRightLine = () => {
           const x0 = colGroup.x() + colGroup.width();
-          let x1 = this.stage.width();
+          let x1 = sheetWidth;
 
           if (nextColGroup) {
             x1 = nextColGroup.x();
@@ -1126,8 +1128,10 @@ class Canvas {
 
   drawYGridLines(ci: number, gridLineParams?: IGridLineParams) {
     const { line = this.shapes.yGridLine, config } = gridLineParams ?? {};
+    const sheetHeight =
+      this.sheetDimensions.height + this.colHeaderDimensions.height;
     const lineConfig: LineConfig = {
-      points: [0, 0, 0, this.stage.height()],
+      points: [0, 0, 0, sheetHeight],
       ...config,
     };
 
@@ -1167,7 +1171,7 @@ class Canvas {
 
         const getBottomLine = () => {
           let y0 = rowGroup.y() + rowGroup.height();
-          let y1 = this.stage.height();
+          let y1 = sheetHeight;
 
           if (nextRowGroup) {
             y1 = nextRowGroup.y();

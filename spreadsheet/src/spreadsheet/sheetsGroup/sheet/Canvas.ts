@@ -24,6 +24,7 @@ import { IMergedCells, IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import { ShapeConfig } from 'konva/lib/Shape';
 import { flatMap } from 'lodash';
+import Merger from './Merger';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -88,11 +89,6 @@ export interface ICustomSizes {
   size: number;
 }
 
-export interface IMergedCellsMap {
-  row: Record<string, number[]>;
-  col: Record<string, number[]>;
-}
-
 const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -154,6 +150,7 @@ class Canvas {
   horizontalScrollBar!: HorizontalScrollBar;
   verticalScrollBar!: VerticalScrollBar;
   selector!: Selector;
+  merger!: Merger;
   rowResizer!: Resizer;
   colResizer!: Resizer;
   private styles: ICanvasStyles;
@@ -161,7 +158,6 @@ class Canvas {
   private colHeaderGroups: Group[];
   private rowGroups: Group[];
   private colGroups: Group[];
-  private gridLinesMergedCellsMap: IMergedCellsMap;
   private shapes!: ICanvasShapes;
   private sheetDimensions: IDimensions;
   private rowHeaderDimensions: IDimensions;
@@ -221,13 +217,6 @@ class Canvas {
     this.colHeaderGroups = [];
     this.rowGroups = [];
     this.colGroups = [];
-
-    this.gridLinesMergedCellsMap = {
-      row: {},
-      col: {},
-    };
-
-    this.setMergedCells(this.options.mergedCells);
 
     const that = this;
 
@@ -330,6 +319,7 @@ class Canvas {
 
     this.createResizer();
     this.createSelector();
+    this.createMerger();
     this.initializeViewport();
   };
 
@@ -409,179 +399,6 @@ class Canvas {
     this.eventEmitter.on(events.resize.col.start, this.onResizeColStart);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
-  }
-
-  setMergedCells(mergedCells: IMergedCells[]) {
-    const gridLinesMergedCellsMap: IMergedCellsMap = {
-      row: {},
-      col: {},
-    };
-    const comparer = (a: number, b: number) => a - b;
-
-    mergedCells.forEach(({ start, end }) => {
-      const rowsArr: number[] = [];
-      const colsArr: number[] = [];
-
-      for (let index = start.row; index <= end.row; index++) {
-        rowsArr.push(index);
-      }
-
-      for (let index = start.col; index <= end.col; index++) {
-        colsArr.push(index);
-      }
-
-      rowsArr.forEach((value, i) => {
-        if (i !== 0) {
-          gridLinesMergedCellsMap.row[value] = [
-            ...(gridLinesMergedCellsMap.row[value] ?? []),
-            ...colsArr,
-          ];
-
-          gridLinesMergedCellsMap.row[value].sort(comparer);
-        }
-      });
-
-      colsArr.forEach((value, i) => {
-        if (i !== 0) {
-          gridLinesMergedCellsMap.col[value] = [
-            ...(gridLinesMergedCellsMap.col[value] ?? []),
-            ...rowsArr,
-          ];
-          gridLinesMergedCellsMap.col[value].sort(comparer);
-        }
-      });
-    });
-
-    this.options.mergedCells = mergedCells;
-    this.gridLinesMergedCellsMap = gridLinesMergedCellsMap;
-  }
-
-  mergeSelectedCells() {
-    const selectedRowCols = this.selector.selectedRowCols;
-
-    if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
-      return;
-    }
-
-    const start = {
-      row: selectedRowCols.rows[0].attrs.index,
-      col: selectedRowCols.cols[0].attrs.index,
-    };
-
-    const end = {
-      row: selectedRowCols.rows[selectedRowCols.rows.length - 1].attrs.index,
-      col: selectedRowCols.cols[selectedRowCols.cols.length - 1].attrs.index,
-    };
-
-    const mergedSelectedRow = selectedRowCols.rows.find(
-      (x) => x.attrs.isMerged
-    );
-
-    if (mergedSelectedRow && mergedSelectedRow.attrs.index >= end.row) {
-      let totalRowHeight = this.rowGroups[start.row].height();
-
-      while (totalRowHeight < mergedSelectedRow.height()) {
-        end.row += 1;
-        totalRowHeight += this.rowGroups[end.row].height();
-      }
-    }
-
-    const mergedSelectedCol = selectedRowCols.cols.find(
-      (x) => x.attrs.isMerged
-    );
-
-    if (mergedSelectedCol && mergedSelectedCol.attrs.index >= end.col) {
-      let totalColWidth = this.colGroups[start.col].width();
-
-      while (totalColWidth < mergedSelectedCol.width()) {
-        end.col += 1;
-        totalColWidth += this.colGroups[end.col].width();
-      }
-    }
-
-    this.mergeCells([{ start, end }]);
-  }
-
-  unmergeSelectedCells() {
-    const selectedRowCols = this.selector.selectedRowCols;
-
-    if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
-      return;
-    }
-
-    const areAllRowsMerged = selectedRowCols.rows.every(
-      (row) => row.attrs.isMerged
-    );
-    const areAllColsMerged = selectedRowCols.cols.every(
-      (col) => col.attrs.isMerged
-    );
-
-    if (areAllRowsMerged && areAllColsMerged) {
-      let { index: rowIndex, height } = selectedRowCols.rows[0].attrs;
-
-      const startRowIndex = rowIndex;
-
-      while (height > 0) {
-        height -= this.rowGroups[rowIndex].height();
-        rowIndex += 1;
-      }
-
-      let { index: colIndex, width } = selectedRowCols.cols[0].attrs;
-
-      const startColIndex = colIndex;
-
-      while (width > 0) {
-        width -= this.colGroups[colIndex].width();
-        colIndex += 1;
-      }
-
-      const mergedCellToRemove = this.options.mergedCells.findIndex(
-        (x) => x.start.row === startRowIndex && x.start.col === startColIndex
-      );
-
-      this.options.mergedCells.splice(mergedCellToRemove, 1);
-
-      this.setMergedCells(this.options.mergedCells);
-
-      for (let index = startRowIndex; index < rowIndex; index++) {
-        this.drawRowLines(index);
-      }
-
-      for (let index = startColIndex; index < colIndex; index++) {
-        this.drawColLines(index);
-      }
-    }
-  }
-
-  mergeCells(cells: IMergedCells[]) {
-    const doesOverlapCells = (x: IMergedCells) => {
-      return !cells.some((z) => {
-        return (
-          x.start.row >= z.start.row &&
-          x.end.row <= z.end.row &&
-          x.start.col >= z.start.col &&
-          x.end.col <= z.end.col
-        );
-      });
-    };
-
-    const existingMergedCells =
-      this.options.mergedCells.filter(doesOverlapCells);
-    const mergedCells = [...existingMergedCells, ...cells];
-
-    this.setMergedCells(mergedCells);
-
-    for (let index = 0; index < cells.length; index++) {
-      const { start, end } = cells[index];
-
-      for (let index = start.row; index <= end.row; index++) {
-        this.drawRowLines(index);
-      }
-
-      for (let index = start.col; index <= end.col; index++) {
-        this.drawColLines(index);
-      }
-    }
   }
 
   onResizeRowStart = () => {
@@ -743,13 +560,9 @@ class Canvas {
           isMerged: true,
         });
 
-        // if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
         rows.push(newMergedRowGroup);
-        //  }
 
-        //  if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
         cols.push(newMergedColGroup);
-        // }
       });
     }
 
@@ -778,6 +591,17 @@ class Canvas {
       this.layers,
       this.options,
       this.getRowColsBetweenVectors.bind(this)
+    );
+  }
+
+  createMerger() {
+    this.merger = new Merger(
+      this.options,
+      this.selector.selectedRowCols,
+      this.rowGroups,
+      this.colGroups,
+      this.drawRowLines,
+      this.drawColLines
     );
   }
 
@@ -1233,7 +1057,7 @@ class Canvas {
       points: [0, 0, this.stage.width(), 0],
       ...config,
     };
-    const mergedRow = this.gridLinesMergedCellsMap.row[ri];
+    const mergedRow = this.merger.mergedCellsMap.row[ri];
 
     const clone = line.clone(lineConfig) as Line;
 
@@ -1309,7 +1133,7 @@ class Canvas {
 
     const clone = line.clone(lineConfig) as Line;
 
-    const mergedCol = this.gridLinesMergedCellsMap.col[ci];
+    const mergedCol = this.merger.mergedCellsMap.col[ci];
 
     if (mergedCol) {
       return flatMap(mergedCol, (ri, i) => {

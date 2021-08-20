@@ -684,7 +684,7 @@ class Canvas {
       cols.push(colGroup);
     }
 
-    const mergedCell = this.options.mergedCells.find((x) => {
+    const mergedCells = this.options.mergedCells.filter((x) => {
       return (
         (cellIndexes.start.ri >= x.start.row &&
           cellIndexes.start.ri <= x.end.row &&
@@ -697,58 +697,60 @@ class Canvas {
       );
     });
 
-    if (mergedCell) {
-      let totalMergedHeight = 0;
-      let totalMergedWidth = 0;
+    if (mergedCells.length) {
+      mergedCells.forEach((mergedCell) => {
+        let totalMergedHeight = 0;
+        let totalMergedWidth = 0;
 
-      const firstRow = this.rowGroups[mergedCell.start.row];
-      const firstCol = this.colGroups[mergedCell.start.col];
+        const firstRow = this.rowGroups[mergedCell.start.row];
+        const firstCol = this.colGroups[mergedCell.start.col];
 
-      for (
-        let index = mergedCell.start.row;
-        index <= mergedCell.end.row;
-        index++
-      ) {
-        const rowGroup = this.rowGroups[index];
+        for (
+          let index = mergedCell.start.row;
+          index <= mergedCell.end.row;
+          index++
+        ) {
+          const rowGroup = this.rowGroups[index];
 
-        totalMergedHeight += rowGroup.height();
+          totalMergedHeight += rowGroup.height();
 
-        rows = rows.filter((x) => x.attrs.index !== index);
-      }
+          rows = rows.filter((x) => x.attrs.index !== index);
+        }
 
-      for (
-        let index = mergedCell.start.col;
-        index <= mergedCell.end.col;
-        index++
-      ) {
-        const colGroup = this.colGroups[index];
+        for (
+          let index = mergedCell.start.col;
+          index <= mergedCell.end.col;
+          index++
+        ) {
+          const colGroup = this.colGroups[index];
 
-        totalMergedWidth += colGroup.width();
+          totalMergedWidth += colGroup.width();
 
-        cols = cols.filter((x) => x.attrs.index !== index);
-      }
+          cols = cols.filter((x) => x.attrs.index !== index);
+        }
 
-      const newMergedRowGroup = new Group({
-        y: firstRow.y(),
-        height: totalMergedHeight,
-        index: firstRow.attrs.index,
-        isMerged: true,
+        const newMergedRowGroup = new Group({
+          y: firstRow.y(),
+          height: totalMergedHeight,
+          index: firstRow.attrs.index,
+          isMerged: true,
+        });
+
+        const newMergedColGroup = new Group({
+          x: firstCol.x(),
+          width: totalMergedWidth,
+          index: firstCol.attrs.index,
+          isMerged: true,
+        });
+
+        // if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
+        rows.push(newMergedRowGroup);
+        //  }
+
+        //  if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
+        cols.push(newMergedColGroup);
+        // }
       });
-
-      const newMergedColGroup = new Group({
-        x: firstCol.x(),
-        width: totalMergedWidth,
-        index: firstCol.attrs.index,
-        isMerged: true,
-      });
-
-      // if (!rows.some((row) => row.attrs.index === firstRow.attrs.index)) {
-      rows.push(newMergedRowGroup);
-      //  }
-
-      //  if (!cols.some((col) => col.attrs.index === firstCol.attrs.index)) {
-      cols.push(newMergedColGroup);
-      // }
     }
 
     const sortedRows = rows.sort(comparer);

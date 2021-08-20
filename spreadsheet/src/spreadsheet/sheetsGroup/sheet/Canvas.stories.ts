@@ -57,26 +57,6 @@ export const MergedCells = Template.bind({});
 MergedCells.args = {
   ...defaultOptions,
   mergedCells: [
-    // {
-    //   start: {
-    //     row: 9,
-    //     col: 3,
-    //   },
-    //   end: {
-    //     row: 14,
-    //     col: 4,
-    //   },
-    // },
-    // {
-    //   start: {
-    //     row: 3,
-    //     col: 3,
-    //   },
-    //   end: {
-    //     row: 4,
-    //     col: 4,
-    //   },
-    // },
     {
       start: {
         row: 9,
@@ -84,6 +64,16 @@ MergedCells.args = {
       },
       end: {
         row: 14,
+        col: 5,
+      },
+    },
+    {
+      start: {
+        row: 7,
+        col: 3,
+      },
+      end: {
+        row: 8,
         col: 5,
       },
     },

@@ -41,8 +41,10 @@ class Resizer {
     private resizeGuideLineConfig: RectConfig,
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,
+    private headerGroups: Group[],
     private groups: Group[],
-    private draw: (index: number) => void,
+    private drawHeader: (index: number) => void,
+    private drawLines: (index: number) => void,
     private eventEmitter: EventEmitter
   ) {
     this.layers = layers;
@@ -62,8 +64,10 @@ class Resizer {
     this.resizeGuideLineConfig = resizeGuideLineConfig;
     this.resizeLineConfig = resizeLineConfig;
     this.sizeOptions = sizeOptions;
+    this.headerGroups = headerGroups;
     this.groups = groups;
-    this.draw = draw;
+    this.drawHeader = drawHeader;
+    this.drawLines = drawLines;
     this.eventEmitter = eventEmitter;
 
     this.resizeStartPos = {
@@ -153,7 +157,18 @@ class Resizer {
     if (sizeChange !== 0) {
       this.sizeOptions.sizes[index] = newSize;
 
-      this.draw(index);
+      this.drawHeader(index);
+      this.drawLines(index);
+
+      for (let i = index + 1; i < this.headerGroups.length; i++) {
+        const item = this.headerGroups[i];
+
+        if (item) {
+          const newAxis = item[this.functions.axis]() + sizeChange;
+
+          item[this.functions.axis](newAxis);
+        }
+      }
 
       for (let i = index + 1; i < this.groups.length; i++) {
         const item = this.groups[i];

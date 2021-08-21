@@ -623,7 +623,9 @@ class Canvas {
         sizes: this.options.row.heights,
       },
       this.rowHeaderGroups,
-      this.drawRow,
+      this.rowGroups,
+      this.drawRow.bind(this),
+      this.drawRowLines.bind(this),
       this.eventEmitter
     );
 
@@ -644,7 +646,9 @@ class Canvas {
         sizes: this.options.col.widths,
       },
       this.colHeaderGroups,
-      this.drawCol,
+      this.colGroups,
+      this.drawCol.bind(this),
+      this.drawColLines.bind(this),
       this.eventEmitter
     );
   }
@@ -865,7 +869,7 @@ class Canvas {
     return colWidth;
   }
 
-  drawRow = (ri: number, drawingAtTop = false) => {
+  drawRow(ri: number, drawingAtTop = false) {
     const prevRi = drawingAtTop ? ri + 1 : ri - 1;
 
     if (this.rowHeaderGroups[ri]) {
@@ -901,9 +905,9 @@ class Canvas {
     } else {
       this.layers.xStickyLayer.add(rowHeaderGroup);
     }
-  };
+  }
 
-  drawCol = (ci: number, drawingAtLeft = false) => {
+  drawCol(ci: number, drawingAtLeft = false) {
     const prevCi = drawingAtLeft ? ci + 1 : ci - 1;
 
     if (this.colHeaderGroups[ci]) {
@@ -939,7 +943,7 @@ class Canvas {
     } else {
       this.layers.yStickyLayer.add(colHeaderGroup);
     }
-  };
+  }
 
   drawRowHeader(ri: number) {
     const rowHeight = this.getRowHeight(ri);
@@ -1012,7 +1016,9 @@ class Canvas {
 
     const xGridLines =
       ri === this.options.frozenCells.row
-        ? this.drawXGridLines(ri, { line: this.shapes.frozenGridLine })
+        ? this.drawXGridLines(ri, {
+            line: this.shapes.frozenGridLine,
+          })
         : this.drawXGridLines(ri);
 
     xGridLines.forEach((xGridLine) => {
@@ -1028,7 +1034,6 @@ class Canvas {
     if (this.colGroups[ci]) {
       this.colGroups[ci].destroy();
     }
-
     const groupConfig: ShapeConfig = {
       index: ci,
       width: this.colHeaderGroups[ci].width(),
@@ -1039,7 +1044,9 @@ class Canvas {
 
     const yGridLines =
       ci === this.options.frozenCells.col
-        ? this.drawYGridLines(ci, { line: this.shapes.frozenGridLine })
+        ? this.drawYGridLines(ci, {
+            line: this.shapes.frozenGridLine,
+          })
         : this.drawYGridLines(ci);
 
     yGridLines.forEach((yGridLine) => {

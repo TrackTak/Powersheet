@@ -42,8 +42,6 @@ class Resizer {
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,
     private headerGroups: Group[],
-    private colGroups: Group[],
-    private rowGroups: Group[],
     private drawHeader: (index: number) => void,
     private drawColLines: (index: number) => void,
     private drawRowLines: (index: number) => void,
@@ -68,8 +66,6 @@ class Resizer {
     this.resizeLineConfig = resizeLineConfig;
     this.sizeOptions = sizeOptions;
     this.headerGroups = headerGroups;
-    this.colGroups = colGroups;
-    this.rowGroups = rowGroups;
     this.drawHeader = drawHeader;
     this.drawColLines = drawColLines;
     this.drawRowLines = drawRowLines;
@@ -146,9 +142,19 @@ class Resizer {
   }
 
   showGuideLine(target: Line) {
-    const axisAmount =
-      target.parent![this.functions.axis]() + target[this.functions.axis]();
-    this.shapes.resizeGuideLine[this.functions.axis](axisAmount);
+    let x = 0;
+    let y = 0;
+
+    if (this.type === 'row') {
+      x = this.layers.mainLayer.x() * -1;
+      y = target.parent!.y() + target.y();
+    } else {
+      x = target.parent!.x() + target.x();
+      y = this.layers.mainLayer.y() * -1;
+    }
+
+    this.shapes.resizeGuideLine.x(x);
+    this.shapes.resizeGuideLine.y(y);
     this.shapes.resizeGuideLine.show();
   }
 
@@ -164,7 +170,6 @@ class Resizer {
       this.sizeOptions.sizes[index] = newSize;
 
       this.drawHeader(index);
-      // this.drawLines(index);
 
       for (let i = index + 1; i < this.headerGroups.length; i++) {
         const item = this.headerGroups[i];

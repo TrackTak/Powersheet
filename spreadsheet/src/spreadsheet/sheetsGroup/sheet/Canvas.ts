@@ -834,6 +834,14 @@ class Canvas {
       ri++
     ) {
       this.drawRowLines(ri);
+
+      const mergedCol = this.merger.mergedCellsMap.row[ri];
+
+      if (mergedCol) {
+        mergedCol.forEach((ci) => {
+          this.drawColLines(ci);
+        });
+      }
     }
     // Scrolling up
     for (
@@ -842,6 +850,14 @@ class Canvas {
       ri--
     ) {
       this.drawRowLines(ri - 1);
+
+      const mergedCol = this.merger.mergedCellsMap.row[ri];
+
+      if (mergedCol) {
+        mergedCol.forEach((ci) => {
+          this.drawColLines(ci);
+        });
+      }
     }
     // Scrolling right
     for (
@@ -850,6 +866,14 @@ class Canvas {
       ci++
     ) {
       this.drawColLines(ci);
+
+      const mergedRow = this.merger.mergedCellsMap.col[ci];
+
+      if (mergedRow) {
+        mergedRow.forEach((ri) => {
+          this.drawRowLines(ri);
+        });
+      }
     }
     // Scrolling left
     for (
@@ -858,6 +882,14 @@ class Canvas {
       ci--
     ) {
       this.drawColLines(ci - 1);
+
+      const mergedRow = this.merger.mergedCellsMap.col[ci];
+
+      if (mergedRow) {
+        mergedRow.forEach((ri) => {
+          this.drawRowLines(ri);
+        });
+      }
     }
   }
 

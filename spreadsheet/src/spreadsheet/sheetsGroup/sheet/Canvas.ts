@@ -318,7 +318,11 @@ class Canvas {
     this.createResizer();
     this.createSelector();
     this.createMerger();
-    this.initializeViewport();
+    this.drawItemsBetweenPositions(
+      this.previousSheetViewportPositions,
+      this.sheetViewportPositions
+    );
+    this.setPreviousSheetViewportPositions();
   };
 
   private create(stageConfig: ICreateStageConfig = {}) {
@@ -725,44 +729,11 @@ class Canvas {
     return hasOverlap;
   }
 
-  initializeViewport() {
-    for (
-      let ri = this.sheetViewportPositions.row.x;
-      ri <= this.sheetViewportPositions.row.y;
-      ri++
-    ) {
-      this.drawRow(ri);
-    }
-
-    for (
-      let ci = this.sheetViewportPositions.col.x;
-      ci <= this.sheetViewportPositions.col.y;
-      ci++
-    ) {
-      this.drawCol(ci);
-    }
-
-    for (
-      let ri = this.sheetViewportPositions.row.x;
-      ri <= this.sheetViewportPositions.row.y;
-      ri++
-    ) {
-      this.drawRowLines(ri);
-    }
-
-    for (
-      let ci = this.sheetViewportPositions.col.x;
-      ci <= this.sheetViewportPositions.col.y;
-      ci++
-    ) {
-      this.drawColLines(ci);
-    }
-
-    this.setPreviousSheetViewportPositions();
-  }
-
   updateViewport() {
-    this.drawNextScrollItems();
+    this.drawItemsBetweenPositions(
+      this.previousSheetViewportPositions,
+      this.sheetViewportPositions
+    );
     this.destroyOutOfViewportShapes();
 
     this.setPreviousSheetViewportPositions();
@@ -827,28 +798,31 @@ class Canvas {
     return -Infinity;
   }
 
-  drawNextScrollItems() {
+  drawItemsBetweenPositions(
+    startPositions: ISheetViewportPositions,
+    endPositions: ISheetViewportPositions
+  ) {
     const rowXGenerator = this.iteratePreviousDownToCurrent(
-      this.previousSheetViewportPositions.row,
-      this.sheetViewportPositions.row,
+      startPositions.row,
+      endPositions.row,
       'x'
     );
 
     const rowYGenerator = this.iteratePreviousUpToCurrent(
-      this.previousSheetViewportPositions.row,
-      this.sheetViewportPositions.row,
+      startPositions.row,
+      endPositions.row,
       'y'
     );
 
     const colXGenerator = this.iteratePreviousDownToCurrent(
-      this.previousSheetViewportPositions.col,
-      this.sheetViewportPositions.col,
+      startPositions.col,
+      endPositions.col,
       'x'
     );
 
     const colYGenerator = this.iteratePreviousUpToCurrent(
-      this.previousSheetViewportPositions.col,
-      this.sheetViewportPositions.col,
+      startPositions.col,
+      endPositions.col,
       'y'
     );
 

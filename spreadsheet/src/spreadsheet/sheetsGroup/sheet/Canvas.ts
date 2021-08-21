@@ -1047,13 +1047,12 @@ class Canvas {
     };
 
     const rowGroup = this.shapes.rowGroup.clone(groupConfig) as Group;
-
-    const xGridLines =
-      ri === this.options.frozenCells.row
-        ? this.drawXGridLines(ri, {
-            line: this.shapes.frozenGridLine,
-          })
-        : this.drawXGridLines(ri);
+    const isFrozen = ri === this.options.frozenCells.row;
+    const xGridLines = isFrozen
+      ? this.drawXGridLines(ri, {
+          line: this.shapes.frozenGridLine,
+        })
+      : this.drawXGridLines(ri);
 
     xGridLines.forEach((xGridLine) => {
       rowGroup.add(xGridLine);
@@ -1061,7 +1060,11 @@ class Canvas {
 
     this.rowGroups[ri] = rowGroup;
 
-    this.layers.mainLayer.add(rowGroup);
+    if (isFrozen) {
+      this.layers.xyStickyLayer.add(rowGroup);
+    } else {
+      this.layers.mainLayer.add(rowGroup);
+    }
   }
 
   drawColLines(ci: number) {
@@ -1075,13 +1078,13 @@ class Canvas {
     };
 
     const colGroup = this.shapes.colGroup.clone(groupConfig) as Group;
+    const isFrozen = ci === this.options.frozenCells.col;
 
-    const yGridLines =
-      ci === this.options.frozenCells.col
-        ? this.drawYGridLines(ci, {
-            line: this.shapes.frozenGridLine,
-          })
-        : this.drawYGridLines(ci);
+    const yGridLines = isFrozen
+      ? this.drawYGridLines(ci, {
+          line: this.shapes.frozenGridLine,
+        })
+      : this.drawYGridLines(ci);
 
     yGridLines.forEach((yGridLine) => {
       colGroup.add(yGridLine);
@@ -1089,7 +1092,11 @@ class Canvas {
 
     this.colGroups[ci] = colGroup;
 
-    this.layers.mainLayer.add(colGroup);
+    if (isFrozen) {
+      this.layers.xyStickyLayer.add(colGroup);
+    } else {
+      this.layers.mainLayer.add(colGroup);
+    }
   }
 
   drawXGridLines(ri: number, gridLineParams?: IGridLineParams) {

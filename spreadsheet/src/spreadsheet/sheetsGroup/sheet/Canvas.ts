@@ -274,21 +274,19 @@ class Canvas {
       this.sheetViewportDimensions.x -
       this.verticalScrollBar.getBoundingClientRect().width;
 
-    const rowYIndex = (this.sheetViewportPositions.row.y =
-      calculateSheetViewportEndPosition(
-        availableRowHeight,
-        0,
-        this.options.row.defaultHeight,
-        this.options.row.heights
-      ));
+    const rowYIndex = calculateSheetViewportEndPosition(
+      availableRowHeight,
+      0,
+      this.options.row.defaultHeight,
+      this.options.row.heights
+    );
 
-    const colYIndex = (this.sheetViewportPositions.col.y =
-      calculateSheetViewportEndPosition(
-        availableColWidth,
-        0,
-        this.options.col.defaultWidth,
-        this.options.col.widths
-      ));
+    const colYIndex = calculateSheetViewportEndPosition(
+      availableColWidth,
+      0,
+      this.options.col.defaultWidth,
+      this.options.col.widths
+    );
 
     let sumOfRowHeights = 0;
     let sumOfColWidths = 0;
@@ -764,7 +762,7 @@ class Canvas {
   }
 
   updateViewport() {
-    this.drawViewportShapes();
+    this.drawNextScrollItems();
     this.destroyOutOfViewportShapes();
 
     this.setPreviousSheetViewportPositions();
@@ -789,104 +787,127 @@ class Canvas {
     });
   }
 
-  drawViewportShapes() {
-    // Scrolling down
+  *iteratePreviousUpToCurrent(
+    previousSheetViewportPosition:
+      | ISheetViewportPositions['row']
+      | ISheetViewportPositions['col'],
+    sheetViewportPositions:
+      | ISheetViewportPositions['row']
+      | ISheetViewportPositions['col'],
+    axis: 'x' | 'y'
+  ) {
     for (
-      let ri = this.previousSheetViewportPositions.row.y;
-      ri < this.sheetViewportPositions.row.y;
-      ri++
+      let index = previousSheetViewportPosition[axis];
+      index < sheetViewportPositions[axis];
+      index++
     ) {
-      this.drawRow(ri);
-    }
-    // Scrolling up
-    for (
-      let ri = this.previousSheetViewportPositions.row.x;
-      ri > this.sheetViewportPositions.row.x;
-      ri--
-    ) {
-      this.drawRow(ri - 1, true);
-    }
-    // Scrolling right
-    for (
-      let ci = this.previousSheetViewportPositions.col.y;
-      ci < this.sheetViewportPositions.col.y;
-      ci++
-    ) {
-      this.drawCol(ci);
-    }
-    // Scrolling left
-    for (
-      let ci = this.previousSheetViewportPositions.col.x;
-      ci > this.sheetViewportPositions.col.x;
-      ci--
-    ) {
-      this.drawCol(ci - 1, true);
+      yield index;
     }
 
-    // Scrolling down
+    return -Infinity;
+  }
+
+  *iteratePreviousDownToCurrent(
+    previousSheetViewportPosition:
+      | ISheetViewportPositions['row']
+      | ISheetViewportPositions['col'],
+    sheetViewportPositions:
+      | ISheetViewportPositions['row']
+      | ISheetViewportPositions['col'],
+    axis: 'x' | 'y'
+  ) {
     for (
-      let ri = this.previousSheetViewportPositions.row.y;
-      ri < this.sheetViewportPositions.row.y;
-      ri++
+      let index = previousSheetViewportPosition[axis];
+      index > sheetViewportPositions[axis];
+      index--
     ) {
-      this.drawRowLines(ri);
+      yield index;
+    }
 
-      const mergedCol = this.merger.mergedCellsMap.row[ri];
+    return -Infinity;
+  }
 
-      if (mergedCol) {
-        mergedCol.forEach((ci) => {
-          this.drawColLines(ci);
-        });
+  drawNextScrollItems() {
+    const rowXGenerator = this.iteratePreviousDownToCurrent(
+      this.previousSheetViewportPositions.row,
+      this.sheetViewportPositions.row,
+      'x'
+    );
+
+    const rowYGenerator = this.iteratePreviousUpToCurrent(
+      this.previousSheetViewportPositions.row,
+      this.sheetViewportPositions.row,
+      'y'
+    );
+
+    const colXGenerator = this.iteratePreviousDownToCurrent(
+      this.previousSheetViewportPositions.col,
+      this.sheetViewportPositions.col,
+      'x'
+    );
+
+    const colYGenerator = this.iteratePreviousUpToCurrent(
+      this.previousSheetViewportPositions.col,
+      this.sheetViewportPositions.col,
+      'y'
+    );
+
+    let ri = -Infinity;
+    let ci = -Infinity;
+
+    do {
+      const rowXGeneratorNext = rowXGenerator.next();
+      const colXGeneratorNext = colXGenerator.next();
+
+      ri = Math.max(
+        rowXGeneratorNext.value ?? -Infinity,
+        rowYGenerator.next().value ?? -Infinity
+      );
+      ci = Math.max(
+        colXGeneratorNext.value ?? -Infinity,
+        colYGenerator.next().value ?? -Infinity
+      );
+
+      if (isFinite(ri)) {
+        const params: [number, boolean?] = !rowXGeneratorNext.done
+          ? [ri - 1, true]
+          : [ri];
+
+        this.drawRow(...params);
       }
-    }
-    // Scrolling up
-    for (
-      let ri = this.previousSheetViewportPositions.row.x;
-      ri > this.sheetViewportPositions.row.x;
-      ri--
-    ) {
-      this.drawRowLines(ri - 1);
 
-      const mergedCol = this.merger.mergedCellsMap.row[ri];
+      if (isFinite(ci)) {
+        const params: [number, boolean?] = !colXGeneratorNext.done
+          ? [ci - 1, true]
+          : [ci];
 
-      if (mergedCol) {
-        mergedCol.forEach((ci) => {
-          this.drawColLines(ci);
-        });
+        this.drawCol(...params);
       }
-    }
-    // Scrolling right
-    for (
-      let ci = this.previousSheetViewportPositions.col.y;
-      ci < this.sheetViewportPositions.col.y;
-      ci++
-    ) {
-      this.drawColLines(ci);
 
-      const mergedRow = this.merger.mergedCellsMap.col[ci];
+      if (isFinite(ri)) {
+        this.drawRowLines(ri);
 
-      if (mergedRow) {
-        mergedRow.forEach((ri) => {
-          this.drawRowLines(ri);
-        });
+        const mergedCol = this.merger.mergedCellsMap.row[ri];
+
+        if (mergedCol) {
+          mergedCol.forEach((ci) => {
+            this.drawColLines(ci);
+          });
+        }
       }
-    }
-    // Scrolling left
-    for (
-      let ci = this.previousSheetViewportPositions.col.x;
-      ci > this.sheetViewportPositions.col.x;
-      ci--
-    ) {
-      this.drawColLines(ci - 1);
 
-      const mergedRow = this.merger.mergedCellsMap.col[ci];
+      if (isFinite(ci)) {
+        this.drawColLines(ci);
 
-      if (mergedRow) {
-        mergedRow.forEach((ri) => {
-          this.drawRowLines(ri);
-        });
+        const mergedRow = this.merger.mergedCellsMap.col[ci];
+
+        if (mergedRow) {
+          mergedRow.forEach((ri) => {
+            this.drawRowLines(ri);
+          });
+        }
       }
-    }
+    } while (isFinite(ri) || isFinite(ci));
   }
 
   getRowHeight(ri: number) {

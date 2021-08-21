@@ -623,9 +623,12 @@ class Canvas {
         sizes: this.options.row.heights,
       },
       this.rowHeaderGroups,
+      this.colGroups,
       this.rowGroups,
       this.drawRow.bind(this),
+      this.drawColLines.bind(this),
       this.drawRowLines.bind(this),
+      this.sheetViewportPositions,
       this.eventEmitter
     );
 
@@ -647,8 +650,11 @@ class Canvas {
       },
       this.colHeaderGroups,
       this.colGroups,
+      this.rowGroups,
       this.drawCol.bind(this),
       this.drawColLines.bind(this),
+      this.drawRowLines.bind(this),
+      this.sheetViewportPositions,
       this.eventEmitter
     );
   }
@@ -1066,11 +1072,13 @@ class Canvas {
       points: [0, 0, sheetWidth, 0],
       ...config,
     };
-    const mergedRow = this.merger.mergedCellsMap.row[ri];
-
     const clone = line.clone(lineConfig) as Line;
 
-    if (mergedRow) {
+    const mergedRow = this.merger.mergedCellsMap.row[ri];
+
+    const hasColsShowing = mergedRow?.some((ci) => this.colHeaderGroups[ci]);
+
+    if (mergedRow && hasColsShowing) {
       return flatMap(mergedRow, (ci, i) => {
         const prevColGroupIndex = mergedRow[i - 1];
         const prevColGroup = !isNil(prevColGroupIndex)
@@ -1078,6 +1086,8 @@ class Canvas {
           : null;
 
         const colGroup = this.colHeaderGroups[ci];
+
+        if (!colGroup) return null;
 
         const nextColGroupIndex = mergedRow[i + 1];
         const nextColGroup = !isNil(nextColGroupIndex)
@@ -1117,7 +1127,7 @@ class Canvas {
         };
 
         return [getLeftLine(), getRightLine()];
-      });
+      }).filter((x) => x !== null) as Line[];
     }
 
     return [clone];
@@ -1146,7 +1156,9 @@ class Canvas {
 
     const mergedCol = this.merger.mergedCellsMap.col[ci];
 
-    if (mergedCol) {
+    const hasRowsShowing = mergedCol?.some((ri) => this.rowHeaderGroups[ri]);
+
+    if (mergedCol && hasRowsShowing) {
       return flatMap(mergedCol, (ri, i) => {
         const prevRowGroupIndex = mergedCol[i - 1];
         const prevRowGroup = !isNil(prevRowGroupIndex)
@@ -1154,6 +1166,8 @@ class Canvas {
           : null;
 
         const rowGroup = this.rowHeaderGroups[ri];
+
+        if (!rowGroup) return null;
 
         const nextRowGroupIndex = mergedCol[i + 1];
         const nextRowGroup = !isNil(nextRowGroupIndex)
@@ -1193,7 +1207,7 @@ class Canvas {
         };
 
         return [getTopLine(), getBottomLine()];
-      });
+      }).filter((x) => x !== null) as Line[];
     }
 
     return [clone];

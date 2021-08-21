@@ -7,7 +7,7 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import { ISizes } from '../../options';
-import { IDimensions, ILayers } from './Canvas';
+import { IDimensions, ILayers, ISheetViewportPositions } from './Canvas';
 import { ICanvasStyles } from './canvasStyles';
 
 interface IShapes {
@@ -42,9 +42,12 @@ class Resizer {
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,
     private headerGroups: Group[],
-    private groups: Group[],
+    private colGroups: Group[],
+    private rowGroups: Group[],
     private drawHeader: (index: number) => void,
-    private drawLines: (index: number) => void,
+    private drawColLines: (index: number) => void,
+    private drawRowLines: (index: number) => void,
+    private sheetViewportPositions: ISheetViewportPositions,
     private eventEmitter: EventEmitter
   ) {
     this.layers = layers;
@@ -65,9 +68,12 @@ class Resizer {
     this.resizeLineConfig = resizeLineConfig;
     this.sizeOptions = sizeOptions;
     this.headerGroups = headerGroups;
-    this.groups = groups;
+    this.colGroups = colGroups;
+    this.rowGroups = rowGroups;
     this.drawHeader = drawHeader;
-    this.drawLines = drawLines;
+    this.drawColLines = drawColLines;
+    this.drawRowLines = drawRowLines;
+    this.sheetViewportPositions = sheetViewportPositions;
     this.eventEmitter = eventEmitter;
 
     this.resizeStartPos = {
@@ -158,7 +164,7 @@ class Resizer {
       this.sizeOptions.sizes[index] = newSize;
 
       this.drawHeader(index);
-      this.drawLines(index);
+      // this.drawLines(index);
 
       for (let i = index + 1; i < this.headerGroups.length; i++) {
         const item = this.headerGroups[i];
@@ -170,14 +176,20 @@ class Resizer {
         }
       }
 
-      for (let i = index + 1; i < this.groups.length; i++) {
-        const item = this.groups[i];
+      for (
+        let ci = this.sheetViewportPositions.col.x;
+        ci < this.sheetViewportPositions.col.y;
+        ci++
+      ) {
+        this.drawColLines(ci);
+      }
 
-        if (item) {
-          const newAxis = item[this.functions.axis]() + sizeChange;
-
-          item[this.functions.axis](newAxis);
-        }
+      for (
+        let ri = this.sheetViewportPositions.row.x;
+        ri < this.sheetViewportPositions.row.y;
+        ri++
+      ) {
+        this.drawRowLines(ri);
       }
     }
   }

@@ -1,7 +1,7 @@
 import { Group } from 'konva/lib/Group';
 import { IMergedCells, IOptions } from '../../options';
 import Canvas from './Canvas';
-import { ISelectedRowCols } from './Selector';
+import Selector from './Selector';
 
 export interface IMergedCellsMap {
   row: Record<string, number[]>;
@@ -13,14 +13,14 @@ class Merger {
 
   constructor(
     private options: IOptions,
-    private selectedRowCols: ISelectedRowCols,
+    private selector: Selector,
     private rowGroups: Group[],
     private colGroups: Group[],
     private drawRowLines: Canvas['drawRowLines'],
     private drawColLines: Canvas['drawColLines']
   ) {
     this.options = options;
-    this.selectedRowCols = selectedRowCols;
+    this.selector = selector;
     this.rowGroups = rowGroups;
     this.colGroups = colGroups;
     this.drawRowLines = drawRowLines;
@@ -79,7 +79,7 @@ class Merger {
   }
 
   mergeSelectedCells() {
-    const selectedRowCols = this.selectedRowCols;
+    const selectedRowCols = this.selector.selectedRowCols;
 
     if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
       return;
@@ -125,7 +125,7 @@ class Merger {
   }
 
   unmergeSelectedCells() {
-    const selectedRowCols = this.selectedRowCols;
+    const selectedRowCols = this.selector.selectedRowCols;
 
     if (!selectedRowCols.rows.length || !selectedRowCols.cols.length) {
       return;

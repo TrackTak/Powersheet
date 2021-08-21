@@ -20,7 +20,7 @@ import {
   performanceProperties,
 } from './canvasStyles';
 import Resizer from './Resizer';
-import { IMergedCells, IOptions, ISizes } from '../../options';
+import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import { ShapeConfig } from 'konva/lib/Shape';
 import { flatMap } from 'lodash';
@@ -597,11 +597,11 @@ class Canvas {
   createMerger() {
     this.merger = new Merger(
       this.options,
-      this.selector.selectedRowCols,
+      this.selector,
       this.rowGroups,
       this.colGroups,
-      this.drawRowLines,
-      this.drawColLines
+      this.drawRowLines.bind(this),
+      this.drawColLines.bind(this)
     );
   }
 

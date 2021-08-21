@@ -21,14 +21,14 @@ const Template: Story<IOptions> = (args) => {
 
   merge.innerHTML = 'Merge Cell';
   merge.onclick = () => {
-    canvas.mergeSelectedCells();
+    canvas.merger.mergeSelectedCells();
   };
 
   const unmerge = document.createElement('button');
 
   unmerge.innerHTML = 'Unmerge Cell';
   unmerge.onclick = () => {
-    canvas.unmergeSelectedCells();
+    canvas.merger.unmergeSelectedCells();
   };
 
   container.appendChild(merge);

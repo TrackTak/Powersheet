@@ -40,7 +40,7 @@ export interface IOptions {
 }
 
 export const defaultOptions: IOptions = {
-  numberOfRows: 10000,
+  numberOfRows: 1000,
   numberOfCols: 26,
   row: {
     minHeight: 25,

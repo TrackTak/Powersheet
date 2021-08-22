@@ -11,20 +11,21 @@ interface IConstructorParams {
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetButton: HTMLButtonElement;
-  menuSheetButton: HTMLButtonElement[];
+  menuSheetButton: HTMLButtonElement;
   addItemTab: HTMLUListElement;
   buttonTabs: HTMLButtonElement[];
+  buttonTabs2: HTMLButtonElement[];
   dropdownMenuTab: HTMLDivElement;
   menuSheetDropdownBox: HTMLDivElement;
   globalSheetIndex: number;
 
   constructor(params?: IConstructorParams) {
     this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
-    this.menuSheetButton = params?.menuSheetButton ?? [
-      this.createMenuSheetButton(),
-    ];
+    this.menuSheetButton =
+      params?.menuSheetButton ?? this.createMenuSheetButton();
     this.addItemTab = this.addItem(this.addSheetButton);
     this.buttonTabs = [this.createTabButton(1)];
+    this.buttonTabs2 = [this.createTabButton2(1)];
     this.dropdownMenuTab = this.dropdownMenu();
     this.globalSheetIndex = 1;
     this.menuSheetDropdownBox = this.menuSheetDropdown();
@@ -44,7 +45,7 @@ class BottomBar implements IBottomBar {
     const menuSheetContainer = document.createElement('div');
     menuSheetContainer.className = 'menusheet-container';
 
-    this.element.appendChild(menuSheetContainer);
+    buttonWrapper.appendChild(menuSheetContainer);
 
     const tabContainer = document.createElement('div');
     tabContainer.className = 'tab';
@@ -54,8 +55,10 @@ class BottomBar implements IBottomBar {
     this.addItem(this.addSheetButton);
 
     buttonWrapper.appendChild(this.addSheetButton);
-    menuSheetContainer.appendChild(this.menuSheetButton[0]);
     tabContainer.appendChild(this.buttonTabs[0]);
+    menuSheetContainer.appendChild(this.menuSheetButton);
+    menuSheetContainer.appendChild(this.menuSheetDropdownBox);
+    this.menuSheetDropdownBox.appendChild(this.buttonTabs2[0]);
 
     this.addSheetButton.addEventListener('click', () => {
       this.globalSheetIndex += 1;
@@ -72,14 +75,12 @@ class BottomBar implements IBottomBar {
 
       // Create a new buttonTabs array thing and a new `createTabButton`
       // push to this new array. Loop through it and do `dropdownContentTab.appendChild` with the new element
-      const menuSheetButtonsArray = this.createMenuSheetButton(
-        this.globalSheetIndex
-      );
+      const menuSheetButton = this.createTabButton2(this.globalSheetIndex);
 
-      this.menuSheetButton.push(menuSheetButtonsArray);
+      this.buttonTabs2.push(menuSheetButton);
 
-      this.menuSheetButton.forEach((element) => {
-        this.menuSheetDropdownBox.appendChild(element);
+      this.buttonTabs2.forEach((buttonTab) => {
+        this.menuSheetDropdownBox.appendChild(buttonTab);
       });
     });
   }
@@ -136,10 +137,13 @@ class BottomBar implements IBottomBar {
         element = element.parentElement;
       }
 
-      this.buttonTabs = this.buttonTabs.filter(
-        (buttonTab) => buttonTab !== element
-      );
+      const elementIndex = [...element.parentElement.children].indexOf(element);
+      const menuSheetDropdown = document.querySelector('.menusheet-dropdown')!;
 
+      this.buttonTabs.splice(elementIndex, 1);
+      this.buttonTabs2.splice(elementIndex, 1);
+
+      menuSheetDropdown.children[elementIndex].remove();
       element.remove();
     });
 
@@ -198,8 +202,8 @@ class BottomBar implements IBottomBar {
 
     buttonMenuSheet.addEventListener('click', (e) => {
       const sheetPressed = e.button;
+
       if (sheetPressed === 0) {
-        e.target.parentElement.appendChild(this.menuSheetDropdownBox);
         this.menuSheetDropdownBox.style.display = 'block';
       }
     });
@@ -221,9 +225,20 @@ class BottomBar implements IBottomBar {
 
   menuSheetDropdown() {
     const menuSheetDropdown = document.createElement('div');
+
     menuSheetDropdown.className = 'menusheet-dropdown';
+    menuSheetDropdown.style.display = 'none';
 
     return menuSheetDropdown;
+  }
+
+  createTabButton2(sheetNumber: number) {
+    const buttonTab2 = document.createElement('button');
+    buttonTab2.className = 'btn-tab';
+
+    buttonTab2.textContent = `Sheet${sheetNumber}`;
+
+    return buttonTab2;
   }
 }
 

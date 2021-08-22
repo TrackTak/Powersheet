@@ -13,7 +13,6 @@
 .wrapper {
   display: flex;
   flex-direction: row;
-  margin-right: 19px;
 }
 
 img {
@@ -91,4 +90,19 @@ img {
   line-height: 20px;
   padding: 12px 16px;
   text-align: left;
+}
+
+.menusheet-container {
+  margin-right: 16px;
+}
+
+.menusheet-dropdown {
+  height: 100px;
+  bottom: 100%;
+  position: absolute;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px 2px rgb(60 64 67 / 15%);
+  min-width: 120px;
+  z-index: 100;
 }

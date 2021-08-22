@@ -11,20 +11,23 @@ interface IConstructorParams {
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetButton: HTMLButtonElement;
-  menuSheetButton: HTMLButtonElement;
+  menuSheetButton: HTMLButtonElement[];
   addItemTab: HTMLUListElement;
   buttonTabs: HTMLButtonElement[];
   dropdownMenuTab: HTMLDivElement;
+  menuSheetDropdownBox: HTMLDivElement;
   globalSheetIndex: number;
 
   constructor(params?: IConstructorParams) {
     this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
-    this.menuSheetButton =
-      params?.menuSheetButton ?? this.createMenuSheetButton();
+    this.menuSheetButton = params?.menuSheetButton ?? [
+      this.createMenuSheetButton(),
+    ];
     this.addItemTab = this.addItem(this.addSheetButton);
     this.buttonTabs = [this.createTabButton(1)];
     this.dropdownMenuTab = this.dropdownMenu();
     this.globalSheetIndex = 1;
+    this.menuSheetDropdownBox = this.menuSheetDropdown();
 
     this.create();
   }
@@ -38,6 +41,11 @@ class BottomBar implements IBottomBar {
 
     this.element.appendChild(buttonWrapper);
 
+    const menuSheetContainer = document.createElement('div');
+    menuSheetContainer.className = 'menusheet-container';
+
+    this.element.appendChild(menuSheetContainer);
+
     const tabContainer = document.createElement('div');
     tabContainer.className = 'tab';
 
@@ -46,7 +54,7 @@ class BottomBar implements IBottomBar {
     this.addItem(this.addSheetButton);
 
     buttonWrapper.appendChild(this.addSheetButton);
-    buttonWrapper.appendChild(this.menuSheetButton);
+    menuSheetContainer.appendChild(this.menuSheetButton[0]);
     tabContainer.appendChild(this.buttonTabs[0]);
 
     this.addSheetButton.addEventListener('click', () => {
@@ -56,9 +64,22 @@ class BottomBar implements IBottomBar {
       this.buttonTabs.push(tabSheetButton);
 
       tabContainer.innerHTML = '';
+      this.menuSheetDropdownBox.innerHTML = '';
 
       this.buttonTabs.forEach((buttonTab) => {
         tabContainer.appendChild(buttonTab);
+      });
+
+      // Create a new buttonTabs array thing and a new `createTabButton`
+      // push to this new array. Loop through it and do `dropdownContentTab.appendChild` with the new element
+      const menuSheetButtonsArray = this.createMenuSheetButton(
+        this.globalSheetIndex
+      );
+
+      this.menuSheetButton.push(menuSheetButtonsArray);
+
+      this.menuSheetButton.forEach((element) => {
+        this.menuSheetDropdownBox.appendChild(element);
       });
     });
   }
@@ -122,13 +143,13 @@ class BottomBar implements IBottomBar {
       element.remove();
     });
 
-    const cloneButton = document.createElement('button');
-    cloneButton.className = 'btn-menuitem';
-    cloneButton.textContent = 'Clone';
+    const renameButton = document.createElement('button');
+    renameButton.className = 'btn-menuitem';
+    renameButton.textContent = 'Rename';
 
     menu.appendChild(menuItem);
     menuItem.appendChild(deleteButton);
-    menuItem.appendChild(cloneButton);
+    menuItem.appendChild(renameButton);
 
     return menu;
   }
@@ -163,6 +184,30 @@ class BottomBar implements IBottomBar {
     const buttonMenuSheet = document.createElement('button');
     buttonMenuSheet.className = 'btn-img';
 
+    window.addEventListener(
+      'click',
+      (e) => {
+        const isClickInside = this.menuSheetDropdownBox.contains(e.target);
+        if (isClickInside) {
+        } else {
+          this.menuSheetDropdownBox.style.display = 'none';
+        }
+      },
+      { capture: true }
+    );
+
+    buttonMenuSheet.addEventListener('click', (e) => {
+      const sheetPressed = e.button;
+      if (sheetPressed === 0) {
+        e.target.parentElement.appendChild(this.menuSheetDropdownBox);
+        this.menuSheetDropdownBox.style.display = 'block';
+      }
+    });
+
+    buttonMenuSheet.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
     const menuSheetImage = document.createElement('img');
 
     menuSheetImage.src = sheetIcon;
@@ -172,6 +217,13 @@ class BottomBar implements IBottomBar {
     buttonMenuSheet.appendChild(menuSheetImage);
 
     return buttonMenuSheet;
+  }
+
+  menuSheetDropdown() {
+    const menuSheetDropdown = document.createElement('div');
+    menuSheetDropdown.className = 'menusheet-dropdown';
+
+    return menuSheetDropdown;
   }
 }
 

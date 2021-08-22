@@ -8,8 +8,8 @@ import styles from './ScrollBar.module.scss';
 
 export interface IBuildScroll {
   create: () => {
-    scrollBar: HTMLDivElement;
-    scroll: HTMLDivElement;
+    scrollBarEl: HTMLDivElement;
+    scrollEl: HTMLDivElement;
   };
   destroy: () => void;
 }
@@ -24,8 +24,8 @@ const buildScrollBar = (
   onWheel: (e: KonvaEventObject<WheelEvent>) => void,
   eventEmitter: EventEmitter
 ): IBuildScroll => {
-  let scrollBar: HTMLDivElement;
-  let scroll: HTMLDivElement;
+  let scrollBarEl: HTMLDivElement;
+  let scrollEl: HTMLDivElement;
   let throttledScroll: DebouncedFunc<(e: Event) => void>;
 
   const _onWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -43,37 +43,40 @@ const buildScrollBar = (
   };
 
   const create = () => {
-    scrollBar = document.createElement('div');
+    scrollBarEl = document.createElement('div');
 
-    scrollBar.classList.add(
+    scrollBarEl.classList.add(
       `${prefix}-scroll-bar`,
       scrollBarType,
       styles[`${scrollBarType}ScrollBar`]
     );
 
-    scroll = document.createElement('div');
+    scrollEl = document.createElement('div');
 
-    scroll.classList.add(`${prefix}-scroll`, styles[`${scrollBarType}Scroll`]);
+    scrollEl.classList.add(
+      `${prefix}-scroll`,
+      styles[`${scrollBarType}Scroll`]
+    );
 
-    scrollBar.appendChild(scroll);
+    scrollBarEl.appendChild(scrollEl);
 
     window.addEventListener('DOMContentLoaded', onLoad);
 
     // 60 fps: (1000ms / 60fps = 16ms);
     throttledScroll = throttle(_onScroll, 16);
 
-    scrollBar.addEventListener('scroll', throttledScroll);
+    scrollBarEl.addEventListener('scroll', throttledScroll);
 
     stage.on('wheel', _onWheel);
 
     return {
-      scrollBar,
-      scroll,
+      scrollBarEl,
+      scrollEl,
     };
   };
 
   const destroy = () => {
-    scrollBar.removeEventListener('scroll', throttledScroll);
+    scrollBarEl.removeEventListener('scroll', throttledScroll);
     window.removeEventListener('DOMContentLoaded', onLoad);
     stage.off('wheel', _onWheel);
   };

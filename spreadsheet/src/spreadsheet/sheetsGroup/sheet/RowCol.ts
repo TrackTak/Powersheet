@@ -62,9 +62,11 @@ class RowCol {
   private sizeOptions: ISizeOptions;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
+  private isCol: boolean;
 
   constructor(private type: RowColType, private canvas: Canvas) {
     this.type = type;
+    this.isCol = this.type === 'col';
     this.canvas = canvas;
     this.headerGroups = [];
     this.groups = [];
@@ -86,8 +88,7 @@ class RowCol {
         ...this.canvas.styles.gridLine,
       }),
     };
-
-    if (this.type === 'col') {
+    if (this.isCol) {
       this.oppositeType = 'row';
       this.functions = {
         axis: 'x',
@@ -105,36 +106,16 @@ class RowCol {
       this.scrollBar = new HorizontalScrollBar(
         this.canvas,
         this.sheetViewportPosition,
-        this.headerGroups,
-        this.onScroll
-      );
-      this.resizer = new Resizer(
-        canvas,
-        this.type,
-        this.functions,
-        {
-          points: [
-            0,
-            this.canvas.getViewportXY().y,
-            0,
-            this.canvas.stage.height(),
-          ],
-        },
-        {
-          points: [0, 0, 0, this.canvas.getViewportXY().y],
-        },
-        this.sizeOptions,
         this.headerGroups
       );
-      this.shapes.headerText.attrs(this.canvas.styles.colHeader.text);
-      this.shapes.headerRect.attrs({
+      this.shapes.headerText.setAttrs(this.canvas.styles.colHeader.text);
+      this.shapes.headerRect.setAttrs({
         ...this.canvas.styles.colHeader.rect,
         width: this.canvas.options.col.defaultWidth,
       });
       this.getHeaderText = (index) => {
         const startCharCode = 'A'.charCodeAt(0);
         const letter = String.fromCharCode(startCharCode + index);
-
         return letter;
       };
       this.getLinePoints = (y0, y1) => {
@@ -144,12 +125,11 @@ class RowCol {
         const lineConfig: LineConfig = {
           points: [0, 0, 0, sheetHeight],
         };
-
         return lineConfig;
       };
       this.getAvailableSize = () =>
         window.innerWidth -
-        this.canvas.getViewportXY().x -
+        this.canvas.getViewportVector().x -
         this.canvas.row.scrollBar.getBoundingClientRect().width;
     } else {
       this.oppositeType = 'col';
@@ -169,29 +149,11 @@ class RowCol {
       this.scrollBar = new VerticalScrollBar(
         this.canvas,
         this.sheetViewportPosition,
-        this.headerGroups,
-        this.onScroll
-      );
-      this.resizer = new Resizer(
-        canvas,
-        this.type,
-        this.functions,
-        {
-          points: [
-            this.canvas.getViewportXY().x,
-            0,
-            this.canvas.stage.width(),
-            0,
-          ],
-        },
-        {
-          points: [0, 0, this.canvas.getViewportXY().x, 0],
-        },
-        this.sizeOptions,
         this.headerGroups
       );
-      this.shapes.headerText.attrs(this.canvas.styles.rowHeader.text);
-      this.shapes.headerRect.attrs({
+
+      this.shapes.headerText.setAttrs(this.canvas.styles.rowHeader.text);
+      this.shapes.headerRect.setAttrs({
         ...this.canvas.styles.rowHeader.rect,
         height: this.canvas.options.row.defaultHeight,
       });
@@ -205,28 +167,62 @@ class RowCol {
         const lineConfig: LineConfig = {
           points: [0, 0, sheetWidth, 0],
         };
-
         return lineConfig;
       };
       this.getAvailableSize = () =>
         window.innerHeight -
-        this.canvas.getViewportXY().y -
+        this.canvas.getViewportVector().y -
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
 
-    this.shapes.headerGroup.cache(this.canvas.getViewportXY());
-    this.shapes.group.cache(this.canvas.getViewportXY());
+    this.resizer = new Resizer(
+      canvas,
+      this.type,
+      this.functions,
+      this.sizeOptions,
+      this.headerGroups
+    );
+    this.shapes.headerGroup.cache({
+      ...this.canvas.getViewportVector(),
+      ...this.canvas.sheetViewportDimensions,
+    });
+    this.shapes.group.cache({
+      ...this.canvas.getViewportVector(),
+      ...this.canvas.sheetViewportDimensions,
+    });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
-
     this.canvas.eventEmitter.on(
       events.resize[this.type].start,
       this.onResizeStart
     );
     this.canvas.eventEmitter.on(events.resize[this.type].end, this.onResizeEnd);
+
+    window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
+  onLoad = () => {
+    const yIndex = calculateSheetViewportEndPosition(
+      this.getAvailableSize(),
+      0,
+      this.sizeOptions.defaultSize,
+      this.sizeOptions.sizes
+    );
+
+    let sumOfSizes = 0;
+
+    for (let index = 0; index < yIndex; index++) {
+      sumOfSizes += this.getSize(index);
+    }
+
+    this.totalSize = sumOfSizes;
+
+    this.sheetViewportPosition.y = yIndex;
+  };
+
   destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onLoad);
+
     this.canvas.eventEmitter.off(
       events.resize[this.type].start,
       this.onResizeStart
@@ -238,10 +234,6 @@ class RowCol {
     this.scrollBar.destroy();
     this.resizer.destroy();
   }
-
-  onScroll = () => {
-    this.updateViewport();
-  };
 
   onResizeStart = () => {
     this.resizer.shapes.resizeGuideLine.moveToTop();
@@ -257,20 +249,7 @@ class RowCol {
     }
   };
 
-  updateViewport() {
-    let iteratorResult = null;
-
-    do {
-      iteratorResult = this.getNextItemToDraw().next();
-    } while (!iteratorResult.done);
-
-    this.destroyOutOfViewportItems();
-
-    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
-    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
-  }
-
-  *getNextItemToDraw() {
+  *updateViewport() {
     const generator = {
       x: iteratePreviousDownToCurrent(
         this.previousSheetViewportPosition.x,
@@ -301,7 +280,7 @@ class RowCol {
         this.drawHeader(...params);
       }
 
-      yield;
+      yield index;
 
       if (isFinite(index)) {
         this.drawGridLines(index);
@@ -319,12 +298,17 @@ class RowCol {
         }
       }
     } while (isFinite(index));
+
+    this.destroyOutOfViewportItems();
+
+    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
+    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
   }
 
   destroyOutOfViewportItems() {
     this.headerGroups.forEach((group, index) => {
       const isOverlapping = hasOverlap(group.getClientRect(), {
-        ...this.canvas.getViewportXY(),
+        ...this.canvas.getViewportVector(),
         ...this.canvas.sheetViewportDimensions,
       });
 
@@ -334,27 +318,6 @@ class RowCol {
         delete this.headerGroups[index];
       }
     });
-  }
-
-  onLoad() {
-    const yIndex = calculateSheetViewportEndPosition(
-      this.getAvailableSize(),
-      0,
-      this.sizeOptions.defaultSize,
-      this.sizeOptions.sizes
-    );
-
-    let sumOfSizes = 0;
-
-    for (let index = 0; index < yIndex; index++) {
-      sumOfSizes += this.getSize(index);
-    }
-
-    this.totalSize = sumOfSizes;
-
-    this.sheetViewportPosition.y = yIndex;
-
-    this.updateViewport();
   }
 
   getSize(index: number) {
@@ -444,7 +407,7 @@ class RowCol {
       ? drawingAtX
         ? this.headerGroups[prevIndex][this.functions.axis]() - size
         : prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
-      : this.canvas.getViewportXY()[this.functions.axis];
+      : this.canvas.getViewportVector()[this.functions.axis];
 
     const groupConfig: ShapeConfig = {
       index,
@@ -463,7 +426,11 @@ class RowCol {
     if (isFrozen) {
       this.canvas.layers.xyStickyLayer.add(headerGroup);
     } else {
-      this.canvas.layers.yStickyLayer.add(headerGroup);
+      if (this.isCol) {
+        this.canvas.layers.yStickyLayer.add(headerGroup);
+      } else {
+        this.canvas.layers.xStickyLayer.add(headerGroup);
+      }
     }
   }
 
@@ -512,7 +479,7 @@ class RowCol {
 
     const sheetSize =
       this.canvas.sheetDimensions[this.oppositeFunctions.size] +
-      this.canvas.getViewportXY()[this.oppositeFunctions.axis];
+      this.canvas.getViewportVector()[this.oppositeFunctions.axis];
 
     const lineConfig = this.getLineConfig(sheetSize);
     const clone = line.clone(lineConfig) as Line;

@@ -1,5 +1,6 @@
 import { Group } from 'konva/lib/Group';
 import { KonvaEventObject } from 'konva/lib/Node';
+import events from '../../../events';
 import Canvas, {
   calculateSheetViewportEndPosition,
   ICustomSizePosition,
@@ -18,13 +19,11 @@ class HorizontalScrollBar implements IScrollBar {
   constructor(
     private canvas: Canvas,
     private sheetViewportPosition: ISheetViewportPosition,
-    private colHeaderGroups: Group[],
-    private _onScroll: (e: Event) => void
+    private colHeaderGroups: Group[]
   ) {
     this.canvas = canvas;
     this.sheetViewportPosition = sheetViewportPosition;
     this.colHeaderGroups = colHeaderGroups;
-    this._onScroll = _onScroll;
     this.customSizePositions = [];
     this.scrollOffset = {
       size: 0,
@@ -47,13 +46,11 @@ class HorizontalScrollBar implements IScrollBar {
       };
     });
 
-    this.canvas.container.appendChild(this.scrollBarEl);
-
     this.scrollBarBuilder = buildScrollBar(
       'horizontal',
       this.canvas.stage,
       this.canvas.eventEmitter,
-      this.onLoad,
+      this.onCanvasLoad,
       this.onScroll,
       this.onWheel
     );
@@ -62,21 +59,23 @@ class HorizontalScrollBar implements IScrollBar {
 
     this.scrollBarEl = scrollBarEl;
     this.scrollEl = scrollEl;
-
-    this.scrollEl.style.width = `${
-      this.canvas.sheetDimensions.width + this.canvas.getViewportXY().x
-    }px`;
   }
 
   getBoundingClientRect = () => {
     return this.scrollBarEl.getBoundingClientRect();
   };
 
-  onLoad() {
+  onCanvasLoad = () => {
     this.scrollBarEl.style.width = `${this.canvas.stage.width()}px`;
-  }
 
-  onScroll(e: Event) {
+    this.scrollEl.style.width = `${
+      this.canvas.sheetDimensions.width + this.canvas.getViewportVector().x
+    }px`;
+
+    this.canvas.container.appendChild(this.scrollBarEl);
+  };
+
+  onScroll = (e: Event) => {
     const { scrollLeft } = e.target! as any;
 
     // TODO: Remove when we have scrollbar snapping
@@ -125,19 +124,19 @@ class HorizontalScrollBar implements IScrollBar {
     this.canvas.layers.mainLayer.x(scrollAmount);
     this.canvas.layers.yStickyLayer.x(scrollAmount);
 
-    this._onScroll(e);
+    this.canvas.eventEmitter.emit(events.scroll.horizontal, e);
 
     const col = this.colHeaderGroups[ci];
 
     this.scrollOffset = {
       index: ci,
-      size: scrollLeft + this.canvas.getViewportXY().x - col.x(),
+      size: scrollLeft + this.canvas.getViewportVector().x - col.x(),
     };
-  }
+  };
 
-  onWheel(e: KonvaEventObject<WheelEvent>) {
+  onWheel = (e: KonvaEventObject<WheelEvent>) => {
     this.scrollBarEl.scrollBy(e.evt.deltaX, 0);
-  }
+  };
 
   destroy() {
     this.scrollBarBuilder.destroy();

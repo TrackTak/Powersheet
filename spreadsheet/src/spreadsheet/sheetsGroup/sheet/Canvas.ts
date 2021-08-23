@@ -19,6 +19,7 @@ import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
+import events from '../../events';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -199,15 +200,15 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 };
 
 class Canvas {
-  container!: HTMLDivElement;
-  stage!: Stage;
-  layers!: ILayers;
-  col!: RowCol;
-  row!: RowCol;
-  selector!: Selector;
-  merger!: Merger;
+  container: HTMLDivElement;
+  stage: Stage;
+  layers: ILayers;
+  col: RowCol;
+  row: RowCol;
+  selector: Selector;
+  merger: Merger;
   styles: ICanvasStyles;
-  shapes!: ICanvasShapes;
+  shapes: ICanvasShapes;
   sheetDimensions: IDimensions;
   sheetViewportDimensions: IDimensions;
   eventEmitter: EventEmitter;
@@ -252,10 +253,10 @@ class Canvas {
 
     this.sheetViewportDimensions = {
       get width() {
-        return that.stage.width() - that.getViewportXY().x;
+        return that.stage.width() - that.getViewportVector().x;
       },
       get height() {
-        return that.stage.height() - that.getViewportXY().y;
+        return that.stage.height() - that.getViewportVector().y;
       },
     };
 
@@ -302,34 +303,43 @@ class Canvas {
 
     this.layers.xyStickyLayer.add(this.shapes.sheetGroup);
 
+    this.col = new RowCol('col', this);
+    this.row = new RowCol('row', this);
+    this.selector = new Selector(this);
+    this.merger = new Merger(this);
+
     window.addEventListener('DOMContentLoaded', this.onLoad);
 
-    this.drawTopLeftOffsetRect();
+    this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
+    this.eventEmitter.on(events.scroll.vertical, this.onScroll);
   }
 
-  getViewportXY() {
+  getViewportVector() {
     return {
-      x: this.row.shapes.headerRect.width(),
-      y: this.col.shapes.headerRect.height(),
+      x: this.styles.rowHeader.rect.width,
+      y: this.styles.colHeader.rect.height,
     };
   }
 
-  onLoad = () => {
-    this.stage.width(this.col.totalSize + this.getViewportXY().x);
-    this.stage.height(this.row.totalSize + this.getViewportXY().y);
+  onScroll = () => {
+    this.updateViewport();
+  };
 
-    this.shapes.sheetGroup.setAttrs(this.getViewportXY());
+  onLoad = (e: Event) => {
+    this.stage.width(this.col.totalSize + this.getViewportVector().x);
+    this.stage.height(this.row.totalSize + this.getViewportVector().y);
+
+    this.shapes.sheetGroup.setAttrs(this.getViewportVector());
 
     this.shapes.sheet.setAttrs({
       width: this.sheetViewportDimensions.width,
       height: this.sheetViewportDimensions.height,
     });
 
-    this.col = new RowCol('col', this);
-    this.row = new RowCol('row', this);
-    this.selector = new Selector(this);
-    this.merger = new Merger(this);
+    this.drawTopLeftOffsetRect();
     this.updateViewport();
+
+    this.eventEmitter.emit(events.canvas.load, e);
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
@@ -387,6 +397,9 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
+    this.eventEmitter.off(events.scroll.horizontal, this.onScroll);
+    this.eventEmitter.off(events.scroll.vertical, this.onScroll);
+
     this.selector.destroy();
     this.col.destroy();
     this.row.destroy();
@@ -395,8 +408,8 @@ class Canvas {
 
   drawTopLeftOffsetRect() {
     const rect = new Rect({
-      width: this.getViewportXY().x,
-      height: this.getViewportXY().y,
+      width: this.getViewportVector().x,
+      height: this.getViewportVector().y,
       ...this.styles.topLeftRect,
     });
 
@@ -404,8 +417,16 @@ class Canvas {
   }
 
   updateViewport() {
-    this.col.updateViewport();
-    this.row.updateViewport();
+    const colGenerator = this.col.updateViewport();
+    const rowGenerator = this.row.updateViewport();
+
+    let colIteratorResult;
+    let rowIteratorResult;
+
+    do {
+      colIteratorResult = colGenerator.next();
+      rowIteratorResult = rowGenerator.next();
+    } while (!colIteratorResult.done || !rowIteratorResult.done);
   }
 }
 

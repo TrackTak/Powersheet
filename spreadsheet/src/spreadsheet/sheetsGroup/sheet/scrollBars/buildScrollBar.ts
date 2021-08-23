@@ -20,7 +20,7 @@ const buildScrollBar = (
   scrollBarType: ScrollBarType,
   stage: Stage,
   eventEmitter: EventEmitter,
-  onLoad: (e: Event) => void,
+  onCanvasLoad: (e: Event) => void,
   onScroll: (e: Event) => void,
   onWheel: (e: KonvaEventObject<WheelEvent>) => void
 ): IBuildScroll => {
@@ -39,7 +39,6 @@ const buildScrollBar = (
     e.preventDefault();
 
     onScroll(e);
-    eventEmitter.emit(events.scroll[scrollBarType], e);
   };
 
   const create = () => {
@@ -60,10 +59,10 @@ const buildScrollBar = (
 
     scrollBarEl.appendChild(scrollEl);
 
-    window.addEventListener('DOMContentLoaded', onLoad);
-
     // 60 fps: (1000ms / 60fps = 16ms);
     throttledScroll = throttle(_onScroll, 16);
+
+    eventEmitter.on(events.canvas.load, onCanvasLoad);
 
     scrollBarEl.addEventListener('scroll', throttledScroll);
 
@@ -76,8 +75,8 @@ const buildScrollBar = (
   };
 
   const destroy = () => {
+    eventEmitter.off(events.canvas.load, onCanvasLoad);
     scrollBarEl.removeEventListener('scroll', throttledScroll);
-    window.removeEventListener('DOMContentLoaded', onLoad);
     stage.off('wheel', _onWheel);
   };
 

@@ -7,6 +7,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import { Group } from 'konva/lib/Group';
 import { IScrollBar, IScrollOffset } from './IScrollBar';
+import events from '../../../events';
 
 class VerticalScrollBar implements IScrollBar {
   scrollBarEl!: HTMLDivElement;
@@ -18,13 +19,11 @@ class VerticalScrollBar implements IScrollBar {
   constructor(
     private canvas: Canvas,
     private sheetViewportPosition: ISheetViewportPosition,
-    private rowHeaderGroups: Group[],
-    private _onScroll: (e: Event) => void
+    private rowHeaderGroups: Group[]
   ) {
     this.canvas = canvas;
     this.sheetViewportPosition = sheetViewportPosition;
     this.rowHeaderGroups = rowHeaderGroups;
-    this._onScroll = _onScroll;
     this.customSizePositions = [];
     this.scrollOffset = {
       size: 0,
@@ -47,13 +46,11 @@ class VerticalScrollBar implements IScrollBar {
       };
     });
 
-    this.canvas.container.appendChild(this.scrollBarEl);
-
     this.scrollBarBuilder = buildScrollBar(
       'vertical',
       this.canvas.stage,
       this.canvas.eventEmitter,
-      this.onLoad,
+      this.onCanvasLoad,
       this.onScroll,
       this.onWheel
     );
@@ -62,24 +59,26 @@ class VerticalScrollBar implements IScrollBar {
 
     this.scrollBarEl = scrollBarEl;
     this.scrollEl = scrollEl;
-
-    this.scrollEl.style.height = `${
-      this.canvas.sheetDimensions.height + this.canvas.getViewportXY().y
-    }px`;
   }
 
   getBoundingClientRect = () => {
     return this.scrollBarEl.getBoundingClientRect();
   };
 
-  onLoad() {
+  onCanvasLoad = () => {
     this.scrollBarEl.style.height = `${this.canvas.stage.height()}px`;
     this.scrollBarEl.style.bottom = `${
       this.canvas.col.scrollBar.getBoundingClientRect().height
     }px`;
-  }
 
-  onScroll(e: Event) {
+    this.scrollEl.style.height = `${
+      this.canvas.sheetDimensions.height + this.canvas.getViewportVector().y
+    }px`;
+
+    this.canvas.container.appendChild(this.scrollBarEl);
+  };
+
+  onScroll = (e: Event) => {
     const { scrollTop } = e.target! as any;
 
     // TODO: Remove when we have scrollbar snapping
@@ -129,19 +128,19 @@ class VerticalScrollBar implements IScrollBar {
     this.canvas.layers.mainLayer.y(scrollAmount);
     this.canvas.layers.xStickyLayer.y(scrollAmount);
 
-    this._onScroll(e);
+    this.canvas.eventEmitter.emit(events.scroll.vertical, e);
 
     const row = this.rowHeaderGroups[ri];
 
     this.scrollOffset = {
       index: ri,
-      size: scrollTop + this.canvas.getViewportXY().y - row.y(),
+      size: scrollTop + this.canvas.getViewportVector().y - row.y(),
     };
-  }
+  };
 
-  onWheel(e: KonvaEventObject<WheelEvent>) {
+  onWheel = (e: KonvaEventObject<WheelEvent>) => {
     this.scrollBarEl.scrollBy(0, e.evt.deltaY);
-  }
+  };
 
   destroy() {
     this.scrollBarBuilder.destroy();

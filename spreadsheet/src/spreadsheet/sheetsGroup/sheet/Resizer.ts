@@ -43,8 +43,7 @@ class Resizer implements IResizer {
     private resizeGuideLineConfig: RectConfig,
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,
-    private headerGroups: Group[],
-    private drawHeader: (index: number) => void
+    private headerGroups: Group[]
   ) {
     this.canvas = canvas;
     this.type = type;
@@ -52,7 +51,6 @@ class Resizer implements IResizer {
     this.resizeLineConfig = resizeLineConfig;
     this.sizeOptions = sizeOptions;
     this.headerGroups = headerGroups;
-    this.drawHeader = drawHeader;
 
     this.resizeStartPos = {
       x: 0,
@@ -64,10 +62,6 @@ class Resizer implements IResizer {
       y: 0,
     };
 
-    this.create();
-  }
-
-  private create() {
     this.shapes = {
       resizeMarker: new Rect({
         ...this.canvas.getViewportXY(),
@@ -151,7 +145,7 @@ class Resizer implements IResizer {
     if (sizeChange !== 0) {
       this.sizeOptions.sizes[index] = newSize;
 
-      this.drawHeader(index);
+      this.canvas[this.type].drawHeader(index);
 
       for (let i = index + 1; i < this.headerGroups.length; i++) {
         const item = this.headerGroups[i];

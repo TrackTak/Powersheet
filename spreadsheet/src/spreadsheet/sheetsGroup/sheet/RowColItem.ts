@@ -19,6 +19,7 @@ import Canvas, {
 import Resizer, { IResizer } from './Resizer';
 import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 import { IScrollBar } from './scrollBars/IScrollBar';
+import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 
 interface IShapes {
   group: Group;
@@ -53,7 +54,10 @@ class RowColItem {
   private getAvailableSize: () => number;
   private getHeaderText: (index: number) => string;
   private getLineConfig: (sheetSize: number) => LineConfig;
-  private getLinePoints: (axis0: number, axis1: number) => [number, number, number, number],
+  private getLinePoints: (
+    axis0: number,
+    axis1: number
+  ) => [number, number, number, number];
   private oppositeType: RowColType;
   private sizeOptions: ISizeOptions;
   private functions: IRowColItemFunctions;
@@ -91,8 +95,8 @@ class RowColItem {
       };
       this.oppositeFunctions = {
         axis: 'y',
-        size: 'height'
-      }
+        size: 'height',
+      };
       this.sizeOptions = {
         minSize: this.canvas.options.col.minWidth,
         defaultSize: this.canvas.options.col.defaultWidth,
@@ -120,8 +124,7 @@ class RowColItem {
           points: [0, 0, 0, this.canvas.getViewportXY().y],
         },
         this.sizeOptions,
-        this.headerGroups,
-        this.drawItem
+        this.headerGroups
       );
       this.shapes.headerText.attrs(this.canvas.styles.colHeader.text);
       this.shapes.headerRect.attrs({
@@ -135,11 +138,11 @@ class RowColItem {
         return letter;
       };
       this.getLinePoints = (y0, y1) => {
-        return  [0, y0, 0, y1]
-      }
-      this.getLineConfig = (sheetSize: number) => {
+        return [0, y0, 0, y1];
+      };
+      this.getLineConfig = (sheetHeight: number) => {
         const lineConfig: LineConfig = {
-          points: [0, 0, 0, sheetSize],
+          points: [0, 0, 0, sheetHeight],
         };
 
         return lineConfig;
@@ -147,9 +150,68 @@ class RowColItem {
       this.getAvailableSize = () =>
         window.innerWidth -
         this.canvas.getViewportXY().x -
-        this.canvas.rows.verticalScrollBar.getBoundingClientRect().width;
+        this.canvas.row.scrollBar.getBoundingClientRect().width;
     } else {
       this.oppositeType = 'col';
+      this.functions = {
+        axis: 'y',
+        size: 'height',
+      };
+      this.oppositeFunctions = {
+        axis: 'x',
+        size: 'width',
+      };
+      this.sizeOptions = {
+        minSize: this.canvas.options.row.minHeight,
+        defaultSize: this.canvas.options.row.defaultHeight,
+        sizes: this.canvas.options.row.heights,
+      };
+      this.scrollBar = new VerticalScrollBar(
+        this.canvas,
+        this.sheetViewportPosition,
+        this.headerGroups,
+        this.onScroll
+      );
+      this.resizer = new Resizer(
+        canvas,
+        this.type,
+        this.functions,
+        {
+          points: [
+            this.canvas.getViewportXY().x,
+            0,
+            this.canvas.stage.width(),
+            0,
+          ],
+        },
+        {
+          points: [0, 0, this.canvas.getViewportXY().x, 0],
+        },
+        this.sizeOptions,
+        this.headerGroups
+      );
+      this.shapes.headerText.attrs(this.canvas.styles.rowHeader.text);
+      this.shapes.headerRect.attrs({
+        ...this.canvas.styles.rowHeader.rect,
+        height: this.canvas.options.row.defaultHeight,
+      });
+      this.getHeaderText = (index) => {
+        return (index + 1).toString();
+      };
+      this.getLinePoints = (x0, x1) => {
+        return [x0, 0, x1, 0];
+      };
+      this.getLineConfig = (sheetWidth: number) => {
+        const lineConfig: LineConfig = {
+          points: [0, 0, sheetWidth, 0],
+        };
+
+        return lineConfig;
+      };
+      this.getAvailableSize = () =>
+        window.innerHeight -
+        this.canvas.getViewportXY().y -
+        this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
 
     this.shapes.headerGroup.cache(this.canvas.getViewportXY());
@@ -236,7 +298,7 @@ class RowColItem {
           ? [index - 1, true]
           : [index];
 
-        this.drawItem(...params);
+        this.drawHeader(...params);
       }
 
       yield;
@@ -368,7 +430,7 @@ class RowColItem {
     return index === this.canvas.options.frozenCells[this.type];
   }
 
-  drawItem(index: number, drawingAtX = false) {
+  drawHeader(index: number, drawingAtX = false) {
     const prevIndex = drawingAtX ? index + 1 : index - 1;
 
     if (this.headerGroups[index]) {
@@ -448,10 +510,11 @@ class RowColItem {
       ? this.canvas.shapes.frozenGridLine
       : this.shapes.gridLine;
 
-      const sheetSize =
-      this.canvas.sheetDimensions[this.oppositeFunctions.size] + this.canvas.getViewportXY()[this.oppositeFunctions.axis];
+    const sheetSize =
+      this.canvas.sheetDimensions[this.oppositeFunctions.size] +
+      this.canvas.getViewportXY()[this.oppositeFunctions.axis];
 
-      const lineConfig = this.getLineConfig(sheetSize)
+    const lineConfig = this.getLineConfig(sheetSize);
     const clone = line.clone(lineConfig) as Line;
 
     const mergedItem = this.canvas.merger.mergedCellsMap[this.type][index];
@@ -479,19 +542,23 @@ class RowColItem {
           let axis1 = group[this.oppositeFunctions.axis]();
 
           if (prevGroup) {
-            axis0 = prevGroup[this.oppositeFunctions.axis]() + prevGroup[this.oppositeFunctions.size]();
+            axis0 =
+              prevGroup[this.oppositeFunctions.axis]() +
+              prevGroup[this.oppositeFunctions.size]();
           }
 
           const clone = line.clone({
             ...lineConfig,
-            points: this.getLinePoints(axis0, axis1)
+            points: this.getLinePoints(axis0, axis1),
           }) as Line;
 
           gridLines.push(clone);
         };
 
         const setSecondLine = () => {
-          let axis0 = group[this.oppositeFunctions.axis]() + group[this.oppositeFunctions.size]();
+          let axis0 =
+            group[this.oppositeFunctions.axis]() +
+            group[this.oppositeFunctions.size]();
           let axis1 = sheetSize;
 
           if (nextGroup) {
@@ -500,7 +567,7 @@ class RowColItem {
 
           const clone = line.clone({
             ...lineConfig,
-            points: this.getLinePoints(axis0, axis1)
+            points: this.getLinePoints(axis0, axis1),
           }) as Line;
 
           gridLines.push(clone);
@@ -531,7 +598,7 @@ class RowColItem {
   getResizeLine(index: number) {
     const size = this.getSize(index);
     const lineConfig: LineConfig = {
-      [this.functions.axis]: size
+      [this.functions.axis]: size,
     };
     const clone = this.resizer.shapes.resizeLine.clone(lineConfig) as Line;
 

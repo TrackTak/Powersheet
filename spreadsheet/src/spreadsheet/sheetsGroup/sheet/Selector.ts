@@ -1,17 +1,9 @@
-import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import { IOptions } from '../../options';
-import {
-  getIsFrozenCol,
-  getIsFrozenRow,
-  ICanvasShapes,
-  ILayers,
-} from './Canvas';
-import { ICanvasStyles } from './canvasStyles';
+import Canvas from './Canvas';
 
 export interface ISelectedRowCols {
   rows: Group[];
@@ -35,26 +27,8 @@ class Selector {
   private selectedRects: Rect[];
   private isInSelectionMode: boolean;
 
-  constructor(
-    private styles: ICanvasStyles,
-    private eventEmitter: EventEmitter,
-    private canvasShapes: ICanvasShapes,
-    private layers: ILayers,
-    private options: IOptions,
-    private getRowColsBetweenVectors: (
-      start: Vector2d,
-      end: Vector2d
-    ) => {
-      rows: Group[];
-      cols: Group[];
-    }
-  ) {
-    this.styles = styles;
-    this.eventEmitter = eventEmitter;
-    this.canvasShapes = canvasShapes;
-    this.layers = layers;
-    this.options = options;
-    this.getRowColsBetweenVectors = getRowColsBetweenVectors;
+  constructor(private canvas: Canvas) {
+    this.canvas = canvas;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -72,35 +46,31 @@ class Selector {
     };
     this.selectedRects = [];
 
-    this.create();
-  }
-
-  private create() {
     this.shapes = {
       selectionBorder: new Rect({
-        ...this.styles.selectionBorder,
+        ...this.canvas.styles.selectionBorder,
       }),
       selection: new Rect({
-        ...this.styles.selection,
+        ...this.canvas.styles.selection,
       }),
     };
 
     this.shapes.selection.cache();
 
-    this.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
-    this.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
+    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
+    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
 
-    this.canvasShapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
-    this.canvasShapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.canvasShapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
+    this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
+    this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
   }
 
   destroy() {
-    this.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
-    this.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
-    this.canvasShapes.sheetGroup.off('mouseup', this.onSheetMouseUp);
-    this.canvasShapes.sheetGroup.off('mousedown', this.onSheetMouseDown);
-    this.canvasShapes.sheetGroup.off('mousemove', this.onSheetMouseMove);
+    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
+    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
+    this.canvas.shapes.sheetGroup.off('mouseup', this.onSheetMouseUp);
+    this.canvas.shapes.sheetGroup.off('mousedown', this.onSheetMouseDown);
+    this.canvas.shapes.sheetGroup.off('mousemove', this.onSheetMouseMove);
 
     Object.values(this.shapes).forEach((shape: Node) => {
       shape.destroy();
@@ -121,7 +91,7 @@ class Selector {
         rect.destroy();
       });
 
-      const { x, y } = this.canvasShapes.sheet.getRelativePointerPosition();
+      const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
       const start = {
         x: this.selectionArea.start.x,
@@ -155,7 +125,7 @@ class Selector {
     this.removeSelectedCells();
     this.isInSelectionMode = true;
 
-    const { x, y } = this.canvasShapes.sheet.getRelativePointerPosition();
+    const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
     this.selectionArea = {
       start: {
@@ -191,12 +161,12 @@ class Selector {
   }
 
   selectCells(start: Vector2d, end: Vector2d, selectionConfig?: RectConfig) {
-    this.selectedRowCols = this.getRowColsBetweenVectors(start, end);
+    this.selectedRowCols = this.canvas.getRowColsBetweenVectors(start, end);
 
     this.selectedRowCols.rows.forEach((rowGroup) => {
       this.selectedRowCols.cols.forEach((colGroup) => {
-        const isFrozenRow = getIsFrozenRow(rowGroup.attrs.index, this.options);
-        const isFrozenCol = getIsFrozenCol(colGroup.attrs.index, this.options);
+        const isFrozenRow = this.canvas.row.getIsFrozen(rowGroup.attrs.index);
+        const isFrozenCol = this.canvas.col.getIsFrozen(colGroup.attrs.index);
 
         const config: RectConfig = {
           ...selectionConfig,
@@ -210,18 +180,21 @@ class Selector {
         this.selectedRects.push(clone);
 
         if (isFrozenRow && isFrozenCol) {
-          this.layers.xyStickyLayer.add(clone);
+          this.canvas.layers.xyStickyLayer.add(clone);
         } else if (isFrozenRow) {
-          this.layers.yStickyLayer.add(clone);
+          this.canvas.layers.yStickyLayer.add(clone);
         } else if (isFrozenCol) {
-          this.layers.xStickyLayer.add(clone);
+          this.canvas.layers.xStickyLayer.add(clone);
         } else {
-          this.layers.mainLayer.add(clone);
+          this.canvas.layers.mainLayer.add(clone);
         }
       });
     });
 
-    this.eventEmitter.emit(events.selector.selectCells, this.selectedRowCols);
+    this.canvas.eventEmitter.emit(
+      events.selector.selectCells,
+      this.selectedRowCols
+    );
   }
 
   setSelectionBorder() {
@@ -253,7 +226,7 @@ class Selector {
 
     this.shapes.selectionBorder.setAttrs(config);
 
-    this.layers.mainLayer.add(this.shapes.selectionBorder);
+    this.canvas.layers.mainLayer.add(this.shapes.selectionBorder);
   }
 }
 

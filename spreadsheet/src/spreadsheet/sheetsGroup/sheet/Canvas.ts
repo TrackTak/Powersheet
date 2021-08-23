@@ -5,7 +5,6 @@ import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Canvas.module.scss';
-import VerticalScrollBar from './scrollBars/VerticalScrollBar';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
@@ -16,12 +15,10 @@ import {
   IRowHeaderConfig,
   performanceProperties,
 } from './canvasStyles';
-import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import Merger from './Merger';
 import RowColItem from './RowColItem';
-import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -209,7 +206,6 @@ class Canvas {
   row!: RowColItem;
   selector!: Selector;
   merger!: Merger;
-  rowResizer!: Resizer;
   styles: ICanvasStyles;
   shapes!: ICanvasShapes;
   sheetDimensions: IDimensions;
@@ -263,45 +259,12 @@ class Canvas {
       },
     };
 
-    this.create(params.stageConfig);
-
-    this.drawTopLeftOffsetRect();
-  }
-
-  getViewportXY() {
-    return {
-      x: this.row.shapes.headerRect.width(),
-      y: this.col.shapes.headerRect.height(),
-    };
-  }
-
-  onLoad = () => {
-    this.stage.width(this.col.totalSize + this.getViewportXY().x);
-    this.stage.height(this.row.totalSize + this.getViewportXY().y);
-
-    this.shapes.sheetGroup.setAttrs(this.getViewportXY());
-
-    this.shapes.sheet.setAttrs({
-      width: this.sheetViewportDimensions.width,
-      height: this.sheetViewportDimensions.height,
-    });
-
-    this.createScrollBars();
-
-    this.col = new RowColItem('col', this);
-    this.row = new RowColItem('row', this);
-    this.createSelector();
-    this.createMerger();
-    this.updateViewport();
-  };
-
-  private create(stageConfig: ICreateStageConfig = {}) {
     this.container = document.createElement('div');
     this.container.classList.add(`${prefix}-canvas`, styles.canvas);
 
     this.stage = new Stage({
       container: this.container,
-      ...stageConfig,
+      ...params.stageConfig,
     });
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
@@ -340,7 +303,34 @@ class Canvas {
     this.layers.xyStickyLayer.add(this.shapes.sheetGroup);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+
+    this.drawTopLeftOffsetRect();
   }
+
+  getViewportXY() {
+    return {
+      x: this.row.shapes.headerRect.width(),
+      y: this.col.shapes.headerRect.height(),
+    };
+  }
+
+  onLoad = () => {
+    this.stage.width(this.col.totalSize + this.getViewportXY().x);
+    this.stage.height(this.row.totalSize + this.getViewportXY().y);
+
+    this.shapes.sheetGroup.setAttrs(this.getViewportXY());
+
+    this.shapes.sheet.setAttrs({
+      width: this.sheetViewportDimensions.width,
+      height: this.sheetViewportDimensions.height,
+    });
+
+    this.col = new RowColItem('col', this);
+    this.row = new RowColItem('row', this);
+    this.selector = new Selector(this);
+    this.merger = new Merger(this);
+    this.updateViewport();
+  };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
@@ -394,53 +384,12 @@ class Canvas {
     };
   }
 
-  createSelector() {
-    this.selector = new Selector(
-      this.styles,
-      this.eventEmitter,
-      this.shapes,
-      this.layers,
-      this.options,
-      this.getRowColsBetweenVectors.bind(this)
-    );
-  }
-
-  createMerger() {
-    this.merger = new Merger(
-      this.options,
-      this.selector,
-      this.rowGroups,
-      this.colGroups,
-      this.drawRowLines.bind(this),
-      this.drawColLines.bind(this)
-    );
-  }
-
-  createScrollBars() {
-    this.verticalScrollBar = new VerticalScrollBar(
-      this.stage,
-      this.layers,
-      this.sheetDimensions,
-      this.sheetViewportPositions,
-      this.horizontalScrollBar.getBoundingClientRect,
-      this.rowHeaderGroups,
-      this.eventEmitter,
-      this.options,
-      this.sheetViewportDimensions,
-      this.onVerticalScroll
-    );
-
-    this.container.appendChild(this.cols.scrollBar.scrollBarEl);
-    this.container.appendChild(this.rows.scrollBar.scrollBarEl);
-  }
-
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
     this.selector.destroy();
-    this.cols.destroy();
-    this.rows.destroy();
-    this.rowResizer.destroy();
+    this.col.destroy();
+    this.row.destroy();
     this.stage.destroy();
   }
 
@@ -455,8 +404,8 @@ class Canvas {
   }
 
   updateViewport() {
-    this.cols.updateViewport();
-    this.rows.updateViewport();
+    this.col.updateViewport();
+    this.row.updateViewport();
   }
 }
 

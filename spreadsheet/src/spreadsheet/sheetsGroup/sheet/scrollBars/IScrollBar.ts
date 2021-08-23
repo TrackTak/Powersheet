@@ -1,5 +1,9 @@
 import { ICustomSizePosition } from '../Canvas';
-import { IScrollOffset } from './VerticalScrollBar';
+
+export interface IScrollOffset {
+  index: number;
+  size: number;
+}
 
 export interface IScrollBar {
   scrollBarEl: HTMLDivElement;

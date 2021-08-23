@@ -19,10 +19,10 @@ type ScrollBarType = 'vertical' | 'horizontal';
 const buildScrollBar = (
   scrollBarType: ScrollBarType,
   stage: Stage,
+  eventEmitter: EventEmitter,
   onLoad: (e: Event) => void,
   onScroll: (e: Event) => void,
-  onWheel: (e: KonvaEventObject<WheelEvent>) => void,
-  eventEmitter: EventEmitter
+  onWheel: (e: KonvaEventObject<WheelEvent>) => void
 ): IBuildScroll => {
   let scrollBarEl: HTMLDivElement;
   let scrollEl: HTMLDivElement;

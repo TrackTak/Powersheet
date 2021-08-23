@@ -59,6 +59,12 @@ class HorizontalScrollBar implements IScrollBar {
 
     this.scrollBarEl = scrollBarEl;
     this.scrollEl = scrollEl;
+
+    this.scrollEl.style.width = `${
+      this.canvas.sheetDimensions.width + this.canvas.getViewportVector().x
+    }px`;
+
+    this.canvas.container.appendChild(this.scrollBarEl);
   }
 
   getBoundingClientRect = () => {
@@ -67,12 +73,6 @@ class HorizontalScrollBar implements IScrollBar {
 
   onCanvasLoad = () => {
     this.scrollBarEl.style.width = `${this.canvas.stage.width()}px`;
-
-    this.scrollEl.style.width = `${
-      this.canvas.sheetDimensions.width + this.canvas.getViewportVector().x
-    }px`;
-
-    this.canvas.container.appendChild(this.scrollBarEl);
   };
 
   onScroll = (e: Event) => {

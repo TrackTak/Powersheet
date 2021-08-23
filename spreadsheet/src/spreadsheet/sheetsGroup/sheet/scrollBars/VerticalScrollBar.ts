@@ -59,14 +59,7 @@ class VerticalScrollBar implements IScrollBar {
 
     this.scrollBarEl = scrollBarEl;
     this.scrollEl = scrollEl;
-  }
 
-  getBoundingClientRect = () => {
-    return this.scrollBarEl.getBoundingClientRect();
-  };
-
-  onCanvasLoad = () => {
-    this.scrollBarEl.style.height = `${this.canvas.stage.height()}px`;
     this.scrollBarEl.style.bottom = `${
       this.canvas.col.scrollBar.getBoundingClientRect().height
     }px`;
@@ -76,6 +69,14 @@ class VerticalScrollBar implements IScrollBar {
     }px`;
 
     this.canvas.container.appendChild(this.scrollBarEl);
+  }
+
+  getBoundingClientRect = () => {
+    return this.scrollBarEl.getBoundingClientRect();
+  };
+
+  onCanvasLoad = () => {
+    this.scrollBarEl.style.height = `${this.canvas.stage.height()}px`;
   };
 
   onScroll = (e: Event) => {

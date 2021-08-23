@@ -7,7 +7,7 @@ export default {
   title: 'Canvas',
 } as Meta;
 
-const Template: Story<IOptions> = (args) => {
+const createCanvas = (args: IOptions) => {
   const eventEmitter = new EventEmitter();
   const options = args;
 
@@ -17,6 +17,22 @@ const Template: Story<IOptions> = (args) => {
   });
 
   const container = document.createElement('div');
+
+  container.appendChild(canvas.container);
+
+  return {
+    canvas,
+    container,
+  };
+};
+
+const Template: Story<IOptions> = (args) => {
+  return createCanvas(args).container;
+};
+
+const MergeTemplate: Story<IOptions> = (args) => {
+  const { container, canvas } = createCanvas(args);
+
   const merge = document.createElement('button');
 
   merge.innerHTML = 'Merge Cell';
@@ -52,7 +68,7 @@ FrozenCells.args = {
   },
 };
 
-export const MergedCells = Template.bind({});
+export const MergedCells = MergeTemplate.bind({});
 
 MergedCells.args = {
   ...defaultOptions,

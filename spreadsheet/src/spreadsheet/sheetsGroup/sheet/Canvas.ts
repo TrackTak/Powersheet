@@ -18,7 +18,7 @@ import {
 import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import Merger from './Merger';
-import RowColItem from './RowColItem';
+import RowCol from './RowCol';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -202,8 +202,8 @@ class Canvas {
   container!: HTMLDivElement;
   stage!: Stage;
   layers!: ILayers;
-  col!: RowColItem;
-  row!: RowColItem;
+  col!: RowCol;
+  row!: RowCol;
   selector!: Selector;
   merger!: Merger;
   styles: ICanvasStyles;
@@ -325,8 +325,8 @@ class Canvas {
       height: this.sheetViewportDimensions.height,
     });
 
-    this.col = new RowColItem('col', this);
-    this.row = new RowColItem('row', this);
+    this.col = new RowCol('col', this);
+    this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
     this.updateViewport();

@@ -37,12 +37,12 @@ export interface ISizeOptions {
   sizes: ISizes;
 }
 
-export interface IRowColItemFunctions {
+export interface IRowColFunctions {
   axis: 'y' | 'x';
   size: 'height' | 'width';
 }
 
-class RowColItem {
+class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
   headerGroups: Group[];
@@ -60,8 +60,8 @@ class RowColItem {
   ) => [number, number, number, number];
   private oppositeType: RowColType;
   private sizeOptions: ISizeOptions;
-  private functions: IRowColItemFunctions;
-  private oppositeFunctions: IRowColItemFunctions;
+  private functions: IRowColFunctions;
+  private oppositeFunctions: IRowColFunctions;
 
   constructor(private type: RowColType, private canvas: Canvas) {
     this.type = type;
@@ -606,4 +606,4 @@ class RowColItem {
   }
 }
 
-export default RowColItem;
+export default RowCol;

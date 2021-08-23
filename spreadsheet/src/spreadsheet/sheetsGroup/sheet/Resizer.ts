@@ -6,7 +6,7 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
-import { IRowColItemFunctions, ISizeOptions, RowColType } from './RowColItem';
+import { IRowColFunctions, ISizeOptions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -39,7 +39,7 @@ class Resizer implements IResizer {
   constructor(
     private canvas: Canvas,
     private type: RowColType,
-    private functions: IRowColItemFunctions,
+    private functions: IRowColFunctions,
     private resizeGuideLineConfig: RectConfig,
     private resizeLineConfig: LineConfig,
     private sizeOptions: ISizeOptions,

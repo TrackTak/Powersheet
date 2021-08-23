@@ -38,6 +38,7 @@ img {
   display: inline-block;
   display: flex;
   flex-direction: row;
+  overflow: hidden;
 }
 
 .btn-tab {
@@ -45,7 +46,8 @@ img {
   padding: 12px 16px;
   font-size: 15px;
   font-weight: 550;
-  color: #43cea2;
+  color: #80868b;
+  letter-spacing: 0.025rem;
   border: 0;
   background: none;
 }
@@ -97,7 +99,6 @@ img {
 }
 
 .menusheet-dropdown {
-  height: 100px;
   bottom: 100%;
   position: absolute;
   border: 1px solid transparent;
@@ -105,4 +106,44 @@ img {
   box-shadow: 0 2px 6px 2px rgb(60 64 67 / 15%);
   min-width: 120px;
   z-index: 100;
+  max-height: 400px;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.scrollslider-container {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  white-space: nowrap;
+  margin-left: 15px;
+  display: none;
+  transition: transform 0.4s ease-in;
+}
+
+.scrollslider-content {
+  display: flex;
+  align-content: space-between;
+}
+
+.left-scrollslider-btn {
+  left: 0;
+  z-index: 1;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.right-scrollslider-btn {
+  right: 0;
+  z-index: 1;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.scroll-icon {
+  width: 10px;
+  height: 12px;
 }

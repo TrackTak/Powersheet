@@ -1,6 +1,8 @@
 import './bottomBar.css';
 import plusIcon from '../../icons/plus-icon.svg';
 import sheetIcon from '../../icons/sheet-icon.svg';
+import leftIcon from '../../icons/left-icon.svg';
+import rightIcon from '../../icons/right-icon.svg';
 
 export interface IBottomBar extends IConstructorParams {}
 
@@ -12,23 +14,23 @@ class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetButton: HTMLButtonElement;
   menuSheetButton: HTMLButtonElement;
-  addItemTab: HTMLUListElement;
   buttonTabs: HTMLButtonElement[];
   buttonTabs2: HTMLButtonElement[];
   dropdownMenuTab: HTMLDivElement;
   menuSheetDropdownBox: HTMLDivElement;
+  scrollSlider: HTMLDivElement;
   globalSheetIndex: number;
 
   constructor(params?: IConstructorParams) {
     this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
     this.menuSheetButton =
       params?.menuSheetButton ?? this.createMenuSheetButton();
-    this.addItemTab = this.addItem(this.addSheetButton);
     this.buttonTabs = [this.createTabButton(1)];
     this.buttonTabs2 = [this.createTabButton2(1)];
     this.dropdownMenuTab = this.dropdownMenu();
     this.globalSheetIndex = 1;
     this.menuSheetDropdownBox = this.menuSheetDropdown();
+    this.scrollSlider = this.createScrollSlider();
 
     this.create();
   }
@@ -42,6 +44,8 @@ class BottomBar implements IBottomBar {
 
     this.element.appendChild(buttonWrapper);
 
+    buttonWrapper.appendChild(this.addSheetButton);
+
     const menuSheetContainer = document.createElement('div');
     menuSheetContainer.className = 'menusheet-container';
 
@@ -51,10 +55,8 @@ class BottomBar implements IBottomBar {
     tabContainer.className = 'tab';
 
     this.element.appendChild(tabContainer);
+    this.element.appendChild(this.scrollSlider);
 
-    this.addItem(this.addSheetButton);
-
-    buttonWrapper.appendChild(this.addSheetButton);
     tabContainer.appendChild(this.buttonTabs[0]);
     menuSheetContainer.appendChild(this.menuSheetButton);
     menuSheetContainer.appendChild(this.menuSheetDropdownBox);
@@ -73,8 +75,6 @@ class BottomBar implements IBottomBar {
         tabContainer.appendChild(buttonTab);
       });
 
-      // Create a new buttonTabs array thing and a new `createTabButton`
-      // push to this new array. Loop through it and do `dropdownContentTab.appendChild` with the new element
       const menuSheetButton = this.createTabButton2(this.globalSheetIndex);
 
       this.buttonTabs2.push(menuSheetButton);
@@ -83,6 +83,52 @@ class BottomBar implements IBottomBar {
         this.menuSheetDropdownBox.appendChild(buttonTab);
       });
     });
+  }
+
+  createScrollSlider() {
+    const scrollSlider = document.createElement('div');
+    scrollSlider.className = 'scrollslider-container';
+
+    const scrollSliderContent = document.createElement('div');
+    scrollSliderContent.className = 'scrollslider-content';
+
+    const leftScrollSliderButton = document.createElement('button');
+    leftScrollSliderButton.className = 'left-scrollslider-btn';
+
+    const rightScrollSliderButton = document.createElement('button');
+    rightScrollSliderButton.className = 'right-scrollslider-btn';
+
+    const leftScrollImage = document.createElement('img');
+
+    leftScrollImage.src = leftIcon;
+    leftScrollImage.alt = 'left';
+    leftScrollImage.className = 'scroll-icon';
+    leftScrollSliderButton.appendChild(leftScrollImage);
+
+    const rightScrollImage = document.createElement('img');
+
+    rightScrollImage.src = rightIcon;
+    rightScrollImage.alt = 'right';
+    rightScrollImage.className = 'scroll-icon';
+    rightScrollSliderButton.appendChild(rightScrollImage);
+
+    let translate = 0;
+
+    leftScrollSliderButton.addEventListener('click', () => {
+      translate += 300;
+      scrollSlider.style.transform = 'translateX(' + translate + 'px' + ')';
+    });
+
+    rightScrollSliderButton.addEventListener('click', () => {
+      translate -= 300;
+      scrollSlider.style.transform = 'translateX(' + translate + 'px' + ')';
+    });
+
+    scrollSlider.appendChild(scrollSliderContent);
+    scrollSliderContent.appendChild(leftScrollSliderButton);
+    scrollSliderContent.appendChild(rightScrollSliderButton);
+
+    return scrollSlider;
   }
 
   createTabButton(sheetNumber: number) {
@@ -158,16 +204,6 @@ class BottomBar implements IBottomBar {
     return menu;
   }
 
-  addItem(button: HTMLButtonElement) {
-    const list = document.createElement('ul');
-    const listItem = document.createElement('li');
-
-    list.appendChild(listItem);
-    listItem.appendChild(button);
-
-    return list;
-  }
-
   createAddSheetButton() {
     const buttonPlus = document.createElement('button');
     buttonPlus.className = 'btn-img';
@@ -204,7 +240,7 @@ class BottomBar implements IBottomBar {
       const sheetPressed = e.button;
 
       if (sheetPressed === 0) {
-        this.menuSheetDropdownBox.style.display = 'block';
+        this.menuSheetDropdownBox.style.display = 'flex';
       }
     });
 

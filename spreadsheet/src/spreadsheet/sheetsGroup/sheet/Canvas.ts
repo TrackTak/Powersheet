@@ -23,6 +23,7 @@ import Resizer from './Resizer';
 import { IOptions, ISizes } from '../../options';
 import Selector from './Selector';
 import { ShapeConfig } from 'konva/lib/Shape';
+import CellEditor from './CellEditor';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -143,6 +144,7 @@ class Canvas {
   selector!: Selector;
   rowResizer!: Resizer;
   colResizer!: Resizer;
+  cellEditor!: CellEditor;
   private styles: ICanvasStyles;
   private rowGroups: Group[];
   private colGroups: Group[];
@@ -305,6 +307,7 @@ class Canvas {
 
     this.createResizer();
     this.createSelector();
+    this.createCellEditor();
     this.initializeViewport();
   };
 
@@ -599,6 +602,14 @@ class Canvas {
     this.container.appendChild(this.verticalScrollBar.scrollBar);
   }
 
+  createCellEditor() {
+    this.cellEditor = new CellEditor(
+      this.container,
+      this.shapes.sheet,
+      this.selector
+    );
+  }
+
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
@@ -611,6 +622,7 @@ class Canvas {
     this.rowResizer.destroy();
     this.colResizer.destroy();
     this.stage.destroy();
+    this.cellEditor.destroy();
   }
 
   drawTopLeftOffsetRect() {

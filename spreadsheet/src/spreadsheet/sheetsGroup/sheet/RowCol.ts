@@ -472,8 +472,8 @@ class RowCol {
     const group = this.shapes.group.clone(groupConfig) as Group;
 
     const gridLines: Line[] = [];
-
-    const line = this.getIsLastFrozen(index)
+    const isFrozen = this.getIsLastFrozen(index);
+    const line = isFrozen
       ? this.canvas.shapes.frozenGridLine
       : this.shapes.gridLine;
 
@@ -555,7 +555,7 @@ class RowCol {
 
     this.groups[index] = group;
 
-    if (this.getIsLastFrozen(index)) {
+    if (isFrozen) {
       this.canvas.layers.xyStickyLayer.add(group);
     } else {
       this.canvas.layers.mainLayer.add(group);

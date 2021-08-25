@@ -37,8 +37,6 @@ const MergeTemplate: Story<IOptions> = (args) => {
 
   merge.innerHTML = 'Merge Cell';
   merge.onclick = () => {
-    const selectedRowCols = canvas.selector.selectedRowCols;
-
     canvas.merger.mergeSelectedCells();
   };
 
@@ -46,7 +44,7 @@ const MergeTemplate: Story<IOptions> = (args) => {
 
   unmerge.innerHTML = 'Unmerge Cell';
   unmerge.onclick = () => {
-    canvas.merger.unmergeSelectedCells();
+    canvas.merger.unMergeSelectedCells();
   };
 
   container.appendChild(merge);

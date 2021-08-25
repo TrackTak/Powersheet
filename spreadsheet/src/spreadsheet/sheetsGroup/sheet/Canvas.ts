@@ -382,7 +382,7 @@ class Canvas {
       rowIteratorResult = rowGenerator.next();
     } while (!colIteratorResult.done || !rowIteratorResult.done);
 
-    this.merger.setMergedCells(this.options.mergedCells);
+    this.merger.mergeCells(this.options.mergedCells);
   }
 }
 

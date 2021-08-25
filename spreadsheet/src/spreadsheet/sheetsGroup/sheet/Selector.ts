@@ -1,6 +1,6 @@
 import { Node } from 'konva/lib/Node';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
@@ -24,7 +24,6 @@ interface ICell extends Shape {}
 
 class Selector {
   shapes!: ISelectorShapes;
-  selectedRowCols: ISelectedRowCols;
   isInSelectionMode: boolean;
   selectedCells: ICell[];
   private selectionArea: ISelectionArea;
@@ -41,10 +40,6 @@ class Selector {
         x: 0,
         y: 0,
       },
-    };
-    this.selectedRowCols = {
-      rows: [],
-      cols: [],
     };
     this.selectedCells = [];
 
@@ -95,11 +90,6 @@ class Selector {
 
     const { rows, cols } = this.canvas.getRowColsBetweenVectors(start, end);
 
-    this.selectedRowCols = {
-      rows,
-      cols,
-    };
-
     const cells = this.convertFromRowColsToCells(rows, cols);
 
     this.startSelection(cells);
@@ -126,9 +116,15 @@ class Selector {
         (cell) => !cell.attrs.strokeWidth
       );
 
+      const firstSelectedCell = this.selectedCells.find(
+        (x) => x.attrs.strokeWidth
+      )!;
+
       selectedCellsAfterFirst.forEach((rect) => {
         rect.destroy();
       });
+
+      this.selectedCells = [firstSelectedCell];
 
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
@@ -142,19 +138,10 @@ class Selector {
         y,
       };
 
-      const firstSelectedCell = this.selectedCells.find(
-        (x) => x.attrs.strokeWidth
-      )!;
-
       const { rows, cols } = this.canvas.getRowColsBetweenVectors(
         start,
         this.selectionArea.end
       );
-
-      this.selectedRowCols = {
-        rows,
-        cols,
-      };
 
       const cells = this.convertFromRowColsToCells(rows, cols, {
         strokeWidth: 0,
@@ -170,6 +157,8 @@ class Selector {
   convertShapeToCell(shape: Shape, cellConfig?: ShapeConfig) {
     const clone = this.shapes.selection.clone({
       ...cellConfig,
+      start: shape.attrs.start,
+      end: shape.attrs.end,
       id: shape.id(),
       x: shape.x(),
       y: shape.y(),
@@ -191,6 +180,14 @@ class Selector {
       cols.forEach((colGroup) => {
         const clone = this.shapes.selection.clone({
           ...cellConfig,
+          start: {
+            row: rowGroup.attrs.index,
+            col: colGroup.attrs.index,
+          },
+          end: {
+            row: rowGroup.attrs.index,
+            col: colGroup.attrs.index,
+          },
           //   isFrozenRow: this.canvas.row.getIsFrozen(rowGroup.attrs.index),
           //   isFrozenCol: this.canvas.col.getIsFrozen(colGroup.attrs.index),
           x: colGroup.x(),

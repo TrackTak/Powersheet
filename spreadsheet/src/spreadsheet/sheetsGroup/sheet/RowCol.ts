@@ -362,23 +362,18 @@ class RowCol {
     });
 
     this.groups.forEach((group, index) => {
-      const mergedCellIndex =
-        this.canvas.merger.mergedCellIndexesMap[this.type][index];
+      const mergedCells = this.canvas.merger.mergedCellsMap[this.type][index];
 
-      const destroyGroup = () => {
-        group.destroy();
-        delete this.groups[index];
-      };
-
-      if (mergedCellIndex) {
-        const mergedCell = this.canvas.merger.mergedCellsMap[mergedCellIndex];
-
-        if (this.isNodeOutsideCanvas(mergedCell)) {
-          mergedCell.destroy();
-        }
+      if (mergedCells?.length) {
+        mergedCells.forEach((cell) => {
+          if (this.isNodeOutsideCanvas(cell)) {
+            cell.destroy();
+          }
+        });
       }
       if (this.isNodeOutsideCanvas(group)) {
-        destroyGroup();
+        group.destroy();
+        delete this.groups[index];
       }
     });
   }

@@ -1,12 +1,10 @@
 import { Group } from 'konva/lib/Group';
 import { KonvaEventObject, Node } from 'konva/lib/Node';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import { IRect } from 'konva/lib/types';
 import { IMergedCells } from '../../options';
 import Canvas from './Canvas';
 import { performanceProperties } from './canvasStyles';
-import { RowColType } from './RowCol';
 
 type MergedCellId = string;
 
@@ -42,8 +40,6 @@ class Merger {
         ...performanceProperties,
         listening: true,
         fill: 'white',
-        stroke: '#c6c6c6',
-        strokeWidth: 0.6,
       }),
     };
 
@@ -101,23 +97,19 @@ class Merger {
         const startCol = this.canvas.col.groups[start.col];
         const startRow = this.canvas.row.groups[start.row];
 
-        let mergedCellRect: IRect = {
-          x: startCol.x(),
-          y: startRow.y(),
-          height: 0,
-          width: 0,
-        };
+        let height = 0;
+        let width = 0;
 
         for (let index = start.row; index <= end.row; index++) {
           const group = this.canvas.row.groups[index];
 
-          mergedCellRect.height += group.height();
+          height += group.height();
         }
 
         for (let index = start.col; index <= end.col; index++) {
           const group = this.canvas.col.groups[index];
 
-          mergedCellRect.width += group.width();
+          width += group.width();
         }
 
         const id = `${start.row}_${start.col}`;
@@ -129,9 +121,14 @@ class Merger {
         for (let index = start.col; index <= end.col; index++) {
           this.mergedCellIndexesMap.col[index] = id;
         }
+        const gridLineStrokWidth = this.canvas.styles.gridLine.strokeWidth!;
+        const offset = gridLineStrokWidth;
 
         const rectConfig: RectConfig = {
-          ...mergedCellRect,
+          x: startCol.x() + offset,
+          y: startRow.y() + offset,
+          height: height - offset * 2,
+          width: width - offset * 2,
           id: getMergedCellId(start.row, start.col),
           colIndex: start.col,
           rowIndex: start.row,

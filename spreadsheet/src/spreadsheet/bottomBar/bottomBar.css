@@ -35,10 +35,13 @@ img {
 .tab {
   background-color: #fff;
   box-shadow: 0 0px 3px -1px rgb(169 164 164);
+  overflow: hidden;
   display: inline-block;
+}
+
+.scrollslider-container-tab {
   display: flex;
   flex-direction: row;
-  overflow: hidden;
 }
 
 .btn-tab {
@@ -111,7 +114,7 @@ img {
   overflow: auto;
 }
 
-.scrollslider-container {
+.scrollslider-arrow {
   overflow-x: hidden;
   overflow-y: hidden;
   white-space: nowrap;

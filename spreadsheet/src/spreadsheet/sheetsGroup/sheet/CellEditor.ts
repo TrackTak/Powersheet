@@ -13,7 +13,7 @@ class CellEditor {
     private container: HTMLDivElement,
     private sheet: Rect,
     private selector: Selector,
-    private eventEmitter: EventEmitter,
+    private eventEmitter: EventEmitter
   ) {
     this.container = container;
     this.sheet = sheet;
@@ -27,13 +27,11 @@ class CellEditor {
     window.addEventListener('keydown', this.keyHandler);
     this.sheet.on('dblclick', this.showCellEditor);
     this.sheet.on('click', this.hideCellEditor);
-    this.eventEmitter.on(events.scroll.vertical, () => this.updatePosition());
-
   }
 
   private setInitialTextAreaStyles = () => {
     this.textArea.classList.add(styles.cellEditor);
-  }
+  };
 
   destroy() {
     this.sheet.off('dblclick', this.showCellEditor);
@@ -53,38 +51,35 @@ class CellEditor {
           this.showCellEditor();
         }
     }
-  }
+  };
 
   showCellEditor = () => {
-    this.updatePosition();
+    const selectedCell = this.selector.getSelectedCell();
+    const absolutePosition = selectedCell.getAbsolutePosition();
+    const cellPosition = {
+      x: absolutePosition.x,
+      y: absolutePosition.y,
+      width: selectedCell.width(),
+      height: selectedCell.height(),
+    };
+    console.log('abs', absolutePosition);
+    this.setTextAreaPosition(cellPosition);
     this.textArea.style.display = 'initial';
     this.textArea.focus();
     this.isEditing = true;
-  }
-
-  updatePosition = () => {
-    const selectedCell = this.selector.getSelectedCell();
-    console.log('selectedCell', selectedCell, selectedCell.position())
-    const cellPosition = {
-      x: selectedCell.x(),
-      y: selectedCell.y(),
-      width: selectedCell.width(),
-      height: selectedCell.height(),
-    }
-    this.setTextAreaPosition(cellPosition);
-  }
+  };
 
   hideCellEditor = () => {
     this.textArea.style.display = 'none';
     this.isEditing = false;
-  }
+  };
 
   setTextAreaPosition = (position: IRect) => {
     this.textArea.style.top = `${position.y}px`;
     this.textArea.style.left = `${position.x}px`;
     this.textArea.style.width = `${position.width}px`;
     this.textArea.style.height = `${position.height}px`;
-  }
+  };
 }
 
 export default CellEditor;

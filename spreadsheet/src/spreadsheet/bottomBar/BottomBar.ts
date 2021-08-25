@@ -123,15 +123,27 @@ class BottomBar implements IBottomBar {
     let translate = 0;
 
     leftScrollSliderButton.addEventListener('click', () => {
-      translate += 50;
-      this.scrollsliderContainerTab.style.transform =
-        'translateX(' + translate + 'px' + ')';
+      if (translate >= 0) {
+        translate += 100;
+        this.scrollsliderContainerTab.style.transform =
+          'translateX(' + translate + 'px' + ')';
+      }
     });
 
     rightScrollSliderButton.addEventListener('click', () => {
-      translate -= 50;
-      this.scrollsliderContainerTab.style.transform =
-        'translateX(' + translate + 'px' + ')';
+      const f = this.buttonTabs[this.buttonTabs.length - 1];
+
+      const totalScrollWidth = this.buttonTabs.reduce((prev, curr) => {
+        return (prev += curr.getBoundingClientRect().width);
+      }, 0);
+
+      const remainingScrollWidth = totalScrollWidth - this.tabContainerMaxWidth;
+
+      if (translate >= 0) {
+        translate -= 100;
+        this.scrollsliderContainerTab.style.transform =
+          'translateX(' + translate + 'px' + ')';
+      }
     });
 
     scrollSlider.appendChild(scrollSliderContent);
@@ -142,10 +154,13 @@ class BottomBar implements IBottomBar {
   }
 
   createTabButton(sheetNumber: number) {
-    const buttonTab = document.createElement('button');
+    const buttonTab = document.createElement('div');
     buttonTab.className = 'btn-tab';
 
-    buttonTab.textContent = `Sheet${sheetNumber}`;
+    const spanElement = document.createElement('span');
+
+    spanElement.textContent = `Sheet${sheetNumber}`;
+    buttonTab.appendChild(spanElement);
 
     const containerButtonTab = document.createElement('div');
     containerButtonTab.className = 'container-btn-tab';
@@ -158,6 +173,16 @@ class BottomBar implements IBottomBar {
         e.target.parentElement.appendChild(this.dropdownMenuTab);
         this.dropdownMenuTab.style.display = 'block';
       }
+    });
+
+    //min height
+    buttonTab.addEventListener('dblclick', () => {
+      spanElement.contentEditable = 'true';
+      spanElement.focus();
+    });
+
+    buttonTab.addEventListener('blur', (e) => {
+      e.target.style.background = 'pink';
     });
 
     window.addEventListener('click', (e) => {

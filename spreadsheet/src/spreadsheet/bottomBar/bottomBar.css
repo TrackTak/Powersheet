@@ -42,17 +42,21 @@ img {
 .scrollslider-container-tab {
   display: flex;
   flex-direction: row;
+  transition: transform 0.2s ease-in;
 }
 
 .btn-tab {
   cursor: pointer;
-  padding: 12px 16px;
+  padding: 10px 16px;
   font-size: 15px;
   font-weight: 550;
   color: #80868b;
   letter-spacing: 0.025rem;
   border: 0;
   background: none;
+  font-family: 'Nunito Sans', -apple-system, '.SFNSText-Regular',
+    'San Francisco', BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica,
+    Arial, sans-serif;
 }
 
 .tab button:hover {
@@ -120,11 +124,10 @@ img {
   white-space: nowrap;
   margin-left: 15px;
   display: none;
-  transition: transform 0.4s ease-in;
 }
 
 .scrollslider-content {
-  display: flex;
+  display: none;
   align-content: space-between;
 }
 

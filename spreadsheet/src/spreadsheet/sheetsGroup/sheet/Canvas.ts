@@ -606,7 +606,8 @@ class Canvas {
     this.cellEditor = new CellEditor(
       this.container,
       this.shapes.sheet,
-      this.selector
+      this.selector,
+      this.eventEmitter,
     );
   }
 
@@ -676,7 +677,7 @@ class Canvas {
   updateViewport() {
     this.drawViewportShapes();
     this.destroyOutOfViewportShapes();
-
+    // this.cellEditor.updatePosition();
     this.setPreviousSheetViewportPositions();
   }
 
@@ -732,6 +733,7 @@ class Canvas {
     ) {
       this.drawCol(ci - 1, true);
     }
+    console.log(this.sheetViewportPositions);
   }
 
   getRowHeight(ri: number) {

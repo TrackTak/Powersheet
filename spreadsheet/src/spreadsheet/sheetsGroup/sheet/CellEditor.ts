@@ -1,13 +1,9 @@
+import EventEmitter from 'eventemitter3';
 import { Rect } from 'konva/lib/shapes/Rect';
+import { IRect } from 'konva/lib/types';
+import events from '../../events';
 import styles from './CellEditor.module.scss';
 import Selector from './Selector';
-
-interface ITextAreaPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 class CellEditor {
   textArea!: HTMLTextAreaElement;
@@ -16,15 +12,14 @@ class CellEditor {
   constructor(
     private container: HTMLDivElement,
     private sheet: Rect,
-    private selector: Selector
+    private selector: Selector,
+    private eventEmitter: EventEmitter,
   ) {
     this.container = container;
     this.sheet = sheet;
     this.selector = selector;
-    this.create();
-  }
+    this.eventEmitter = eventEmitter;
 
-  private create() {
     this.textArea = document.createElement('textarea');
     this.container.appendChild(this.textArea);
     this.setInitialTextAreaStyles();
@@ -32,6 +27,8 @@ class CellEditor {
     window.addEventListener('keydown', this.keyHandler);
     this.sheet.on('dblclick', this.showCellEditor);
     this.sheet.on('click', this.hideCellEditor);
+    this.eventEmitter.on(events.scroll.vertical, () => this.updatePosition());
+
   }
 
   private setInitialTextAreaStyles = () => {
@@ -45,6 +42,7 @@ class CellEditor {
   }
 
   private keyHandler = (e: KeyboardEvent) => {
+    e.preventDefault();
     switch (e.key) {
       case 'Enter':
       case 'Escape':
@@ -58,17 +56,22 @@ class CellEditor {
   }
 
   showCellEditor = () => {
-    const selectedCell = this.selector.selectedRowCols;
-    const cellPosition = {
-      x: selectedCell.cols[0].attrs.x,
-      y: selectedCell.rows[0].attrs.y,
-      width: selectedCell.cols[0].attrs.width,
-      height: selectedCell.rows[0].attrs.height,
-    }
-    this.setTextAreaPosition(cellPosition);
+    this.updatePosition();
     this.textArea.style.display = 'initial';
     this.textArea.focus();
     this.isEditing = true;
+  }
+
+  updatePosition = () => {
+    const selectedCell = this.selector.getSelectedCell();
+    console.log('selectedCell', selectedCell, selectedCell.position())
+    const cellPosition = {
+      x: selectedCell.x(),
+      y: selectedCell.y(),
+      width: selectedCell.width(),
+      height: selectedCell.height(),
+    }
+    this.setTextAreaPosition(cellPosition);
   }
 
   hideCellEditor = () => {
@@ -76,7 +79,7 @@ class CellEditor {
     this.isEditing = false;
   }
 
-  setTextAreaPosition = (position: ITextAreaPosition) => {
+  setTextAreaPosition = (position: IRect) => {
     this.textArea.style.top = `${position.y}px`;
     this.textArea.style.left = `${position.x}px`;
     this.textArea.style.width = `${position.width}px`;

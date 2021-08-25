@@ -259,6 +259,10 @@ class Selector {
 
     this.layers.mainLayer.add(this.shapes.selectionBorder);
   }
+
+  getSelectedCell() {
+    return this.selectedRects[0];
+  }
 }
 
 export default Selector;

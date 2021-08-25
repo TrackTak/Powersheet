@@ -42,6 +42,8 @@ class Merger {
         ...performanceProperties,
         listening: true,
         fill: 'white',
+        stroke: '#c6c6c6',
+        strokeWidth: 0.6,
       }),
     };
 

@@ -1,67 +1,149 @@
+import { Group } from 'konva/lib/Group';
+import { KonvaEventObject, Node } from 'konva/lib/Node';
+import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { IRect } from 'konva/lib/types';
 import { IMergedCells } from '../../options';
 import Canvas from './Canvas';
+import { performanceProperties } from './canvasStyles';
+import { RowColType } from './RowCol';
 
-export interface IMergedCellsMap {
-  row: Record<string, number[]>;
-  col: Record<string, number[]>;
+type MergedCellId = string;
+
+export interface IMergedCellIndexesMap {
+  row: Record<string, MergedCellId>;
+  col: Record<string, MergedCellId>;
+}
+
+export type MergedCellsMap = Record<MergedCellId, Shape>;
+
+export const getMergedCellId = (ri: number, ci: number) => `${ri}_${ci}`;
+
+interface IShapes {
+  mergedCells: Rect;
 }
 
 class Merger {
-  mergedCellsMap: IMergedCellsMap;
+  mergedCellIndexesMap: IMergedCellIndexesMap;
+  mergedCellsMap: MergedCellsMap;
+  mergedCells: Group[];
+  private shapes: IShapes;
 
   constructor(private canvas: Canvas) {
     this.canvas = canvas;
-    this.mergedCellsMap = {
+    this.mergedCellIndexesMap = {
       row: {},
       col: {},
     };
+    this.mergedCellsMap = {};
+    this.mergedCells = [];
+    this.shapes = {
+      mergedCells: new Rect({
+        ...performanceProperties,
+        listening: true,
+        fill: 'white',
+      }),
+    };
 
-    this.setMergedCells(this.canvas.options.mergedCells);
+    this.shapes.mergedCells.on('mousedown', this.onMergedCellsMousedown);
+    this.shapes.mergedCells.on('mousemove', this.onMergedCellsMousemove);
+    this.shapes.mergedCells.on('mouseup', this.onMergedCellsMouseup);
+  }
+
+  onMergedCellsMousedown = (e: KonvaEventObject<MouseEvent>) => {
+    const mergedShape = e.target as Shape;
+    const cell = this.canvas.selector.convertShapeToCell(mergedShape);
+
+    this.canvas.selector.startSelection([cell]);
+  };
+
+  onMergedCellsMousemove = (e: KonvaEventObject<MouseEvent>) => {
+    const mergedCell = e.target as Shape;
+
+    if (this.canvas.selector.isInSelectionMode) {
+      const cells = this.canvas.selector.selectedCells;
+      const cell = this.canvas.selector.convertShapeToCell(mergedCell, {
+        strokeWidth: 0,
+      });
+      const cellAlreadyExists = cells.find((x) => x.id === cell.id);
+
+      if (!cellAlreadyExists) {
+        this.canvas.selector.selectCells([...cells, cell]);
+
+        const firstSelectedCell = this.canvas.selector.selectedCells.find(
+          (x) => x.attrs.strokeWidth
+        )!;
+
+        firstSelectedCell.moveToTop();
+      }
+    }
+    //this.canvas.selector.moveSelection();
+  };
+
+  onMergedCellsMouseup = () => {
+    this.canvas.selector.setSelectionBorder();
+  };
+
+  destroy() {
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
   }
 
   setMergedCells(mergedCells: IMergedCells[]) {
-    const mergedCellsMap: IMergedCellsMap = {
-      row: {},
-      col: {},
-    };
-    const comparer = (a: number, b: number) => a - b;
-
     mergedCells.forEach(({ start, end }) => {
-      const rowsArr: number[] = [];
-      const colsArr: number[] = [];
+      if (
+        this.canvas.col.groups[start.col] &&
+        this.canvas.row.groups[start.row]
+      ) {
+        const startCol = this.canvas.col.groups[start.col];
+        const startRow = this.canvas.row.groups[start.row];
 
-      for (let index = start.row; index <= end.row; index++) {
-        rowsArr.push(index);
-      }
+        let mergedCellRect: IRect = {
+          x: startCol.x(),
+          y: startRow.y(),
+          height: 0,
+          width: 0,
+        };
 
-      for (let index = start.col; index <= end.col; index++) {
-        colsArr.push(index);
-      }
+        for (let index = start.row; index <= end.row; index++) {
+          const group = this.canvas.row.groups[index];
 
-      rowsArr.forEach((value, i) => {
-        if (i !== 0) {
-          mergedCellsMap.row[value] = [
-            ...(mergedCellsMap.row[value] ?? []),
-            ...colsArr,
-          ];
-
-          mergedCellsMap.row[value].sort(comparer);
+          mergedCellRect.height += group.height();
         }
-      });
 
-      colsArr.forEach((value, i) => {
-        if (i !== 0) {
-          mergedCellsMap.col[value] = [
-            ...(mergedCellsMap.col[value] ?? []),
-            ...rowsArr,
-          ];
-          mergedCellsMap.col[value].sort(comparer);
+        for (let index = start.col; index <= end.col; index++) {
+          const group = this.canvas.col.groups[index];
+
+          mergedCellRect.width += group.width();
         }
-      });
+
+        const id = `${start.row}_${start.col}`;
+
+        for (let index = start.row; index <= end.row; index++) {
+          this.mergedCellIndexesMap.row[index] = id;
+        }
+
+        for (let index = start.col; index <= end.col; index++) {
+          this.mergedCellIndexesMap.col[index] = id;
+        }
+
+        const rectConfig: RectConfig = {
+          ...mergedCellRect,
+          id: getMergedCellId(start.row, start.col),
+          colIndex: start.col,
+          rowIndex: start.row,
+        };
+
+        const rect = this.shapes.mergedCells.clone(rectConfig) as Rect;
+
+        this.mergedCellsMap[id] = rect;
+
+        this.canvas.layers.mainLayer.add(rect);
+      }
     });
 
     this.canvas.options.mergedCells = mergedCells;
-    this.mergedCellsMap = mergedCellsMap;
   }
 
   mergeSelectedCells() {
@@ -85,7 +167,8 @@ class Merger {
       (x) => x.attrs.isMerged
     );
 
-    if (mergedSelectedRow && mergedSelectedRow.attrs.index >= end.row) {
+    if (mergedSelectedRow) {
+      // && mergedSelectedRow.attrs.index >= end.row) {
       let totalRowHeight = this.canvas.row.groups[start.row].height();
 
       while (totalRowHeight < mergedSelectedRow.height()) {
@@ -98,7 +181,8 @@ class Merger {
       (x) => x.attrs.isMerged
     );
 
-    if (mergedSelectedCol && mergedSelectedCol.attrs.index >= end.col) {
+    if (mergedSelectedCol) {
+      // && mergedSelectedCol.attrs.index >= end.col) {
       let totalColWidth = this.canvas.col.groups[start.col].width();
 
       while (totalColWidth < mergedSelectedCol.width()) {

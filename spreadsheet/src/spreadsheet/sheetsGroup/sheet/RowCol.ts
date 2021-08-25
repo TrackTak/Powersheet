@@ -1,5 +1,6 @@
 import { Group } from 'konva/lib/Group';
-import { ShapeConfig } from 'konva/lib/Shape';
+import { Node } from 'konva/lib/Node';
+import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
@@ -8,7 +9,6 @@ import { isNil } from 'lodash';
 import events from '../../events';
 import { ISizes } from '../../options';
 import Canvas, {
-  calculateSheetViewportEndPosition,
   centerRectTwoInRectOne,
   hasOverlap,
   ICustomSizes,
@@ -46,7 +46,7 @@ class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
   headerGroups: Group[];
-  groups: Group[];
+  groups: Shape[];
   totalSize: number;
   shapes!: IShapes;
   private sheetViewportPosition: ISheetViewportPosition;
@@ -201,8 +201,37 @@ class RowCol {
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
+  calculateSheetViewportEndPosition = (
+    sheetViewportDimensionSize: number,
+    sheetViewportStartYIndex: number,
+    defaultSize: number,
+    sizes?: ISizes,
+    customSizeChanges?: ICustomSizes[]
+  ) => {
+    let sumOfSizes = 0;
+    let i = sheetViewportStartYIndex;
+
+    const getSize = () => {
+      // TODO: Remove when we have snapping to row/col for scroll
+      let offset = 0;
+
+      if (customSizeChanges?.[i]?.size) {
+        offset = customSizeChanges[i].size;
+      }
+
+      return (sizes?.[i] ?? defaultSize) - offset;
+    };
+
+    while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
+      sumOfSizes += getSize();
+      i += 1;
+    }
+
+    return i;
+  };
+
   onLoad = () => {
-    const yIndex = calculateSheetViewportEndPosition(
+    const yIndex = this.calculateSheetViewportEndPosition(
       this.getAvailableSize(),
       0,
       this.sizeOptions.defaultSize,
@@ -285,17 +314,26 @@ class RowCol {
       if (isFinite(index)) {
         this.drawGridLines(index);
 
-        const mergedCells = this.canvas.merger.mergedCellsMap[this.type][index];
+        // const mergedCellIndexes =
+        //   this.canvas.merger.mergedCellsMap[this.type][index];
 
-        if (mergedCells) {
-          mergedCells
-            .filter(
-              (index) => this.canvas[this.oppositeType].headerGroups[index]
-            )
-            .forEach((index) => {
-              this.canvas[this.oppositeType].drawGridLines(index);
-            });
-        }
+        // if (!isNil(mergedCellIndexes)) {
+        //   mergedCellIndexes.forEach((index) => {
+        //     if (!this.groups[index]) {
+        //       this.drawGridLines(index);
+        //     }
+        //   });
+        // }
+
+        // const mergedCells = this.canvas.merger.getMergedCellsMapInViewport(
+        //   this.type,
+        //   this.oppositeType,
+        //   index
+        // );
+
+        // mergedCells.forEach((index) => {
+        //   this.canvas[this.oppositeType].drawGridLines(index);
+        // });
       }
     } while (isFinite(index));
 
@@ -305,17 +343,42 @@ class RowCol {
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
   }
 
-  destroyOutOfViewportItems() {
-    this.headerGroups.forEach((group, index) => {
-      const isOverlapping = hasOverlap(group.getClientRect(), {
-        ...this.canvas.getViewportVector(),
-        ...this.canvas.sheetViewportDimensions,
-      });
+  isNodeOutsideCanvas = (node: Node) => {
+    const isOverlapping = hasOverlap(node.getClientRect(), {
+      ...this.canvas.getViewportVector(),
+      ...this.canvas.sheetViewportDimensions,
+    });
 
-      if (!isOverlapping) {
-        group.destroy();
+    return !isOverlapping;
+  };
+
+  destroyOutOfViewportItems() {
+    this.headerGroups.forEach((headerGroup, index) => {
+      if (this.isNodeOutsideCanvas(headerGroup)) {
+        headerGroup.destroy();
 
         delete this.headerGroups[index];
+      }
+    });
+
+    this.groups.forEach((group, index) => {
+      const mergedCellIndex =
+        this.canvas.merger.mergedCellIndexesMap[this.type][index];
+
+      const destroyGroup = () => {
+        group.destroy();
+        delete this.groups[index];
+      };
+
+      if (mergedCellIndex) {
+        const mergedCell = this.canvas.merger.mergedCellsMap[mergedCellIndex];
+
+        if (this.isNodeOutsideCanvas(mergedCell)) {
+          mergedCell.destroy();
+        }
+      }
+      if (this.isNodeOutsideCanvas(group)) {
+        destroyGroup();
       }
     });
   }
@@ -341,44 +404,21 @@ class RowCol {
     ];
 
     const indexes = {
-      x: calculateSheetViewportEndPosition(position.x, ...params),
-      y: calculateSheetViewportEndPosition(position.y, ...params),
+      x: this.calculateSheetViewportEndPosition(position.x, ...params),
+      y: this.calculateSheetViewportEndPosition(position.y, ...params),
     };
 
     return indexes;
   }
 
-  getItemsBetweenIndexes(indexes: Vector2d, mergedCells: Vector2d[]) {
-    let groups: Group[] = [];
+  getItemsBetweenIndexes(indexes: Vector2d) {
+    let groups: Shape[] = [];
 
     for (let index = indexes.x; index <= indexes.y; index++) {
-      groups.push(this.headerGroups[index]);
+      groups.push(this.groups[index]);
     }
 
-    const comparer = (a: Group, b: Group) => a.attrs.index - b.attrs.index;
-
-    mergedCells.forEach((mergedCell) => {
-      let totalMergedSize = 0;
-
-      const item = this.groups[mergedCell.x];
-
-      for (let index = mergedCell.x; index <= mergedCell.y; index++) {
-        const group = this.groups[index];
-
-        totalMergedSize += group[this.functions.size]();
-
-        groups = groups.filter((x) => x.attrs.index !== index);
-      }
-
-      const newMergedGroup = new Group({
-        [this.functions.axis]: item[this.functions.axis](),
-        [this.functions.size]: totalMergedSize,
-        index: item.attrs.index,
-        isMerged: true,
-      });
-
-      groups.push(newMergedGroup);
-    });
+    const comparer = (a: Shape, b: Shape) => a.attrs.index - b.attrs.index;
 
     return groups.sort(comparer);
   }
@@ -463,9 +503,11 @@ class RowCol {
       this.groups[index].destroy();
     }
 
+    const size = this.headerGroups[index][this.functions.size]();
+
     const groupConfig: ShapeConfig = {
       index,
-      [this.functions.size]: this.headerGroups[index][this.functions.size](),
+      [this.functions.size]: size,
       [this.functions.axis]: this.headerGroups[index][this.functions.axis](),
     };
 
@@ -482,72 +524,12 @@ class RowCol {
       this.canvas.getViewportVector()[this.oppositeFunctions.axis];
 
     const lineConfig = this.getLineConfig(sheetSize);
-    const clone = line.clone(lineConfig) as Line;
+    const clone = line.clone({
+      ...lineConfig,
+      [this.functions.axis]: size,
+    }) as Line;
 
-    const mergedItem = this.canvas.merger.mergedCellsMap[this.type][index];
-
-    const hasMergedCellsShowing = mergedItem?.some(
-      (index) => this.canvas[this.oppositeType].headerGroups[index]
-    );
-
-    if (mergedItem && hasMergedCellsShowing) {
-      mergedItem.forEach((index, i) => {
-        const prevGroupIndex = mergedItem[i - 1];
-        const prevGroup = !isNil(prevGroupIndex)
-          ? this.canvas[this.oppositeType].headerGroups[prevGroupIndex]
-          : null;
-
-        const group = this.canvas[this.oppositeType].headerGroups[index];
-
-        const nextGroupIndex = mergedItem[i + 1];
-        const nextGroup = !isNil(nextGroupIndex)
-          ? this.canvas[this.oppositeType].headerGroups[nextGroupIndex]
-          : null;
-
-        const setFirstLine = () => {
-          let axis0 = 0;
-          let axis1 = group[this.oppositeFunctions.axis]();
-
-          if (prevGroup) {
-            axis0 =
-              prevGroup[this.oppositeFunctions.axis]() +
-              prevGroup[this.oppositeFunctions.size]();
-          }
-
-          const clone = line.clone({
-            ...lineConfig,
-            points: this.getLinePoints(axis0, axis1),
-          }) as Line;
-
-          gridLines.push(clone);
-        };
-
-        const setSecondLine = () => {
-          let axis0 =
-            group[this.oppositeFunctions.axis]() +
-            group[this.oppositeFunctions.size]();
-          let axis1 = sheetSize;
-
-          if (nextGroup) {
-            axis1 = nextGroup[this.oppositeFunctions.axis]();
-          }
-
-          const clone = line.clone({
-            ...lineConfig,
-            points: this.getLinePoints(axis0, axis1),
-          }) as Line;
-
-          gridLines.push(clone);
-        };
-
-        if (group) {
-          setFirstLine();
-          setSecondLine();
-        }
-      });
-    } else {
-      gridLines.push(clone);
-    }
+    gridLines.push(clone);
 
     gridLines.forEach((gridLine) => {
       group.add(gridLine);

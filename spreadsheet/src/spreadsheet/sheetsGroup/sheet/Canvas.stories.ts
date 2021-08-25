@@ -37,6 +37,8 @@ const MergeTemplate: Story<IOptions> = (args) => {
 
   merge.innerHTML = 'Merge Cell';
   merge.onclick = () => {
+    const selectedRowCols = canvas.selector.selectedRowCols;
+
     canvas.merger.mergeSelectedCells();
   };
 
@@ -75,24 +77,34 @@ MergedCells.args = {
   mergedCells: [
     {
       start: {
-        row: 9,
-        col: 3,
+        row: 1,
+        col: 1,
       },
       end: {
-        row: 14,
-        col: 5,
+        row: 2,
+        col: 2,
       },
     },
     {
       start: {
-        row: 7,
-        col: 3,
+        row: 3,
+        col: 1,
       },
       end: {
-        row: 8,
-        col: 5,
+        row: 4,
+        col: 2,
       },
     },
+    // {
+    //   start: {
+    //     row: 1,
+    //     col: 1,
+    //   },
+    //   end: {
+    //     row: 4,
+    //     col: 2,
+    //   },
+    // },
   ],
 };
 

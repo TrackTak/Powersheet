@@ -15,9 +15,9 @@ import {
   IRowHeaderConfig,
   performanceProperties,
 } from './canvasStyles';
-import { IOptions, ISizes } from '../../options';
+import { IOptions } from '../../options';
 import Selector from './Selector';
-import Merger from './Merger';
+import Merger, { getMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 
@@ -87,35 +87,6 @@ export const getIsFrozenRow = (ri: number, options: IOptions) => {
   return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
 };
 
-export const calculateSheetViewportEndPosition = (
-  sheetViewportDimensionSize: number,
-  sheetViewportStartYIndex: number,
-  defaultSize: number,
-  sizes?: ISizes,
-  customSizeChanges?: ICustomSizes[]
-) => {
-  let sumOfSizes = 0;
-  let i = sheetViewportStartYIndex;
-
-  const getSize = () => {
-    // TODO: Remove when we have snapping to row/col for scroll
-    let offset = 0;
-
-    if (customSizeChanges?.[i]?.size) {
-      offset = customSizeChanges[i].size;
-    }
-
-    return (sizes?.[i] ?? defaultSize) - offset;
-  };
-
-  while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
-    sumOfSizes += getSize();
-    i += 1;
-  }
-
-  return i;
-};
-
 export function* iteratePreviousUpToCurrent(
   previousSheetViewportPosition:
     | ISheetViewportPosition['x']
@@ -143,9 +114,11 @@ export function* iteratePreviousDownToCurrent(
     | ISheetViewportPosition['x']
     | ISheetViewportPosition['y']
 ) {
+  if (previousSheetViewportPosition === sheetViewportPosition) return -Infinity;
+
   for (
     let index = previousSheetViewportPosition;
-    index > sheetViewportPosition;
+    index >= sheetViewportPosition;
     index--
   ) {
     yield index;
@@ -272,10 +245,10 @@ class Canvas {
 
     // The order here matters
     this.layers = {
-      mainLayer: new Layer(),
       xStickyLayer: new Layer(),
       yStickyLayer: new Layer(),
       xyStickyLayer: new Layer(),
+      mainLayer: new Layer(),
     };
 
     Object.values(this.layers).forEach((layer) => {
@@ -358,35 +331,15 @@ class Canvas {
       y: newEnd.y,
     });
 
-    const mergedCells = this.options.mergedCells.filter((x) => {
-      return (
-        (rowIndexes.x >= x.start.row &&
-          rowIndexes.x <= x.end.row &&
-          colIndexes.x >= x.start.col &&
-          colIndexes.x <= x.end.col) ||
-        (rowIndexes.y >= x.start.row &&
-          rowIndexes.x <= x.end.row &&
-          colIndexes.y >= x.start.col &&
-          colIndexes.x <= x.end.col)
-      );
-    });
+    const rows = this.row.getItemsBetweenIndexes(rowIndexes);
+    const cols = this.col.getItemsBetweenIndexes(colIndexes);
 
-    const mergedCols = mergedCells.map((mergedCell) => {
-      return {
-        x: mergedCell.start.col,
-        y: mergedCell.end.col,
-      };
-    });
-
-    const mergedRows = mergedCells.map((mergedCell) => {
-      return {
-        x: mergedCell.start.row,
-        y: mergedCell.end.row,
-      };
-    });
-
-    const cols = this.col.getItemsBetweenIndexes(colIndexes, mergedCols);
-    const rows = this.row.getItemsBetweenIndexes(rowIndexes, mergedRows);
+    // for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
+    //   for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
+    //     const id = getMergedCellId(ri, ci);
+    //     const mergedCellIndex = this.merger.mergedCellsMap[id];
+    //   }
+    // }
 
     return {
       rows,
@@ -403,6 +356,7 @@ class Canvas {
     this.selector.destroy();
     this.col.destroy();
     this.row.destroy();
+    this.merger.destroy();
     this.stage.destroy();
   }
 
@@ -427,6 +381,8 @@ class Canvas {
       colIteratorResult = colGenerator.next();
       rowIteratorResult = rowGenerator.next();
     } while (!colIteratorResult.done || !rowIteratorResult.done);
+
+    this.merger.setMergedCells(this.options.mergedCells);
   }
 }
 

@@ -1,6 +1,6 @@
 import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
@@ -46,7 +46,7 @@ class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
   headerGroups: Group[];
-  groups: Shape[];
+  groups: Group[];
   totalSize: number;
   shapes!: IShapes;
   private sheetViewportPosition: ISheetViewportPosition;
@@ -54,11 +54,6 @@ class RowCol {
   private getAvailableSize: () => number;
   private getHeaderText: (index: number) => string;
   private getLineConfig: (sheetSize: number) => LineConfig;
-  private getLinePoints: (
-    axis0: number,
-    axis1: number
-  ) => [number, number, number, number];
-  private oppositeType: RowColType;
   private sizeOptions: ISizeOptions;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
@@ -89,7 +84,6 @@ class RowCol {
       }),
     };
     if (this.isCol) {
-      this.oppositeType = 'row';
       this.functions = {
         axis: 'x',
         size: 'width',
@@ -118,9 +112,6 @@ class RowCol {
         const letter = String.fromCharCode(startCharCode + index);
         return letter;
       };
-      this.getLinePoints = (y0, y1) => {
-        return [0, y0, 0, y1];
-      };
       this.getLineConfig = (sheetHeight: number) => {
         const lineConfig: LineConfig = {
           points: [0, 0, 0, sheetHeight],
@@ -132,7 +123,6 @@ class RowCol {
         this.canvas.getViewportVector().x -
         this.canvas.row.scrollBar.getBoundingClientRect().width;
     } else {
-      this.oppositeType = 'col';
       this.functions = {
         axis: 'y',
         size: 'height',
@@ -159,9 +149,6 @@ class RowCol {
       });
       this.getHeaderText = (index) => {
         return (index + 1).toString();
-      };
-      this.getLinePoints = (x0, x1) => {
-        return [x0, 0, x1, 0];
       };
       this.getLineConfig = (sheetWidth: number) => {
         const lineConfig: LineConfig = {
@@ -313,27 +300,6 @@ class RowCol {
 
       if (isFinite(index)) {
         this.drawGridLines(index);
-
-        // const mergedCellIndexes =
-        //   this.canvas.merger.mergedCellsMap[this.type][index];
-
-        // if (!isNil(mergedCellIndexes)) {
-        //   mergedCellIndexes.forEach((index) => {
-        //     if (!this.groups[index]) {
-        //       this.drawGridLines(index);
-        //     }
-        //   });
-        // }
-
-        // const mergedCells = this.canvas.merger.getMergedCellsMapInViewport(
-        //   this.type,
-        //   this.oppositeType,
-        //   index
-        // );
-
-        // mergedCells.forEach((index) => {
-        //   this.canvas[this.oppositeType].drawGridLines(index);
-        // });
       }
     } while (isFinite(index));
 
@@ -362,15 +328,6 @@ class RowCol {
     });
 
     this.groups.forEach((group, index) => {
-      //const mergedCells = this.canvas.merger.mergedCellsMap[this.type][index];
-
-      // if (mergedCells?.length) {
-      //   mergedCells.forEach((cell) => {
-      //     if (this.isNodeOutsideCanvas(cell)) {
-      //       cell.destroy();
-      //     }
-      //   });
-      // }
       if (this.isNodeOutsideCanvas(group)) {
         group.destroy();
         delete this.groups[index];
@@ -407,13 +364,13 @@ class RowCol {
   }
 
   getItemsBetweenIndexes(indexes: Vector2d) {
-    let groups: Shape[] = [];
+    let groups: Group[] = [];
 
     for (let index = indexes.x; index <= indexes.y; index++) {
       groups.push(this.groups[index]);
     }
 
-    const comparer = (a: Shape, b: Shape) => a.attrs.index - b.attrs.index;
+    const comparer = (a: Group, b: Group) => a.attrs.index - b.attrs.index;
 
     return groups.sort(comparer);
   }

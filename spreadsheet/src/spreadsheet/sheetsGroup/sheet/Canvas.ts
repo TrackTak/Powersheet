@@ -17,7 +17,7 @@ import {
 } from './canvasStyles';
 import { IOptions } from '../../options';
 import Selector from './Selector';
-import Merger, { getMergedCellId } from './Merger';
+import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 
@@ -333,13 +333,6 @@ class Canvas {
 
     const rows = this.row.getItemsBetweenIndexes(rowIndexes);
     const cols = this.col.getItemsBetweenIndexes(colIndexes);
-
-    // for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
-    //   for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
-    //     const id = getMergedCellId(ri, ci);
-    //     const mergedCellIndex = this.merger.mergedCellsMap[id];
-    //   }
-    // }
 
     return {
       rows,

@@ -35,7 +35,6 @@ img {
 .tab {
   background-color: #fff;
   box-shadow: 0 0px 3px -1px rgb(169 164 164);
-  overflow: hidden;
   display: inline-block;
 }
 
@@ -46,8 +45,11 @@ img {
 }
 
 .btn-tab {
+  display: flex;
+  align-items: center;
   cursor: pointer;
-  padding: 10px 16px;
+  padding: 0px 16px;
+  min-height: 40px;
   font-size: 15px;
   font-weight: 550;
   color: #80868b;
@@ -65,6 +67,13 @@ img {
 
 .tab button.active {
   background-color: #43cea2;
+}
+
+.btn-tab-span:focus {
+  border: 2px solid #43cea2;
+  outline: none;
+  border-radius: 4px;
+  padding: 4px 22px 4px 4px;
 }
 
 .dropdown-menu {
@@ -116,6 +125,9 @@ img {
   max-height: 400px;
   flex-direction: column;
   overflow: auto;
+  font-family: 'Nunito Sans', -apple-system, '.SFNSText-Regular',
+    'San Francisco', BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica,
+    Arial, sans-serif;
 }
 
 .scrollslider-arrow {

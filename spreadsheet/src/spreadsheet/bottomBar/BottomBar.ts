@@ -25,19 +25,20 @@ class BottomBar implements IBottomBar {
   scrollsliderContainerTab: HTMLDivElement;
 
   constructor(params?: IConstructorParams) {
+    this.globalSheetIndex = 1;
     this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
     this.menuSheetButton =
       params?.menuSheetButton ?? this.createMenuSheetButton();
-    this.buttonTabs = [this.createTabButton(1)];
-    this.buttonTabs2 = [this.createTabButton2(1)];
+    this.buttonTabs = [this.createTabButton()];
+    this.buttonTabs2 = [this.createTabButton2()];
     this.dropdownMenuTab = this.dropdownMenu();
-    this.globalSheetIndex = 1;
     this.menuSheetDropdownBox = this.menuSheetDropdown();
     this.scrollSlider = this.createScrollSlider();
     this.tabContainer = document.createElement('div');
     this.scrollsliderContainerTab = document.createElement('div');
-    this.tabContainerMaxWidth = 700;
-    this.tabContainer.style.width = `${this.tabContainerMaxWidth}px`;
+    //TO DO
+    // this.tabContainerMaxWidth = 700;
+    // this.tabContainer.style.width = `${this.tabContainerMaxWidth}px`;
 
     this.create();
   }
@@ -72,7 +73,7 @@ class BottomBar implements IBottomBar {
 
     this.addSheetButton.addEventListener('click', () => {
       this.globalSheetIndex += 1;
-      const tabSheetButton = this.createTabButton(this.globalSheetIndex);
+      const tabSheetButton = this.createTabButton();
 
       this.buttonTabs.push(tabSheetButton);
 
@@ -83,7 +84,7 @@ class BottomBar implements IBottomBar {
         this.scrollsliderContainerTab.appendChild(buttonTab);
       });
 
-      const menuSheetButton = this.createTabButton2(this.globalSheetIndex);
+      const menuSheetButton = this.createTabButton2();
 
       this.buttonTabs2.push(menuSheetButton);
 
@@ -93,6 +94,7 @@ class BottomBar implements IBottomBar {
     });
   }
 
+  //TO DO
   createScrollSlider() {
     const scrollSlider = document.createElement('div');
     scrollSlider.className = 'scrollslider-arrow';
@@ -153,17 +155,20 @@ class BottomBar implements IBottomBar {
     return scrollSlider;
   }
 
-  createTabButton(sheetNumber: number) {
+  createTabButton() {
     const buttonTab = document.createElement('div');
     buttonTab.className = 'btn-tab';
 
     const spanElement = document.createElement('span');
+    spanElement.className = 'btn-tab-span';
 
-    spanElement.textContent = `Sheet${sheetNumber}`;
+    spanElement.textContent = `Sheet${this.globalSheetIndex}`;
     buttonTab.appendChild(spanElement);
 
     const containerButtonTab = document.createElement('div');
     containerButtonTab.className = 'container-btn-tab';
+    containerButtonTab.dataset.globalSheetIndex =
+      this.globalSheetIndex.toString();
 
     containerButtonTab.appendChild(buttonTab);
 
@@ -175,14 +180,19 @@ class BottomBar implements IBottomBar {
       }
     });
 
-    //min height
     buttonTab.addEventListener('dblclick', () => {
       spanElement.contentEditable = 'true';
       spanElement.focus();
     });
 
-    buttonTab.addEventListener('blur', (e) => {
-      e.target.style.background = 'pink';
+    spanElement.addEventListener('blur', () => {
+      const buttonTab2 = this.buttonTabs2.find(
+        (x) =>
+          x.dataset.globalSheetIndex ===
+          containerButtonTab.dataset.globalSheetIndex
+      )!;
+
+      buttonTab2.textContent = spanElement.textContent;
     });
 
     window.addEventListener('click', (e) => {
@@ -231,6 +241,8 @@ class BottomBar implements IBottomBar {
     const renameButton = document.createElement('button');
     renameButton.className = 'btn-menuitem';
     renameButton.textContent = 'Rename';
+
+    renameButton.addEventListener('click', () => {});
 
     menu.appendChild(menuItem);
     menuItem.appendChild(deleteButton);
@@ -312,11 +324,12 @@ class BottomBar implements IBottomBar {
     return menuSheetDropdown;
   }
 
-  createTabButton2(sheetNumber: number) {
+  createTabButton2() {
     const buttonTab2 = document.createElement('button');
     buttonTab2.className = 'btn-tab';
+    buttonTab2.dataset.globalSheetIndex = this.globalSheetIndex.toString();
 
-    buttonTab2.textContent = `Sheet${sheetNumber}`;
+    buttonTab2.textContent = `Sheet${this.globalSheetIndex}`;
 
     return buttonTab2;
   }

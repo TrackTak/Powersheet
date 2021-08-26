@@ -322,12 +322,12 @@ class RowCol {
       }
     });
 
-    this.groups.forEach((group, index) => {
-      if (this.isNodeOutsideCanvas(group)) {
-        group.destroy();
-        delete this.groups[index];
-      }
-    });
+    // this.groups.forEach((group, index) => {
+    //   if (this.isNodeOutsideCanvas(group)) {
+    //     group.destroy();
+    //     delete this.groups[index];
+    //   }
+    // });
   }
 
   getSize(index: number) {

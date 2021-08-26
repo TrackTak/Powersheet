@@ -26,6 +26,43 @@ class VerticalScrollBar implements IScrollBar {
       index: 0,
     };
 
+    this.scrollBarBuilder = buildScrollBar(
+      'vertical',
+      this.canvas.stage,
+      this.canvas.eventEmitter,
+      this.onCanvasLoad,
+      this.onScroll,
+      this.onWheel
+    );
+
+    const { scrollBarEl, scrollEl } = this.scrollBarBuilder.create();
+
+    this.scrollBarEl = scrollBarEl;
+    this.scrollEl = scrollEl;
+
+    this.canvas.container.appendChild(this.scrollBarEl);
+
+    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
+  }
+
+  getBoundingClientRect = () => {
+    return this.scrollBarEl.getBoundingClientRect();
+  };
+
+  onCanvasLoad = () => {
+    this.updateCustomSizePositions();
+
+    this.scrollBarEl.style.height = `${this.canvas.stage.height()}px`;
+    this.scrollBarEl.style.bottom = `${
+      this.canvas.col.scrollBar.getBoundingClientRect().height
+    }px`;
+  };
+
+  onResizeRowEnd = () => {
+    this.updateCustomSizePositions();
+  };
+
+  updateCustomSizePositions() {
     let customHeightDifference = 0;
 
     Object.keys(this.canvas.options.row.heights).forEach((key) => {
@@ -42,38 +79,10 @@ class VerticalScrollBar implements IScrollBar {
       };
     });
 
-    this.scrollBarBuilder = buildScrollBar(
-      'vertical',
-      this.canvas.stage,
-      this.canvas.eventEmitter,
-      this.onCanvasLoad,
-      this.onScroll,
-      this.onWheel
-    );
-
-    const { scrollBarEl, scrollEl } = this.scrollBarBuilder.create();
-
-    this.scrollBarEl = scrollBarEl;
-    this.scrollEl = scrollEl;
-
-    this.scrollBarEl.style.bottom = `${
-      this.canvas.col.scrollBar.getBoundingClientRect().height
-    }px`;
-
     this.scrollEl.style.height = `${
       this.canvas.sheetDimensions.height + this.canvas.getViewportVector().y
     }px`;
-
-    this.canvas.container.appendChild(this.scrollBarEl);
   }
-
-  getBoundingClientRect = () => {
-    return this.scrollBarEl.getBoundingClientRect();
-  };
-
-  onCanvasLoad = () => {
-    this.scrollBarEl.style.height = `${this.canvas.stage.height()}px`;
-  };
 
   onScroll = (e: Event) => {
     const { scrollTop } = e.target! as any;
@@ -141,6 +150,8 @@ class VerticalScrollBar implements IScrollBar {
   };
 
   destroy() {
+    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
+
     this.scrollBarBuilder.destroy();
   }
 }

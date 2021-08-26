@@ -199,33 +199,8 @@ class Canvas {
     const that = this;
 
     this.sheetDimensions = {
-      get width() {
-        const widths = Object.values(that.options.col.widths);
-
-        const totalWidthsDifference = widths.reduce((currentWidth, width) => {
-          return width - that.options.col.defaultWidth + currentWidth;
-        }, 0);
-
-        return (
-          that.options.numberOfCols * that.options.col.defaultWidth +
-          totalWidthsDifference
-        );
-      },
-      get height() {
-        const heights = Object.values(that.options.row.heights);
-
-        const totalHeightsDifference = heights.reduce(
-          (currentHeight, height) => {
-            return height - that.options.row.defaultHeight + currentHeight;
-          },
-          0
-        );
-
-        return (
-          that.options.numberOfRows * that.options.row.defaultHeight +
-          totalHeightsDifference
-        );
-      },
+      width: 0,
+      height: 0,
     };
 
     this.sheetViewportDimensions = {
@@ -280,15 +255,43 @@ class Canvas {
 
     this.layers.xyStickyLayer.add(this.shapes.sheetGroup);
 
+    this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
+    this.eventEmitter.on(events.scroll.vertical, this.onScroll);
+    this.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
+    this.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
+
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+  }
 
-    this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
-    this.eventEmitter.on(events.scroll.vertical, this.onScroll);
+  onResizeEnd = () => {
+    this.updateSheetDimensions();
+  };
+
+  updateSheetDimensions() {
+    const widths = Object.values(this.options.col.widths);
+
+    const totalWidthsDifference = widths.reduce((currentWidth, width) => {
+      return width - this.options.col.defaultWidth + currentWidth;
+    }, 0);
+
+    const heights = Object.values(this.options.row.heights);
+
+    const totalHeightsDifference = heights.reduce((currentHeight, height) => {
+      return height - this.options.row.defaultHeight + currentHeight;
+    }, 0);
+
+    this.sheetDimensions.width =
+      this.options.numberOfCols * this.options.col.defaultWidth +
+      totalWidthsDifference;
+
+    this.sheetDimensions.height =
+      this.options.numberOfRows * this.options.row.defaultHeight +
+      totalHeightsDifference;
   }
 
   getViewportVector() {
@@ -303,6 +306,8 @@ class Canvas {
   };
 
   onLoad = (e: Event) => {
+    this.updateSheetDimensions();
+
     this.stage.width(this.col.totalSize + this.getViewportVector().x);
     this.stage.height(this.row.totalSize + this.getViewportVector().y);
 

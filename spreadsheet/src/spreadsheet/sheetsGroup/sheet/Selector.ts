@@ -253,6 +253,8 @@ class Selector {
   setSelectionBorder() {
     this.isInSelectionMode = false;
 
+    if (!this.selectedCells.length) return;
+
     const getMin = (property: string) =>
       Math.min(...this.selectedCells.map((o) => o.attrs.start[property]));
     const getMax = (property: string) =>

@@ -1,6 +1,7 @@
 import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import events from '../../events';
 import { IMergedCells } from '../../options';
 import Canvas, { CellId } from './Canvas';
 import { performanceProperties } from './canvasStyles';
@@ -28,10 +29,26 @@ class Merger {
       }),
     };
 
+    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
+    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
+
     this.shapes.mergedCells.on('mousedown', this.onMergedCellsMousedown);
     this.shapes.mergedCells.on('mousemove', this.onMergedCellsMousemove);
     this.shapes.mergedCells.on('mouseup', this.onMergedCellsMouseup);
   }
+
+  destroy() {
+    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeEnd);
+    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeEnd);
+
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
+  }
+
+  onResizeEnd = () => {
+    this.updateMergedCells();
+  };
 
   onMergedCellsMousedown = (e: KonvaEventObject<MouseEvent>) => {
     const mergedShape = e.target as Shape;
@@ -67,12 +84,6 @@ class Merger {
     this.canvas.selector.setSelectionBorder();
   };
 
-  destroy() {
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
-  }
-
   updateMergedCells() {
     const generator = this.mergeCells(this.canvas.options.mergedCells);
 
@@ -96,9 +107,9 @@ class Merger {
       const { start, end } = cells[index];
       const id = getCellId(start.row, start.col);
       const shouldMerge =
-        this.canvas.col.groups[start.col] &&
-        this.canvas.row.groups[start.row] &&
-        !this.mergedCellsMap[id];
+        this.canvas.col.groups[start.col] && this.canvas.row.groups[start.row]
+          ? true
+          : false;
 
       if (shouldMerge) {
         const startCol = this.canvas.col.groups[start.col];
@@ -133,6 +144,10 @@ class Merger {
         };
 
         const rect = this.shapes.mergedCells.clone(rectConfig) as Rect;
+
+        if (this.mergedCellsMap[id]) {
+          this.mergedCellsMap[id].destroy();
+        }
 
         this.mergedCellsMap[id] = rect;
 

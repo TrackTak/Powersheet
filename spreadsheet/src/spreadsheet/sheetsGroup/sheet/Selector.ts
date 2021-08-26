@@ -1,3 +1,4 @@
+import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -60,8 +61,8 @@ class Selector {
       }),
     };
 
-    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
-    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
+    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
+    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
 
     this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
     this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
@@ -69,8 +70,8 @@ class Selector {
   }
 
   destroy() {
-    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeRowEnd);
-    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
+    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeEnd);
+    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeEnd);
 
     Object.values(this.shapes).forEach((shape: Node) => {
       shape.destroy();
@@ -147,13 +148,14 @@ class Selector {
         this.shapes.selection
       );
 
-      this.removeSelectedCells();
+      if (this.selectedCells.length !== cells.length) {
+        this.removeSelectedCells();
 
-      // TODO: Make this func more efficient by only calling when we go to a new cell
-      this.selectCells(cells);
+        this.selectCells(cells);
 
-      this.selectedCells = cells;
-      this.selectedFirstCell?.moveToTop();
+        this.selectedCells = cells;
+        this.selectedFirstCell?.moveToTop();
+      }
     }
   }
 
@@ -172,8 +174,8 @@ class Selector {
   }
 
   convertFromRowColsToCells(
-    rows: Shape[],
-    cols: Shape[],
+    rows: Group[],
+    cols: Group[],
     selectionShape: Rect
   ) {
     const cells: ICell[] = [];
@@ -207,13 +209,7 @@ class Selector {
     return cells;
   }
 
-  onResizeRowEnd = () => {
-    if (this.selectedCells) {
-      this.removeSelectedCells(true);
-    }
-  };
-
-  onResizeColEnd = () => {
+  onResizeEnd = () => {
     if (this.selectedCells) {
       this.removeSelectedCells(true);
     }

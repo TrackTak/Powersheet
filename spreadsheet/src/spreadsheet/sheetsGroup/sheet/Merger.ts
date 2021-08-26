@@ -145,8 +145,8 @@ class Merger {
     }
   }
 
-  private destroyMergedCell({ start, end }: IMergedCells) {
-    const id = getMergedCellId(start.row, end.col);
+  private destroyMergedCell(start: IMergedCells['start']) {
+    const id = getMergedCellId(start.row, start.col);
 
     this.mergedCellsMap[id].destroy();
 
@@ -165,7 +165,7 @@ class Merger {
         );
 
         if (shouldUnMerge) {
-          this.destroyMergedCell({ start, end });
+          this.destroyMergedCell(start);
         }
 
         return !shouldUnMerge;

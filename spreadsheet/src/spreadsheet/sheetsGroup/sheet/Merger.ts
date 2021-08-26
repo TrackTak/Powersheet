@@ -5,27 +5,29 @@ import { IMergedCells } from '../../options';
 import Canvas from './Canvas';
 import { performanceProperties } from './canvasStyles';
 
-export interface IMergedCellsMap {
-  row: Record<string, Shape[]>;
-  col: Record<string, Shape[]>;
-}
+// export interface IMergedCellsMap {
+//   row: Record<string, Shape[]>;
+//   col: Record<string, Shape[]>;
+// }
 
-export const getMergedCellId = (ri: number, ci: number) => `${ri}_${ci}`;
+export type MergedCellsId = string;
+
+export type MergedCellsMap = Record<MergedCellsId, Shape>;
+
+export const getMergedCellId = (ri: number, ci: number): MergedCellsId =>
+  `${ri}_${ci}`;
 
 interface IShapes {
   mergedCells: Rect;
 }
 
 class Merger {
-  mergedCellsMap: IMergedCellsMap;
+  mergedCellsMap: MergedCellsMap;
   private shapes: IShapes;
 
   constructor(private canvas: Canvas) {
     this.canvas = canvas;
-    this.mergedCellsMap = {
-      row: {},
-      col: {},
-    };
+    this.mergedCellsMap = {};
     this.shapes = {
       mergedCells: new Rect({
         ...performanceProperties,
@@ -79,14 +81,34 @@ class Merger {
     });
   }
 
-  mergeCells(cells: IMergedCells[]) {
-    this.mergedCellsMap = { row: {}, col: {} };
+  updateMergedCells() {
+    const generator = this.mergeCells(this.canvas.options.mergedCells);
 
-    cells.forEach(({ start, end }) => {
-      if (
+    for (const { id } of generator) {
+      this.mergedCellsMap[id].moveToTop();
+    }
+  }
+
+  addMergeCells(cells: IMergedCells[]) {
+    const generator = this.mergeCells(cells);
+
+    for (const { start, end, shouldMerge } of generator) {
+      if (shouldMerge) {
+        this.canvas.options.mergedCells.push({ start, end });
+      }
+    }
+  }
+
+  private *mergeCells(cells: IMergedCells[]) {
+    for (let index = 0; index < cells.length; index++) {
+      const { start, end } = cells[index];
+      const id = getMergedCellId(start.row, start.col);
+      const shouldMerge =
         this.canvas.col.groups[start.col] &&
-        this.canvas.row.groups[start.row]
-      ) {
+        this.canvas.row.groups[start.row] &&
+        !this.mergedCellsMap[id];
+
+      if (shouldMerge) {
         const startCol = this.canvas.col.groups[start.col];
         const startRow = this.canvas.row.groups[start.row];
 
@@ -113,81 +135,85 @@ class Merger {
           y: startRow.y() + offset,
           height: height - offset * 2,
           width: width - offset * 2,
-          id: getMergedCellId(start.row, start.col),
+          id,
           start,
           end,
         };
 
         const rect = this.shapes.mergedCells.clone(rectConfig) as Rect;
 
-        for (let index = start.row; index <= end.row; index++) {
-          this.mergedCellsMap.row[index] = [
-            ...(this.mergedCellsMap.row[index] ?? []),
-            rect,
-          ];
-        }
-
-        for (let index = start.col; index <= end.col; index++) {
-          this.mergedCellsMap.col[index] = [
-            ...(this.mergedCellsMap.col[index] ?? []),
-            rect,
-          ];
-        }
+        this.mergedCellsMap[id] = rect;
 
         this.canvas.layers.mainLayer.add(rect);
       }
-    });
-
-    this.canvas.options.mergedCells = cells;
+      yield { start, end, id, shouldMerge };
+    }
   }
 
   unMergeCells(mergedCells: IMergedCells[]) {
+    this.canvas.options.mergedCells = this.canvas.options.mergedCells.filter(
+      (x) => {
+        const shouldUnMerge = mergedCells.some(
+          (z) =>
+            z.start.row === x.start.row &&
+            z.start.col === x.start.col &&
+            z.end.row === x.end.row &&
+            z.end.col === x.end.col
+        );
+
+        if (shouldUnMerge) {
+          const id = getMergedCellId(x.start.row, x.start.col);
+
+          this.mergedCellsMap[id].destroy();
+
+          delete this.mergedCellsMap[id];
+        }
+
+        return !shouldUnMerge;
+      }
+    );
+
     mergedCells.forEach((mergedCell) => {
-      for (
-        let index = mergedCell.start.row;
-        index <= mergedCell.end.row;
-        index++
-      ) {
-        this.mergedCellsMap.row[index] = this.mergedCellsMap.row[index].filter(
-          (cell) => {
-            const isMergedCell =
-              cell.attrs.id ===
-              getMergedCellId(mergedCell.start.row, mergedCell.start.col);
-
-            if (isMergedCell) {
-              cell.destroy();
-            }
-            return !isMergedCell;
-          }
-        );
-
-        if (!this.mergedCellsMap.row[index].length) {
-          delete this.mergedCellsMap.row[index];
-        }
-      }
-
-      for (
-        let index = mergedCell.start.col;
-        index <= mergedCell.end.col;
-        index++
-      ) {
-        this.mergedCellsMap.col[index] = this.mergedCellsMap.col[index].filter(
-          (cell) => {
-            const isMergedCell =
-              cell.attrs.id ===
-              getMergedCellId(mergedCell.start.row, mergedCell.start.col);
-
-            if (isMergedCell) {
-              cell.destroy();
-            }
-            return !isMergedCell;
-          }
-        );
-
-        if (!this.mergedCellsMap.col[index].length) {
-          delete this.mergedCellsMap.col[index];
-        }
-      }
+      // for (
+      //   let index = mergedCell.start.row;
+      //   index <= mergedCell.end.row;
+      //   index++
+      // ) {
+      //   this.mergedCellsMap.row[index] = this.mergedCellsMap.row[index].filter(
+      //     (cell) => {
+      //       const isMergedCell =
+      //         cell.attrs.id ===
+      //         getMergedCellId(mergedCell.start.row, mergedCell.start.col);
+      //       if (isMergedCell) {
+      //         cell.destroy();
+      //       }
+      //       return !isMergedCell;
+      //     }
+      //   );
+      //   if (!this.mergedCellsMap.row[index].length) {
+      //     delete this.mergedCellsMap.row[index];
+      //   }
+      // }
+      // for (
+      //   let index = mergedCell.start.col;
+      //   index <= mergedCell.end.col;
+      //   index++
+      // ) {
+      //   this.mergedCellsMap.col[index] = this.mergedCellsMap.col[index].filter(
+      //     (cell) => {
+      //       const isMergedCell =
+      //         cell.attrs.id ===
+      //         getMergedCellId(mergedCell.start.row, mergedCell.start.col);
+      //       if (isMergedCell) {
+      //         cell.destroy();
+      //       }
+      //       return !isMergedCell;
+      //     }
+      //   );
+      //   if (!this.mergedCellsMap.col[index].length) {
+      //     delete this.mergedCellsMap.col[index];
+      //   }
+      // }
     });
   }
 
@@ -213,7 +239,7 @@ class Merger {
       col: getMax('col'),
     };
 
-    this.mergeCells([...this.canvas.options.mergedCells, { start, end }]);
+    this.addMergeCells([{ start, end }]);
 
     // const mergedSelectedRow = selectedRowCols.rows.find(
     //   (x) => x.attrs.isMerged
@@ -250,7 +276,7 @@ class Merger {
     if (!selectedCells.length) {
       return;
     }
-    debugger;
+
     const mergedCells = selectedCells.map((x) => {
       return {
         start: x.attrs.start,

@@ -362,15 +362,15 @@ class RowCol {
     });
 
     this.groups.forEach((group, index) => {
-      const mergedCells = this.canvas.merger.mergedCellsMap[this.type][index];
+      //const mergedCells = this.canvas.merger.mergedCellsMap[this.type][index];
 
-      if (mergedCells?.length) {
-        mergedCells.forEach((cell) => {
-          if (this.isNodeOutsideCanvas(cell)) {
-            cell.destroy();
-          }
-        });
-      }
+      // if (mergedCells?.length) {
+      //   mergedCells.forEach((cell) => {
+      //     if (this.isNodeOutsideCanvas(cell)) {
+      //       cell.destroy();
+      //     }
+      //   });
+      // }
       if (this.isNodeOutsideCanvas(group)) {
         group.destroy();
         delete this.groups[index];

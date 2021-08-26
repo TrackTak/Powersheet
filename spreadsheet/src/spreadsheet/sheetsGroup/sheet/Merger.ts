@@ -2,15 +2,12 @@ import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { IMergedCells } from '../../options';
-import Canvas from './Canvas';
+import Canvas, { CellId } from './Canvas';
 import { performanceProperties } from './canvasStyles';
 
-export type MergedCellsId = string;
+export type MergedCellsMap = Record<CellId, Shape>;
 
-export type MergedCellsMap = Record<MergedCellsId, Shape>;
-
-export const getMergedCellId = (ri: number, ci: number): MergedCellsId =>
-  `${ri}_${ci}`;
+export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
 interface IShapes {
   mergedCells: Rect;
@@ -97,7 +94,7 @@ class Merger {
   private *mergeCells(cells: IMergedCells[]) {
     for (let index = 0; index < cells.length; index++) {
       const { start, end } = cells[index];
-      const id = getMergedCellId(start.row, start.col);
+      const id = getCellId(start.row, start.col);
       const shouldMerge =
         this.canvas.col.groups[start.col] &&
         this.canvas.row.groups[start.row] &&
@@ -146,7 +143,7 @@ class Merger {
   }
 
   private destroyMergedCell(start: IMergedCells['start']) {
-    const id = getMergedCellId(start.row, start.col);
+    const id = getCellId(start.row, start.col);
 
     this.mergedCellsMap[id].destroy();
 

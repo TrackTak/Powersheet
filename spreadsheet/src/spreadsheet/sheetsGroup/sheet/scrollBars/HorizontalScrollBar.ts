@@ -26,6 +26,40 @@ class HorizontalScrollBar implements IScrollBar {
       index: 0,
     };
 
+    this.scrollBarBuilder = buildScrollBar(
+      'horizontal',
+      this.canvas.stage,
+      this.canvas.eventEmitter,
+      this.onCanvasLoad,
+      this.onScroll,
+      this.onWheel
+    );
+
+    const { scrollBarEl, scrollEl } = this.scrollBarBuilder.create();
+
+    this.scrollBarEl = scrollBarEl;
+    this.scrollEl = scrollEl;
+
+    this.canvas.container.appendChild(this.scrollBarEl);
+
+    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
+  }
+
+  getBoundingClientRect = () => {
+    return this.scrollBarEl.getBoundingClientRect();
+  };
+
+  onCanvasLoad = () => {
+    this.updateCustomSizePositions();
+
+    this.scrollBarEl.style.width = `${this.canvas.stage.width()}px`;
+  };
+
+  onResizeColEnd = () => {
+    this.updateCustomSizePositions();
+  };
+
+  updateCustomSizePositions() {
     let customWidthDifference = 0;
 
     Object.keys(this.canvas.options.col.widths).forEach((key) => {
@@ -42,34 +76,10 @@ class HorizontalScrollBar implements IScrollBar {
       };
     });
 
-    this.scrollBarBuilder = buildScrollBar(
-      'horizontal',
-      this.canvas.stage,
-      this.canvas.eventEmitter,
-      this.onCanvasLoad,
-      this.onScroll,
-      this.onWheel
-    );
-
-    const { scrollBarEl, scrollEl } = this.scrollBarBuilder.create();
-
-    this.scrollBarEl = scrollBarEl;
-    this.scrollEl = scrollEl;
-
     this.scrollEl.style.width = `${
       this.canvas.sheetDimensions.width + this.canvas.getViewportVector().x
     }px`;
-
-    this.canvas.container.appendChild(this.scrollBarEl);
   }
-
-  getBoundingClientRect = () => {
-    return this.scrollBarEl.getBoundingClientRect();
-  };
-
-  onCanvasLoad = () => {
-    this.scrollBarEl.style.width = `${this.canvas.stage.width()}px`;
-  };
 
   onScroll = (e: Event) => {
     const { scrollLeft } = e.target! as any;
@@ -136,6 +146,8 @@ class HorizontalScrollBar implements IScrollBar {
   };
 
   destroy() {
+    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
+
     this.scrollBarBuilder.destroy();
   }
 }

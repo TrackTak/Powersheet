@@ -5,11 +5,6 @@ import { IMergedCells } from '../../options';
 import Canvas from './Canvas';
 import { performanceProperties } from './canvasStyles';
 
-// export interface IMergedCellsMap {
-//   row: Record<string, Shape[]>;
-//   col: Record<string, Shape[]>;
-// }
-
 export type MergedCellsId = string;
 
 export type MergedCellsMap = Record<MergedCellsId, Shape>;

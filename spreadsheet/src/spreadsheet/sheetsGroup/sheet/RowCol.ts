@@ -45,11 +45,13 @@ export interface IRowColFunctions {
 class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
+  headerGroup: Group;
   headerGroups: Group[];
+  group: Group;
   groups: Group[];
   totalSize: number;
-  shapes!: IShapes;
-  private sheetViewportPosition: ISheetViewportPosition;
+  shapes: IShapes;
+  sheetViewportPosition: ISheetViewportPosition;
   private previousSheetViewportPosition: ISheetViewportPosition;
   private getAvailableSize: () => number;
   private getHeaderText: (index: number) => string;
@@ -97,11 +99,7 @@ class RowCol {
         defaultSize: this.canvas.options.col.defaultWidth,
         sizes: this.canvas.options.col.widths,
       };
-      this.scrollBar = new HorizontalScrollBar(
-        this.canvas,
-        this.sheetViewportPosition,
-        this.headerGroups
-      );
+      this.scrollBar = new HorizontalScrollBar(this.canvas);
       this.shapes.headerText.setAttrs(this.canvas.styles.colHeader.text);
       this.shapes.headerRect.setAttrs({
         ...this.canvas.styles.colHeader.rect,
@@ -136,11 +134,7 @@ class RowCol {
         defaultSize: this.canvas.options.row.defaultHeight,
         sizes: this.canvas.options.row.heights,
       };
-      this.scrollBar = new VerticalScrollBar(
-        this.canvas,
-        this.sheetViewportPosition,
-        this.headerGroups
-      );
+      this.scrollBar = new VerticalScrollBar(this.canvas);
 
       this.shapes.headerText.setAttrs(this.canvas.styles.rowHeader.text);
       this.shapes.headerRect.setAttrs({
@@ -161,6 +155,8 @@ class RowCol {
         this.canvas.getViewportVector().y -
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
+    this.headerGroup = new Group();
+    this.group = new Group();
 
     this.resizer = new Resizer(
       canvas,
@@ -169,16 +165,17 @@ class RowCol {
       this.sizeOptions,
       this.headerGroups
     );
-    this.shapes.headerGroup.cache({
-      ...this.canvas.getViewportVector(),
-      ...this.canvas.sheetViewportDimensions,
-    });
+
     this.shapes.group.cache({
       ...this.canvas.getViewportVector(),
       ...this.canvas.sheetViewportDimensions,
     });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
+
+    this.canvas.layers.mainLayer.add(this.headerGroup);
+    this.canvas.layers.mainLayer.add(this.group);
+
     this.canvas.eventEmitter.on(
       events.resize[this.type].start,
       this.onResizeStart
@@ -314,14 +311,12 @@ class RowCol {
   };
 
   destroyOutOfViewportItems() {
-    this.headerGroups.forEach((headerGroup, index) => {
-      if (this.isNodeOutsideCanvas(headerGroup)) {
-        headerGroup.destroy();
-
-        delete this.headerGroups[index];
-      }
-    });
-
+    // this.headerGroups.forEach((headerGroup, index) => {
+    //   if (this.isNodeOutsideCanvas(headerGroup)) {
+    //     headerGroup.destroy();
+    //     delete this.headerGroups[index];
+    //   }
+    // });
     // this.groups.forEach((group, index) => {
     //   if (this.isNodeOutsideCanvas(group)) {
     //     group.destroy();
@@ -415,14 +410,16 @@ class RowCol {
 
     this.headerGroups[index] = headerGroup;
 
+    this.headerGroup.add(headerGroup);
+
     if (isFrozen) {
-      this.canvas.layers.xyStickyLayer.add(headerGroup);
     } else {
-      if (this.isCol) {
-        this.canvas.layers.yStickyLayer.add(headerGroup);
-      } else {
-        this.canvas.layers.xStickyLayer.add(headerGroup);
-      }
+      // this.canvas.layers.mainLayer.add(headerGroup);
+      // if (this.isCol) {
+      //   this.canvas.layers.yStickyLayer.add(headerGroup);
+      // } else {
+      //   this.canvas.layers.xStickyLayer.add(headerGroup);
+      // }
     }
   }
 
@@ -489,10 +486,11 @@ class RowCol {
 
     this.groups[index] = group;
 
+    this.group.add(group);
+
     if (isFrozen) {
-      this.canvas.layers.xyStickyLayer.add(group);
     } else {
-      this.canvas.layers.mainLayer.add(group);
+      //  this.canvas.layers.mainLayer.add(group);
     }
   }
 

@@ -1,7 +1,6 @@
-import { Group } from 'konva/lib/Group';
 import { KonvaEventObject } from 'konva/lib/Node';
 import events from '../../../events';
-import Canvas, { ICustomSizePosition, ISheetViewportPosition } from '../Canvas';
+import Canvas, { ICustomSizePosition } from '../Canvas';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
 import { IScrollBar, IScrollOffset } from './IScrollBar';
 
@@ -12,14 +11,8 @@ class HorizontalScrollBar implements IScrollBar {
   scrollOffset: IScrollOffset;
   private scrollBarBuilder!: IBuildScroll;
 
-  constructor(
-    private canvas: Canvas,
-    private sheetViewportPosition: ISheetViewportPosition,
-    private colHeaderGroups: Group[]
-  ) {
+  constructor(private canvas: Canvas) {
     this.canvas = canvas;
-    this.sheetViewportPosition = sheetViewportPosition;
-    this.colHeaderGroups = colHeaderGroups;
     this.customSizePositions = [];
     this.scrollOffset = {
       size: 0,
@@ -118,22 +111,22 @@ class HorizontalScrollBar implements IScrollBar {
       (this.canvas.sheetDimensions.width - totalSizeDifference);
     const ci = Math.trunc(this.canvas.options.numberOfCols * scrollPercent);
 
-    this.sheetViewportPosition.x = ci;
-    this.sheetViewportPosition.y =
+    this.canvas.col.sheetViewportPosition.x = ci;
+    this.canvas.col.sheetViewportPosition.y =
       this.canvas.col.calculateSheetViewportEndPosition(
         this.canvas.stage.width(),
-        this.sheetViewportPosition.x,
+        this.canvas.col.sheetViewportPosition.x,
         this.canvas.options.col.defaultWidth,
         this.canvas.options.col.widths,
         customSizeChanges
       );
 
-    this.canvas.layers.mainLayer.x(scrollAmount);
-    this.canvas.layers.yStickyLayer.x(scrollAmount);
+    this.canvas.col.headerGroup.x(scrollAmount);
+    this.canvas.col.group.x(scrollAmount);
 
     this.canvas.eventEmitter.emit(events.scroll.horizontal, e);
 
-    const col = this.colHeaderGroups[ci];
+    const col = this.canvas.col.headerGroups[ci];
 
     this.scrollOffset = {
       index: ci,

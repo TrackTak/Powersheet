@@ -57,9 +57,6 @@ export interface ICustomSizePosition {
 
 export interface ILayers {
   mainLayer: Layer;
-  yStickyLayer: Layer;
-  xStickyLayer: Layer;
-  xyStickyLayer: Layer;
 }
 
 export interface ICustomSizes {
@@ -224,9 +221,6 @@ class Canvas {
 
     // The order here matters
     this.layers = {
-      xStickyLayer: new Layer(),
-      yStickyLayer: new Layer(),
-      xyStickyLayer: new Layer(),
       mainLayer: new Layer(),
     };
 
@@ -253,7 +247,7 @@ class Canvas {
 
     this.shapes.sheetGroup.add(this.shapes.sheet);
 
-    this.layers.xyStickyLayer.add(this.shapes.sheetGroup);
+    this.layers.mainLayer.add(this.shapes.sheetGroup);
 
     this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
     this.eventEmitter.on(events.scroll.vertical, this.onScroll);
@@ -369,7 +363,7 @@ class Canvas {
       ...this.styles.topLeftRect,
     });
 
-    this.layers.xyStickyLayer.add(rect);
+    this.layers.mainLayer.add(rect);
   }
 
   updateViewport() {

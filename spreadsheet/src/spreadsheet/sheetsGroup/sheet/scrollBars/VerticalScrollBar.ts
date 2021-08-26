@@ -1,7 +1,6 @@
-import Canvas, { ICustomSizePosition, ISheetViewportPosition } from '../Canvas';
+import Canvas, { ICustomSizePosition } from '../Canvas';
 import { KonvaEventObject } from 'konva/lib/Node';
 import buildScrollBar, { IBuildScroll } from './buildScrollBar';
-import { Group } from 'konva/lib/Group';
 import { IScrollBar, IScrollOffset } from './IScrollBar';
 import events from '../../../events';
 
@@ -12,14 +11,8 @@ class VerticalScrollBar implements IScrollBar {
   scrollOffset: IScrollOffset;
   private scrollBarBuilder!: IBuildScroll;
 
-  constructor(
-    private canvas: Canvas,
-    private sheetViewportPosition: ISheetViewportPosition,
-    private rowHeaderGroups: Group[]
-  ) {
+  constructor(private canvas: Canvas) {
     this.canvas = canvas;
-    this.sheetViewportPosition = sheetViewportPosition;
-    this.rowHeaderGroups = rowHeaderGroups;
     this.customSizePositions = [];
     this.scrollOffset = {
       size: 0,
@@ -122,22 +115,21 @@ class VerticalScrollBar implements IScrollBar {
       (this.canvas.sheetDimensions.height - totalSizeDifference);
     const ri = Math.trunc(this.canvas.options.numberOfRows * scrollPercent);
 
-    this.sheetViewportPosition.x = ri;
-    this.sheetViewportPosition.y =
+    this.canvas.row.sheetViewportPosition.x = ri;
+    this.canvas.row.sheetViewportPosition.y =
       this.canvas.row.calculateSheetViewportEndPosition(
         this.canvas.stage.height(),
-        this.sheetViewportPosition.x,
+        this.canvas.row.sheetViewportPosition.x,
         this.canvas.options.row.defaultHeight,
         this.canvas.options.row.heights,
         customSizeChanges
       );
 
     this.canvas.layers.mainLayer.y(scrollAmount);
-    this.canvas.layers.xStickyLayer.y(scrollAmount);
 
     this.canvas.eventEmitter.emit(events.scroll.vertical, e);
 
-    const row = this.rowHeaderGroups[ri];
+    const row = this.canvas.row.headerGroups[ri];
 
     this.scrollOffset = {
       index: ri,

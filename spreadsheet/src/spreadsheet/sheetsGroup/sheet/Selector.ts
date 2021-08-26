@@ -233,11 +233,11 @@ class Selector {
       const isFrozenCol = cell.attrs.isFrozenCol;
 
       if (isFrozenRow && isFrozenCol) {
-        this.canvas.layers.xyStickyLayer.add(cell);
+        // this.canvas.layers.xyStickyLayer.add(cell);
       } else if (isFrozenRow) {
-        this.canvas.layers.yStickyLayer.add(cell);
+        //   this.canvas.layers.yStickyLayer.add(cell);
       } else if (isFrozenCol) {
-        this.canvas.layers.xStickyLayer.add(cell);
+        //    this.canvas.layers.xStickyLayer.add(cell);
       } else {
         this.canvas.layers.mainLayer.add(cell);
       }

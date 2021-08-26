@@ -1,5 +1,5 @@
 import { Node } from 'konva/lib/Node';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
@@ -178,14 +178,10 @@ class Selector {
   ) {
     const cells: ICell[] = [];
 
-    rows.forEach((rowGroup, ri) => {
-      cols.forEach((colGroup, ci) => {
+    rows.forEach((rowGroup) => {
+      cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        // const existingCell = this.selectedCells.find((x) => x.attrs.id === id);
 
-        // if (existingCell) {
-        //   cells.push(existingCell);
-        // } else {
         const clone = selectionShape.clone({
           id,
           start: {
@@ -205,7 +201,6 @@ class Selector {
         });
 
         cells.push(clone);
-        //    }
       });
     });
 

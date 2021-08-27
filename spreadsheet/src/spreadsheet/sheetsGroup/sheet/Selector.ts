@@ -121,7 +121,7 @@ class Selector {
     this.selectedFirstCell = cells[0];
   }
 
-  moveSelection() {
+  moveSelection(positionOverride?: Vector2d) {
     if (this.isInSelectionMode) {
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
@@ -137,7 +137,7 @@ class Selector {
 
       const { rows, cols } = this.canvas.getRowColsBetweenVectors(
         start,
-        this.selectionArea.end
+        positionOverride || this.selectionArea.end
       );
 
       const cells = this.convertFromRowColsToCells(

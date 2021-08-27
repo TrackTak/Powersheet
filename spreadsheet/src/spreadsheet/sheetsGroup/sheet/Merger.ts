@@ -56,25 +56,40 @@ class Merger {
   };
 
   onMergedCellsMousemove = (e: KonvaEventObject<MouseEvent>) => {
-    const mergedCell = e.target as Shape;
+    this.canvas.selector.moveSelection({
+      x: e.target.x(),
+      y: e.target.y()
+    });
+    // const mergedCell = e.target as Shape;
 
-    if (this.canvas.selector.isInSelectionMode) {
-      const cells = this.canvas.selector.selectedCells;
-      const cell = this.canvas.selector.convertShapeToCell(mergedCell, {
-        strokeWidth: 0,
-      });
-      const cellAlreadyExists = cells.find((x) => x.id === cell.id);
+    // if (this.canvas.selector.isInSelectionMode) {
+    //   const cells = this.canvas.selector.selectedCells;
+    //   const cell = this.canvas.selector.convertShapeToCell(mergedCell, {
+    //     strokeWidth: 0,
+    //   });
+    //   const cellAlreadyExists = cells.find((x) => x.id === cell.id);
 
-      if (!cellAlreadyExists) {
-        this.canvas.selector.selectCells([...cells, cell]);
+    //   if (!cellAlreadyExists) {
+    //     this.canvas.selector.selectCells([...cells, cell]);
 
-        const firstSelectedCell = this.canvas.selector.selectedCells.find(
-          (x) => x.attrs.strokeWidth
-        )!;
+    //     const firstSelectedCell = this.canvas.selector.selectedCells.find(
+    //       (x) => x.attrs.strokeWidth
+    //     )!;
 
-        firstSelectedCell.moveToTop();
-      }
-    }
+    //     firstSelectedCell.moveToTop();
+    //   }
+    //   const end = {
+    //     x: e.target.x(),
+    //     y: e.target.y(),
+    //   }
+    //   Object.values(this.mergedCellsMap).forEach((mergedCell) => {
+    //     const isInMergedCellXRange = end.x >= mergedCell.x() && end.x <= mergedCell.x() + mergedCell.width();
+    //     const isInMergedCellYRange = end.y >= mergedCell.y() && end.y <= mergedCell.y() + mergedCell.height();
+    //     if (isInMergedCellXRange && isInMergedCellYRange) {
+    //       // this.canvas.selector.moveSelection();
+    //     }
+    //   })
+    // }
     //this.canvas.selector.moveSelection();
   };
 

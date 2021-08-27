@@ -1,3 +1,4 @@
+import { Group } from 'konva/lib/Group';
 import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -6,8 +7,6 @@ import { IMergedCells } from '../../options';
 import Canvas, { CellId } from './Canvas';
 import { performanceProperties } from './canvasStyles';
 
-export type MergedCellsMap = Record<CellId, Shape>;
-
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
 interface IShapes {
@@ -15,12 +14,13 @@ interface IShapes {
 }
 
 class Merger {
-  mergedCellsMap: MergedCellsMap;
+  mergedCellsMap: Map<CellId, Shape>;
+  mergedCellsGroup: Group;
   private shapes: IShapes;
 
   constructor(private canvas: Canvas) {
     this.canvas = canvas;
-    this.mergedCellsMap = {};
+    this.mergedCellsMap = new Map();
     this.shapes = {
       mergedCells: new Rect({
         ...performanceProperties,
@@ -28,6 +28,9 @@ class Merger {
         fill: 'white',
       }),
     };
+    this.mergedCellsGroup = new Group();
+
+    this.canvas.layers.mainLayer.add(this.mergedCellsGroup);
 
     this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
     this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
@@ -88,7 +91,7 @@ class Merger {
     const generator = this.mergeCells(this.canvas.options.mergedCells);
 
     for (const { id } of generator) {
-      this.mergedCellsMap[id].moveToTop();
+      this.mergedCellsMap.get(id)!.moveToTop();
     }
   }
 
@@ -106,36 +109,32 @@ class Merger {
     for (let index = 0; index < cells.length; index++) {
       const { start, end } = cells[index];
       const id = getCellId(start.row, start.col);
-      const shouldMerge =
-        this.canvas.col.groups[start.col] && this.canvas.row.groups[start.row]
-          ? true
-          : false;
+      const startCol = this.canvas.col.rowColGroupMap.get(start.col);
+      const startRow = this.canvas.row.rowColGroupMap.get(start.row);
+      const shouldMerge = startCol && startRow ? true : false;
 
       if (shouldMerge) {
-        const startCol = this.canvas.col.groups[start.col];
-        const startRow = this.canvas.row.groups[start.row];
-
         let height = 0;
         let width = 0;
 
         for (let index = start.row; index <= end.row; index++) {
-          const group = this.canvas.row.groups[index];
+          const group = this.canvas.row.rowColGroupMap.get(index)!;
 
           height += group.height();
         }
 
         for (let index = start.col; index <= end.col; index++) {
-          const group = this.canvas.col.groups[index];
+          const group = this.canvas.col.rowColGroupMap.get(index)!;
 
           width += group.width();
         }
 
-        const gridLineStrokWidth = this.canvas.styles.gridLine.strokeWidth!;
-        const offset = gridLineStrokWidth;
+        const gridLineStrokeWidth = this.canvas.styles.gridLine.strokeWidth!;
+        const offset = gridLineStrokeWidth;
 
         const rectConfig: RectConfig = {
-          x: startCol.x() + offset,
-          y: startRow.y() + offset,
+          x: startCol!.x() + offset,
+          y: startRow!.y() + offset,
           height: height - offset * 2,
           width: width - offset * 2,
           id,
@@ -145,13 +144,13 @@ class Merger {
 
         const rect = this.shapes.mergedCells.clone(rectConfig) as Rect;
 
-        if (this.mergedCellsMap[id]) {
-          this.mergedCellsMap[id].destroy();
+        if (this.mergedCellsMap.has(id)) {
+          this.mergedCellsMap.get(id)!.destroy();
         }
 
-        this.mergedCellsMap[id] = rect;
+        this.mergedCellsMap.set(id, rect);
 
-        this.canvas.layers.mainLayer.add(rect);
+        this.mergedCellsGroup.add(rect);
       }
       yield { start, end, id, shouldMerge };
     }
@@ -160,9 +159,11 @@ class Merger {
   private destroyMergedCell(start: IMergedCells['start']) {
     const id = getCellId(start.row, start.col);
 
-    this.mergedCellsMap[id].destroy();
+    if (this.mergedCellsMap.has(id)) {
+      this.mergedCellsMap.get(id)!.destroy();
 
-    delete this.mergedCellsMap[id];
+      this.mergedCellsMap.delete(id);
+    }
   }
 
   unMergeCells(mergedCells: IMergedCells[]) {
@@ -186,7 +187,7 @@ class Merger {
   }
 
   mergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCells;
+    const selectedCells = this.canvas.selector.selectedCellsGroup.children!;
 
     if (!selectedCells.length) {
       return;
@@ -211,7 +212,7 @@ class Merger {
   }
 
   unMergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCells;
+    const selectedCells = this.canvas.selector.selectedCellsGroup.children!;
 
     if (!selectedCells.length) {
       return;

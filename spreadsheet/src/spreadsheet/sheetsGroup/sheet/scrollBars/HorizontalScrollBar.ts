@@ -122,11 +122,13 @@ class HorizontalScrollBar implements IScrollBar {
       );
 
     this.canvas.col.headerGroup.x(scrollAmount);
-    this.canvas.col.group.x(scrollAmount);
+    this.canvas.col.rowColGroup.x(scrollAmount);
+    this.canvas.merger.mergedCellsGroup.x(scrollAmount);
+    this.canvas.selector.selectedCellsGroup.x(scrollAmount);
 
     this.canvas.eventEmitter.emit(events.scroll.horizontal, e);
 
-    const col = this.canvas.col.headerGroups[ci];
+    const col = this.canvas.col.headerGroupMap.get(ci)!;
 
     this.scrollOffset = {
       index: ci,

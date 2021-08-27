@@ -1,3 +1,4 @@
+import { Container } from 'konva/lib/Container';
 import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
@@ -23,13 +24,15 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-interface ICell extends Rect {}
+interface ISelectedCell extends Group {}
+
+interface ISelectedCellsGroup extends Group {}
 
 class Selector {
   shapes!: IShapes;
   isInSelectionMode: boolean;
-  selectedCells: ICell[];
-  selectedFirstCell: ICell | null;
+  selectedCellsGroup: ISelectedCellsGroup;
+  selectedFirstCell: ISelectedCell | null;
   private selectionArea: ISelectionArea;
 
   constructor(private canvas: Canvas) {
@@ -45,7 +48,7 @@ class Selector {
         y: 0,
       },
     };
-    this.selectedCells = [];
+
     this.selectedFirstCell = null;
 
     this.shapes = {
@@ -60,6 +63,10 @@ class Selector {
         ...this.canvas.styles.selection,
       }),
     };
+
+    this.selectedCellsGroup = new Group();
+
+    this.canvas.layers.mainLayer.add(this.selectedCellsGroup);
 
     this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
     this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
@@ -114,7 +121,7 @@ class Selector {
     this.setSelectionBorder();
   };
 
-  startSelection(cells: ICell[]) {
+  startSelection(cells: ISelectedCell[]) {
     this.removeSelectedCells(true);
     this.isInSelectionMode = true;
 
@@ -148,12 +155,11 @@ class Selector {
         this.shapes.selection
       );
 
-      if (this.selectedCells.length !== cells.length) {
+      if (this.selectedCellsGroup.children!.length !== cells.length) {
         this.removeSelectedCells();
 
         this.selectCells(cells);
 
-        this.selectedCells = cells;
         this.selectedFirstCell?.moveToTop();
       }
     }
@@ -178,13 +184,12 @@ class Selector {
     cols: Group[],
     selectionShape: Rect
   ) {
-    const cells: ICell[] = [];
+    const cells: ISelectedCell[] = [];
 
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-
-        const clone = selectionShape.clone({
+        const group = new Group({
           id,
           start: {
             row: rowGroup.attrs.index,
@@ -194,15 +199,19 @@ class Selector {
             row: rowGroup.attrs.index,
             col: colGroup.attrs.index,
           },
-          //   isFrozenRow: this.canvas.row.getIsFrozen(rowGroup.attrs.index),
-          //   isFrozenCol: this.canvas.col.getIsFrozen(colGroup.attrs.index),
           x: colGroup.x(),
           y: rowGroup.y(),
+        });
+        const config: RectConfig = {
+          //   isFrozenRow: this.canvas.row.getIsFrozen(rowGroup.attrs.index),
+          //   isFrozenCol: this.canvas.col.getIsFrozen(colGroup.attrs.index),
           width: colGroup.width(),
           height: rowGroup.height(),
-        });
+        };
+        const clone = selectionShape.clone(config);
 
-        cells.push(clone);
+        group.add(clone);
+        cells.push(group);
       });
     });
 
@@ -210,16 +219,15 @@ class Selector {
   }
 
   onResizeEnd = () => {
-    if (this.selectedCells) {
+    if (this.selectedCellsGroup.children!.length) {
       this.removeSelectedCells(true);
     }
   };
 
   removeSelectedCells(removeFirstCell = false) {
-    this.shapes.selectionBorder.destroy();
-    this.selectedCells.forEach((rect) => rect.destroy());
-
-    this.selectedCells = [];
+    this.selectedCellsGroup.children
+      ?.filter((x) => x !== this.selectedFirstCell)
+      .forEach((x) => x.destroy());
 
     if (this.selectedFirstCell && removeFirstCell) {
       this.selectedFirstCell.destroy();
@@ -227,7 +235,7 @@ class Selector {
     }
   }
 
-  selectCells(cells: ICell[]) {
+  selectCells(cells: ISelectedCell[]) {
     cells.forEach((cell) => {
       const isFrozenRow = cell.attrs.isFrozenRow;
       const isFrozenCol = cell.attrs.isFrozenCol;
@@ -239,7 +247,7 @@ class Selector {
       } else if (isFrozenCol) {
         //    this.canvas.layers.xStickyLayer.add(cell);
       } else {
-        this.canvas.layers.mainLayer.add(cell);
+        this.selectedCellsGroup.add(cell);
       }
     });
 
@@ -249,12 +257,16 @@ class Selector {
   setSelectionBorder() {
     this.isInSelectionMode = false;
 
-    if (!this.selectedCells.length) return;
+    if (!this.selectedCellsGroup.children!.length) return;
 
     const getMin = (property: string) =>
-      Math.min(...this.selectedCells.map((o) => o.attrs.start[property]));
+      Math.min(
+        ...this.selectedCellsGroup.children!.map((o) => o.attrs.start[property])
+      );
     const getMax = (property: string) =>
-      Math.max(...this.selectedCells.map((o) => o.attrs.end[property]));
+      Math.max(
+        ...this.selectedCellsGroup.children!.map((o) => o.attrs.end[property])
+      );
 
     const start = {
       row: getMin('row'),
@@ -270,23 +282,23 @@ class Selector {
     let totalHeight = 0;
 
     for (let index = start.row; index <= end.row; index++) {
-      totalHeight += this.canvas.row.groups[index].height();
+      totalHeight += this.canvas.row.rowColGroupMap.get(index)!.height();
     }
 
     for (let index = start.col; index <= end.col; index++) {
-      totalWidth += this.canvas.col.groups[index].width();
+      totalWidth += this.canvas.col.rowColGroupMap.get(index)!.width();
     }
 
     const config: RectConfig = {
-      x: this.selectedCells[0].x(),
-      y: this.selectedCells[0].y(),
       width: totalWidth,
       height: totalHeight,
     };
 
     this.shapes.selectionBorder.setAttrs(config);
 
-    this.canvas.layers.mainLayer.add(this.shapes.selectionBorder);
+    (this.selectedCellsGroup.children![0] as Container<Shape>).add(
+      this.shapes.selectionBorder
+    );
   }
 }
 

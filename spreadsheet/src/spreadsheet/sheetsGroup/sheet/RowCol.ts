@@ -42,13 +42,17 @@ export interface IRowColFunctions {
   size: 'height' | 'width';
 }
 
+export type HeaderGroupId = number;
+
+export type RowColGroupId = number;
+
 class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
   headerGroup: Group;
-  headerGroups: Group[];
-  group: Group;
-  groups: Group[];
+  headerGroupMap: Map<HeaderGroupId, Group>;
+  rowColGroup: Group;
+  rowColGroupMap: Map<RowColGroupId, Group>;
   totalSize: number;
   shapes: IShapes;
   sheetViewportPosition: ISheetViewportPosition;
@@ -65,8 +69,8 @@ class RowCol {
     this.type = type;
     this.isCol = this.type === 'col';
     this.canvas = canvas;
-    this.headerGroups = [];
-    this.groups = [];
+    this.headerGroupMap = new Map();
+    this.rowColGroupMap = new Map();
     this.sheetViewportPosition = {
       x: 0,
       y: 0,
@@ -156,14 +160,14 @@ class RowCol {
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
     this.headerGroup = new Group();
-    this.group = new Group();
+    this.rowColGroup = new Group();
 
     this.resizer = new Resizer(
       canvas,
       this.type,
       this.functions,
       this.sizeOptions,
-      this.headerGroups
+      this.headerGroup
     );
 
     this.shapes.group.cache({
@@ -174,7 +178,7 @@ class RowCol {
     this.shapes.gridLine.cache();
 
     this.canvas.layers.mainLayer.add(this.headerGroup);
-    this.canvas.layers.mainLayer.add(this.group);
+    this.canvas.layers.mainLayer.add(this.rowColGroup);
 
     this.canvas.eventEmitter.on(
       events.resize[this.type].start,
@@ -357,7 +361,9 @@ class RowCol {
     let groups: Group[] = [];
 
     for (let index = indexes.x; index <= indexes.y; index++) {
-      groups.push(this.groups[index]);
+      const existingRowColGroup = this.rowColGroupMap.get(index)!;
+
+      groups.push(existingRowColGroup);
     }
 
     const comparer = (a: Group, b: Group) => a.attrs.index - b.attrs.index;
@@ -383,16 +389,16 @@ class RowCol {
   private drawHeader(index: number, drawingAtX = false) {
     const prevIndex = drawingAtX ? index + 1 : index - 1;
 
-    if (this.headerGroups[index]) {
-      this.headerGroups[index].destroy();
+    if (this.headerGroupMap.has(index)) {
+      this.headerGroupMap.get(index)!.destroy();
     }
 
     const size = this.getSize(index);
-    const prevHeader = this.headerGroups[prevIndex];
+    const prevHeader = this.headerGroupMap.get(prevIndex);
 
     const axis = prevHeader
       ? drawingAtX
-        ? this.headerGroups[prevIndex][this.functions.axis]() - size
+        ? prevHeader[this.functions.axis]() - size
         : prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
       : this.canvas.getViewportVector()[this.functions.axis];
 
@@ -408,7 +414,7 @@ class RowCol {
 
     headerGroup.add(header.rect, header.text, resizeLine);
 
-    this.headerGroups[index] = headerGroup;
+    this.headerGroupMap.set(index, headerGroup);
 
     this.headerGroup.add(headerGroup);
 
@@ -448,16 +454,17 @@ class RowCol {
   }
 
   private drawGridLines(index: number) {
-    if (this.groups[index]) {
-      this.groups[index].destroy();
+    if (this.rowColGroupMap.has(index)) {
+      this.rowColGroupMap.get(index)!.destroy();
     }
+    const headerGroup = this.headerGroupMap.get(index)!;
 
-    const size = this.headerGroups[index][this.functions.size]();
+    const size = headerGroup![this.functions.size]();
 
     const groupConfig: ShapeConfig = {
       index,
       [this.functions.size]: size,
-      [this.functions.axis]: this.headerGroups[index][this.functions.axis](),
+      [this.functions.axis]: headerGroup[this.functions.axis](),
     };
 
     const group = this.shapes.group.clone(groupConfig) as Group;
@@ -484,9 +491,8 @@ class RowCol {
       group.add(gridLine);
     });
 
-    this.groups[index] = group;
-
-    this.group.add(group);
+    this.rowColGroupMap.set(index, group);
+    this.rowColGroup.add(group);
 
     if (isFrozen) {
     } else {

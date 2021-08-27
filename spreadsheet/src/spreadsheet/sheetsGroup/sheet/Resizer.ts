@@ -42,14 +42,14 @@ class Resizer implements IResizer {
     private type: RowColType,
     private functions: IRowColFunctions,
     private sizeOptions: ISizeOptions,
-    private headerGroups: Group[]
+    private headerGroup: Group
   ) {
     this.canvas = canvas;
     this.type = type;
     this.isCol = this.type === 'col';
     this.functions = functions;
     this.sizeOptions = sizeOptions;
-    this.headerGroups = headerGroups;
+    this.headerGroup = headerGroup;
 
     this.resizeStartPos = {
       x: 0,
@@ -168,10 +168,10 @@ class Resizer implements IResizer {
     if (sizeChange !== 0) {
       this.sizeOptions.sizes[index] = newSize;
 
-      this.canvas[this.type].drawHeader(index);
+      this.canvas[this.type].draw(index);
 
-      for (let i = index + 1; i < this.headerGroups.length; i++) {
-        const item = this.headerGroups[i];
+      for (let i = index + 1; i < this.headerGroup.children!.length; i++) {
+        const item = this.headerGroup.children![i];
 
         if (item) {
           const newAxis = item[this.functions.axis]() + sizeChange;

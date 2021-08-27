@@ -125,11 +125,14 @@ class VerticalScrollBar implements IScrollBar {
         customSizeChanges
       );
 
-    this.canvas.layers.mainLayer.y(scrollAmount);
+    this.canvas.row.headerGroup.y(scrollAmount);
+    this.canvas.row.rowColGroup.y(scrollAmount);
+    this.canvas.merger.mergedCellsGroup.y(scrollAmount);
+    this.canvas.selector.selectedCellsGroup.y(scrollAmount);
 
     this.canvas.eventEmitter.emit(events.scroll.vertical, e);
 
-    const row = this.canvas.row.headerGroups[ri];
+    const row = this.canvas.row.headerGroupMap.get(ri)!;
 
     this.scrollOffset = {
       index: ri,

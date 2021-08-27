@@ -23,6 +23,7 @@ class BottomBar implements IBottomBar {
   tabContainerMaxWidth: number;
   tabContainer: HTMLDivElement;
   scrollsliderContainerTab: HTMLDivElement;
+  currentDropdownTab?: HTMLDivElement;
 
   constructor(params?: IConstructorParams) {
     this.globalSheetIndex = 1;
@@ -175,6 +176,8 @@ class BottomBar implements IBottomBar {
     buttonTab.addEventListener('mouseup', (e) => {
       const buttonPressed = e.button;
       if (buttonPressed === 2) {
+        this.currentDropdownTab = e.target.parentElement;
+
         e.target.parentElement.appendChild(this.dropdownMenuTab);
         this.dropdownMenuTab.style.display = 'block';
       }
@@ -204,6 +207,7 @@ class BottomBar implements IBottomBar {
     });
 
     buttonTab.addEventListener('contextmenu', (e) => {
+      this.menuSheetDropdownBox.style.display = 'none';
       e.preventDefault();
     });
 
@@ -242,7 +246,13 @@ class BottomBar implements IBottomBar {
     renameButton.className = 'btn-menuitem';
     renameButton.textContent = 'Rename';
 
-    renameButton.addEventListener('click', () => {});
+    renameButton.addEventListener('click', () => {
+      const contentEditable =
+        this.currentDropdownTab!.querySelector('.btn-tab-span');
+
+      contentEditable.contentEditable = 'true';
+      contentEditable.focus();
+    });
 
     menu.appendChild(menuItem);
     menuItem.appendChild(deleteButton);
@@ -280,6 +290,13 @@ class BottomBar implements IBottomBar {
     const buttonMenuSheet = document.createElement('button');
     buttonMenuSheet.className = 'btn-img';
 
+    buttonMenuSheet.addEventListener('click', (e) => {
+      const sheetPressed = e.button;
+      if (sheetPressed === 0) {
+        this.menuSheetDropdownBox.style.display = 'flex';
+      }
+    });
+
     window.addEventListener(
       'click',
       (e) => {
@@ -291,14 +308,6 @@ class BottomBar implements IBottomBar {
       },
       { capture: true }
     );
-
-    buttonMenuSheet.addEventListener('click', (e) => {
-      const sheetPressed = e.button;
-
-      if (sheetPressed === 0) {
-        this.menuSheetDropdownBox.style.display = 'flex';
-      }
-    });
 
     buttonMenuSheet.addEventListener('contextmenu', (e) => {
       e.preventDefault();
@@ -326,7 +335,7 @@ class BottomBar implements IBottomBar {
 
   createTabButton2() {
     const buttonTab2 = document.createElement('button');
-    buttonTab2.className = 'btn-tab';
+    buttonTab2.className = 'btn-tab-2';
     buttonTab2.dataset.globalSheetIndex = this.globalSheetIndex.toString();
 
     buttonTab2.textContent = `Sheet${this.globalSheetIndex}`;

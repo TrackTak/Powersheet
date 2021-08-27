@@ -55,18 +55,31 @@ img {
   color: #80868b;
   letter-spacing: 0.025rem;
   border: 0;
+  border-left: 1px solid #e8eaed;
   background: none;
   font-family: 'Nunito Sans', -apple-system, '.SFNSText-Regular',
     'San Francisco', BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica,
     Arial, sans-serif;
 }
 
-.tab button:hover {
+.btn-tab-2 {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  line-height: 20px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.btn-tab-2:hover {
   background-color: #ddd;
 }
 
-.tab button.active {
-  background-color: #43cea2;
+.btn-tab:hover {
+  background-color: #ddd;
 }
 
 .btn-tab-span:focus {
@@ -85,6 +98,10 @@ img {
   box-shadow: 0 2px 6px 2px rgb(60 64 67 / 15%);
   min-width: 120px;
   z-index: 100;
+}
+
+.btn-menuitem:hover {
+  background-color: #ddd;
 }
 
 .dropdown-menuitem {

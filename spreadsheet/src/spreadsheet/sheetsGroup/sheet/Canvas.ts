@@ -350,62 +350,53 @@ class Canvas {
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
-    console.log(end);
-    let updatedEndVector = {
-      ...end
-    };
-    if (this.selector.isInSelectionMode) {
-      const { isReversedX, isReversedY } = reverseVectorsIfStartBiggerThanEnd(
-        start,
-        end
-      );
-      for (const mergedCell of Object.values(this.merger.mergedCellsMap)) {
-        const mergedCellRelativeToViewport: Shape<ShapeConfig> = mergedCell.clone();
-        const viewportVector = this.getViewportVector();
-        mergedCellRelativeToViewport.setPosition({
-          x: mergedCellRelativeToViewport.x() - viewportVector.x,
-          y: mergedCellRelativeToViewport.y() - viewportVector.y
-        });
-        // const isInMergedCellXRange = end.x >= mergedCell.x() && end.x <= mergedCell.x() + mergedCell.width();
-        // const isInMergedCellYRange = end.y >= mergedCell.y() && end.y <= mergedCell.y() + mergedCell.height();
-        console.log(end.x, mergedCellRelativeToViewport.x(), end.y, mergedCellRelativeToViewport.y());
-        // if (isInMergedCellXRange || isInMergedCellYRange) {
-          const isInMergedCellRange = end.x >= mergedCellRelativeToViewport.x() && end.y >= mergedCellRelativeToViewport.y();
-          if (isInMergedCellRange) {
-            console.log('isInMergedCellRange')
-            if (isReversedX || isReversedY) {
-              updatedEndVector.x = isReversedX ? mergedCellRelativeToViewport.x() : updatedEndVector.x + mergedCellRelativeToViewport.x() ;
-              updatedEndVector.y = isReversedY ? mergedCellRelativeToViewport.y() : updatedEndVector.y + (mergedCellRelativeToViewport.height() - mergedCellRelativeToViewport.height() / 2);
-              console.log('IS REVERSED', isReversedX, isReversedY);
-            } else {
-              const endXDiff = end.x - mergedCellRelativeToViewport.x();
-              const endYDiff = end.y - mergedCellRelativeToViewport.y();
-              updatedEndVector.x = start.x + mergedCellRelativeToViewport.width() + (endXDiff > 0 ? endXDiff : 0);
-              updatedEndVector.y = mergedCellRelativeToViewport.y() + (mergedCellRelativeToViewport.height() - mergedCellRelativeToViewport.height() / 2) + (endYDiff > 0 ? endYDiff : 0);;
-              console.log('NOT REVERSED', end, updatedEndVector);
-            }
-          break;
-        }
-      }
-  }
-
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
       start,
-      updatedEndVector
+      end
     );
-
-    const colIndexes = this.col.getIndexesBetweenVectors({
-      x: newStart.x,
-      y: newEnd.x,
-    });
 
     const rowIndexes = this.row.getIndexesBetweenVectors({
       x: newStart.y,
       y: newEnd.y,
     });
 
-    const rows = this.row.getItemsBetweenIndexes(rowIndexes, this.merger.mergedCellsMap);
-    const cols = this.col.getItemsBetweenIndexes(colIndexes, this.merger.mergedCellsMap);
+    const colIndexes = this.col.getIndexesBetweenVectors({
+      x: newStart.x,
+      y: newEnd.x,
+    });
+
+    for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
+      for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
+        const mergedCellId = getCellId(ri, ci);
+
+        const mergedCell =
+          this.merger.associatedMergedCellMap.get(mergedCellId);
+
+        if (mergedCell) {
+          const start = mergedCell.attrs.start;
+          const end = mergedCell.attrs.end;
+
+          if (start.col < colIndexes.x) {
+            colIndexes.x = start.col;
+          }
+
+          if (start.row < rowIndexes.x) {
+            rowIndexes.x = start.row;
+          }
+
+          if (end.col > colIndexes.y) {
+            colIndexes.y = end.col;
+          }
+
+          if (end.row > rowIndexes.y) {
+            rowIndexes.y = end.row;
+          }
+        }
+      }
+    }
+
+    const rows = this.row.getItemsBetweenIndexes(rowIndexes);
+    const cols = this.col.getItemsBetweenIndexes(colIndexes);
 
     return {
       rows,

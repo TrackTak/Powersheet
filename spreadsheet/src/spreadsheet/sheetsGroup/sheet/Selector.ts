@@ -121,7 +121,7 @@ class Selector {
     this.selectedFirstCell = cells[0];
   }
 
-  moveSelection(positionOverride?: Vector2d) {
+  moveSelection() {
     if (this.isInSelectionMode) {
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
@@ -137,7 +137,7 @@ class Selector {
 
       const { rows, cols } = this.canvas.getRowColsBetweenVectors(
         start,
-        positionOverride || this.selectionArea.end
+        this.selectionArea.end
       );
 
       const cells = this.convertFromRowColsToCells(
@@ -156,20 +156,6 @@ class Selector {
     }
   }
 
-  convertShapeToCell(shape: Shape) {
-    const clone = this.shapes.selection.clone({
-      start: shape.attrs.start,
-      end: shape.attrs.end,
-      id: shape.id(),
-      x: shape.x(),
-      y: shape.y(),
-      width: shape.width(),
-      height: shape.height(),
-    });
-
-    return clone;
-  }
-
   convertFromRowColsToCells(
     rows: Group[],
     cols: Group[],
@@ -180,27 +166,46 @@ class Selector {
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const group = new Group({
-          id,
-          start: {
-            row: rowGroup.attrs.index,
-            col: colGroup.attrs.index,
-          },
-          end: {
-            row: rowGroup.attrs.index,
-            col: colGroup.attrs.index,
-          },
-          x: colGroup.x(),
-          y: rowGroup.y(),
-        });
-        const config: RectConfig = {
-          width: colGroup.width(),
-          height: rowGroup.height(),
-        };
-        const clone = selectionShape.clone(config);
+        const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
 
-        group.add(clone);
-        cells.push(group);
+        if (mergedCell) {
+          const group = new Group({
+            id: mergedCell.id(),
+            isMerged: true,
+            x: mergedCell.x(),
+            y: mergedCell.y(),
+          });
+          const config: RectConfig = {
+            width: mergedCell.width(),
+            height: mergedCell.height(),
+          };
+          const clone = selectionShape.clone(config) as Rect;
+
+          group.add(clone);
+          cells.push(group);
+        } else {
+          const group = new Group({
+            id,
+            start: {
+              row: rowGroup.attrs.index,
+              col: colGroup.attrs.index,
+            },
+            end: {
+              row: rowGroup.attrs.index,
+              col: colGroup.attrs.index,
+            },
+            x: colGroup.x(),
+            y: rowGroup.y(),
+          });
+          const config: RectConfig = {
+            width: colGroup.width(),
+            height: rowGroup.height(),
+          };
+          const clone = selectionShape.clone(config) as Rect;
+
+          group.add(clone);
+          cells.push(group);
+        }
       });
     });
 
@@ -228,21 +233,30 @@ class Selector {
 
   selectCells(cells: ISelectedCell[]) {
     cells.forEach((cell) => {
-      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
-      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
+      // const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
+      // const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
 
       this.selectedCells.push(cell);
 
-      if (isFrozenRow && isFrozenCol) {
-        this.canvas.scrollGroups.xySticky.add(cell);
-      } else if (isFrozenRow) {
-        this.canvas.scrollGroups.ySticky.add(cell);
-      } else if (isFrozenCol) {
-        this.canvas.scrollGroups.xSticky.add(cell);
+      // if (isFrozenRow && isFrozenCol) {
+      //   this.canvas.scrollGroups.xySticky.add(cell);
+      // } else if (isFrozenRow) {
+      //   this.canvas.scrollGroups.ySticky.add(cell);
+      // } else if (isFrozenCol) {
+      //   this.canvas.scrollGroups.xSticky.add(cell);
+      // } else {
+      this.canvas.scrollGroups.main.add(cell);
+      // }
+
+      if (cell.attrs.isMerged) {
+        const mergedCell = this.canvas.merger.mergedCellsMap.get(
+          cell.attrs.id
+        )!;
+
+        cell.zIndex(mergedCell.zIndex() + 1);
       } else {
-        this.canvas.scrollGroups.main.add(cell);
+        cell.moveToBottom();
       }
-      cell.moveToBottom();
     });
 
     this.canvas.eventEmitter.emit(events.selector.selectCells, cells);

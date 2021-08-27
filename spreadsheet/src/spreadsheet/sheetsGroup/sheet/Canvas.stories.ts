@@ -7,29 +7,83 @@ export default {
   title: 'Canvas',
 } as Meta;
 
-const Template: Story<IOptions> = (args) => {
+const createCanvas = (args: IOptions) => {
   const eventEmitter = new EventEmitter();
+  const options = args;
 
   const canvas = new Canvas({
-    options: args,
+    options,
     eventEmitter,
   });
 
-  return canvas.container;
+  const container = document.createElement('div');
+
+  container.appendChild(canvas.container);
+
+  return {
+    canvas,
+    container,
+  };
+};
+
+const Template: Story<IOptions> = (args) => {
+  return createCanvas(args).container;
+};
+
+const MergeTemplate: Story<IOptions> = (args) => {
+  const { container, canvas } = createCanvas(args);
+
+  const merge = document.createElement('button');
+
+  merge.innerHTML = 'Merge Cell';
+  merge.onclick = () => {
+    canvas.merger.mergeSelectedCells();
+  };
+
+  const unmerge = document.createElement('button');
+
+  unmerge.innerHTML = 'Unmerge Cell';
+  unmerge.onclick = () => {
+    canvas.merger.unMergeSelectedCells();
+  };
+
+  container.appendChild(merge);
+  container.appendChild(unmerge);
+  container.appendChild(canvas.container);
+
+  return container;
 };
 
 export const Default = Template.bind({});
 
 Default.args = defaultOptions;
 
-export const FreezeCells = Template.bind({});
+export const FrozenCells = Template.bind({});
 
-FreezeCells.args = {
+FrozenCells.args = {
   ...defaultOptions,
   frozenCells: {
-    row: 1,
+    row: 0,
     col: 0,
   },
+};
+
+export const MergedCells = MergeTemplate.bind({});
+
+MergedCells.args = {
+  ...defaultOptions,
+  mergedCells: [
+    {
+      start: {
+        row: 3,
+        col: 1,
+      },
+      end: {
+        row: 4,
+        col: 2,
+      },
+    },
+  ],
 };
 
 export const DifferentSizeCells = Template.bind({});

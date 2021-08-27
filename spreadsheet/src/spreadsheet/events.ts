@@ -1,4 +1,7 @@
 const events = {
+  canvas: {
+    load: 'c-load',
+  },
   scroll: {
     vertical: 'sv-scroll',
     horizontal: 'sh-scroll',

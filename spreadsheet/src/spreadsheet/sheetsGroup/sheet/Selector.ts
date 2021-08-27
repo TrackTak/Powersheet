@@ -124,6 +124,7 @@ class Selector {
   startSelection(cells: ISelectedCell[]) {
     this.removeSelectedCells(true);
     this.isInSelectionMode = true;
+    this.selectedCellsGroup.moveToBottom();
 
     this.selectCells(cells);
 

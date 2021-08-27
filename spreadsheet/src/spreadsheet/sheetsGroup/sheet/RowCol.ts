@@ -302,6 +302,8 @@ class RowCol {
 
     this.destroyOutOfViewportItems();
 
+    this.headerGroup.zIndex(this.canvas.shapes.topLeftRect.zIndex() - 1);
+
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
 

@@ -48,6 +48,7 @@ export interface ICanvasShapes {
   sheetGroup: Group;
   sheet: Rect;
   frozenGridLine: Line;
+  topLeftRect: Rect;
 }
 
 export interface ICustomSizePosition {
@@ -241,6 +242,11 @@ class Canvas {
       frozenGridLine: new Line({
         ...this.styles.frozenGridLine,
       }),
+      topLeftRect: new Rect({
+        width: this.getViewportVector().x,
+        height: this.getViewportVector().y,
+        ...this.styles.topLeftRect,
+      }),
     };
 
     this.shapes.frozenGridLine.cache();
@@ -357,13 +363,9 @@ class Canvas {
   }
 
   drawTopLeftOffsetRect() {
-    const rect = new Rect({
-      width: this.getViewportVector().x,
-      height: this.getViewportVector().y,
-      ...this.styles.topLeftRect,
-    });
+    this.layers.mainLayer.add(this.shapes.topLeftRect);
 
-    this.layers.mainLayer.add(rect);
+    this.shapes.topLeftRect.moveToTop();
   }
 
   updateViewport() {

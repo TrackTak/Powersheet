@@ -31,6 +31,7 @@ export interface ICanvasStyles {
   rowHeader: IRowHeaderConfig;
   colHeader: IColHeaderConfig;
   topLeftRect: RectConfig;
+  selectionFirstCell: RectConfig;
   selection: RectConfig;
   selectionBorder: RectConfig;
 }
@@ -65,6 +66,11 @@ export const sharedCanvasStyles = {
     fontSize: 12,
     fontFamily: 'Source Sans Pro',
     fill: '#585757',
+  },
+  selection: {
+    ...performanceProperties,
+    stroke: '#0057ff',
+    fill: '#EDF3FF',
   },
 };
 
@@ -124,10 +130,12 @@ export const defaultCanvasStyles: ICanvasStyles = {
     stroke: '#0057ff',
     strokeWidth: 1,
   },
-  selection: {
-    ...performanceProperties,
-    stroke: '#0057ff',
-    fill: '#EDF3FF',
+  selectionFirstCell: {
+    ...sharedCanvasStyles.selection,
     strokeWidth: 2,
+  },
+  selection: {
+    ...sharedCanvasStyles.selection,
+    strokeWidth: 0,
   },
 };

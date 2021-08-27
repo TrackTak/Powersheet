@@ -67,6 +67,10 @@ export interface ICustomSizes {
   size: number;
 }
 
+export type CellId = string;
+
+export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,

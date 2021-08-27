@@ -1,17 +1,19 @@
 import { Node } from 'konva/lib/Node';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Shape } from 'konva/lib/Shape';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
+import { getCellId } from './Merger';
 
 export interface ISelectedRowCols {
   rows: Shape[];
   cols: Shape[];
 }
 
-interface ISelectorShapes {
+interface IShapes {
   selection: Rect;
+  selectionFirstCell: Rect;
   selectionBorder: Rect;
 }
 
@@ -20,12 +22,13 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-interface ICell extends Shape {}
+interface ICell extends Rect {}
 
 class Selector {
-  shapes!: ISelectorShapes;
+  shapes!: IShapes;
   isInSelectionMode: boolean;
   selectedCells: ICell[];
+  selectedFirstCell: ICell | null;
   private selectionArea: ISelectionArea;
 
   constructor(private canvas: Canvas) {
@@ -42,17 +45,20 @@ class Selector {
       },
     };
     this.selectedCells = [];
+    this.selectedFirstCell = null;
 
     this.shapes = {
       selectionBorder: new Rect({
         ...this.canvas.styles.selectionBorder,
       }),
+      selectionFirstCell: new Rect({
+        ...this.canvas.styles.selectionFirstCell,
+        firstCell: true,
+      }),
       selection: new Rect({
         ...this.canvas.styles.selection,
       }),
     };
-
-    this.shapes.selection.cache();
 
     this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeRowEnd);
     this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
@@ -90,7 +96,11 @@ class Selector {
 
     const { rows, cols } = this.canvas.getRowColsBetweenVectors(start, end);
 
-    const cells = this.convertFromRowColsToCells(rows, cols);
+    const cells = this.convertFromRowColsToCells(
+      rows,
+      cols,
+      this.shapes.selectionFirstCell
+    );
 
     this.startSelection(cells);
   };
@@ -104,28 +114,16 @@ class Selector {
   };
 
   startSelection(cells: ICell[]) {
-    this.removeSelectedCells();
+    this.removeSelectedCells(true);
     this.isInSelectionMode = true;
 
     this.selectCells(cells);
+
+    this.selectedFirstCell = cells[0];
   }
 
   moveSelection(positionOverride?: Vector2d) {
     if (this.isInSelectionMode) {
-      const selectedCellsAfterFirst = this.selectedCells!.filter(
-        (cell) => !cell.attrs.strokeWidth
-      );
-
-      const firstSelectedCell = this.selectedCells.find(
-        (x) => x.attrs.strokeWidth
-      )!;
-
-      selectedCellsAfterFirst.forEach((rect) => {
-        rect.destroy();
-      });
-
-      this.selectedCells = [firstSelectedCell];
-
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
       const start = {
@@ -143,20 +141,24 @@ class Selector {
         positionOverride || this.selectionArea.end
       );
 
-      const cells = this.convertFromRowColsToCells(rows, cols, {
-        strokeWidth: 0,
-      });
+      const cells = this.convertFromRowColsToCells(
+        rows,
+        cols,
+        this.shapes.selection
+      );
+
+      this.removeSelectedCells();
 
       // TODO: Make this func more efficient by only calling when we go to a new cell
       this.selectCells(cells);
 
-      firstSelectedCell.moveToTop();
+      this.selectedCells = cells;
+      this.selectedFirstCell?.moveToTop();
     }
   }
 
-  convertShapeToCell(shape: Shape, cellConfig?: ShapeConfig) {
+  convertShapeToCell(shape: Shape) {
     const clone = this.shapes.selection.clone({
-      ...cellConfig,
       start: shape.attrs.start,
       end: shape.attrs.end,
       id: shape.id(),
@@ -172,14 +174,16 @@ class Selector {
   convertFromRowColsToCells(
     rows: Shape[],
     cols: Shape[],
-    cellConfig?: ShapeConfig
+    selectionShape: Rect
   ) {
     const cells: ICell[] = [];
 
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
-        const clone = this.shapes.selection.clone({
-          ...cellConfig,
+        const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
+
+        const clone = selectionShape.clone({
+          id,
           start: {
             row: rowGroup.attrs.index,
             col: colGroup.attrs.index,
@@ -205,29 +209,32 @@ class Selector {
 
   onResizeRowEnd = () => {
     if (this.selectedCells) {
-      this.removeSelectedCells();
+      this.removeSelectedCells(true);
     }
   };
 
   onResizeColEnd = () => {
     if (this.selectedCells) {
-      this.removeSelectedCells();
+      this.removeSelectedCells(true);
     }
   };
 
-  removeSelectedCells() {
+  removeSelectedCells(removeFirstCell = false) {
     this.shapes.selectionBorder.destroy();
     this.selectedCells.forEach((rect) => rect.destroy());
 
     this.selectedCells = [];
+
+    if (this.selectedFirstCell && removeFirstCell) {
+      this.selectedFirstCell.destroy();
+      this.selectedFirstCell = null;
+    }
   }
 
   selectCells(cells: ICell[]) {
     cells.forEach((cell) => {
       const isFrozenRow = cell.attrs.isFrozenRow;
       const isFrozenCol = cell.attrs.isFrozenCol;
-
-      this.selectedCells.push(cell);
 
       if (isFrozenRow && isFrozenCol) {
         this.canvas.layers.xyStickyLayer.add(cell);
@@ -246,33 +253,44 @@ class Selector {
   setSelectionBorder() {
     this.isInSelectionMode = false;
 
-    // const totalHeight = this.selectedRowCols.rows.reduce(
-    //   (totalHeight, rowGroup) => {
-    //     return totalHeight + rowGroup.height();
-    //   },
-    //   0
-    // );
+    if (!this.selectedCells.length) return;
 
-    // const totalWidth = this.selectedRowCols.cols.reduce(
-    //   (totalWidth, colGroup) => {
-    //     return totalWidth + colGroup.width();
-    //   },
-    //   0
-    // );
+    const getMin = (property: string) =>
+      Math.min(...this.selectedCells.map((o) => o.attrs.start[property]));
+    const getMax = (property: string) =>
+      Math.max(...this.selectedCells.map((o) => o.attrs.end[property]));
 
-    // const colGroup = this.selectedRowCols.cols[0];
-    // const rowGroup = this.selectedRowCols.rows[0];
+    const start = {
+      row: getMin('row'),
+      col: getMin('col'),
+    };
 
-    // const config: RectConfig = {
-    //   x: colGroup.x(),
-    //   y: rowGroup.y(),
-    //   width: totalWidth,
-    //   height: totalHeight,
-    // };
+    const end = {
+      row: getMax('row'),
+      col: getMax('col'),
+    };
 
-    // this.shapes.selectionBorder.setAttrs(config);
+    let totalWidth = 0;
+    let totalHeight = 0;
 
-    // this.canvas.layers.mainLayer.add(this.shapes.selectionBorder);
+    for (let index = start.row; index <= end.row; index++) {
+      totalHeight += this.canvas.row.groups[index].height();
+    }
+
+    for (let index = start.col; index <= end.col; index++) {
+      totalWidth += this.canvas.col.groups[index].width();
+    }
+
+    const config: RectConfig = {
+      x: this.selectedCells[0].x(),
+      y: this.selectedCells[0].y(),
+      width: totalWidth,
+      height: totalHeight,
+    };
+
+    this.shapes.selectionBorder.setAttrs(config);
+
+    this.canvas.layers.mainLayer.add(this.shapes.selectionBorder);
   }
 }
 

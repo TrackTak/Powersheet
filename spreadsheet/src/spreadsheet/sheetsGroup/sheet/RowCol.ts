@@ -293,20 +293,15 @@ class RowCol {
           ? [index - 1, true]
           : [index];
 
-        this.drawHeader(...params);
+        this.draw(...params);
       }
 
       yield index;
-
-      if (isFinite(index)) {
-        this.drawGridLines(index);
-      }
     } while (isFinite(index));
 
     this.destroyOutOfViewportItems();
 
-    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
-    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
+    this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
 
   isNodeOutsideCanvas = (node: Node) => {
@@ -385,7 +380,12 @@ class RowCol {
     return index === this.canvas.options.frozenCells[this.type];
   }
 
-  drawHeader(index: number, drawingAtX = false) {
+  draw(index: number, drawingAtX = false) {
+    this.drawHeader(index, drawingAtX);
+    this.drawGridLines(index);
+  }
+
+  private drawHeader(index: number, drawingAtX = false) {
     const prevIndex = drawingAtX ? index + 1 : index - 1;
 
     if (this.headerGroups[index]) {
@@ -426,7 +426,7 @@ class RowCol {
     }
   }
 
-  getHeader(index: number) {
+  private getHeader(index: number) {
     const size = this.getSize(index);
     const rectConfig: RectConfig = {
       [this.functions.size]: size,
@@ -450,7 +450,7 @@ class RowCol {
     };
   }
 
-  drawGridLines(index: number) {
+  private drawGridLines(index: number) {
     if (this.groups[index]) {
       this.groups[index].destroy();
     }
@@ -496,7 +496,7 @@ class RowCol {
     }
   }
 
-  getResizeLine(index: number) {
+  private getResizeLine(index: number) {
     const size = this.getSize(index);
     const lineConfig: LineConfig = {
       [this.functions.axis]: size,

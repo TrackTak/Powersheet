@@ -110,7 +110,7 @@ class Selector {
     this.selectCells(cells);
   }
 
-  moveSelection() {
+  moveSelection(positionOverride?: Vector2d) {
     if (this.isInSelectionMode) {
       const selectedCellsAfterFirst = this.selectedCells!.filter(
         (cell) => !cell.attrs.strokeWidth
@@ -140,7 +140,7 @@ class Selector {
 
       const { rows, cols } = this.canvas.getRowColsBetweenVectors(
         start,
-        this.selectionArea.end
+        positionOverride || this.selectionArea.end
       );
 
       const cells = this.convertFromRowColsToCells(rows, cols, {

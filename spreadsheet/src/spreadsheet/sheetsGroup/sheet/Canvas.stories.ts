@@ -63,8 +63,8 @@ export const FrozenCells = Template.bind({});
 FrozenCells.args = {
   ...defaultOptions,
   frozenCells: {
-    row: 1,
-    col: 1,
+    row: 0,
+    col: 0,
   },
 };
 
@@ -93,16 +93,6 @@ MergedCells.args = {
         col: 2,
       },
     },
-    // {
-    //   start: {
-    //     row: 1,
-    //     col: 1,
-    //   },
-    //   end: {
-    //     row: 4,
-    //     col: 2,
-    //   },
-    // },
   ],
 };
 

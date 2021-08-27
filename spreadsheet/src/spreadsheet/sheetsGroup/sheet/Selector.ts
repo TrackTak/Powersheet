@@ -1,4 +1,3 @@
-import { Container } from 'konva/lib/Container';
 import { Group } from 'konva/lib/Group';
 import { Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
@@ -16,7 +15,6 @@ export interface ISelectedRowCols {
 interface IShapes {
   selection: Rect;
   selectionFirstCell: Rect;
-  selectionBorder: Rect;
 }
 
 interface ISelectionArea {
@@ -26,12 +24,10 @@ interface ISelectionArea {
 
 interface ISelectedCell extends Group {}
 
-interface ISelectedCellsGroup extends Group {}
-
 class Selector {
   shapes!: IShapes;
   isInSelectionMode: boolean;
-  selectedCellsGroup: ISelectedCellsGroup;
+  selectedCells: Group[];
   selectedFirstCell: ISelectedCell | null;
   private selectionArea: ISelectionArea;
 
@@ -52,9 +48,6 @@ class Selector {
     this.selectedFirstCell = null;
 
     this.shapes = {
-      selectionBorder: new Rect({
-        ...this.canvas.styles.selectionBorder,
-      }),
       selectionFirstCell: new Rect({
         ...this.canvas.styles.selectionFirstCell,
         firstCell: true,
@@ -64,9 +57,7 @@ class Selector {
       }),
     };
 
-    this.selectedCellsGroup = new Group();
-
-    this.canvas.layers.mainLayer.add(this.selectedCellsGroup);
+    this.selectedCells = [];
 
     this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
     this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
@@ -118,13 +109,12 @@ class Selector {
   };
 
   onSheetMouseUp = () => {
-    this.setSelectionBorder();
+    this.isInSelectionMode = false;
   };
 
   startSelection(cells: ISelectedCell[]) {
     this.removeSelectedCells(true);
     this.isInSelectionMode = true;
-    this.selectedCellsGroup.moveToBottom();
 
     this.selectCells(cells);
 
@@ -156,7 +146,7 @@ class Selector {
         this.shapes.selection
       );
 
-      if (this.selectedCellsGroup.children!.length !== cells.length) {
+      if (this.selectedCells.length !== cells.length) {
         this.removeSelectedCells();
 
         this.selectCells(cells);
@@ -204,8 +194,6 @@ class Selector {
           y: rowGroup.y(),
         });
         const config: RectConfig = {
-          //   isFrozenRow: this.canvas.row.getIsFrozen(rowGroup.attrs.index),
-          //   isFrozenCol: this.canvas.col.getIsFrozen(colGroup.attrs.index),
           width: colGroup.width(),
           height: rowGroup.height(),
         };
@@ -220,15 +208,17 @@ class Selector {
   }
 
   onResizeEnd = () => {
-    if (this.selectedCellsGroup.children!.length) {
+    if (this.selectedCells.length) {
       this.removeSelectedCells(true);
     }
   };
 
   removeSelectedCells(removeFirstCell = false) {
-    this.selectedCellsGroup.children
-      ?.filter((x) => x !== this.selectedFirstCell)
-      .forEach((x) => x.destroy());
+    this.selectedCells
+      .filter((cell) => cell !== this.selectedFirstCell)
+      .forEach((cell) => {
+        cell.destroy();
+      });
 
     if (this.selectedFirstCell && removeFirstCell) {
       this.selectedFirstCell.destroy();
@@ -238,68 +228,24 @@ class Selector {
 
   selectCells(cells: ISelectedCell[]) {
     cells.forEach((cell) => {
-      const isFrozenRow = cell.attrs.isFrozenRow;
-      const isFrozenCol = cell.attrs.isFrozenCol;
+      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
+      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
+
+      this.selectedCells.push(cell);
 
       if (isFrozenRow && isFrozenCol) {
-        // this.canvas.layers.xyStickyLayer.add(cell);
+        this.canvas.scrollGroups.xySticky.add(cell);
       } else if (isFrozenRow) {
-        //   this.canvas.layers.yStickyLayer.add(cell);
+        this.canvas.scrollGroups.ySticky.add(cell);
       } else if (isFrozenCol) {
-        //    this.canvas.layers.xStickyLayer.add(cell);
+        this.canvas.scrollGroups.xSticky.add(cell);
       } else {
-        this.selectedCellsGroup.add(cell);
+        this.canvas.scrollGroups.main.add(cell);
       }
+      cell.moveToBottom();
     });
 
     this.canvas.eventEmitter.emit(events.selector.selectCells, cells);
-  }
-
-  setSelectionBorder() {
-    this.isInSelectionMode = false;
-
-    if (!this.selectedCellsGroup.children!.length) return;
-
-    const getMin = (property: string) =>
-      Math.min(
-        ...this.selectedCellsGroup.children!.map((o) => o.attrs.start[property])
-      );
-    const getMax = (property: string) =>
-      Math.max(
-        ...this.selectedCellsGroup.children!.map((o) => o.attrs.end[property])
-      );
-
-    const start = {
-      row: getMin('row'),
-      col: getMin('col'),
-    };
-
-    const end = {
-      row: getMax('row'),
-      col: getMax('col'),
-    };
-
-    let totalWidth = 0;
-    let totalHeight = 0;
-
-    for (let index = start.row; index <= end.row; index++) {
-      totalHeight += this.canvas.row.rowColGroupMap.get(index)!.height();
-    }
-
-    for (let index = start.col; index <= end.col; index++) {
-      totalWidth += this.canvas.col.rowColGroupMap.get(index)!.width();
-    }
-
-    const config: RectConfig = {
-      width: totalWidth,
-      height: totalHeight,
-    };
-
-    this.shapes.selectionBorder.setAttrs(config);
-
-    (this.selectedCellsGroup.children![0] as Container<Shape>).add(
-      this.shapes.selectionBorder
-    );
   }
 }
 

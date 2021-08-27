@@ -60,6 +60,13 @@ export interface ILayers {
   mainLayer: Layer;
 }
 
+export interface IScrollGroups {
+  main: Group;
+  xSticky: Group;
+  ySticky: Group;
+  xySticky: Group;
+}
+
 export interface ICustomSizes {
   size: number;
 }
@@ -177,6 +184,7 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 class Canvas {
   container: HTMLDivElement;
   stage: Stage;
+  scrollGroups: IScrollGroups;
   layers: ILayers;
   col: RowCol;
   row: RowCol;
@@ -220,9 +228,15 @@ class Canvas {
 
     this.stage.container().style.backgroundColor = this.styles.backgroundColor;
 
-    // The order here matters
     this.layers = {
       mainLayer: new Layer(),
+    };
+
+    this.scrollGroups = {
+      main: new Group(),
+      xSticky: new Group(),
+      ySticky: new Group(),
+      xySticky: new Group(),
     };
 
     Object.values(this.layers).forEach((layer) => {
@@ -243,9 +257,9 @@ class Canvas {
         ...this.styles.frozenGridLine,
       }),
       topLeftRect: new Rect({
+        ...this.styles.topLeftRect,
         width: this.getViewportVector().x,
         height: this.getViewportVector().y,
-        ...this.styles.topLeftRect,
       }),
     };
 
@@ -254,6 +268,10 @@ class Canvas {
     this.shapes.sheetGroup.add(this.shapes.sheet);
 
     this.layers.mainLayer.add(this.shapes.sheetGroup);
+
+    Object.values(this.scrollGroups).forEach((group) => {
+      this.layers.mainLayer.add(group);
+    });
 
     this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
     this.eventEmitter.on(events.scroll.vertical, this.onScroll);
@@ -363,7 +381,7 @@ class Canvas {
   }
 
   drawTopLeftOffsetRect() {
-    this.layers.mainLayer.add(this.shapes.topLeftRect);
+    this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
 
     this.shapes.topLeftRect.moveToTop();
   }

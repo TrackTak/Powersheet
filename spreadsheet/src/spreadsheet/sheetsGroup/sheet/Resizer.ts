@@ -6,7 +6,12 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
-import { IRowColFunctions, ISizeOptions, RowColType } from './RowCol';
+import {
+  HeaderGroupId,
+  IRowColFunctions,
+  ISizeOptions,
+  RowColType,
+} from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -42,14 +47,14 @@ class Resizer implements IResizer {
     private type: RowColType,
     private functions: IRowColFunctions,
     private sizeOptions: ISizeOptions,
-    private headerGroup: Group
+    private headerGroupMap: Map<HeaderGroupId, Group>
   ) {
     this.canvas = canvas;
     this.type = type;
     this.isCol = this.type === 'col';
     this.functions = functions;
     this.sizeOptions = sizeOptions;
-    this.headerGroup = headerGroup;
+    this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
       x: 0,
@@ -170,8 +175,8 @@ class Resizer implements IResizer {
 
       this.canvas[this.type].draw(index);
 
-      for (let i = index + 1; i < this.headerGroup.children!.length; i++) {
-        const item = this.headerGroup.children![i];
+      for (let i = index + 1; i < this.headerGroupMap.size; i++) {
+        const item = this.headerGroupMap.get(i);
 
         if (item) {
           const newAxis = item[this.functions.axis]() + sizeChange;

@@ -121,10 +121,8 @@ class HorizontalScrollBar implements IScrollBar {
         customSizeChanges
       );
 
-    this.canvas.col.headerGroup.x(scrollAmount);
-    this.canvas.col.rowColGroup.x(scrollAmount);
-    this.canvas.merger.mergedCellsGroup.x(scrollAmount);
-    this.canvas.selector.selectedCellsGroup.x(scrollAmount);
+    this.canvas.scrollGroups.ySticky.x(scrollAmount);
+    this.canvas.scrollGroups.main.x(scrollAmount);
 
     this.canvas.eventEmitter.emit(events.scroll.horizontal, e, scrollAmount);
 

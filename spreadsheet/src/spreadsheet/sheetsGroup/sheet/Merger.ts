@@ -1,4 +1,3 @@
-import { Group } from 'konva/lib/Group';
 import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -15,7 +14,6 @@ interface IShapes {
 
 class Merger {
   mergedCellsMap: Map<CellId, Shape>;
-  mergedCellsGroup: Group;
   private shapes: IShapes;
 
   constructor(private canvas: Canvas) {
@@ -28,9 +26,6 @@ class Merger {
         fill: 'white',
       }),
     };
-    this.mergedCellsGroup = new Group();
-
-    this.canvas.layers.mainLayer.add(this.mergedCellsGroup);
 
     this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
     this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
@@ -150,7 +145,7 @@ class Merger {
 
         this.mergedCellsMap.set(id, rect);
 
-        this.mergedCellsGroup.add(rect);
+        this.canvas.scrollGroups.main.add(rect);
       }
       yield { start, end, id, shouldMerge };
     }
@@ -187,7 +182,7 @@ class Merger {
   }
 
   mergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCellsGroup.children!;
+    const selectedCells = this.canvas.selector.selectedCells;
 
     if (!selectedCells.length) {
       return;
@@ -212,7 +207,7 @@ class Merger {
   }
 
   unMergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCellsGroup.children!;
+    const selectedCells = this.canvas.selector.selectedCells;
 
     if (!selectedCells.length) {
       return;

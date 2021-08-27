@@ -49,9 +49,7 @@ export type RowColGroupId = number;
 class RowCol {
   resizer: IResizer;
   scrollBar: IScrollBar;
-  headerGroup: Group;
   headerGroupMap: Map<HeaderGroupId, Group>;
-  rowColGroup: Group;
   rowColGroupMap: Map<RowColGroupId, Group>;
   totalSize: number;
   shapes: IShapes;
@@ -159,15 +157,13 @@ class RowCol {
         this.canvas.getViewportVector().y -
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
-    this.headerGroup = new Group();
-    this.rowColGroup = new Group();
 
     this.resizer = new Resizer(
       canvas,
       this.type,
       this.functions,
       this.sizeOptions,
-      this.headerGroup
+      this.headerGroupMap
     );
 
     this.shapes.group.cache({
@@ -176,9 +172,6 @@ class RowCol {
     });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
-
-    this.canvas.layers.mainLayer.add(this.headerGroup);
-    this.canvas.layers.mainLayer.add(this.rowColGroup);
 
     this.canvas.eventEmitter.on(
       events.resize[this.type].start,
@@ -302,7 +295,7 @@ class RowCol {
 
     this.destroyOutOfViewportItems();
 
-    this.headerGroup.zIndex(this.canvas.shapes.topLeftRect.zIndex() - 1);
+    this.canvas.shapes.topLeftRect.moveToTop();
 
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
@@ -317,18 +310,21 @@ class RowCol {
   };
 
   destroyOutOfViewportItems() {
-    // this.headerGroups.forEach((headerGroup, index) => {
-    //   if (this.isNodeOutsideCanvas(headerGroup)) {
-    //     headerGroup.destroy();
-    //     delete this.headerGroups[index];
-    //   }
-    // });
-    // this.groups.forEach((group, index) => {
-    //   if (this.isNodeOutsideCanvas(group)) {
-    //     group.destroy();
-    //     delete this.groups[index];
-    //   }
-    // });
+    this.headerGroupMap.forEach((headerGroup, index) => {
+      if (this.isNodeOutsideCanvas(headerGroup)) {
+        headerGroup.destroy();
+
+        this.headerGroupMap.delete(index);
+      }
+    });
+
+    this.rowColGroupMap.forEach((group, index) => {
+      if (this.isNodeOutsideCanvas(group)) {
+        group.destroy();
+
+        this.rowColGroupMap.delete(index);
+      }
+    });
   }
 
   getSize(index: number) {
@@ -415,19 +411,18 @@ class RowCol {
     const isFrozen = this.getIsFrozen(index);
 
     headerGroup.add(header.rect, header.text, resizeLine);
+    headerGroup.setAttr('isFrozen', isFrozen);
 
     this.headerGroupMap.set(index, headerGroup);
 
-    this.headerGroup.add(headerGroup);
-
     if (isFrozen) {
+      this.canvas.scrollGroups.xySticky.add(headerGroup);
     } else {
-      // this.canvas.layers.mainLayer.add(headerGroup);
-      // if (this.isCol) {
-      //   this.canvas.layers.yStickyLayer.add(headerGroup);
-      // } else {
-      //   this.canvas.layers.xStickyLayer.add(headerGroup);
-      // }
+      if (this.isCol) {
+        this.canvas.scrollGroups.ySticky.add(headerGroup);
+      } else {
+        this.canvas.scrollGroups.xSticky.add(headerGroup);
+      }
     }
   }
 
@@ -471,7 +466,6 @@ class RowCol {
 
     const group = this.shapes.group.clone(groupConfig) as Group;
 
-    const gridLines: Line[] = [];
     const isFrozen = this.getIsLastFrozen(index);
     const line = isFrozen
       ? this.canvas.shapes.frozenGridLine
@@ -482,23 +476,21 @@ class RowCol {
       this.canvas.getViewportVector()[this.oppositeFunctions.axis];
 
     const lineConfig = this.getLineConfig(sheetSize);
-    const clone = line.clone({
+    const gridLine = line.clone({
       ...lineConfig,
       [this.functions.axis]: size,
     }) as Line;
 
-    gridLines.push(clone);
-
-    gridLines.forEach((gridLine) => {
-      group.add(gridLine);
-    });
+    group.add(gridLine);
 
     this.rowColGroupMap.set(index, group);
-    this.rowColGroup.add(group);
 
     if (isFrozen) {
+      this.canvas.scrollGroups.xySticky.add(group);
+
+      group.moveToBottom();
     } else {
-      //  this.canvas.layers.mainLayer.add(group);
+      this.canvas.scrollGroups.main.add(group);
     }
   }
 

@@ -1,4 +1,4 @@
-import { KonvaEventObject, Node } from 'konva/lib/Node';
+import { Node } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import events from '../../events';
@@ -10,13 +10,15 @@ export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
 export type AssociatedMergedCellId = CellId;
 
+export type MergedCell = Shape;
+
 interface IShapes {
   mergedCells: Rect;
 }
 
 class Merger {
-  associatedMergedCellMap: Map<AssociatedMergedCellId, Shape>;
-  mergedCellsMap: Map<CellId, Shape>;
+  associatedMergedCellMap: Map<AssociatedMergedCellId, MergedCell>;
+  mergedCellsMap: Map<CellId, MergedCell>;
   private shapes: IShapes;
 
   constructor(private canvas: Canvas) {
@@ -26,7 +28,6 @@ class Merger {
     this.shapes = {
       mergedCells: new Rect({
         ...performanceProperties,
-        // listening: true,
         fill: 'white',
       }),
     };
@@ -62,6 +63,8 @@ class Merger {
     for (const { start, end, shouldMerge } of generator) {
       if (shouldMerge) {
         this.canvas.options.mergedCells.push({ start, end });
+
+        this.canvas.selector.removeSelectedCells();
       }
     }
   }
@@ -148,15 +151,19 @@ class Merger {
     }
   }
 
-  unMergeCells(mergedCells: IMergedCells[]) {
+  unMergeCells(mergedCells: MergedCell[]) {
+    if (mergedCells.length && this.canvas.options.mergedCells.length) {
+      this.canvas.selector.removeSelectedCells();
+    }
+
     this.canvas.options.mergedCells = this.canvas.options.mergedCells.filter(
       ({ start, end }) => {
         const shouldUnMerge = mergedCells.some(
           (z) =>
-            z.start.row === start.row &&
-            z.start.col === start.col &&
-            z.end.row === end.row &&
-            z.end.col === end.col
+            z.attrs.start.row === start.row &&
+            z.attrs.start.col === start.col &&
+            z.attrs.end.row === end.row &&
+            z.attrs.end.col === end.col
         );
 
         if (shouldUnMerge) {
@@ -200,11 +207,8 @@ class Merger {
       return;
     }
 
-    const mergedCells = selectedCells.map((x) => {
-      return {
-        start: x.attrs.start,
-        end: x.attrs.end,
-      };
+    const mergedCells = selectedCells.map((selectedCell) => {
+      return this.mergedCellsMap.get(selectedCell.attrs.id)!;
     });
 
     this.unMergeCells(mergedCells);

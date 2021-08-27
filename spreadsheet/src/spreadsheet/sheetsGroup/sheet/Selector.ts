@@ -59,18 +59,12 @@ class Selector {
 
     this.selectedCells = [];
 
-    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
-
     this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
     this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
     this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
   }
 
   destroy() {
-    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeEnd);
-
     Object.values(this.shapes).forEach((shape: Node) => {
       shape.destroy();
     });
@@ -113,7 +107,7 @@ class Selector {
   };
 
   startSelection(cells: ISelectedCell[]) {
-    this.removeSelectedCells(true);
+    this.removeSelectedCells();
     this.isInSelectionMode = true;
 
     this.selectCells(cells);
@@ -147,7 +141,7 @@ class Selector {
       );
 
       if (this.selectedCells.length !== cells.length) {
-        this.removeSelectedCells();
+        this.removeSelectedCells(false);
 
         this.selectCells(cells);
 
@@ -161,6 +155,7 @@ class Selector {
     cols: Group[],
     selectionShape: Rect
   ) {
+    const mergedCellsAddedMap = new Map();
     const cells: ISelectedCell[] = [];
 
     rows.forEach((rowGroup) => {
@@ -169,20 +164,26 @@ class Selector {
         const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
 
         if (mergedCell) {
-          const group = new Group({
-            id: mergedCell.id(),
-            isMerged: true,
-            x: mergedCell.x(),
-            y: mergedCell.y(),
-          });
-          const config: RectConfig = {
-            width: mergedCell.width(),
-            height: mergedCell.height(),
-          };
-          const clone = selectionShape.clone(config) as Rect;
+          const id = mergedCell.id();
 
-          group.add(clone);
-          cells.push(group);
+          if (!mergedCellsAddedMap.get(id)) {
+            const group = new Group({
+              id,
+              isMerged: true,
+              x: mergedCell.x(),
+              y: mergedCell.y(),
+            });
+            const config: RectConfig = {
+              width: mergedCell.width(),
+              height: mergedCell.height(),
+            };
+            const clone = selectionShape.clone(config) as Rect;
+
+            group.add(clone);
+            cells.push(group);
+
+            mergedCellsAddedMap.set(id, group);
+          }
         } else {
           const group = new Group({
             id,
@@ -212,18 +213,14 @@ class Selector {
     return cells;
   }
 
-  onResizeEnd = () => {
-    if (this.selectedCells.length) {
-      this.removeSelectedCells(true);
-    }
-  };
-
-  removeSelectedCells(removeFirstCell = false) {
+  removeSelectedCells(removeFirstCell = true) {
     this.selectedCells
       .filter((cell) => cell !== this.selectedFirstCell)
       .forEach((cell) => {
         cell.destroy();
       });
+
+    this.selectedCells = [];
 
     if (this.selectedFirstCell && removeFirstCell) {
       this.selectedFirstCell.destroy();

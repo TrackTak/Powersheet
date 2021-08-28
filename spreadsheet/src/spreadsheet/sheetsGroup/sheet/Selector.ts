@@ -1,5 +1,5 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
+import { NodeConfig } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
@@ -93,23 +93,6 @@ class Selector {
   };
 
   onSheetMouseMove = () => {
-    this.moveSelection();
-  };
-
-  onSheetMouseUp = () => {
-    this.isInSelectionMode = false;
-  };
-
-  startSelection(cells: ISelectedCell[]) {
-    this.removeSelectedCells();
-    this.isInSelectionMode = true;
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-  }
-
-  moveSelection() {
     if (this.isInSelectionMode) {
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
@@ -142,6 +125,19 @@ class Selector {
         this.selectedFirstCell?.moveToTop();
       }
     }
+  };
+
+  onSheetMouseUp = () => {
+    this.isInSelectionMode = false;
+  };
+
+  startSelection(cells: ISelectedCell[]) {
+    this.removeSelectedCells();
+    this.isInSelectionMode = true;
+
+    this.selectCells(cells);
+
+    this.selectedFirstCell = cells[0];
   }
 
   convertFromRowColsToCells(
@@ -156,32 +152,40 @@ class Selector {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
         const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
+        const group = new Group();
+
+        const pushToCells = (rectConfig: RectConfig) => {
+          const clone = selectionShape.clone(rectConfig) as Rect;
+
+          group.add(clone);
+          cells.push(group);
+        };
 
         if (mergedCell) {
           const id = mergedCell.id();
 
           if (!mergedCellsAddedMap.get(id)) {
-            const group = new Group({
+            const groupConfig: NodeConfig = {
               id,
               isMerged: true,
               x: mergedCell.x(),
               y: mergedCell.y(),
               start: mergedCell.attrs.start,
               end: mergedCell.attrs.end,
-            });
-            const config: RectConfig = {
+            };
+
+            group.setAttrs(groupConfig);
+
+            const rectConfig: RectConfig = {
               width: mergedCell.width(),
               height: mergedCell.height(),
             };
-            const clone = selectionShape.clone(config) as Rect;
-
-            group.add(clone);
-            cells.push(group);
+            pushToCells(rectConfig);
 
             mergedCellsAddedMap.set(id, group);
           }
         } else {
-          const group = new Group({
+          const groupConfig: NodeConfig = {
             id,
             start: {
               row: rowGroup.attrs.index,
@@ -193,15 +197,16 @@ class Selector {
             },
             x: colGroup.x(),
             y: rowGroup.y(),
-          });
-          const config: RectConfig = {
+          };
+
+          group.setAttrs(groupConfig);
+
+          const rectConfig: RectConfig = {
             width: colGroup.width(),
             height: rowGroup.height(),
           };
-          const clone = selectionShape.clone(config) as Rect;
 
-          group.add(clone);
-          cells.push(group);
+          pushToCells(rectConfig);
         }
       });
     });
@@ -226,20 +231,20 @@ class Selector {
 
   selectCells(cells: ISelectedCell[]) {
     cells.forEach((cell) => {
-      // const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
-      // const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
+      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
+      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
 
       this.selectedCells.push(cell);
 
-      // if (isFrozenRow && isFrozenCol) {
-      //   this.canvas.scrollGroups.xySticky.add(cell);
-      // } else if (isFrozenRow) {
-      //   this.canvas.scrollGroups.ySticky.add(cell);
-      // } else if (isFrozenCol) {
-      //   this.canvas.scrollGroups.xSticky.add(cell);
-      // } else {
-      this.canvas.scrollGroups.main.add(cell);
-      // }
+      if (isFrozenRow && isFrozenCol) {
+        this.canvas.scrollGroups.xySticky.add(cell);
+      } else if (isFrozenRow) {
+        this.canvas.scrollGroups.ySticky.add(cell);
+      } else if (isFrozenCol) {
+        this.canvas.scrollGroups.xSticky.add(cell);
+      } else {
+        this.canvas.scrollGroups.main.add(cell);
+      }
 
       if (cell.attrs.isMerged) {
         const mergedCell = this.canvas.merger.mergedCellsMap.get(

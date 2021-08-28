@@ -163,12 +163,12 @@ class RowCol {
   calculateSheetViewportEndPosition = (
     sheetViewportDimensionSize: number,
     sheetViewportStartYIndex: number,
-    defaultSize: number,
-    sizes?: ISizes,
     customSizeChanges?: ICustomSizes[]
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
+    const defaultSize = this.canvas.options[this.type].defaultSize;
+    const sizes = this.canvas.options[this.type].sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -192,9 +192,7 @@ class RowCol {
   onLoad = () => {
     const yIndex = this.calculateSheetViewportEndPosition(
       this.getAvailableSize(),
-      0,
-      this.canvas.options[this.type].defaultSize,
-      this.canvas.options[this.type].sizes
+      0
     );
 
     let sumOfSizes = 0;
@@ -311,10 +309,8 @@ class RowCol {
       size: this.scrollBar.scrollOffset.size,
     };
 
-    const params: [number, number, ISizes, ICustomSizes[]] = [
+    const params: [number, ICustomSizes[]] = [
       this.sheetViewportPosition.x,
-      this.canvas.options[this.type].defaultSize,
-      this.canvas.options[this.type].sizes,
       customSizes,
     ];
 

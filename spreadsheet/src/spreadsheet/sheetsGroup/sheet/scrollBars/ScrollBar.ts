@@ -148,8 +148,6 @@ class ScrollBar {
     ].calculateSheetViewportEndPosition(
       this.canvas.stage[this.functions.size](),
       this.canvas[this.type].sheetViewportPosition.x,
-      this.canvas.options[this.type].defaultSize,
-      this.canvas.options[this.type].sizes,
       customSizeChanges
     );
 

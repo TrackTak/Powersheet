@@ -1,4 +1,4 @@
-import { Node } from 'konva/lib/Node';
+import { Group } from 'konva/lib/Group';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import events from '../../events';
@@ -14,6 +14,18 @@ export type MergedCell = Shape;
 
 interface IShapes {
   mergedCells: Rect;
+}
+
+export function* iterateRowStartToEnd({ start, end }: IMergedCells) {
+  for (let index = start.row; index <= end.row; index++) {
+    yield index;
+  }
+}
+
+export function* iterateColStartToEnd({ start, end }: IMergedCells) {
+  for (let index = start.col; index <= end.col; index++) {
+    yield index;
+  }
 }
 
 class Merger {
@@ -55,7 +67,8 @@ class Merger {
     this.canvas.eventEmitter.emit(events.merge.add, mergedCells);
   }
 
-  private mergeCells({ start, end }: IMergedCells) {
+  private mergeCells(mergedCells: IMergedCells) {
+    const { start, end } = mergedCells;
     const mergedCellId = getCellId(start.row, start.col);
     const startCol = this.canvas.col.rowColGroupMap.get(start.col);
     const startRow = this.canvas.row.rowColGroupMap.get(start.row);
@@ -65,13 +78,13 @@ class Merger {
       let height = 0;
       let width = 0;
 
-      for (let index = start.row; index <= end.row; index++) {
+      for (const index of iterateRowStartToEnd(mergedCells)) {
         const group = this.canvas.row.rowColGroupMap.get(index)!;
 
         height += group.height();
       }
 
-      for (let index = start.col; index <= end.col; index++) {
+      for (const index of iterateColStartToEnd(mergedCells)) {
         const group = this.canvas.col.rowColGroupMap.get(index)!;
 
         width += group.width();
@@ -96,8 +109,8 @@ class Merger {
         this.mergedCellsMap.get(mergedCellId)!.destroy();
       }
 
-      for (let ri = start.row; ri <= end.row; ri++) {
-        for (let ci = start.col; ci <= end.col; ci++) {
+      for (const ri of iterateRowStartToEnd(mergedCells)) {
+        for (const ci of iterateColStartToEnd(mergedCells)) {
           const id = getCellId(ri, ci);
 
           this.associatedMergedCellMap.set(id, rect);
@@ -121,8 +134,8 @@ class Merger {
       const start = mergedCell.attrs.start;
       const end = mergedCell.attrs.end;
 
-      for (let ri = start.row; ri <= end.row; ri++) {
-        for (let ci = start.col; ci <= end.col; ci++) {
+      for (const ri of iterateRowStartToEnd({ start, end })) {
+        for (const ci of iterateColStartToEnd({ start, end })) {
           const id = getCellId(ri, ci);
 
           this.associatedMergedCellMap.delete(id);
@@ -157,17 +170,11 @@ class Merger {
     this.canvas.eventEmitter.emit(events.merge.unMerge, mergedCells);
   }
 
-  mergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCells;
-
-    if (!selectedCells.length) {
-      return;
-    }
-
+  convertFromCellsToMergedCells(groups: Group[]) {
     const getMin = (property: string) =>
-      Math.min(...selectedCells.map((o) => o.attrs.start[property]));
+      Math.min(...groups.map((o) => o.attrs.start[property]));
     const getMax = (property: string) =>
-      Math.max(...selectedCells.map((o) => o.attrs.end[property]));
+      Math.max(...groups.map((o) => o.attrs.end[property]));
 
     const start = {
       row: getMin('row'),
@@ -179,32 +186,27 @@ class Merger {
       col: getMax('col'),
     };
 
-    this.addMergeCells({ start, end });
+    return { start, end };
+  }
+
+  mergeSelectedCells() {
+    const selectedCells = this.canvas.selector.selectedCells;
+
+    if (!selectedCells.length) return;
+
+    const mergedCells = this.convertFromCellsToMergedCells(selectedCells);
+
+    this.addMergeCells(mergedCells);
   }
 
   unMergeSelectedCells() {
     const selectedCells = this.canvas.selector.selectedCells;
 
-    if (!selectedCells.length) {
-      return;
-    }
+    if (!selectedCells.length) return;
 
-    const getMin = (property: string) =>
-      Math.min(...selectedCells.map((o) => o.attrs.start[property]));
-    const getMax = (property: string) =>
-      Math.max(...selectedCells.map((o) => o.attrs.end[property]));
+    const mergedCells = this.convertFromCellsToMergedCells(selectedCells);
 
-    const start = {
-      row: getMin('row'),
-      col: getMin('col'),
-    };
-
-    const end = {
-      row: getMax('row'),
-      col: getMax('col'),
-    };
-
-    this.unMergeCells({ start, end });
+    this.unMergeCells(mergedCells);
   }
 }
 

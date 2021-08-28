@@ -1,5 +1,4 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
@@ -14,25 +13,7 @@ interface IShapes {
   resizeMarker: Rect;
 }
 
-export interface IResizer {
-  shapes: IShapes;
-  destroy: () => void;
-  setResizeGuideLinePoints: () => void;
-  showResizeMarker: (target: Line) => void;
-  showGuideLine: (target: Line) => void;
-  hideResizeMarker: () => void;
-  hideGuideLine: () => void;
-  resize: (index: number, newSize: number) => void;
-  resizeLineDragStart: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineDragMove: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineDragEnd: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineOnMousedown: (e: KonvaEventObject<Event>) => void;
-  resizeLineOnMouseover: (e: KonvaEventObject<Event>) => void;
-  resizeLineOnMouseup: () => void;
-  resizeLineOnMouseout: () => void;
-}
-
-class Resizer implements IResizer {
+class Resizer {
   shapes!: IShapes;
   private resizeStartPos: Vector2d;
   private resizePosition: Vector2d;
@@ -103,12 +84,6 @@ class Resizer implements IResizer {
     this.canvas.layers.mainLayer.add(this.shapes.resizeMarker);
     this.canvas.layers.mainLayer.add(this.shapes.resizeLine);
     this.canvas.layers.mainLayer.add(this.shapes.resizeGuideLine);
-  }
-
-  destroy() {
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
   }
 
   setResizeGuideLinePoints() {

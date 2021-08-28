@@ -386,11 +386,10 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.selector.destroy();
+    this.stage.destroy();
+
     this.col.destroy();
     this.row.destroy();
-    this.merger.destroy();
-    this.stage.destroy();
   }
 
   drawTopLeftOffsetRect() {

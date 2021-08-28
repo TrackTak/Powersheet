@@ -15,7 +15,7 @@ import Canvas, {
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
 } from './Canvas';
-import Resizer, { IResizer } from './Resizer';
+import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 
 interface IShapes {
@@ -38,7 +38,7 @@ export type HeaderGroupId = number;
 export type RowColGroupId = number;
 
 class RowCol {
-  resizer: IResizer;
+  resizer: Resizer;
   scrollBar: ScrollBar;
   headerGroupMap: Map<HeaderGroupId, Group>;
   rowColGroupMap: Map<RowColGroupId, Group>;
@@ -212,7 +212,6 @@ class RowCol {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
     this.scrollBar.destroy();
-    this.resizer.destroy();
   }
 
   *updateViewport() {

@@ -33,12 +33,6 @@ class Merger {
     };
   }
 
-  destroy() {
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
-  }
-
   updateMergedCells() {
     this.canvas.options.mergedCells.forEach((mergedCells) => {
       const { mergedCellId } = this.mergeCells(mergedCells);

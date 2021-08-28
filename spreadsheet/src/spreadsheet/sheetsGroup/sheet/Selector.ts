@@ -64,12 +64,6 @@ class Selector {
     this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
   }
 
-  destroy() {
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
-  }
-
   onSheetMouseDown = () => {
     const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 

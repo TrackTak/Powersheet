@@ -22,6 +22,10 @@ const events = {
       end: 'rc-end',
     },
   },
+  merge: {
+    add: 'm-add',
+    unMerge: 'm-unMerge',
+  },
   selector: {
     selectCells: 's-selectCells',
   },

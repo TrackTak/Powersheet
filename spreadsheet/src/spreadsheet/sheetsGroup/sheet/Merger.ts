@@ -31,23 +31,13 @@ class Merger {
         fill: 'white',
       }),
     };
-
-    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
   }
 
   destroy() {
-    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeEnd);
-
     Object.values(this.shapes).forEach((shape: Node) => {
       shape.destroy();
     });
   }
-
-  onResizeEnd = () => {
-    this.updateMergedCells();
-  };
 
   updateMergedCells() {
     this.canvas.options.mergedCells.forEach((mergedCells) => {
@@ -67,6 +57,8 @@ class Merger {
 
       this.canvas.selector.removeSelectedCells();
     }
+
+    this.canvas.eventEmitter.emit(events.merge.add, mergedCells);
   }
 
   private mergeCells({ start, end }: IMergedCells) {
@@ -167,6 +159,8 @@ class Merger {
     );
 
     this.canvas.selector.removeSelectedCells();
+
+    this.canvas.eventEmitter.emit(events.merge.unMerge, mergedCells);
   }
 
   mergeSelectedCells() {

@@ -247,6 +247,7 @@ class Resizer implements IResizer {
     }
 
     this.canvas.selector.removeSelectedCells();
+    this.canvas.merger.updateMergedCells();
 
     this.canvas.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
   };

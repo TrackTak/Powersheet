@@ -172,6 +172,8 @@ class Selector {
               isMerged: true,
               x: mergedCell.x(),
               y: mergedCell.y(),
+              start: mergedCell.attrs.start,
+              end: mergedCell.attrs.end,
             });
             const config: RectConfig = {
               width: mergedCell.width(),

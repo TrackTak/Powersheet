@@ -288,25 +288,8 @@ class Canvas {
   }
 
   updateSheetDimensions() {
-    const widths = Object.values(this.options.col.widths);
-
-    const totalWidthsDifference = widths.reduce((currentWidth, width) => {
-      return width - this.options.col.defaultWidth + currentWidth;
-    }, 0);
-
-    const heights = Object.values(this.options.row.heights);
-
-    const totalHeightsDifference = heights.reduce((currentHeight, height) => {
-      return height - this.options.row.defaultHeight + currentHeight;
-    }, 0);
-
-    this.sheetDimensions.width =
-      this.options.numberOfCols * this.options.col.defaultWidth +
-      totalWidthsDifference;
-
-    this.sheetDimensions.height =
-      this.options.numberOfRows * this.options.row.defaultHeight +
-      totalHeightsDifference;
+    this.sheetDimensions.width = this.col.getTotalSize();
+    this.sheetDimensions.height = this.row.getTotalSize();
   }
 
   getViewportVector() {
@@ -334,6 +317,13 @@ class Canvas {
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
+
+    this.col.scrollBar.setup();
+    this.row.scrollBar.setup();
+
+    this.row.scrollBar.scrollBarEl.style.bottom = `${
+      this.col.scrollBar.getBoundingClientRect().height
+    }px`;
 
     this.eventEmitter.emit(events.canvas.load, e);
   };

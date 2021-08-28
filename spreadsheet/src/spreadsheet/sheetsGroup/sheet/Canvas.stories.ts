@@ -91,18 +91,16 @@ export const DifferentSizeCells = Template.bind({});
 DifferentSizeCells.args = {
   ...defaultOptions,
   col: {
-    minWidth: 60,
-    defaultWidth: 100,
-    widths: {
+    ...defaultOptions.col,
+    sizes: {
       '3': 70,
     },
   },
   row: {
-    heights: {
+    ...defaultOptions.row,
+    sizes: {
       '1': 250,
       '5': 100,
     },
-    minHeight: 25,
-    defaultHeight: 25,
   },
 };

@@ -6,12 +6,7 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
-import {
-  HeaderGroupId,
-  IRowColFunctions,
-  ISizeOptions,
-  RowColType,
-} from './RowCol';
+import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -41,20 +36,18 @@ class Resizer implements IResizer {
   shapes!: IShapes;
   private resizeStartPos: Vector2d;
   private resizePosition: Vector2d;
-  private isCol: boolean;
 
   constructor(
     private canvas: Canvas,
     private type: RowColType,
+    private isCol: boolean,
     private functions: IRowColFunctions,
-    private sizeOptions: ISizeOptions,
     private headerGroupMap: Map<HeaderGroupId, Group>
   ) {
     this.canvas = canvas;
     this.type = type;
-    this.isCol = this.type === 'col';
+    this.isCol = isCol;
     this.functions = functions;
-    this.sizeOptions = sizeOptions;
     this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
@@ -164,11 +157,13 @@ class Resizer implements IResizer {
   }
 
   resize(index: number, newSize: number) {
-    const size = this.sizeOptions.sizes[index] ?? this.sizeOptions.defaultSize;
+    const size =
+      this.canvas.options[this.type].sizes[index] ??
+      this.canvas.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sizeOptions.sizes[index] = newSize;
+      this.canvas.options[this.type].sizes[index] = newSize;
 
       this.canvas[this.type].draw(index);
 
@@ -195,7 +190,7 @@ class Resizer implements IResizer {
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.sizeOptions.minSize;
+    const minSize = this.canvas.options[this.type].minSize;
     let newAxis = this.isCol ? position.x : position.y;
 
     const getNewPosition = () => {
@@ -234,7 +229,7 @@ class Resizer implements IResizer {
     const index = target.parent!.attrs.index;
 
     const position = this.resizePosition;
-    const minSize = this.sizeOptions.minSize;
+    const minSize = this.canvas.options[this.type].minSize;
 
     const axis = this.isCol ? position.x : position.y;
 

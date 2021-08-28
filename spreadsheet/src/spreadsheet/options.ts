@@ -18,39 +18,32 @@ export interface ISizes {
   [index: string]: number;
 }
 
-export interface IRowOptions {
-  minHeight: number;
-  defaultHeight: number;
-  heights: ISizes;
-}
-
-export interface IColOptions {
-  minWidth: number;
-  defaultWidth: number;
-  widths: ISizes;
+export interface IRowColOptions {
+  amount: number;
+  minSize: number;
+  defaultSize: number;
+  sizes: ISizes;
 }
 
 export interface IOptions {
-  numberOfRows: number;
-  numberOfCols: number;
-  row: IRowOptions;
-  col: IColOptions;
+  row: IRowColOptions;
+  col: IRowColOptions;
   frozenCells: IFrozenCells;
   mergedCells: IMergedCells[];
 }
 
 export const defaultOptions: IOptions = {
-  numberOfRows: 100,
-  numberOfCols: 26,
   row: {
-    minHeight: 25,
-    defaultHeight: 25,
-    heights: {},
+    amount: 100,
+    minSize: 25,
+    defaultSize: 25,
+    sizes: {},
   },
   col: {
-    minWidth: 60,
-    defaultWidth: 100,
-    widths: {},
+    amount: 26,
+    minSize: 60,
+    defaultSize: 100,
+    sizes: {},
   },
   frozenCells: {},
   mergedCells: [],

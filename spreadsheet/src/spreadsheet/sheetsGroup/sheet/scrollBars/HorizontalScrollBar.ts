@@ -34,8 +34,6 @@ class HorizontalScrollBar implements IScrollBar {
     this.scrollEl = scrollEl;
 
     this.canvas.container.appendChild(this.scrollBarEl);
-
-    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeColEnd);
   }
 
   getBoundingClientRect = () => {
@@ -46,10 +44,6 @@ class HorizontalScrollBar implements IScrollBar {
     this.updateCustomSizePositions();
 
     this.scrollBarEl.style.width = `${this.canvas.stage.width()}px`;
-  };
-
-  onResizeColEnd = () => {
-    this.updateCustomSizePositions();
   };
 
   updateCustomSizePositions() {
@@ -124,7 +118,7 @@ class HorizontalScrollBar implements IScrollBar {
     this.canvas.scrollGroups.ySticky.x(scrollAmount);
     this.canvas.scrollGroups.main.x(scrollAmount);
 
-    this.canvas.eventEmitter.emit(events.scroll.horizontal, e, scrollAmount);
+    this.canvas.updateViewport();
 
     const col = this.canvas.col.headerGroupMap.get(ci)!;
 
@@ -132,6 +126,8 @@ class HorizontalScrollBar implements IScrollBar {
       index: ci,
       size: scrollLeft + this.canvas.getViewportVector().x - col.x(),
     };
+
+    this.canvas.eventEmitter.emit(events.scroll.horizontal, e, scrollAmount);
   };
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -139,8 +135,6 @@ class HorizontalScrollBar implements IScrollBar {
   };
 
   destroy() {
-    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeColEnd);
-
     this.scrollBarBuilder.destroy();
   }
 }

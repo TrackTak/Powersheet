@@ -11,5 +11,6 @@ export interface IScrollBar {
   customSizePositions: ICustomSizePosition[];
   scrollOffset: IScrollOffset;
   getBoundingClientRect: () => DOMRect;
+  updateCustomSizePositions: () => void;
   destroy: () => void;
 }

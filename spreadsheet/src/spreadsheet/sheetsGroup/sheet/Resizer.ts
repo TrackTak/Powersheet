@@ -22,6 +22,7 @@ interface IShapes {
 export interface IResizer {
   shapes: IShapes;
   destroy: () => void;
+  setResizeGuideLinePoints: () => void;
   showResizeMarker: (target: Line) => void;
   showGuideLine: (target: Line) => void;
   hideResizeMarker: () => void;
@@ -109,24 +110,20 @@ class Resizer implements IResizer {
     this.canvas.layers.mainLayer.add(this.shapes.resizeMarker);
     this.canvas.layers.mainLayer.add(this.shapes.resizeLine);
     this.canvas.layers.mainLayer.add(this.shapes.resizeGuideLine);
-
-    this.canvas.eventEmitter.on(events.canvas.load, this.onCanvasLoad);
   }
 
-  onCanvasLoad = () => {
+  destroy() {
+    Object.values(this.shapes).forEach((shape: Node) => {
+      shape.destroy();
+    });
+  }
+
+  setResizeGuideLinePoints() {
     this.shapes.resizeGuideLine.points(
       this.isCol
         ? [0, this.canvas.getViewportVector().y, 0, this.canvas.stage.height()]
         : [this.canvas.getViewportVector().x, 0, this.canvas.stage.width(), 0]
     );
-  };
-
-  destroy() {
-    this.canvas.eventEmitter.off(events.canvas.load, this.onCanvasLoad);
-
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
   }
 
   showResizeMarker(target: Line) {
@@ -190,6 +187,8 @@ class Resizer implements IResizer {
   resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
     this.resizeStartPos = e.target.getPosition();
 
+    this.shapes.resizeGuideLine.moveToTop();
+
     this.canvas.eventEmitter.emit(events.resize[this.type].start, e);
   };
 
@@ -246,7 +245,18 @@ class Resizer implements IResizer {
       this.resize(index, axis);
     }
 
+    this.canvas.updateSheetDimensions();
     this.canvas.selector.removeSelectedCells();
+    this.canvas[this.type].scrollBar.updateCustomSizePositions();
+
+    for (
+      let index = this.canvas[this.type].sheetViewportPosition.x;
+      index < this.canvas[this.type].sheetViewportPosition.y;
+      index++
+    ) {
+      this.canvas[this.type].draw(index);
+    }
+
     this.canvas.merger.updateMergedCells();
 
     this.canvas.eventEmitter.emit(events.resize[this.type].end, e, index, axis);

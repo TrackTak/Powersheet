@@ -173,12 +173,6 @@ class RowCol {
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
 
-    this.canvas.eventEmitter.on(
-      events.resize[this.type].start,
-      this.onResizeStart
-    );
-    this.canvas.eventEmitter.on(events.resize[this.type].end, this.onResizeEnd);
-
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
@@ -233,31 +227,9 @@ class RowCol {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.canvas.eventEmitter.off(
-      events.resize[this.type].start,
-      this.onResizeStart
-    );
-    this.canvas.eventEmitter.off(
-      events.resize[this.type].end,
-      this.onResizeEnd
-    );
     this.scrollBar.destroy();
     this.resizer.destroy();
   }
-
-  onResizeStart = () => {
-    this.resizer.shapes.resizeGuideLine.moveToTop();
-  };
-
-  onResizeEnd = () => {
-    for (
-      let index = this.sheetViewportPosition.x;
-      index < this.sheetViewportPosition.y;
-      index++
-    ) {
-      this.drawGridLines(index);
-    }
-  };
 
   *updateViewport() {
     const generator = {

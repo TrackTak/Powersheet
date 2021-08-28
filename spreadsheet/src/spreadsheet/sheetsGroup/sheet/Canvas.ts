@@ -20,7 +20,6 @@ import Selector from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -280,11 +279,6 @@ class Canvas {
       this.layers.mainLayer.add(group);
     });
 
-    this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
-    this.eventEmitter.on(events.scroll.vertical, this.onScroll);
-    this.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
-    this.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
-
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
@@ -292,10 +286,6 @@ class Canvas {
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
-
-  onResizeEnd = () => {
-    this.updateSheetDimensions();
-  };
 
   updateSheetDimensions() {
     const widths = Object.values(this.options.col.widths);
@@ -326,10 +316,6 @@ class Canvas {
     };
   }
 
-  onScroll = () => {
-    this.updateViewport();
-  };
-
   onLoad = (e: Event) => {
     this.updateSheetDimensions();
 
@@ -345,6 +331,9 @@ class Canvas {
 
     this.drawTopLeftOffsetRect();
     this.updateViewport();
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
 
     this.eventEmitter.emit(events.canvas.load, e);
   };
@@ -406,9 +395,6 @@ class Canvas {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
-
-    this.eventEmitter.off(events.scroll.horizontal, this.onScroll);
-    this.eventEmitter.off(events.scroll.vertical, this.onScroll);
 
     this.selector.destroy();
     this.col.destroy();

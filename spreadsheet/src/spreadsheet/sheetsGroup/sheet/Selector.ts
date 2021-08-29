@@ -1,5 +1,5 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
+import { NodeConfig } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
@@ -59,21 +59,9 @@ class Selector {
 
     this.selectedCells = [];
 
-    this.canvas.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
-
     this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
     this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
     this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
-  }
-
-  destroy() {
-    this.canvas.eventEmitter.off(events.resize.row.end, this.onResizeEnd);
-    this.canvas.eventEmitter.off(events.resize.col.end, this.onResizeEnd);
-
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
   }
 
   onSheetMouseDown = () => {
@@ -105,23 +93,6 @@ class Selector {
   };
 
   onSheetMouseMove = () => {
-    this.moveSelection();
-  };
-
-  onSheetMouseUp = () => {
-    this.isInSelectionMode = false;
-  };
-
-  startSelection(cells: ISelectedCell[]) {
-    this.removeSelectedCells(true);
-    this.isInSelectionMode = true;
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-  }
-
-  moveSelection(positionOverride?: Vector2d) {
     if (this.isInSelectionMode) {
       const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
 
@@ -137,7 +108,7 @@ class Selector {
 
       const { rows, cols } = this.canvas.getRowColsBetweenVectors(
         start,
-        positionOverride || this.selectionArea.end
+        this.selectionArea.end
       );
 
       const cells = this.convertFromRowColsToCells(
@@ -147,27 +118,26 @@ class Selector {
       );
 
       if (this.selectedCells.length !== cells.length) {
-        this.removeSelectedCells();
+        this.removeSelectedCells(false);
 
         this.selectCells(cells);
 
         this.selectedFirstCell?.moveToTop();
       }
     }
-  }
+  };
 
-  convertShapeToCell(shape: Shape) {
-    const clone = this.shapes.selection.clone({
-      start: shape.attrs.start,
-      end: shape.attrs.end,
-      id: shape.id(),
-      x: shape.x(),
-      y: shape.y(),
-      width: shape.width(),
-      height: shape.height(),
-    });
+  onSheetMouseUp = () => {
+    this.isInSelectionMode = false;
+  };
 
-    return clone;
+  startSelection(cells: ISelectedCell[]) {
+    this.removeSelectedCells();
+    this.isInSelectionMode = true;
+
+    this.selectCells(cells);
+
+    this.selectedFirstCell = cells[0];
   }
 
   convertFromRowColsToCells(
@@ -175,50 +145,83 @@ class Selector {
     cols: Group[],
     selectionShape: Rect
   ) {
+    const mergedCellsAddedMap = new Map();
     const cells: ISelectedCell[] = [];
 
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const group = new Group({
-          id,
-          start: {
-            row: rowGroup.attrs.index,
-            col: colGroup.attrs.index,
-          },
-          end: {
-            row: rowGroup.attrs.index,
-            col: colGroup.attrs.index,
-          },
-          x: colGroup.x(),
-          y: rowGroup.y(),
-        });
-        const config: RectConfig = {
-          width: colGroup.width(),
-          height: rowGroup.height(),
-        };
-        const clone = selectionShape.clone(config);
+        const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
+        const group = new Group();
 
-        group.add(clone);
-        cells.push(group);
+        const pushToCells = (rectConfig: RectConfig) => {
+          const clone = selectionShape.clone(rectConfig) as Rect;
+
+          group.add(clone);
+          cells.push(group);
+        };
+
+        if (mergedCell) {
+          const id = mergedCell.id();
+
+          if (!mergedCellsAddedMap.get(id)) {
+            const groupConfig: NodeConfig = {
+              id,
+              isMerged: true,
+              x: mergedCell.x(),
+              y: mergedCell.y(),
+              start: mergedCell.attrs.start,
+              end: mergedCell.attrs.end,
+            };
+
+            group.setAttrs(groupConfig);
+
+            const rectConfig: RectConfig = {
+              width: mergedCell.width(),
+              height: mergedCell.height(),
+            };
+            pushToCells(rectConfig);
+
+            mergedCellsAddedMap.set(id, group);
+          }
+        } else {
+          const groupConfig: NodeConfig = {
+            id,
+            start: {
+              row: rowGroup.attrs.index,
+              col: colGroup.attrs.index,
+            },
+            end: {
+              row: rowGroup.attrs.index,
+              col: colGroup.attrs.index,
+            },
+            x: colGroup.x(),
+            y: rowGroup.y(),
+          };
+
+          group.setAttrs(groupConfig);
+
+          const rectConfig: RectConfig = {
+            width: colGroup.width(),
+            height: rowGroup.height(),
+          };
+
+          pushToCells(rectConfig);
+        }
       });
     });
 
     return cells;
   }
 
-  onResizeEnd = () => {
-    if (this.selectedCells.length) {
-      this.removeSelectedCells(true);
-    }
-  };
-
-  removeSelectedCells(removeFirstCell = false) {
+  removeSelectedCells(removeFirstCell = true) {
     this.selectedCells
       .filter((cell) => cell !== this.selectedFirstCell)
       .forEach((cell) => {
         cell.destroy();
       });
+
+    this.selectedCells = [];
 
     if (this.selectedFirstCell && removeFirstCell) {
       this.selectedFirstCell.destroy();
@@ -242,7 +245,16 @@ class Selector {
       } else {
         this.canvas.scrollGroups.main.add(cell);
       }
-      cell.moveToBottom();
+
+      if (cell.attrs.isMerged) {
+        const mergedCell = this.canvas.merger.mergedCellsMap.get(
+          cell.attrs.id
+        )!;
+
+        cell.zIndex(mergedCell.zIndex() + 1);
+      } else {
+        cell.moveToBottom();
+      }
     });
 
     this.canvas.eventEmitter.emit(events.selector.selectCells, cells);

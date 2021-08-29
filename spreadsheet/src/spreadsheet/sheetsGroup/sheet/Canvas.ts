@@ -20,7 +20,6 @@ import Selector from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -280,11 +279,6 @@ class Canvas {
       this.layers.mainLayer.add(group);
     });
 
-    this.eventEmitter.on(events.scroll.horizontal, this.onScroll);
-    this.eventEmitter.on(events.scroll.vertical, this.onScroll);
-    this.eventEmitter.on(events.resize.row.end, this.onResizeEnd);
-    this.eventEmitter.on(events.resize.col.end, this.onResizeEnd);
-
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
@@ -293,30 +287,9 @@ class Canvas {
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
-  onResizeEnd = () => {
-    this.updateSheetDimensions();
-  };
-
   updateSheetDimensions() {
-    const widths = Object.values(this.options.col.widths);
-
-    const totalWidthsDifference = widths.reduce((currentWidth, width) => {
-      return width - this.options.col.defaultWidth + currentWidth;
-    }, 0);
-
-    const heights = Object.values(this.options.row.heights);
-
-    const totalHeightsDifference = heights.reduce((currentHeight, height) => {
-      return height - this.options.row.defaultHeight + currentHeight;
-    }, 0);
-
-    this.sheetDimensions.width =
-      this.options.numberOfCols * this.options.col.defaultWidth +
-      totalWidthsDifference;
-
-    this.sheetDimensions.height =
-      this.options.numberOfRows * this.options.row.defaultHeight +
-      totalHeightsDifference;
+    this.sheetDimensions.width = this.col.getTotalSize();
+    this.sheetDimensions.height = this.row.getTotalSize();
   }
 
   getViewportVector() {
@@ -325,10 +298,6 @@ class Canvas {
       y: this.styles.colHeader.rect.height,
     };
   }
-
-  onScroll = () => {
-    this.updateViewport();
-  };
 
   onLoad = (e: Event) => {
     this.updateSheetDimensions();
@@ -346,66 +315,67 @@ class Canvas {
     this.drawTopLeftOffsetRect();
     this.updateViewport();
 
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
+
+    this.col.scrollBar.setup();
+    this.row.scrollBar.setup();
+
+    this.row.scrollBar.scrollBarEl.style.bottom = `${
+      this.col.scrollBar.getBoundingClientRect().height
+    }px`;
+
     this.eventEmitter.emit(events.canvas.load, e);
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
-    console.log(end);
-    let updatedEndVector = {
-      ...end
-    };
-    if (this.selector.isInSelectionMode) {
-      const { isReversedX, isReversedY } = reverseVectorsIfStartBiggerThanEnd(
-        start,
-        end
-      );
-      for (const mergedCell of Object.values(this.merger.mergedCellsMap)) {
-        const mergedCellRelativeToViewport: Shape<ShapeConfig> = mergedCell.clone();
-        const viewportVector = this.getViewportVector();
-        mergedCellRelativeToViewport.setPosition({
-          x: mergedCellRelativeToViewport.x() - viewportVector.x,
-          y: mergedCellRelativeToViewport.y() - viewportVector.y
-        });
-        // const isInMergedCellXRange = end.x >= mergedCell.x() && end.x <= mergedCell.x() + mergedCell.width();
-        // const isInMergedCellYRange = end.y >= mergedCell.y() && end.y <= mergedCell.y() + mergedCell.height();
-        console.log(end.x, mergedCellRelativeToViewport.x(), end.y, mergedCellRelativeToViewport.y());
-        // if (isInMergedCellXRange || isInMergedCellYRange) {
-          const isInMergedCellRange = end.x >= mergedCellRelativeToViewport.x() && end.y >= mergedCellRelativeToViewport.y();
-          if (isInMergedCellRange) {
-            console.log('isInMergedCellRange')
-            if (isReversedX || isReversedY) {
-              updatedEndVector.x = isReversedX ? mergedCellRelativeToViewport.x() : updatedEndVector.x + mergedCellRelativeToViewport.x() ;
-              updatedEndVector.y = isReversedY ? mergedCellRelativeToViewport.y() : updatedEndVector.y + (mergedCellRelativeToViewport.height() - mergedCellRelativeToViewport.height() / 2);
-              console.log('IS REVERSED', isReversedX, isReversedY);
-            } else {
-              const endXDiff = end.x - mergedCellRelativeToViewport.x();
-              const endYDiff = end.y - mergedCellRelativeToViewport.y();
-              updatedEndVector.x = start.x + mergedCellRelativeToViewport.width() + (endXDiff > 0 ? endXDiff : 0);
-              updatedEndVector.y = mergedCellRelativeToViewport.y() + (mergedCellRelativeToViewport.height() - mergedCellRelativeToViewport.height() / 2) + (endYDiff > 0 ? endYDiff : 0);;
-              console.log('NOT REVERSED', end, updatedEndVector);
-            }
-          break;
-        }
-      }
-  }
-
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
       start,
-      updatedEndVector
+      end
     );
-
-    const colIndexes = this.col.getIndexesBetweenVectors({
-      x: newStart.x,
-      y: newEnd.x,
-    });
 
     const rowIndexes = this.row.getIndexesBetweenVectors({
       x: newStart.y,
       y: newEnd.y,
     });
 
-    const rows = this.row.getItemsBetweenIndexes(rowIndexes, this.merger.mergedCellsMap);
-    const cols = this.col.getItemsBetweenIndexes(colIndexes, this.merger.mergedCellsMap);
+    const colIndexes = this.col.getIndexesBetweenVectors({
+      x: newStart.x,
+      y: newEnd.x,
+    });
+
+    for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
+      for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
+        const mergedCellId = getCellId(ri, ci);
+
+        const mergedCell =
+          this.merger.associatedMergedCellMap.get(mergedCellId);
+
+        if (mergedCell) {
+          const start = mergedCell.attrs.start;
+          const end = mergedCell.attrs.end;
+
+          if (start.col < colIndexes.x) {
+            colIndexes.x = start.col;
+          }
+
+          if (start.row < rowIndexes.x) {
+            rowIndexes.x = start.row;
+          }
+
+          if (end.col > colIndexes.y) {
+            colIndexes.y = end.col;
+          }
+
+          if (end.row > rowIndexes.y) {
+            rowIndexes.y = end.row;
+          }
+        }
+      }
+    }
+
+    const rows = this.row.getItemsBetweenIndexes(rowIndexes);
+    const cols = this.col.getItemsBetweenIndexes(colIndexes);
 
     return {
       rows,
@@ -416,14 +386,10 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.eventEmitter.off(events.scroll.horizontal, this.onScroll);
-    this.eventEmitter.off(events.scroll.vertical, this.onScroll);
+    this.stage.destroy();
 
-    this.selector.destroy();
     this.col.destroy();
     this.row.destroy();
-    this.merger.destroy();
-    this.stage.destroy();
   }
 
   drawTopLeftOffsetRect() {

@@ -1,17 +1,11 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
-import {
-  HeaderGroupId,
-  IRowColFunctions,
-  ISizeOptions,
-  RowColType,
-} from './RowCol';
+import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -19,41 +13,22 @@ interface IShapes {
   resizeMarker: Rect;
 }
 
-export interface IResizer {
-  shapes: IShapes;
-  destroy: () => void;
-  showResizeMarker: (target: Line) => void;
-  showGuideLine: (target: Line) => void;
-  hideResizeMarker: () => void;
-  hideGuideLine: () => void;
-  resize: (index: number, newSize: number) => void;
-  resizeLineDragStart: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineDragMove: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineDragEnd: (e: KonvaEventObject<DragEvent>) => void;
-  resizeLineOnMousedown: (e: KonvaEventObject<Event>) => void;
-  resizeLineOnMouseover: (e: KonvaEventObject<Event>) => void;
-  resizeLineOnMouseup: () => void;
-  resizeLineOnMouseout: () => void;
-}
-
-class Resizer implements IResizer {
+class Resizer {
   shapes!: IShapes;
   private resizeStartPos: Vector2d;
   private resizePosition: Vector2d;
-  private isCol: boolean;
 
   constructor(
     private canvas: Canvas,
     private type: RowColType,
+    private isCol: boolean,
     private functions: IRowColFunctions,
-    private sizeOptions: ISizeOptions,
     private headerGroupMap: Map<HeaderGroupId, Group>
   ) {
     this.canvas = canvas;
     this.type = type;
-    this.isCol = this.type === 'col';
+    this.isCol = isCol;
     this.functions = functions;
-    this.sizeOptions = sizeOptions;
     this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
@@ -109,24 +84,14 @@ class Resizer implements IResizer {
     this.canvas.layers.mainLayer.add(this.shapes.resizeMarker);
     this.canvas.layers.mainLayer.add(this.shapes.resizeLine);
     this.canvas.layers.mainLayer.add(this.shapes.resizeGuideLine);
-
-    this.canvas.eventEmitter.on(events.canvas.load, this.onCanvasLoad);
   }
 
-  onCanvasLoad = () => {
+  setResizeGuideLinePoints() {
     this.shapes.resizeGuideLine.points(
       this.isCol
         ? [0, this.canvas.getViewportVector().y, 0, this.canvas.stage.height()]
         : [this.canvas.getViewportVector().x, 0, this.canvas.stage.width(), 0]
     );
-  };
-
-  destroy() {
-    this.canvas.eventEmitter.off(events.canvas.load, this.onCanvasLoad);
-
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
   }
 
   showResizeMarker(target: Line) {
@@ -167,11 +132,13 @@ class Resizer implements IResizer {
   }
 
   resize(index: number, newSize: number) {
-    const size = this.sizeOptions.sizes[index] ?? this.sizeOptions.defaultSize;
+    const size =
+      this.canvas.options[this.type].sizes[index] ??
+      this.canvas.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sizeOptions.sizes[index] = newSize;
+      this.canvas.options[this.type].sizes[index] = newSize;
 
       this.canvas[this.type].draw(index);
 
@@ -190,13 +157,15 @@ class Resizer implements IResizer {
   resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
     this.resizeStartPos = e.target.getPosition();
 
+    this.shapes.resizeGuideLine.moveToTop();
+
     this.canvas.eventEmitter.emit(events.resize[this.type].start, e);
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.sizeOptions.minSize;
+    const minSize = this.canvas.options[this.type].minSize;
     let newAxis = this.isCol ? position.x : position.y;
 
     const getNewPosition = () => {
@@ -235,7 +204,7 @@ class Resizer implements IResizer {
     const index = target.parent!.attrs.index;
 
     const position = this.resizePosition;
-    const minSize = this.sizeOptions.minSize;
+    const minSize = this.canvas.options[this.type].minSize;
 
     const axis = this.isCol ? position.x : position.y;
 
@@ -245,6 +214,20 @@ class Resizer implements IResizer {
     if (axis >= minSize) {
       this.resize(index, axis);
     }
+
+    this.canvas.updateSheetDimensions();
+    this.canvas.selector.removeSelectedCells();
+    this.canvas[this.type].scrollBar.updateCustomSizePositions();
+
+    for (
+      let index = this.canvas[this.type].sheetViewportPosition.x;
+      index < this.canvas[this.type].sheetViewportPosition.y;
+      index++
+    ) {
+      this.canvas[this.type].draw(index);
+    }
+
+    this.canvas.merger.updateMergedCells();
 
     this.canvas.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
   };

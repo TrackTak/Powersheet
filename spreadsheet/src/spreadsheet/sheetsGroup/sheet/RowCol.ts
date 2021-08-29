@@ -6,7 +6,6 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
-import events from '../../events';
 import { ISizes } from '../../options';
 import Canvas, {
   centerRectTwoInRectOne,
@@ -16,10 +15,8 @@ import Canvas, {
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
 } from './Canvas';
-import Resizer, { IResizer } from './Resizer';
-import HorizontalScrollBar from './scrollBars/HorizontalScrollBar';
-import { IScrollBar } from './scrollBars/IScrollBar';
-import VerticalScrollBar from './scrollBars/VerticalScrollBar';
+import Resizer from './Resizer';
+import ScrollBar from './scrollBars/ScrollBar';
 
 interface IShapes {
   group: Group;
@@ -31,12 +28,6 @@ interface IShapes {
 
 export type RowColType = 'row' | 'col';
 
-export interface ISizeOptions {
-  minSize: number;
-  defaultSize: number;
-  sizes: ISizes;
-}
-
 export interface IRowColFunctions {
   axis: 'y' | 'x';
   size: 'height' | 'width';
@@ -47,8 +38,8 @@ export type HeaderGroupId = number;
 export type RowColGroupId = number;
 
 class RowCol {
-  resizer: IResizer;
-  scrollBar: IScrollBar;
+  resizer: Resizer;
+  scrollBar: ScrollBar;
   headerGroupMap: Map<HeaderGroupId, Group>;
   rowColGroupMap: Map<RowColGroupId, Group>;
   totalSize: number;
@@ -58,7 +49,6 @@ class RowCol {
   private getAvailableSize: () => number;
   private getHeaderText: (index: number) => string;
   private getLineConfig: (sheetSize: number) => LineConfig;
-  private sizeOptions: ISizeOptions;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
   private isCol: boolean;
@@ -96,16 +86,10 @@ class RowCol {
         axis: 'y',
         size: 'height',
       };
-      this.sizeOptions = {
-        minSize: this.canvas.options.col.minWidth,
-        defaultSize: this.canvas.options.col.defaultWidth,
-        sizes: this.canvas.options.col.widths,
-      };
-      this.scrollBar = new HorizontalScrollBar(this.canvas);
       this.shapes.headerText.setAttrs(this.canvas.styles.colHeader.text);
       this.shapes.headerRect.setAttrs({
         ...this.canvas.styles.colHeader.rect,
-        width: this.canvas.options.col.defaultWidth,
+        width: this.canvas.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         const startCharCode = 'A'.charCodeAt(0);
@@ -131,17 +115,10 @@ class RowCol {
         axis: 'x',
         size: 'width',
       };
-      this.sizeOptions = {
-        minSize: this.canvas.options.row.minHeight,
-        defaultSize: this.canvas.options.row.defaultHeight,
-        sizes: this.canvas.options.row.heights,
-      };
-      this.scrollBar = new VerticalScrollBar(this.canvas);
-
       this.shapes.headerText.setAttrs(this.canvas.styles.rowHeader.text);
       this.shapes.headerRect.setAttrs({
         ...this.canvas.styles.rowHeader.rect,
-        height: this.canvas.options.row.defaultHeight,
+        height: this.canvas.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         return (index + 1).toString();
@@ -158,11 +135,18 @@ class RowCol {
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }
 
+    this.scrollBar = new ScrollBar(
+      this.canvas,
+      this.type,
+      this.isCol,
+      this.functions
+    );
+
     this.resizer = new Resizer(
       canvas,
       this.type,
+      this.isCol,
       this.functions,
-      this.sizeOptions,
       this.headerGroupMap
     );
 
@@ -173,24 +157,18 @@ class RowCol {
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
 
-    this.canvas.eventEmitter.on(
-      events.resize[this.type].start,
-      this.onResizeStart
-    );
-    this.canvas.eventEmitter.on(events.resize[this.type].end, this.onResizeEnd);
-
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
   calculateSheetViewportEndPosition = (
     sheetViewportDimensionSize: number,
     sheetViewportStartYIndex: number,
-    defaultSize: number,
-    sizes?: ISizes,
     customSizeChanges?: ICustomSizes[]
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
+    const defaultSize = this.canvas.options[this.type].defaultSize;
+    const sizes = this.canvas.options[this.type].sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -214,9 +192,7 @@ class RowCol {
   onLoad = () => {
     const yIndex = this.calculateSheetViewportEndPosition(
       this.getAvailableSize(),
-      0,
-      this.sizeOptions.defaultSize,
-      this.sizeOptions.sizes
+      0
     );
 
     let sumOfSizes = 0;
@@ -233,31 +209,8 @@ class RowCol {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.canvas.eventEmitter.off(
-      events.resize[this.type].start,
-      this.onResizeStart
-    );
-    this.canvas.eventEmitter.off(
-      events.resize[this.type].end,
-      this.onResizeEnd
-    );
     this.scrollBar.destroy();
-    this.resizer.destroy();
   }
-
-  onResizeStart = () => {
-    this.resizer.shapes.resizeGuideLine.moveToTop();
-  };
-
-  onResizeEnd = () => {
-    for (
-      let index = this.sheetViewportPosition.x;
-      index < this.sheetViewportPosition.y;
-      index++
-    ) {
-      this.drawGridLines(index);
-    }
-  };
 
   *updateViewport() {
     const generator = {
@@ -327,8 +280,24 @@ class RowCol {
     });
   }
 
+  getTotalSize() {
+    const sizes = Object.values(this.canvas.options[this.type].sizes);
+
+    const totalSizeDifference = sizes.reduce((currentSize, size) => {
+      return size - this.canvas.options[this.type].defaultSize + currentSize;
+    }, 0);
+
+    return (
+      this.canvas.options[this.type].amount *
+        this.canvas.options[this.type].defaultSize +
+      totalSizeDifference
+    );
+  }
+
   getSize(index: number) {
-    const size = this.sizeOptions.sizes[index] ?? this.sizeOptions.defaultSize;
+    const size =
+      this.canvas.options[this.type].sizes[index] ??
+      this.canvas.options[this.type].defaultSize;
 
     return size;
   }
@@ -340,10 +309,8 @@ class RowCol {
       size: this.scrollBar.scrollOffset.size,
     };
 
-    const params: [number, number, ISizes, ICustomSizes[]] = [
+    const params: [number, ICustomSizes[]] = [
       this.sheetViewportPosition.x,
-      this.sizeOptions.defaultSize,
-      this.sizeOptions.sizes,
       customSizes,
     ];
 

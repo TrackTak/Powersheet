@@ -431,6 +431,7 @@ class Toolbar {
 
     iconContainer.classList.add(
       styles.iconContainer,
+      styles[`${name}IconContainer`],
       `${toolbarPrefix}-icon-container`,
       `${toolbarPrefix}-${name}-icon-container`
     );

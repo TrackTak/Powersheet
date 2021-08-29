@@ -103,7 +103,7 @@ class RowCol {
         return lineConfig;
       };
       this.getAvailableSize = () =>
-        window.innerWidth -
+        this.canvas.options.width -
         this.canvas.getViewportVector().x -
         this.canvas.row.scrollBar.getBoundingClientRect().width;
     } else {
@@ -130,7 +130,8 @@ class RowCol {
         return lineConfig;
       };
       this.getAvailableSize = () =>
-        window.innerHeight -
+        this.canvas.options.height -
+        (this.canvas.toolbar?.toolbarEl?.getBoundingClientRect().height ?? 0) -
         this.canvas.getViewportVector().y -
         this.canvas.col.scrollBar.getBoundingClientRect().height;
     }

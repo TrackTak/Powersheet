@@ -20,6 +20,7 @@ import Selector from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
+import Toolbar from '../../toolbar/Toolbar';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -30,6 +31,7 @@ interface IConstructor {
   styles?: Partial<ICanvasStyles>;
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
+  toolbar?: Toolbar;
   options: IOptions;
   eventEmitter: EventEmitter;
 }
@@ -202,11 +204,13 @@ class Canvas {
   sheetViewportDimensions: IDimensions;
   eventEmitter: EventEmitter;
   options: IOptions;
+  toolbar?: Toolbar;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
     this.styles = merge({}, defaultCanvasStyles, params.styles);
     this.options = params.options;
+    this.toolbar = params.toolbar;
 
     const that = this;
 
@@ -225,7 +229,10 @@ class Canvas {
     };
 
     this.container = document.createElement('div');
-    this.container.classList.add(`${prefix}-canvas`, styles.canvas);
+    this.container.classList.add(
+      `${prefix}-canvas-container`,
+      styles.canvasContainer
+    );
 
     this.stage = new Stage({
       container: this.container,

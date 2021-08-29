@@ -1,37 +1,46 @@
 import { Story, Meta } from '@storybook/html';
-import Canvas from './Canvas';
+import Canvas from './sheetsGroup/sheet/Canvas';
 import EventEmitter from 'eventemitter3';
-import { defaultOptions, IOptions } from '../../options';
+import { defaultOptions, IOptions } from './options';
+import Toolbar from './toolbar/Toolbar';
+import { HyperFormula } from 'hyperformula';
+import 'tippy.js/dist/tippy.css';
+import './tippy.scss';
 
 export default {
-  title: 'Canvas',
+  title: 'Spreadsheet',
 } as Meta;
 
-const createCanvas = (args: IOptions) => {
+const buildSpreadsheet = (args: IOptions) => {
+  const spreadsheet = document.createElement('div');
+  const registeredFunctionNames =
+    HyperFormula.getRegisteredFunctionNames('enGB');
+  const toolbar = new Toolbar(registeredFunctionNames);
+
   const eventEmitter = new EventEmitter();
   const options = args;
 
   const canvas = new Canvas({
+    toolbar,
     options,
     eventEmitter,
   });
 
-  const container = document.createElement('div');
-
-  container.appendChild(canvas.container);
+  spreadsheet.appendChild(toolbar.toolbarEl);
+  spreadsheet.appendChild(canvas.container);
 
   return {
     canvas,
-    container,
+    spreadsheet,
   };
 };
 
 const Template: Story<IOptions> = (args) => {
-  return createCanvas(args).container;
+  return buildSpreadsheet(args).spreadsheet;
 };
 
 const MergeTemplate: Story<IOptions> = (args) => {
-  const { container, canvas } = createCanvas(args);
+  const { spreadsheet, canvas } = buildSpreadsheet(args);
 
   const merge = document.createElement('button');
 
@@ -47,11 +56,11 @@ const MergeTemplate: Story<IOptions> = (args) => {
     canvas.merger.unMergeSelectedCells();
   };
 
-  container.appendChild(merge);
-  container.appendChild(unmerge);
-  container.appendChild(canvas.container);
+  spreadsheet.appendChild(merge);
+  spreadsheet.appendChild(unmerge);
+  spreadsheet.appendChild(canvas.container);
 
-  return container;
+  return spreadsheet;
 };
 
 export const Default = Template.bind({});

@@ -6,6 +6,7 @@ $iconSize: 18px;
   display: flex;
   align-items: center;
   background: #f5f6f7;
+  border-bottom: 1px solid #e0e2e4;
 
   :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
     padding: 0;

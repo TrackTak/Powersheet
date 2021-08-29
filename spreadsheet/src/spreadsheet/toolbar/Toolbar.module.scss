@@ -6,6 +6,35 @@ $iconSize: 18px;
   display: flex;
   align-items: center;
   background: #f5f6f7;
+
+  :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
+    padding: 0;
+  }
+}
+
+.functionName {
+  @include button();
+  padding: 10px 5px;
+  padding-left: 10px;
+  text-align: left;
+}
+
+.dropdownContent {
+  overflow: auto;
+  max-height: 400px;
+  display: flex;
+}
+
+.functions {
+  flex-direction: column;
+}
+
+.borders {
+  flex-direction: column;
+}
+
+.bordersGroup {
+  display: flex;
 }
 
 .group {
@@ -50,10 +79,6 @@ $iconSize: 18px;
   border-radius: 2px;
   display: flex;
   align-items: center;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.08);
-  }
 }
 
 .iconContainer {

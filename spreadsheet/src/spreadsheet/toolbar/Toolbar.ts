@@ -3,7 +3,7 @@ import { sentenceCase } from 'sentence-case';
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 
-export type IconElement = HTMLButtonElement;
+export type IconElement = HTMLElement;
 
 export interface ITopLevelIconMap {
   undo: IconElement;
@@ -24,6 +24,13 @@ export interface ITopLevelIconMap {
   borderAll: IconElement;
   export: IconElement;
   formula: IconElement;
+}
+
+export interface IDropdownMap {
+  function: HTMLElement;
+  alignMiddle: HTMLElement;
+  alignLeft: HTMLElement;
+  borderAll: HTMLElement;
 }
 
 export interface IToolbarActionGroups {
@@ -56,15 +63,19 @@ export const toolbarPrefix = `${prefix}-toolbar`;
 class Toolbar {
   toolbarEl: HTMLDivElement;
   topLevelIconMap: ITopLevelIconMap;
+  dropdownMap: IDropdownMap;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
 
-  constructor() {
+  constructor(private registeredFunctionNames: string[]) {
+    this.registeredFunctionNames = registeredFunctionNames;
+
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
     this.topLevelIconMap = {} as ITopLevelIconMap;
+    this.dropdownMap = {} as IDropdownMap;
 
     this.tooltip = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-tooltip`,
@@ -74,31 +85,62 @@ class Toolbar {
     this.dropdown = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-dropdown-icon-button`,
       trigger: 'click',
+      theme: 'dropdown',
+      placement: 'auto',
       interactive: true,
       arrow: false,
       content: (e) => {
-        const name = (e as HTMLButtonElement).dataset.name as string;
+        const name = (e as HTMLButtonElement).dataset
+          .name as keyof IDropdownMap;
 
-        return this.createDropdown();
+        return this.dropdownMap[name];
       },
     });
 
+    const setDropdownButtonContainer = (name: keyof ITopLevelIconMap) => {
+      const buttonContainer = this.createDropdownIconButton(name);
+
+      this.topLevelIconMap[name] = buttonContainer;
+    };
+
     topLevelIconNames.forEach((name) => {
-      let button;
-
       switch (name) {
-        case 'alignLeft':
-        case 'alignMiddle':
-        case 'function':
-          button = this.createDropdownIconButton(name);
-          break;
-        default:
-          button = this.createIconButton(name);
-          button.appendChild(this.createTooltip(name));
-          break;
-      }
+        case 'borderAll': {
+          setDropdownButtonContainer(name);
 
-      this.topLevelIconMap[name] = button;
+          this.dropdownMap[name] = this.createBordersContent();
+
+          break;
+        }
+        case 'alignLeft': {
+          setDropdownButtonContainer(name);
+
+          this.dropdownMap[name] = this.createHorizontalAlignContent();
+          break;
+        }
+        case 'alignMiddle': {
+          setDropdownButtonContainer(name);
+
+          this.dropdownMap[name] = this.createVerticalAlignContent();
+          break;
+        }
+        case 'function': {
+          setDropdownButtonContainer(name);
+
+          this.dropdownMap[name] = this.createFunctionDropdownContent(
+            this.registeredFunctionNames
+          );
+          break;
+        }
+        default: {
+          const { button, buttonContainer } = this.createIconButton(name);
+
+          button.appendChild(this.createTooltip(name));
+
+          this.topLevelIconMap[name] = buttonContainer;
+          break;
+        }
+      }
     });
 
     const icons = this.topLevelIconMap;
@@ -162,8 +204,118 @@ class Toolbar {
     return tooltip;
   }
 
+  createDropdownContent(className?: string) {
+    const dropdownContent = document.createElement('div');
+
+    dropdownContent.classList.add(
+      styles.dropdownContent,
+      `${toolbarPrefix}-dropdownContent`
+    );
+
+    if (className) {
+      dropdownContent.classList.add(className);
+    }
+
+    return dropdownContent;
+  }
+
+  createBordersContent() {
+    const dropdownContent = this.createDropdownContent(styles.borders);
+
+    const firstBordersRow = [
+      this.createIconButton('borderAll'),
+      this.createIconButton('borderInside'),
+      this.createIconButton('borderHorizontal'),
+      this.createIconButton('borderVertical'),
+      this.createIconButton('borderOutside'),
+    ];
+
+    const secondBordersRow = [
+      this.createIconButton('borderLeft'),
+      this.createIconButton('borderTop'),
+      this.createIconButton('borderRight'),
+      this.createIconButton('borderBottom'),
+      this.createIconButton('borderNone'),
+    ];
+
+    const borderGroups = [
+      document.createElement('div'),
+      document.createElement('div'),
+    ];
+
+    firstBordersRow.forEach((border) => {
+      borderGroups[0].appendChild(border.buttonContainer);
+    });
+
+    secondBordersRow.forEach((border) => {
+      borderGroups[1].appendChild(border.buttonContainer);
+    });
+
+    borderGroups.forEach((borderGroup) => {
+      borderGroup.classList.add(
+        styles.bordersGroup,
+        `${toolbarPrefix}-borders-group`
+      );
+
+      dropdownContent.appendChild(borderGroup);
+    });
+
+    return dropdownContent;
+  }
+
+  createVerticalAlignContent() {
+    const dropdownContent = this.createDropdownContent();
+
+    const aligns = [
+      this.createIconButton('alignTop'),
+      this.createIconButton('alignMiddle'),
+      this.createIconButton('alignBottom'),
+    ];
+
+    aligns.forEach((align) => {
+      dropdownContent.appendChild(align.buttonContainer);
+    });
+
+    return dropdownContent;
+  }
+
+  createHorizontalAlignContent() {
+    const dropdownContent = this.createDropdownContent();
+
+    const aligns = [
+      this.createIconButton('alignLeft'),
+      this.createIconButton('alignCenter'),
+      this.createIconButton('alignRight'),
+    ];
+
+    aligns.forEach((align) => {
+      dropdownContent.appendChild(align.buttonContainer);
+    });
+
+    return dropdownContent;
+  }
+
+  createFunctionDropdownContent(registeredFunctionNames: string[]) {
+    const dropdownContent = this.createDropdownContent(styles.functions);
+
+    registeredFunctionNames.forEach((functionName) => {
+      const button = document.createElement('button');
+
+      button.classList.add(
+        styles.functionName,
+        `${toolbarPrefix}-${functionName}`
+      );
+
+      button.textContent = functionName;
+
+      dropdownContent.appendChild(button);
+    });
+
+    return dropdownContent;
+  }
+
   createDropdownIconButton(name: string) {
-    const button = this.createIconButton(name);
+    const { buttonContainer, button } = this.createIconButton(name);
     const iconContainer = this.createIcon('arrowDown');
 
     button.classList.add(
@@ -173,7 +325,7 @@ class Toolbar {
     button.appendChild(iconContainer);
     button.appendChild(this.createTooltip(name));
 
-    return button;
+    return buttonContainer;
   }
 
   createDropdown() {
@@ -185,13 +337,15 @@ class Toolbar {
   }
 
   createIconButton(name: string) {
+    const buttonContainer = document.createElement('div');
     const button = document.createElement('button');
+
+    buttonContainer.classList.add(`${toolbarPrefix}-${name}-button-container`);
 
     button.dataset.name = name;
 
     button.classList.add(
       styles.iconButton,
-      styles[name],
       `${toolbarPrefix}-icon-button`,
       `${toolbarPrefix}-${name}-button`
     );
@@ -199,8 +353,9 @@ class Toolbar {
     const iconContainer = this.createIcon(name);
 
     button.appendChild(iconContainer);
+    buttonContainer.appendChild(button);
 
-    return button;
+    return { buttonContainer, button };
   }
 
   createIcon(name: string) {

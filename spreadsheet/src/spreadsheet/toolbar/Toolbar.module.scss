@@ -21,16 +21,20 @@ $iconSize: 18px;
 
 .dropdownContent {
   overflow: auto;
-  max-height: 400px;
   display: flex;
 }
 
 .functions {
+  max-height: 400px;
+}
+
+.functions,
+.borders {
   flex-direction: column;
 }
 
-.borders {
-  flex-direction: column;
+.colorPicker {
+  overflow-x: hidden;
 }
 
 .bordersGroup {
@@ -79,6 +83,16 @@ $iconSize: 18px;
   border-radius: 2px;
   display: flex;
   align-items: center;
+}
+
+.colorBar {
+  width: 75%;
+  transform: translate(-50%, 0);
+  left: 50%;
+  bottom: 4px;
+  height: 4px;
+  position: absolute;
+  background-color: white;
 }
 
 .iconContainer {

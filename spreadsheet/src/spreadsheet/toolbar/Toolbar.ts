@@ -188,6 +188,29 @@ class Toolbar {
     this.tooltip.destroy();
   }
 
+  setDropdownButtonContainer(
+    name: keyof ITopLevelIconMap,
+    createArrow?: boolean
+  ) {
+    const buttonContainer = this.createDropdownIconButton(name, createArrow);
+
+    this.topLevelIconMap[name] = buttonContainer;
+  }
+
+  setDropdownColorPicker(name: keyof IDropdownMap) {
+    this.setDropdownButtonContainer(name);
+
+    const button = this.topLevelIconMap[name].querySelector(
+      `.${toolbarPrefix}-dropdown-icon-button`
+    )!;
+    const { dropdownContent, picker } = this.createColorPickerContent();
+    const colorBar = this.createColorBar(picker);
+
+    button.appendChild(colorBar);
+
+    this.dropdownMap[name] = dropdownContent;
+  }
+
   createGroup(elements: HTMLElement[]) {
     const group = document.createElement('div');
 
@@ -243,29 +266,6 @@ class Toolbar {
     dropdownContent.appendChild(colorPicker);
 
     return { dropdownContent, picker };
-  }
-
-  setDropdownButtonContainer(
-    name: keyof ITopLevelIconMap,
-    createArrow?: boolean
-  ) {
-    const buttonContainer = this.createDropdownIconButton(name, createArrow);
-
-    this.topLevelIconMap[name] = buttonContainer;
-  }
-
-  setDropdownColorPicker(name: keyof IDropdownMap) {
-    this.setDropdownButtonContainer(name);
-
-    const button = this.topLevelIconMap[name].querySelector(
-      `.${toolbarPrefix}-dropdown-icon-button`
-    )!;
-    const { dropdownContent, picker } = this.createColorPickerContent();
-    const colorBar = this.createColorBar(picker);
-
-    button.appendChild(colorBar);
-
-    this.dropdownMap[name] = dropdownContent;
   }
 
   createColorBar(picker: ACPController) {

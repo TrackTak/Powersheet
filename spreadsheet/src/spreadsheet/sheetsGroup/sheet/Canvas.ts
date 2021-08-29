@@ -386,6 +386,7 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
+    this.container.remove();
     this.stage.destroy();
 
     this.col.destroy();

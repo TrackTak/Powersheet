@@ -6,7 +6,6 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
-import { ISizes } from '../../options';
 import Canvas, {
   centerRectTwoInRectOne,
   hasOverlap,

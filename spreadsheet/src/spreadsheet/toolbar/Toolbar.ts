@@ -3,6 +3,9 @@ import { sentenceCase } from 'sentence-case';
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { createPicker, ACPController } from 'a-color-picker';
+import EventEmitter from 'eventemitter3';
+import { IOptions } from '../options';
+import events from '../events';
 
 export type IconElement = HTMLElement;
 
@@ -40,6 +43,12 @@ export interface IToolbarActionGroups {
   elements: HTMLElement[];
 }
 
+interface IConstructor {
+  registeredFunctionNames: string[];
+  options: IOptions;
+  eventEmitter: EventEmitter;
+}
+
 const topLevelIconNames: (keyof ITopLevelIconMap)[] = [
   'undo',
   'redo',
@@ -70,9 +79,14 @@ class Toolbar {
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
+  registeredFunctionNames: string[];
+  options: IOptions;
+  eventEmitter: EventEmitter;
 
-  constructor(private registeredFunctionNames: string[]) {
-    this.registeredFunctionNames = registeredFunctionNames;
+  constructor(params: IConstructor) {
+    this.registeredFunctionNames = params.registeredFunctionNames;
+    this.options = params.options;
+    this.eventEmitter = params.eventEmitter;
 
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
@@ -205,6 +219,10 @@ class Toolbar {
     )!;
     const { dropdownContent, picker } = this.createColorPickerContent();
     const colorBar = this.createColorBar(picker);
+
+    picker.on('change', (_, color) => {
+      this.eventEmitter.emit(events.toolbar.change, name, color);
+    });
 
     button.appendChild(colorBar);
 

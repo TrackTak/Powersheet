@@ -202,6 +202,7 @@ class Canvas {
   shapes: ICanvasShapes;
   sheetDimensions: IDimensions;
   sheetViewportDimensions: IDimensions;
+  cellsMap: Map<CellId, Group>;
   eventEmitter: EventEmitter;
   options: IOptions;
   toolbar?: Toolbar;
@@ -211,6 +212,7 @@ class Canvas {
     this.styles = merge({}, defaultCanvasStyles, params.styles);
     this.options = params.options;
     this.toolbar = params.toolbar;
+    this.cellsMap = new Map();
 
     const that = this;
 
@@ -291,8 +293,54 @@ class Canvas {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
 
+    this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
+
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
+
+  toolbarOnChange = (name: string, value: any) => {
+    const selectedCells = this.selector.selectedCells;
+
+    switch (name) {
+      case 'backgroundColor': {
+        selectedCells.forEach((selectedCell) => {
+          const isFrozenRow = this.row.getIsFrozen(
+            selectedCell.attrs.start.row
+          );
+          const isFrozenCol = this.col.getIsFrozen(
+            selectedCell.attrs.start.col
+          );
+          const clientRect = selectedCell.getClientRect();
+
+          const cell = new Group({
+            x: clientRect.x,
+            y: clientRect.y,
+          });
+          const rect = new Rect({
+            fill: value,
+            width: clientRect.width,
+            height: clientRect.height,
+          });
+
+          cell.add(rect);
+
+          this.cellsMap.set(selectedCell.attrs.id, cell);
+
+          if (isFrozenRow && isFrozenCol) {
+            this.scrollGroups.xySticky.add(cell);
+          } else if (isFrozenRow) {
+            this.scrollGroups.ySticky.add(cell);
+          } else if (isFrozenCol) {
+            this.scrollGroups.xSticky.add(cell);
+          } else {
+            this.scrollGroups.main.add(cell);
+          }
+          cell.zIndex(selectedCell.zIndex() + 2);
+        });
+        break;
+      }
+    }
+  };
 
   updateSheetDimensions() {
     this.sheetDimensions.width = this.col.getTotalSize();

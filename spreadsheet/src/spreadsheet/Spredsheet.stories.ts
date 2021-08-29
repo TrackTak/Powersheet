@@ -15,10 +15,14 @@ const buildSpreadsheet = (args: IOptions) => {
   const spreadsheet = document.createElement('div');
   const registeredFunctionNames =
     HyperFormula.getRegisteredFunctionNames('enGB');
-  const toolbar = new Toolbar(registeredFunctionNames);
-
   const eventEmitter = new EventEmitter();
   const options = args;
+
+  const toolbar = new Toolbar({
+    registeredFunctionNames,
+    options,
+    eventEmitter,
+  });
 
   const canvas = new Canvas({
     toolbar,

@@ -10,6 +10,9 @@ const events = {
     vertical: 'swv-scroll',
     horizontal: 'swh-scroll',
   },
+  toolbar: {
+    change: 't-change',
+  },
   resize: {
     row: {
       start: 'rr-start',

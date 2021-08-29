@@ -121,8 +121,6 @@ class Selector {
         this.removeSelectedCells(false);
 
         this.selectCells(cells);
-
-        this.selectedFirstCell?.moveToTop();
       }
     }
   };

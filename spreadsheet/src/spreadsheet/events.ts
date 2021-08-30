@@ -1,4 +1,7 @@
 const events = {
+  canvas: {
+    load: 'c-load',
+  },
   scroll: {
     vertical: 'sv-scroll',
     horizontal: 'sh-scroll',
@@ -18,6 +21,10 @@ const events = {
       move: 'rc-move',
       end: 'rc-end',
     },
+  },
+  merge: {
+    add: 'm-add',
+    unMerge: 'm-unMerge',
   },
   selector: {
     selectCells: 's-selectCells',

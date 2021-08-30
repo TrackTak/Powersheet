@@ -1,14 +1,11 @@
-import EventEmitter from 'eventemitter3';
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
 import { KonvaEventObject } from 'konva/lib/Node';
-import { Line, LineConfig } from 'konva/lib/shapes/Line';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Line } from 'konva/lib/shapes/Line';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import { ISizes } from '../../options';
-import { IDimensions, ILayers } from './Canvas';
-import { ICanvasStyles } from './canvasStyles';
+import Canvas from './Canvas';
+import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -16,55 +13,23 @@ interface IShapes {
   resizeMarker: Rect;
 }
 
-interface IFunctions {
-  axis: 'y' | 'x';
-  size: 'height' | 'width';
-}
-
-interface ISizeOptions {
-  minSize: number;
-  defaultSize: number;
-  sizes: ISizes;
-}
-
 class Resizer {
-  public shapes!: IShapes;
+  shapes!: IShapes;
   private resizeStartPos: Vector2d;
   private resizePosition: Vector2d;
-  private functions: IFunctions;
 
   constructor(
-    private type: 'row' | 'col',
-    private layers: ILayers,
-    private headerDimensions: IDimensions,
-    private styles: ICanvasStyles,
-    private resizeGuideLineConfig: RectConfig,
-    private resizeLineConfig: LineConfig,
-    private sizeOptions: ISizeOptions,
-    private groups: Group[],
-    private draw: (index: number) => void,
-    private eventEmitter: EventEmitter
+    private canvas: Canvas,
+    private type: RowColType,
+    private isCol: boolean,
+    private functions: IRowColFunctions,
+    private headerGroupMap: Map<HeaderGroupId, Group>
   ) {
-    this.layers = layers;
+    this.canvas = canvas;
     this.type = type;
-    this.functions =
-      this.type === 'row'
-        ? {
-            axis: 'y',
-            size: 'height',
-          }
-        : {
-            axis: 'x',
-            size: 'width',
-          };
-    this.headerDimensions = headerDimensions;
-    this.styles = styles;
-    this.resizeGuideLineConfig = resizeGuideLineConfig;
-    this.resizeLineConfig = resizeLineConfig;
-    this.sizeOptions = sizeOptions;
-    this.groups = groups;
-    this.draw = draw;
-    this.eventEmitter = eventEmitter;
+    this.isCol = isCol;
+    this.functions = functions;
+    this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
       x: 0,
@@ -76,26 +41,35 @@ class Resizer {
       y: 0,
     };
 
-    this.create();
-  }
-
-  private create() {
     this.shapes = {
       resizeMarker: new Rect({
-        ...this.headerDimensions,
-        ...(this.type === 'row'
-          ? this.styles.rowResizeMarker
-          : this.styles.colResizeMarker),
+        ...this.canvas.getViewportVector(),
       }),
       resizeGuideLine: new Line({
-        ...this.resizeGuideLineConfig,
-        ...this.styles.resizeGuideLine,
+        ...this.canvas.styles.resizeGuideLine,
       }),
       resizeLine: new Line({
-        ...this.resizeLineConfig,
-        ...this.styles.resizeLine,
+        ...this.canvas.styles.resizeLine,
       }),
     };
+
+    if (this.isCol) {
+      this.shapes.resizeMarker.setAttrs(this.canvas.styles.colResizeMarker);
+      this.shapes.resizeLine.points([
+        0,
+        0,
+        0,
+        this.canvas.getViewportVector().y,
+      ]);
+    } else {
+      this.shapes.resizeMarker.setAttrs(this.canvas.styles.rowResizeMarker);
+      this.shapes.resizeLine.points([
+        0,
+        0,
+        this.canvas.getViewportVector().x,
+        0,
+      ]);
+    }
 
     this.shapes.resizeLine.on('dragstart', this.resizeLineDragStart);
     this.shapes.resizeLine.on('dragmove', this.resizeLineDragMove);
@@ -107,20 +81,21 @@ class Resizer {
 
     this.shapes.resizeLine.cache();
 
-    this.layers.mainLayer.add(this.shapes.resizeMarker);
-    this.layers.mainLayer.add(this.shapes.resizeLine);
-    this.layers.mainLayer.add(this.shapes.resizeGuideLine);
+    this.canvas.layers.mainLayer.add(this.shapes.resizeMarker);
+    this.canvas.layers.mainLayer.add(this.shapes.resizeLine);
+    this.canvas.layers.mainLayer.add(this.shapes.resizeGuideLine);
   }
 
-  destroy() {
-    Object.values(this.shapes).forEach((shape: Node) => {
-      shape.destroy();
-    });
+  setResizeGuideLinePoints() {
+    this.shapes.resizeGuideLine.points(
+      this.isCol
+        ? [0, this.canvas.getViewportVector().y, 0, this.canvas.stage.height()]
+        : [this.canvas.getViewportVector().x, 0, this.canvas.stage.width(), 0]
+    );
   }
 
   showResizeMarker(target: Line) {
-    document.body.style.cursor =
-      this.type === 'row' ? 'row-resize' : 'col-resize';
+    document.body.style.cursor = this.isCol ? 'col-resize' : 'row-resize';
 
     const axisAmount =
       target.parent![this.functions.axis]() +
@@ -136,9 +111,19 @@ class Resizer {
   }
 
   showGuideLine(target: Line) {
-    const axisAmount =
-      target.parent![this.functions.axis]() + target[this.functions.axis]();
-    this.shapes.resizeGuideLine[this.functions.axis](axisAmount);
+    let x = 0;
+    let y = 0;
+
+    if (this.isCol) {
+      x = target.parent!.x() + target.x();
+      y = this.canvas.layers.mainLayer.y() * -1;
+    } else {
+      x = this.canvas.layers.mainLayer.x() * -1;
+      y = target.parent!.y() + target.y();
+    }
+
+    this.shapes.resizeGuideLine.x(x);
+    this.shapes.resizeGuideLine.y(y);
     this.shapes.resizeGuideLine.show();
   }
 
@@ -147,16 +132,18 @@ class Resizer {
   }
 
   resize(index: number, newSize: number) {
-    const size = this.sizeOptions.sizes[index] ?? this.sizeOptions.defaultSize;
+    const size =
+      this.canvas.options[this.type].sizes[index] ??
+      this.canvas.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sizeOptions.sizes[index] = newSize;
+      this.canvas.options[this.type].sizes[index] = newSize;
 
-      this.draw(index);
+      this.canvas[this.type].draw(index);
 
-      for (let i = index + 1; i < this.groups.length; i++) {
-        const item = this.groups[i];
+      for (let i = index + 1; i < this.headerGroupMap.size; i++) {
+        const item = this.headerGroupMap.get(i);
 
         if (item) {
           const newAxis = item[this.functions.axis]() + sizeChange;
@@ -170,23 +157,25 @@ class Resizer {
   resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
     this.resizeStartPos = e.target.getPosition();
 
-    this.eventEmitter.emit(events.resize[this.type].start, e);
+    this.shapes.resizeGuideLine.moveToTop();
+
+    this.canvas.eventEmitter.emit(events.resize[this.type].start, e);
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.sizeOptions.minSize;
-    let newAxis = this.type === 'row' ? position.y : position.x;
+    const minSize = this.canvas.options[this.type].minSize;
+    let newAxis = this.isCol ? position.x : position.y;
 
     const getNewPosition = () => {
       const newPosition = {
         ...position,
       };
-      if (this.type === 'row') {
-        newPosition.y = newAxis;
-      } else {
+      if (this.isCol) {
         newPosition.x = newAxis;
+      } else {
+        newPosition.y = newAxis;
       }
       return newPosition;
     };
@@ -205,7 +194,7 @@ class Resizer {
     // Stops moving this element completely
     target.setPosition(this.resizeStartPos);
 
-    this.eventEmitter.emit(events.resize[this.type].move, e, newAxis);
+    this.canvas.eventEmitter.emit(events.resize[this.type].move, e, newAxis);
   };
 
   resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
@@ -215,9 +204,9 @@ class Resizer {
     const index = target.parent!.attrs.index;
 
     const position = this.resizePosition;
-    const minSize = this.sizeOptions.minSize;
+    const minSize = this.canvas.options[this.type].minSize;
 
-    const axis = this.type === 'row' ? position.y : position.x;
+    const axis = this.isCol ? position.x : position.y;
 
     this.hideGuideLine();
     this.hideResizeMarker();
@@ -226,7 +215,21 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
+    this.canvas.updateSheetDimensions();
+    this.canvas.selector.removeSelectedCells();
+    this.canvas[this.type].scrollBar.updateCustomSizePositions();
+
+    for (
+      let index = this.canvas[this.type].sheetViewportPosition.x;
+      index < this.canvas[this.type].sheetViewportPosition.y;
+      index++
+    ) {
+      this.canvas[this.type].draw(index);
+    }
+
+    this.canvas.merger.updateMergedCells();
+
+    this.canvas.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
   };
 
   resizeLineOnMousedown = (e: KonvaEventObject<Event>) => {

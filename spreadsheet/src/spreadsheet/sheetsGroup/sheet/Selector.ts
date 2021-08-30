@@ -4,7 +4,7 @@ import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Canvas from './Canvas';
+import Canvas, { convertFromCellsToCellsRange } from './Canvas';
 import { getCellId } from './Merger';
 
 export interface ISelectedRowCols {
@@ -15,6 +15,7 @@ export interface ISelectedRowCols {
 interface IShapes {
   selection: Rect;
   selectionFirstCell: Rect;
+  selectionBorder: Rect;
 }
 
 interface ISelectionArea {
@@ -23,6 +24,12 @@ interface ISelectionArea {
 }
 
 interface ISelectedCell extends Group {}
+
+export function* iterateSelection(selection: Vector2d) {
+  for (let index = selection.x; index <= selection.y; index++) {
+    yield index;
+  }
+}
 
 class Selector {
   shapes!: IShapes;
@@ -48,6 +55,9 @@ class Selector {
     this.selectedFirstCell = null;
 
     this.shapes = {
+      selectionBorder: new Rect({
+        ...this.canvas.styles.selectionBorder,
+      }),
       selectionFirstCell: new Rect({
         ...this.canvas.styles.selectionFirstCell,
         firstCell: true,
@@ -127,6 +137,8 @@ class Selector {
 
   onSheetMouseUp = () => {
     this.isInSelectionMode = false;
+
+    this.setSelectionBorder();
   };
 
   startSelection(cells: ISelectedCell[]) {
@@ -168,8 +180,8 @@ class Selector {
               isMerged: true,
               x: mergedCell.x(),
               y: mergedCell.y(),
-              start: mergedCell.attrs.start,
-              end: mergedCell.attrs.end,
+              row: mergedCell.attrs.row,
+              col: mergedCell.attrs.col,
             };
 
             group.setAttrs(groupConfig);
@@ -185,13 +197,13 @@ class Selector {
         } else {
           const groupConfig: NodeConfig = {
             id,
-            start: {
-              row: rowGroup.attrs.index,
-              col: colGroup.attrs.index,
+            row: {
+              x: rowGroup.attrs.index,
+              y: rowGroup.attrs.index,
             },
-            end: {
-              row: rowGroup.attrs.index,
-              col: colGroup.attrs.index,
+            col: {
+              x: colGroup.attrs.index,
+              y: colGroup.attrs.index,
             },
             x: colGroup.x(),
             y: rowGroup.y(),
@@ -220,6 +232,7 @@ class Selector {
       });
 
     this.selectedCells = [];
+    this.shapes.selectionBorder.destroy();
 
     if (this.selectedFirstCell && removeFirstCell) {
       this.selectedFirstCell.destroy();
@@ -227,10 +240,14 @@ class Selector {
     }
   }
 
+  setOpacity(selectedCell: ISelectedCell) {
+    selectedCell.opacity(0.3);
+  }
+
   selectCells(cells: ISelectedCell[]) {
     cells.forEach((cell) => {
-      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
-      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
+      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.row.x);
+      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.col.x);
 
       this.selectedCells.push(cell);
 
@@ -251,11 +268,46 @@ class Selector {
 
         cell.zIndex(mergedCell.zIndex() + 1);
       } else {
-        cell.moveToBottom();
+        const existingCell = this.canvas.cellsMap.get(cell.id());
+
+        if (existingCell) {
+          cell.zIndex(existingCell.zIndex() + 2);
+          this.setOpacity(cell);
+        } else {
+          cell.moveToBottom();
+        }
       }
     });
 
     this.canvas.eventEmitter.emit(events.selector.selectCells, cells);
+  }
+
+  setSelectionBorder() {
+    if (!this.selectedCells.length) return;
+
+    const { row, col } = convertFromCellsToCellsRange(this.selectedCells);
+
+    let totalWidth = 0;
+    let totalHeight = 0;
+
+    for (const ri of iterateSelection(row)) {
+      totalHeight += this.canvas.row.rowColGroupMap.get(ri)!.height();
+    }
+
+    for (const ci of iterateSelection(col)) {
+      totalWidth += this.canvas.col.rowColGroupMap.get(ci)!.width();
+    }
+
+    const config: RectConfig = {
+      x: this.selectedCells[0].x(),
+      y: this.selectedCells[0].y(),
+      width: totalWidth,
+      height: totalHeight,
+    };
+
+    this.shapes.selectionBorder.setAttrs(config);
+
+    this.canvas.scrollGroups.main.add(this.shapes.selectionBorder);
   }
 }
 

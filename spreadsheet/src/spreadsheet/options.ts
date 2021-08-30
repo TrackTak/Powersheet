@@ -1,17 +1,13 @@
+import { Vector2d } from 'konva/lib/types';
+
 export interface IFrozenCells {
   row?: number;
   col?: number;
 }
 
 export interface IMergedCells {
-  start: {
-    row: number;
-    col: number;
-  };
-  end: {
-    row: number;
-    col: number;
-  };
+  row: Vector2d;
+  col: Vector2d;
 }
 
 export interface ISizes {

@@ -70,7 +70,6 @@ export const sharedCanvasStyles = {
   selection: {
     ...performanceProperties,
     stroke: '#0057ff',
-    fill: '#EDF3FF',
   },
 };
 
@@ -137,5 +136,7 @@ export const defaultCanvasStyles: ICanvasStyles = {
   selection: {
     ...sharedCanvasStyles.selection,
     strokeWidth: 0,
+    opacity: 0.1,
+    fill: '#4b89ff',
   },
 };

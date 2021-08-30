@@ -16,7 +16,7 @@ import {
   performanceProperties,
 } from './canvasStyles';
 import { IOptions } from '../../options';
-import Selector from './Selector';
+import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
@@ -76,6 +76,25 @@ export interface ICustomSizes {
 export type CellId = string;
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const convertFromCellsToCellsRange = (groups: Group[]) => {
+  const getMin = (property: string) =>
+    Math.min(...groups.map((o) => o.attrs[property].x));
+  const getMax = (property: string) =>
+    Math.max(...groups.map((o) => o.attrs[property].y));
+
+  const row = {
+    x: getMin('row'),
+    y: getMax('row'),
+  };
+
+  const col = {
+    x: getMin('col'),
+    y: getMax('col'),
+  };
+
+  return { row, col };
+};
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
@@ -300,21 +319,26 @@ class Canvas {
 
   toolbarOnChange = (name: string, value: any) => {
     const selectedCells = this.selector.selectedCells;
+    console.log(selectedCells);
+    console.log(this.cellsMap);
 
     switch (name) {
       case 'backgroundColor': {
         selectedCells.forEach((selectedCell) => {
-          const isFrozenRow = this.row.getIsFrozen(
-            selectedCell.attrs.start.row
-          );
-          const isFrozenCol = this.col.getIsFrozen(
-            selectedCell.attrs.start.col
-          );
+          const row = selectedCell.attrs.row;
+          const col = selectedCell.attrs.col;
+
+          const id = selectedCell.id();
+          const isFrozenRow = this.row.getIsFrozen(row.x);
+          const isFrozenCol = this.col.getIsFrozen(col.x);
           const clientRect = selectedCell.getClientRect();
 
           const cell = new Group({
+            ...performanceProperties,
             x: clientRect.x,
             y: clientRect.y,
+            row,
+            col,
           });
           const rect = new Rect({
             fill: value,
@@ -323,6 +347,10 @@ class Canvas {
           });
 
           cell.add(rect);
+
+          if (this.cellsMap.has(id)) {
+            this.cellsMap.get(id)!.destroy();
+          }
 
           this.cellsMap.set(selectedCell.attrs.id, cell);
 
@@ -335,7 +363,10 @@ class Canvas {
           } else {
             this.scrollGroups.main.add(cell);
           }
-          cell.zIndex(selectedCell.zIndex() + 2);
+
+          this.selector.setOpacity(selectedCell);
+
+          cell.moveToBottom();
         });
         break;
       }
@@ -399,31 +430,30 @@ class Canvas {
       y: newEnd.x,
     });
 
-    for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
-      for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
-        const mergedCellId = getCellId(ri, ci);
-
+    for (const ri of iterateSelection(rowIndexes)) {
+      for (const ci of iterateSelection(colIndexes)) {
+        const existingCellId = getCellId(ri, ci);
         const mergedCell =
-          this.merger.associatedMergedCellMap.get(mergedCellId);
+          this.merger.associatedMergedCellMap.get(existingCellId);
 
         if (mergedCell) {
-          const start = mergedCell.attrs.start;
-          const end = mergedCell.attrs.end;
+          const row = mergedCell.attrs.row;
+          const col = mergedCell.attrs.col;
 
-          if (start.col < colIndexes.x) {
-            colIndexes.x = start.col;
+          if (col.x < colIndexes.x) {
+            colIndexes.x = col.x;
           }
 
-          if (start.row < rowIndexes.x) {
-            rowIndexes.x = start.row;
+          if (row.x < rowIndexes.x) {
+            rowIndexes.x = row.x;
           }
 
-          if (end.col > colIndexes.y) {
-            colIndexes.y = end.col;
+          if (col.y > colIndexes.y) {
+            colIndexes.y = col.y;
           }
 
-          if (end.row > rowIndexes.y) {
-            rowIndexes.y = end.row;
+          if (row.y > rowIndexes.y) {
+            rowIndexes.y = row.y;
           }
         }
       }

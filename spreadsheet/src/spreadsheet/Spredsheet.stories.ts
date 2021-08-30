@@ -87,13 +87,13 @@ MergedCells.args = {
   ...defaultOptions,
   mergedCells: [
     {
-      start: {
-        row: 3,
-        col: 1,
+      row: {
+        x: 3,
+        y: 4,
       },
-      end: {
-        row: 4,
-        col: 2,
+      col: {
+        x: 1,
+        y: 2,
       },
     },
   ],

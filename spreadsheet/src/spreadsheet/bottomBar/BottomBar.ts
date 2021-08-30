@@ -7,17 +7,17 @@ import rightIcon from '../../icons/right-icon.svg';
 export interface IBottomBar extends IConstructorParams {}
 
 interface IConstructorParams {
-  addSheetButton: HTMLButtonElement;
-  menuSheetButton: HTMLButtonElement;
+  addSheetTab: HTMLButtonElement;
+  menuSheetHeader: HTMLButtonElement;
 }
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
-  addSheetButton: HTMLButtonElement;
-  menuSheetButton: HTMLButtonElement;
-  buttonTabs: HTMLButtonElement[];
-  buttonTabs2: HTMLButtonElement[];
-  dropdownMenuTab: HTMLDivElement;
-  menuSheetDropdownBox: HTMLDivElement;
+  addSheetTab: HTMLButtonElement;
+  menuSheetHeader: HTMLButtonElement;
+  sheetTabs: HTMLButtonElement[];
+  allSheetsMenu: HTMLButtonElement[];
+  contextSheetTabMenu: HTMLDivElement;
+  menuSheetDropdownContent: HTMLDivElement;
   scrollSlider: HTMLDivElement;
   globalSheetIndex: number;
   tabContainerMaxWidth: number;
@@ -27,13 +27,13 @@ class BottomBar implements IBottomBar {
 
   constructor(params?: IConstructorParams) {
     this.globalSheetIndex = 1;
-    this.addSheetButton = params?.addSheetButton ?? this.createAddSheetButton();
-    this.menuSheetButton =
-      params?.menuSheetButton ?? this.createMenuSheetButton();
-    this.buttonTabs = [this.createTabButton()];
-    this.buttonTabs2 = [this.createTabButton2()];
-    this.dropdownMenuTab = this.dropdownMenu();
-    this.menuSheetDropdownBox = this.menuSheetDropdown();
+    this.addSheetTab = params?.addSheetTab ?? this.createAddSheetTab();
+    this.menuSheetHeader =
+      params?.menuSheetHeader ?? this.createMenuSheetHeader();
+    this.sheetTabs = [this.createSheetTab()];
+    this.allSheetsMenu = [this.createAllSheetsMenu()];
+    this.contextSheetTabMenu = this.createContextSheetTabMenu();
+    this.menuSheetDropdownContent = this.createMenuSheetDropdownContent();
     this.scrollSlider = this.createScrollSlider();
     this.tabContainer = document.createElement('div');
     this.scrollsliderContainerTab = document.createElement('div');
@@ -53,7 +53,7 @@ class BottomBar implements IBottomBar {
 
     this.element.appendChild(buttonWrapper);
 
-    buttonWrapper.appendChild(this.addSheetButton);
+    buttonWrapper.appendChild(this.addSheetTab);
 
     const menuSheetContainer = document.createElement('div');
     menuSheetContainer.className = 'menusheet-container';
@@ -67,30 +67,30 @@ class BottomBar implements IBottomBar {
     this.element.appendChild(this.tabContainer);
     this.element.appendChild(this.scrollSlider);
 
-    this.scrollsliderContainerTab.appendChild(this.buttonTabs[0]);
-    menuSheetContainer.appendChild(this.menuSheetButton);
-    menuSheetContainer.appendChild(this.menuSheetDropdownBox);
-    this.menuSheetDropdownBox.appendChild(this.buttonTabs2[0]);
+    this.scrollsliderContainerTab.appendChild(this.sheetTabs[0]);
+    menuSheetContainer.appendChild(this.menuSheetHeader);
+    menuSheetContainer.appendChild(this.menuSheetDropdownContent);
+    this.menuSheetDropdownContent.appendChild(this.allSheetsMenu[0]);
 
-    this.addSheetButton.addEventListener('click', () => {
+    this.addSheetTab.addEventListener('click', () => {
       this.globalSheetIndex += 1;
-      const tabSheetButton = this.createTabButton();
+      const tabSheets = this.createSheetTab();
 
-      this.buttonTabs.push(tabSheetButton);
+      this.sheetTabs.push(tabSheets);
 
       this.scrollsliderContainerTab.innerHTML = '';
-      this.menuSheetDropdownBox.innerHTML = '';
+      this.menuSheetDropdownContent.innerHTML = '';
 
-      this.buttonTabs.forEach((buttonTab) => {
-        this.scrollsliderContainerTab.appendChild(buttonTab);
+      this.sheetTabs.forEach((sheetTab) => {
+        this.scrollsliderContainerTab.appendChild(sheetTab);
       });
 
-      const menuSheetButton = this.createTabButton2();
+      const menuSheetButton = this.createAllSheetsMenu();
 
-      this.buttonTabs2.push(menuSheetButton);
+      this.allSheetsMenu.push(menuSheetButton);
 
-      this.buttonTabs2.forEach((buttonTab) => {
-        this.menuSheetDropdownBox.appendChild(buttonTab);
+      this.allSheetsMenu.forEach((sheet) => {
+        this.menuSheetDropdownContent.appendChild(sheet);
       });
     });
   }
@@ -134,9 +134,9 @@ class BottomBar implements IBottomBar {
     });
 
     rightScrollSliderButton.addEventListener('click', () => {
-      const f = this.buttonTabs[this.buttonTabs.length - 1];
+      const scrollSliderSheetTabs = this.sheetTabs[this.sheetTabs.length - 1];
 
-      const totalScrollWidth = this.buttonTabs.reduce((prev, curr) => {
+      const totalScrollWidth = this.sheetTabs.reduce((prev, curr) => {
         return (prev += curr.getBoundingClientRect().width);
       }, 0);
 
@@ -156,76 +156,76 @@ class BottomBar implements IBottomBar {
     return scrollSlider;
   }
 
-  createTabButton() {
-    const buttonTab = document.createElement('div');
-    buttonTab.className = 'btn-tab';
+  createSheetTab() {
+    const sheetTab = document.createElement('div');
+    sheetTab.className = 'btn-tab';
 
     const spanElement = document.createElement('span');
     spanElement.className = 'btn-tab-span';
 
     spanElement.textContent = `Sheet${this.globalSheetIndex}`;
-    buttonTab.appendChild(spanElement);
+    sheetTab.appendChild(spanElement);
 
-    const containerButtonTab = document.createElement('div');
-    containerButtonTab.className = 'container-btn-tab';
-    containerButtonTab.dataset.globalSheetIndex =
+    const containerSheetTab = document.createElement('div');
+    containerSheetTab.className = 'container-btn-tab';
+    containerSheetTab.dataset.globalSheetIndex =
       this.globalSheetIndex.toString();
 
-    containerButtonTab.appendChild(buttonTab);
+    containerSheetTab.appendChild(sheetTab);
 
-    buttonTab.addEventListener('mouseup', (e) => {
+    sheetTab.addEventListener('mouseup', (e) => {
       const buttonPressed = e.button;
       if (buttonPressed === 2) {
         this.currentDropdownTab = e.target.parentElement;
 
-        e.target.parentElement.appendChild(this.dropdownMenuTab);
-        this.dropdownMenuTab.style.display = 'block';
+        e.target.parentElement.appendChild(this.contextSheetTabMenu);
+        this.contextSheetTabMenu.style.display = 'block';
       }
     });
 
-    buttonTab.addEventListener('dblclick', () => {
+    sheetTab.addEventListener('dblclick', () => {
       spanElement.contentEditable = 'true';
       spanElement.focus();
     });
 
     spanElement.addEventListener('blur', () => {
-      const buttonTab2 = this.buttonTabs2.find(
+      const sheetMenu = this.allSheetsMenu.find(
         (x) =>
           x.dataset.globalSheetIndex ===
-          containerButtonTab.dataset.globalSheetIndex
+          containerSheetTab.dataset.globalSheetIndex
       )!;
 
-      buttonTab2.textContent = spanElement.textContent;
+      sheetMenu.textContent = spanElement.textContent;
     });
 
     window.addEventListener('click', (e) => {
-      const isClickInside = this.dropdownMenuTab.contains(e.target);
+      const isClickInside = this.contextSheetTabMenu.contains(e.target);
       if (isClickInside) {
       } else {
-        this.dropdownMenuTab.style.display = 'none';
+        this.contextSheetTabMenu.style.display = 'none';
       }
     });
 
-    buttonTab.addEventListener('contextmenu', (e) => {
-      this.menuSheetDropdownBox.style.display = 'none';
+    sheetTab.addEventListener('contextmenu', (e) => {
+      this.menuSheetDropdownContent.style.display = 'none';
       e.preventDefault();
     });
 
-    return containerButtonTab;
+    return containerSheetTab;
   }
 
-  dropdownMenu() {
-    const menu = document.createElement('div');
-    menu.className = 'dropdown-menu';
+  createContextSheetTabMenu() {
+    const contextSheetTabMenu = document.createElement('div');
+    contextSheetTabMenu.className = 'dropdown-menu';
 
-    const menuItem = document.createElement('div');
-    menuItem.className = 'dropdown-menuitem';
+    const sheetTabMenuItem = document.createElement('div');
+    sheetTabMenuItem.className = 'dropdown-menuitem';
 
-    const deleteButton = document.createElement('button');
-    deleteButton.className = 'btn-menuitem';
-    deleteButton.textContent = 'Delete';
+    const deleteSheetTab = document.createElement('button');
+    deleteSheetTab.className = 'btn-menuitem';
+    deleteSheetTab.textContent = 'Delete';
 
-    deleteButton.addEventListener('click', (e) => {
+    deleteSheetTab.addEventListener('click', (e) => {
       let element = e.target;
 
       while (!element.classList.contains('container-btn-tab')) {
@@ -235,18 +235,18 @@ class BottomBar implements IBottomBar {
       const elementIndex = [...element.parentElement.children].indexOf(element);
       const menuSheetDropdown = document.querySelector('.menusheet-dropdown')!;
 
-      this.buttonTabs.splice(elementIndex, 1);
-      this.buttonTabs2.splice(elementIndex, 1);
+      this.sheetTabs.splice(elementIndex, 1);
+      this.allSheetsMenu.splice(elementIndex, 1);
 
       menuSheetDropdown.children[elementIndex].remove();
       element.remove();
     });
 
-    const renameButton = document.createElement('button');
-    renameButton.className = 'btn-menuitem';
-    renameButton.textContent = 'Rename';
+    const renameSheetTab = document.createElement('button');
+    renameSheetTab.className = 'btn-menuitem';
+    renameSheetTab.textContent = 'Rename';
 
-    renameButton.addEventListener('click', () => {
+    renameSheetTab.addEventListener('click', () => {
       const contentEditable =
         this.currentDropdownTab!.querySelector('.btn-tab-span');
 
@@ -254,14 +254,14 @@ class BottomBar implements IBottomBar {
       contentEditable.focus();
     });
 
-    menu.appendChild(menuItem);
-    menuItem.appendChild(deleteButton);
-    menuItem.appendChild(renameButton);
+    contextSheetTabMenu.appendChild(sheetTabMenuItem);
+    sheetTabMenuItem.appendChild(deleteSheetTab);
+    sheetTabMenuItem.appendChild(renameSheetTab);
 
-    return menu;
+    return contextSheetTabMenu;
   }
 
-  createAddSheetButton() {
+  createAddSheetTab() {
     const buttonPlus = document.createElement('button');
     buttonPlus.className = 'btn-img';
 
@@ -286,30 +286,30 @@ class BottomBar implements IBottomBar {
     return buttonPlus;
   }
 
-  createMenuSheetButton() {
-    const buttonMenuSheet = document.createElement('button');
-    buttonMenuSheet.className = 'btn-img';
+  createMenuSheetHeader() {
+    const menuSheetHeader = document.createElement('button');
+    menuSheetHeader.className = 'btn-img';
 
-    buttonMenuSheet.addEventListener('click', (e) => {
+    menuSheetHeader.addEventListener('click', (e) => {
       const sheetPressed = e.button;
       if (sheetPressed === 0) {
-        this.menuSheetDropdownBox.style.display = 'flex';
+        this.menuSheetDropdownContent.style.display = 'flex';
       }
     });
 
     window.addEventListener(
       'click',
       (e) => {
-        const isClickInside = this.menuSheetDropdownBox.contains(e.target);
+        const isClickInside = this.menuSheetDropdownContent.contains(e.target);
         if (isClickInside) {
         } else {
-          this.menuSheetDropdownBox.style.display = 'none';
+          this.menuSheetDropdownContent.style.display = 'none';
         }
       },
       { capture: true }
     );
 
-    buttonMenuSheet.addEventListener('contextmenu', (e) => {
+    menuSheetHeader.addEventListener('contextmenu', (e) => {
       e.preventDefault();
     });
 
@@ -319,28 +319,28 @@ class BottomBar implements IBottomBar {
     menuSheetImage.alt = 'sheet';
     menuSheetImage.className = 'sheet-icon';
 
-    buttonMenuSheet.appendChild(menuSheetImage);
+    menuSheetHeader.appendChild(menuSheetImage);
 
-    return buttonMenuSheet;
+    return menuSheetHeader;
   }
 
-  menuSheetDropdown() {
-    const menuSheetDropdown = document.createElement('div');
+  createMenuSheetDropdownContent() {
+    const menuSheetDropdownContent = document.createElement('div');
 
-    menuSheetDropdown.className = 'menusheet-dropdown';
-    menuSheetDropdown.style.display = 'none';
+    menuSheetDropdownContent.className = 'menusheet-dropdown';
+    menuSheetDropdownContent.style.display = 'none';
 
-    return menuSheetDropdown;
+    return menuSheetDropdownContent;
   }
 
-  createTabButton2() {
-    const buttonTab2 = document.createElement('button');
-    buttonTab2.className = 'btn-tab-2';
-    buttonTab2.dataset.globalSheetIndex = this.globalSheetIndex.toString();
+  createAllSheetsMenu() {
+    const allSheetsMenu = document.createElement('button');
+    allSheetsMenu.className = 'btn-tab-2';
+    allSheetsMenu.dataset.globalSheetIndex = this.globalSheetIndex.toString();
 
-    buttonTab2.textContent = `Sheet${this.globalSheetIndex}`;
+    allSheetsMenu.textContent = `Sheet${this.globalSheetIndex}`;
 
-    return buttonTab2;
+    return allSheetsMenu;
   }
 }
 

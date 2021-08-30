@@ -48,30 +48,6 @@ const defaultStoryArgs: IOptions = {
   devMode: true,
 };
 
-const MergeTemplate: Story<IOptions> = (args) => {
-  const { spreadsheet, sheet } = buildSpreadsheet(args);
-
-  const merge = document.createElement('button');
-
-  merge.innerHTML = 'Merge Cell';
-  merge.onclick = () => {
-    sheet.merger.mergeSelectedCells();
-  };
-
-  const unmerge = document.createElement('button');
-
-  unmerge.innerHTML = 'Unmerge Cell';
-  unmerge.onclick = () => {
-    sheet.merger.unMergeSelectedCells();
-  };
-
-  spreadsheet.appendChild(merge);
-  spreadsheet.appendChild(unmerge);
-  spreadsheet.appendChild(sheet.container);
-
-  return spreadsheet;
-};
-
 export const Default = Template.bind({});
 
 Default.args = defaultStoryArgs;
@@ -86,7 +62,7 @@ FrozenCells.args = {
   },
 };
 
-export const MergedCells = MergeTemplate.bind({});
+export const MergedCells = Template.bind({});
 
 MergedCells.args = {
   ...defaultStoryArgs,

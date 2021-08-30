@@ -1,5 +1,5 @@
 import { Story, Meta } from '@storybook/html';
-import Canvas from './sheetsGroup/sheet/Canvas';
+import Sheet from './sheetsGroup/sheet/Sheet';
 import EventEmitter from 'eventemitter3';
 import { defaultOptions, IOptions } from './options';
 import Toolbar from './toolbar/Toolbar';
@@ -24,17 +24,17 @@ const buildSpreadsheet = (args: IOptions) => {
     eventEmitter,
   });
 
-  const canvas = new Canvas({
+  const sheet = new Sheet({
     toolbar,
     options,
     eventEmitter,
   });
 
   spreadsheet.appendChild(toolbar.toolbarEl);
-  spreadsheet.appendChild(canvas.container);
+  spreadsheet.appendChild(sheet.container);
 
   return {
-    canvas,
+    sheet,
     spreadsheet,
   };
 };
@@ -43,38 +43,43 @@ const Template: Story<IOptions> = (args) => {
   return buildSpreadsheet(args).spreadsheet;
 };
 
+const defaultStoryArgs: IOptions = {
+  ...defaultOptions,
+  devMode: true,
+};
+
 const MergeTemplate: Story<IOptions> = (args) => {
-  const { spreadsheet, canvas } = buildSpreadsheet(args);
+  const { spreadsheet, sheet } = buildSpreadsheet(args);
 
   const merge = document.createElement('button');
 
   merge.innerHTML = 'Merge Cell';
   merge.onclick = () => {
-    canvas.merger.mergeSelectedCells();
+    sheet.merger.mergeSelectedCells();
   };
 
   const unmerge = document.createElement('button');
 
   unmerge.innerHTML = 'Unmerge Cell';
   unmerge.onclick = () => {
-    canvas.merger.unMergeSelectedCells();
+    sheet.merger.unMergeSelectedCells();
   };
 
   spreadsheet.appendChild(merge);
   spreadsheet.appendChild(unmerge);
-  spreadsheet.appendChild(canvas.container);
+  spreadsheet.appendChild(sheet.container);
 
   return spreadsheet;
 };
 
 export const Default = Template.bind({});
 
-Default.args = defaultOptions;
+Default.args = defaultStoryArgs;
 
 export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
-  ...defaultOptions,
+  ...defaultStoryArgs,
   frozenCells: {
     row: 0,
     col: 0,
@@ -84,7 +89,7 @@ FrozenCells.args = {
 export const MergedCells = MergeTemplate.bind({});
 
 MergedCells.args = {
-  ...defaultOptions,
+  ...defaultStoryArgs,
   mergedCells: [
     {
       row: {
@@ -102,15 +107,15 @@ MergedCells.args = {
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
-  ...defaultOptions,
+  ...defaultStoryArgs,
   col: {
-    ...defaultOptions.col,
+    ...defaultStoryArgs.col,
     sizes: {
       '3': 70,
     },
   },
   row: {
-    ...defaultOptions.row,
+    ...defaultStoryArgs.row,
     sizes: {
       '1': 250,
       '5': 100,

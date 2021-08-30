@@ -4,7 +4,7 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Canvas from './Canvas';
+import Sheet from './Sheet';
 import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
@@ -19,13 +19,13 @@ class Resizer {
   private resizePosition: Vector2d;
 
   constructor(
-    private canvas: Canvas,
+    private sheet: Sheet,
     private type: RowColType,
     private isCol: boolean,
     private functions: IRowColFunctions,
     private headerGroupMap: Map<HeaderGroupId, Group>
   ) {
-    this.canvas = canvas;
+    this.sheet = sheet;
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;
@@ -43,30 +43,30 @@ class Resizer {
 
     this.shapes = {
       resizeMarker: new Rect({
-        ...this.canvas.getViewportVector(),
+        ...this.sheet.getViewportVector(),
       }),
       resizeGuideLine: new Line({
-        ...this.canvas.styles.resizeGuideLine,
+        ...this.sheet.styles.resizeGuideLine,
       }),
       resizeLine: new Line({
-        ...this.canvas.styles.resizeLine,
+        ...this.sheet.styles.resizeLine,
       }),
     };
 
     if (this.isCol) {
-      this.shapes.resizeMarker.setAttrs(this.canvas.styles.colResizeMarker);
+      this.shapes.resizeMarker.setAttrs(this.sheet.styles.colResizeMarker);
       this.shapes.resizeLine.points([
         0,
         0,
         0,
-        this.canvas.getViewportVector().y,
+        this.sheet.getViewportVector().y,
       ]);
     } else {
-      this.shapes.resizeMarker.setAttrs(this.canvas.styles.rowResizeMarker);
+      this.shapes.resizeMarker.setAttrs(this.sheet.styles.rowResizeMarker);
       this.shapes.resizeLine.points([
         0,
         0,
-        this.canvas.getViewportVector().x,
+        this.sheet.getViewportVector().x,
         0,
       ]);
     }
@@ -81,16 +81,16 @@ class Resizer {
 
     this.shapes.resizeLine.cache();
 
-    this.canvas.layers.mainLayer.add(this.shapes.resizeMarker);
-    this.canvas.layers.mainLayer.add(this.shapes.resizeLine);
-    this.canvas.layers.mainLayer.add(this.shapes.resizeGuideLine);
+    this.sheet.layers.mainLayer.add(this.shapes.resizeMarker);
+    this.sheet.layers.mainLayer.add(this.shapes.resizeLine);
+    this.sheet.layers.mainLayer.add(this.shapes.resizeGuideLine);
   }
 
   setResizeGuideLinePoints() {
     this.shapes.resizeGuideLine.points(
       this.isCol
-        ? [0, this.canvas.getViewportVector().y, 0, this.canvas.stage.height()]
-        : [this.canvas.getViewportVector().x, 0, this.canvas.stage.width(), 0]
+        ? [0, this.sheet.getViewportVector().y, 0, this.sheet.stage.height()]
+        : [this.sheet.getViewportVector().x, 0, this.sheet.stage.width(), 0]
     );
   }
 
@@ -116,9 +116,9 @@ class Resizer {
 
     if (this.isCol) {
       x = target.parent!.x() + target.x();
-      y = this.canvas.layers.mainLayer.y() * -1;
+      y = this.sheet.layers.mainLayer.y() * -1;
     } else {
-      x = this.canvas.layers.mainLayer.x() * -1;
+      x = this.sheet.layers.mainLayer.x() * -1;
       y = target.parent!.y() + target.y();
     }
 
@@ -133,14 +133,14 @@ class Resizer {
 
   resize(index: number, newSize: number) {
     const size =
-      this.canvas.options[this.type].sizes[index] ??
-      this.canvas.options[this.type].defaultSize;
+      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.canvas.options[this.type].sizes[index] = newSize;
+      this.sheet.options[this.type].sizes[index] = newSize;
 
-      this.canvas[this.type].draw(index);
+      this.sheet[this.type].draw(index);
 
       for (let i = index + 1; i < this.headerGroupMap.size; i++) {
         const item = this.headerGroupMap.get(i);
@@ -159,13 +159,13 @@ class Resizer {
 
     this.shapes.resizeGuideLine.moveToTop();
 
-    this.canvas.eventEmitter.emit(events.resize[this.type].start, e);
+    this.sheet.emit(events.resize[this.type].start, e);
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.canvas.options[this.type].minSize;
+    const minSize = this.sheet.options[this.type].minSize;
     let newAxis = this.isCol ? position.x : position.y;
 
     const getNewPosition = () => {
@@ -194,7 +194,7 @@ class Resizer {
     // Stops moving this element completely
     target.setPosition(this.resizeStartPos);
 
-    this.canvas.eventEmitter.emit(events.resize[this.type].move, e, newAxis);
+    this.sheet.emit(events.resize[this.type].move, e, newAxis);
   };
 
   resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
@@ -204,7 +204,7 @@ class Resizer {
     const index = target.parent!.attrs.index;
 
     const position = this.resizePosition;
-    const minSize = this.canvas.options[this.type].minSize;
+    const minSize = this.sheet.options[this.type].minSize;
 
     const axis = this.isCol ? position.x : position.y;
 
@@ -215,21 +215,21 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.canvas.updateSheetDimensions();
-    this.canvas.selector.removeSelectedCells();
-    this.canvas[this.type].scrollBar.updateCustomSizePositions();
+    this.sheet.updateSheetDimensions();
+    this.sheet.selector.removeSelectedCells();
+    this.sheet[this.type].scrollBar.updateCustomSizePositions();
 
     for (
-      let index = this.canvas[this.type].sheetViewportPosition.x;
-      index < this.canvas[this.type].sheetViewportPosition.y;
+      let index = this.sheet[this.type].sheetViewportPosition.x;
+      index < this.sheet[this.type].sheetViewportPosition.y;
       index++
     ) {
-      this.canvas[this.type].draw(index);
+      this.sheet[this.type].draw(index);
     }
 
-    this.canvas.merger.updateMergedCells();
+    this.sheet.merger.updateMergedCells();
 
-    this.canvas.eventEmitter.emit(events.resize[this.type].end, e, index, axis);
+    this.sheet.emit(events.resize[this.type].end, e, index, axis);
   };
 
   resizeLineOnMousedown = (e: KonvaEventObject<Event>) => {

@@ -4,23 +4,24 @@ import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
-import styles from './Canvas.module.scss';
+import styles from './Sheet.module.scss';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import {
-  defaultCanvasStyles,
-  ICanvasStyles,
+  defaultStyles,
   IColHeaderConfig,
   IRowHeaderConfig,
+  IStyles,
   performanceProperties,
-} from './canvasStyles';
+} from './styles';
 import { IOptions } from '../../options';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 import Toolbar from '../../toolbar/Toolbar';
+import { NodeConfig } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -28,7 +29,7 @@ interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
 
 interface IConstructor {
   stageConfig?: ICreateStageConfig;
-  styles?: Partial<ICanvasStyles>;
+  styles?: Partial<IStyles>;
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
   toolbar?: Toolbar;
@@ -46,11 +47,12 @@ export interface ISheetViewportPosition {
   y: number;
 }
 
-export interface ICanvasShapes {
+interface IShapes {
   sheetGroup: Group;
   sheet: Rect;
   frozenGridLine: Line;
   topLeftRect: Rect;
+  cellGroup: Group;
 }
 
 export interface ICustomSizePosition {
@@ -74,6 +76,8 @@ export interface ICustomSizes {
 }
 
 export type CellId = string;
+
+export type Cell = Group;
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
@@ -208,7 +212,7 @@ export const reverseVectorsIfStartBiggerThanEnd = (
   };
 };
 
-class Canvas {
+class Sheet {
   container: HTMLDivElement;
   stage: Stage;
   scrollGroups: IScrollGroups;
@@ -217,18 +221,18 @@ class Canvas {
   row: RowCol;
   selector: Selector;
   merger: Merger;
-  styles: ICanvasStyles;
-  shapes: ICanvasShapes;
+  styles: IStyles;
+  shapes: IShapes;
   sheetDimensions: IDimensions;
   sheetViewportDimensions: IDimensions;
-  cellsMap: Map<CellId, Group>;
+  cellsMap: Map<CellId, Cell>;
   eventEmitter: EventEmitter;
   options: IOptions;
   toolbar?: Toolbar;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
-    this.styles = merge({}, defaultCanvasStyles, params.styles);
+    this.styles = merge({}, defaultStyles, params.styles);
     this.options = params.options;
     this.toolbar = params.toolbar;
     this.cellsMap = new Map();
@@ -251,8 +255,8 @@ class Canvas {
 
     this.container = document.createElement('div');
     this.container.classList.add(
-      `${prefix}-canvas-container`,
-      styles.canvasContainer
+      `${prefix}-sheet-container`,
+      styles.sheetContainer
     );
 
     this.stage = new Stage({
@@ -295,6 +299,9 @@ class Canvas {
         width: this.getViewportVector().x,
         height: this.getViewportVector().y,
       }),
+      cellGroup: new Group({
+        ...performanceProperties,
+      }),
     };
 
     this.shapes.frozenGridLine.cache();
@@ -317,30 +324,38 @@ class Canvas {
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
+  emit<T extends EventEmitter.EventNames<string | symbol>>(
+    event: T,
+    ...args: any[]
+  ) {
+    const params: [Sheet, ...any[]] = [this, ...args];
+
+    if (this.options.devMode) {
+      console.log(event, params);
+    }
+
+    this.eventEmitter.emit(event, ...params);
+  }
+
   toolbarOnChange = (name: string, value: any) => {
     const selectedCells = this.selector.selectedCells;
-    console.log(selectedCells);
-    console.log(this.cellsMap);
 
     switch (name) {
       case 'backgroundColor': {
         selectedCells.forEach((selectedCell) => {
-          const row = selectedCell.attrs.row;
-          const col = selectedCell.attrs.col;
-
           const id = selectedCell.id();
-          const isFrozenRow = this.row.getIsFrozen(row.x);
-          const isFrozenCol = this.col.getIsFrozen(col.x);
           const clientRect = selectedCell.getClientRect();
 
-          const cell = new Group({
-            ...performanceProperties,
+          const groupConfig: NodeConfig = {
             x: clientRect.x,
             y: clientRect.y,
-            row,
-            col,
-          });
+            row: selectedCell.attrs.row,
+            col: selectedCell.attrs.col,
+          };
+          const cell = this.shapes.cellGroup.clone(groupConfig) as Group;
+
           const rect = new Rect({
+            type: 'cellRect',
             fill: value,
             width: clientRect.width,
             height: clientRect.height,
@@ -354,15 +369,7 @@ class Canvas {
 
           this.cellsMap.set(selectedCell.attrs.id, cell);
 
-          if (isFrozenRow && isFrozenCol) {
-            this.scrollGroups.xySticky.add(cell);
-          } else if (isFrozenRow) {
-            this.scrollGroups.ySticky.add(cell);
-          } else if (isFrozenCol) {
-            this.scrollGroups.xSticky.add(cell);
-          } else {
-            this.scrollGroups.main.add(cell);
-          }
+          this.drawCell(cell);
 
           this.selector.setOpacity(selectedCell);
 
@@ -411,7 +418,7 @@ class Canvas {
       this.col.scrollBar.getBoundingClientRect().height
     }px`;
 
-    this.eventEmitter.emit(events.canvas.load, e);
+    this.emit(events.sheet.load, e);
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
@@ -478,6 +485,21 @@ class Canvas {
     this.row.destroy();
   }
 
+  drawCell(cell: Cell) {
+    const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
+    const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
+
+    if (isFrozenRow && isFrozenCol) {
+      this.scrollGroups.xySticky.add(cell);
+    } else if (isFrozenRow) {
+      this.scrollGroups.ySticky.add(cell);
+    } else if (isFrozenCol) {
+      this.scrollGroups.xSticky.add(cell);
+    } else {
+      this.scrollGroups.main.add(cell);
+    }
+  }
+
   drawTopLeftOffsetRect() {
     this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
 
@@ -500,4 +522,4 @@ class Canvas {
   }
 }
 
-export default Canvas;
+export default Sheet;

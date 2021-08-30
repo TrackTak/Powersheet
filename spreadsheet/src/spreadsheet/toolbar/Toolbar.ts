@@ -6,38 +6,10 @@ import { createPicker, ACPController } from 'a-color-picker';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../options';
 import events from '../events';
+import Sheet, { Cell } from '../sheetsGroup/sheet/Sheet';
+import { Rect } from 'konva/lib/shapes/Rect';
 
 export type IconElement = HTMLElement;
-
-export interface ITopLevelIconMap {
-  undo: IconElement;
-  redo: IconElement;
-  fontBold: IconElement;
-  fontItalic: IconElement;
-  underline: IconElement;
-  strike: IconElement;
-  color: IconElement;
-  backgroundColor: IconElement;
-  merge: IconElement;
-  alignLeft: IconElement;
-  alignMiddle: IconElement;
-  textWrap: IconElement;
-  function: IconElement;
-  freeze: IconElement;
-  ellipsis: IconElement;
-  borderAll: IconElement;
-  export: IconElement;
-  formula: IconElement;
-}
-
-export interface IDropdownMap {
-  function: HTMLElement;
-  alignMiddle: HTMLElement;
-  alignLeft: HTMLElement;
-  borderAll: HTMLElement;
-  backgroundColor: HTMLElement;
-  color: HTMLElement;
-}
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -49,7 +21,18 @@ interface IConstructor {
   eventEmitter: EventEmitter;
 }
 
-const topLevelIconNames: (keyof ITopLevelIconMap)[] = [
+export type ColorPicker = 'backgroundColor' | 'color';
+
+export const dropdownIconNames = <const>[
+  'function',
+  'alignMiddle',
+  'alignLeft',
+  'borderAll',
+  'backgroundColor',
+  'color',
+];
+
+export const topLevelIconNames = <const>[
   'undo',
   'redo',
   'fontBold',
@@ -70,12 +53,17 @@ const topLevelIconNames: (keyof ITopLevelIconMap)[] = [
   'formula',
 ];
 
+type TopLevelIconKey = typeof topLevelIconNames[number];
+
+type DropdownIconKey = typeof dropdownIconNames[number];
+
 export const toolbarPrefix = `${prefix}-toolbar`;
 
 class Toolbar {
   toolbarEl: HTMLDivElement;
-  topLevelIconMap: ITopLevelIconMap;
-  dropdownMap: IDropdownMap;
+  topLevelIconMap: Record<TopLevelIconKey, IconElement>;
+  dropdownIconMap: Record<DropdownIconKey, HTMLElement>;
+  colorBarMap: Record<ColorPicker, HTMLSpanElement>;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -91,8 +79,9 @@ class Toolbar {
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
-    this.topLevelIconMap = {} as ITopLevelIconMap;
-    this.dropdownMap = {} as IDropdownMap;
+    this.topLevelIconMap = {} as Record<TopLevelIconKey, IconElement>;
+    this.dropdownIconMap = {} as Record<DropdownIconKey, HTMLElement>;
+    this.colorBarMap = {} as Record<ColorPicker, HTMLSpanElement>;
 
     this.tooltip = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-tooltip`,
@@ -107,10 +96,9 @@ class Toolbar {
       interactive: true,
       arrow: false,
       content: (e) => {
-        const name = (e as HTMLButtonElement).dataset
-          .name as keyof IDropdownMap;
+        const name = (e as HTMLButtonElement).dataset.name as DropdownIconKey;
 
-        return this.dropdownMap[name];
+        return this.dropdownIconMap[name];
       },
     });
 
@@ -127,25 +115,25 @@ class Toolbar {
         case 'borderAll': {
           this.setDropdownButtonContainer(name);
 
-          this.dropdownMap[name] = this.createBordersContent();
+          this.dropdownIconMap[name] = this.createBordersContent();
           break;
         }
         case 'alignLeft': {
           this.setDropdownButtonContainer(name, true);
 
-          this.dropdownMap[name] = this.createHorizontalAlignContent();
+          this.dropdownIconMap[name] = this.createHorizontalAlignContent();
           break;
         }
         case 'alignMiddle': {
           this.setDropdownButtonContainer(name, true);
 
-          this.dropdownMap[name] = this.createVerticalAlignContent();
+          this.dropdownIconMap[name] = this.createVerticalAlignContent();
           break;
         }
         case 'function': {
           this.setDropdownButtonContainer(name, true);
 
-          this.dropdownMap[name] = this.createFunctionDropdownContent(
+          this.dropdownIconMap[name] = this.createFunctionDropdownContent(
             this.registeredFunctionNames
           );
           break;
@@ -195,38 +183,55 @@ class Toolbar {
 
       this.toolbarEl.appendChild(group);
     });
+
+    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
   }
 
+  onStartSelection = (sheet: Sheet, selectedCell: Cell) => {
+    const selectedCellId = selectedCell.id();
+
+    if (sheet.cellsMap.has(selectedCellId)) {
+      const cell = sheet.cellsMap.get(selectedCellId)!;
+      const cellRect = cell.children?.find(
+        (x) => x.attrs.type === 'cellRect'
+      ) as Rect;
+
+      this.colorBarMap.backgroundColor.style.backgroundColor = cellRect.fill();
+    } else {
+      this.colorBarMap.backgroundColor.style.backgroundColor = 'white';
+    }
+  };
+
   destroy() {
+    this.eventEmitter.off(events.selector.startSelection);
+
     this.toolbarEl.remove();
     this.tooltip.destroy();
   }
 
-  setDropdownButtonContainer(
-    name: keyof ITopLevelIconMap,
-    createArrow?: boolean
-  ) {
+  setDropdownButtonContainer(name: TopLevelIconKey, createArrow?: boolean) {
     const buttonContainer = this.createDropdownIconButton(name, createArrow);
 
     this.topLevelIconMap[name] = buttonContainer;
   }
 
-  setDropdownColorPicker(name: keyof IDropdownMap) {
+  setDropdownColorPicker(name: ColorPicker) {
     this.setDropdownButtonContainer(name);
 
     const button = this.topLevelIconMap[name].querySelector(
       `.${toolbarPrefix}-dropdown-icon-button`
     )!;
     const { dropdownContent, picker } = this.createColorPickerContent();
-    const colorBar = this.createColorBar(picker);
+
+    this.colorBarMap[name] = this.createColorBar(picker);
 
     picker.on('change', (_, color) => {
       this.eventEmitter.emit(events.toolbar.change, name, color);
     });
 
-    button.appendChild(colorBar);
+    button.appendChild(this.colorBarMap[name]);
 
-    this.dropdownMap[name] = dropdownContent;
+    this.dropdownIconMap[name] = dropdownContent;
   }
 
   createGroup(elements: HTMLElement[]) {

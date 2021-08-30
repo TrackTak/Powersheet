@@ -4,7 +4,7 @@ import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Canvas, { convertFromCellsToCellsRange } from './Canvas';
+import Sheet, { Cell, convertFromCellsToCellsRange } from './Sheet';
 import { getCellId } from './Merger';
 
 export interface ISelectedRowCols {
@@ -23,8 +23,6 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-interface ISelectedCell extends Group {}
-
 export function* iterateSelection(selection: Vector2d) {
   for (let index = selection.x; index <= selection.y; index++) {
     yield index;
@@ -35,11 +33,11 @@ class Selector {
   shapes!: IShapes;
   isInSelectionMode: boolean;
   selectedCells: Group[];
-  selectedFirstCell: ISelectedCell | null;
+  selectedFirstCell: Cell | null;
   private selectionArea: ISelectionArea;
 
-  constructor(private canvas: Canvas) {
-    this.canvas = canvas;
+  constructor(private sheet: Sheet) {
+    this.sheet = sheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -56,26 +54,26 @@ class Selector {
 
     this.shapes = {
       selectionBorder: new Rect({
-        ...this.canvas.styles.selectionBorder,
+        ...this.sheet.styles.selectionBorder,
       }),
       selectionFirstCell: new Rect({
-        ...this.canvas.styles.selectionFirstCell,
+        ...this.sheet.styles.selectionFirstCell,
         firstCell: true,
       }),
       selection: new Rect({
-        ...this.canvas.styles.selection,
+        ...this.sheet.styles.selection,
       }),
     };
 
     this.selectedCells = [];
 
-    this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
-    this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.sheet.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
+    this.sheet.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
+    this.sheet.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
   }
 
   onSheetMouseDown = () => {
-    const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
+    const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
 
     const start = {
       x,
@@ -91,7 +89,7 @@ class Selector {
       end,
     };
 
-    const { rows, cols } = this.canvas.getRowColsBetweenVectors(start, end);
+    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
     const cells = this.convertFromRowColsToCells(
       rows,
@@ -99,12 +97,19 @@ class Selector {
       this.shapes.selectionFirstCell
     );
 
-    this.startSelection(cells);
+    this.removeSelectedCells();
+    this.isInSelectionMode = true;
+
+    this.selectCells(cells);
+
+    this.selectedFirstCell = cells[0];
+
+    this.sheet.emit(events.selector.startSelection, this.selectedFirstCell);
   };
 
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
-      const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
+      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
 
       const start = {
         x: this.selectionArea.start.x,
@@ -116,7 +121,7 @@ class Selector {
         y,
       };
 
-      const { rows, cols } = this.canvas.getRowColsBetweenVectors(
+      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
         start,
         this.selectionArea.end
       );
@@ -131,6 +136,8 @@ class Selector {
         this.removeSelectedCells(false);
 
         this.selectCells(cells);
+
+        this.sheet.emit(events.selector.moveSelection, cells);
       }
     }
   };
@@ -139,16 +146,9 @@ class Selector {
     this.isInSelectionMode = false;
 
     this.setSelectionBorder();
+
+    this.sheet.emit(events.selector.endSelection);
   };
-
-  startSelection(cells: ISelectedCell[]) {
-    this.removeSelectedCells();
-    this.isInSelectionMode = true;
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-  }
 
   convertFromRowColsToCells(
     rows: Group[],
@@ -156,12 +156,12 @@ class Selector {
     selectionShape: Rect
   ) {
     const mergedCellsAddedMap = new Map();
-    const cells: ISelectedCell[] = [];
+    const cells: Cell[] = [];
 
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
+        const mergedCell = this.sheet.merger.associatedMergedCellMap.get(id);
         const group = new Group();
 
         const pushToCells = (rectConfig: RectConfig) => {
@@ -240,35 +240,22 @@ class Selector {
     }
   }
 
-  setOpacity(selectedCell: ISelectedCell) {
+  setOpacity(selectedCell: Cell) {
     selectedCell.opacity(0.3);
   }
 
-  selectCells(cells: ISelectedCell[]) {
+  selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
-      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.row.x);
-      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.col.x);
-
       this.selectedCells.push(cell);
 
-      if (isFrozenRow && isFrozenCol) {
-        this.canvas.scrollGroups.xySticky.add(cell);
-      } else if (isFrozenRow) {
-        this.canvas.scrollGroups.ySticky.add(cell);
-      } else if (isFrozenCol) {
-        this.canvas.scrollGroups.xSticky.add(cell);
-      } else {
-        this.canvas.scrollGroups.main.add(cell);
-      }
+      this.sheet.drawCell(cell);
 
       if (cell.attrs.isMerged) {
-        const mergedCell = this.canvas.merger.mergedCellsMap.get(
-          cell.attrs.id
-        )!;
+        const mergedCell = this.sheet.merger.mergedCellsMap.get(cell.attrs.id)!;
 
         cell.zIndex(mergedCell.zIndex() + 1);
       } else {
-        const existingCell = this.canvas.cellsMap.get(cell.id());
+        const existingCell = this.sheet.cellsMap.get(cell.id());
 
         if (existingCell) {
           cell.zIndex(existingCell.zIndex() + 2);
@@ -278,8 +265,6 @@ class Selector {
         }
       }
     });
-
-    this.canvas.eventEmitter.emit(events.selector.selectCells, cells);
   }
 
   setSelectionBorder() {
@@ -291,11 +276,11 @@ class Selector {
     let totalHeight = 0;
 
     for (const ri of iterateSelection(row)) {
-      totalHeight += this.canvas.row.rowColGroupMap.get(ri)!.height();
+      totalHeight += this.sheet.row.rowColGroupMap.get(ri)!.height();
     }
 
     for (const ci of iterateSelection(col)) {
-      totalWidth += this.canvas.col.rowColGroupMap.get(ci)!.width();
+      totalWidth += this.sheet.col.rowColGroupMap.get(ci)!.width();
     }
 
     const config: RectConfig = {
@@ -307,7 +292,7 @@ class Selector {
 
     this.shapes.selectionBorder.setAttrs(config);
 
-    this.canvas.scrollGroups.main.add(this.shapes.selectionBorder);
+    this.sheet.scrollGroups.main.add(this.shapes.selectionBorder);
   }
 }
 

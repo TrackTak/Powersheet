@@ -28,6 +28,7 @@ export interface IOptions {
   col: IRowColOptions;
   frozenCells: IFrozenCells;
   mergedCells: IMergedCells[];
+  devMode: boolean;
 }
 
 export const defaultOptions: IOptions = {
@@ -47,4 +48,5 @@ export const defaultOptions: IOptions = {
   },
   frozenCells: {},
   mergedCells: [],
+  devMode: false,
 };

@@ -2,8 +2,8 @@ import { Shape } from 'konva/lib/Shape';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import events from '../../events';
 import { IMergedCells } from '../../options';
-import Canvas, { CellId, convertFromCellsToCellsRange } from './Canvas';
-import { performanceProperties } from './canvasStyles';
+import Sheet, { CellId, convertFromCellsToCellsRange } from './Sheet';
+import { performanceProperties } from './styles';
 import { iterateSelection } from './Selector';
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
@@ -21,8 +21,8 @@ class Merger {
   mergedCellsMap: Map<CellId, MergedCell>;
   private shapes: IShapes;
 
-  constructor(private canvas: Canvas) {
-    this.canvas = canvas;
+  constructor(private sheet: Sheet) {
+    this.sheet = sheet;
     this.mergedCellsMap = new Map();
     this.associatedMergedCellMap = new Map();
     this.shapes = {
@@ -34,7 +34,7 @@ class Merger {
   }
 
   updateMergedCells() {
-    this.canvas.options.mergedCells.forEach((mergedCells) => {
+    this.sheet.options.mergedCells.forEach((mergedCells) => {
       const { mergedCellId } = this.mergeCells(mergedCells);
 
       this.mergedCellsMap.get(mergedCellId)!.moveToTop();
@@ -47,19 +47,19 @@ class Merger {
     const { shouldMerge } = this.mergeCells(mergedCells);
 
     if (shouldMerge) {
-      this.canvas.options.mergedCells.push(mergedCells);
+      this.sheet.options.mergedCells.push(mergedCells);
 
-      this.canvas.selector.removeSelectedCells();
+      this.sheet.selector.removeSelectedCells();
     }
 
-    this.canvas.eventEmitter.emit(events.merge.add, mergedCells);
+    this.sheet.emit(events.merge.add, mergedCells);
   }
 
   private mergeCells(mergedCells: IMergedCells) {
     const { row, col } = mergedCells;
     const mergedCellId = getCellId(row.x, col.x);
-    const startRow = this.canvas.row.rowColGroupMap.get(row.x);
-    const startCol = this.canvas.col.rowColGroupMap.get(col.x);
+    const startRow = this.sheet.row.rowColGroupMap.get(row.x);
+    const startCol = this.sheet.col.rowColGroupMap.get(col.x);
     const shouldMerge = startCol && startRow ? true : false;
 
     if (shouldMerge) {
@@ -67,18 +67,18 @@ class Merger {
       let width = 0;
 
       for (const index of iterateSelection(mergedCells.row)) {
-        const group = this.canvas.row.rowColGroupMap.get(index)!;
+        const group = this.sheet.row.rowColGroupMap.get(index)!;
 
         height += group.height();
       }
 
       for (const index of iterateSelection(mergedCells.col)) {
-        const group = this.canvas.col.rowColGroupMap.get(index)!;
+        const group = this.sheet.col.rowColGroupMap.get(index)!;
 
         width += group.width();
       }
 
-      const gridLineStrokeWidth = this.canvas.styles.gridLine.strokeWidth!;
+      const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
       const offset = gridLineStrokeWidth;
 
       const rectConfig: RectConfig = {
@@ -107,7 +107,7 @@ class Merger {
 
       this.mergedCellsMap.set(mergedCellId, rect);
 
-      this.canvas.scrollGroups.main.add(rect);
+      this.sheet.scrollGroups.main.add(rect);
     }
 
     return { mergedCellId, shouldMerge };
@@ -134,7 +134,7 @@ class Merger {
   }
 
   unMergeCells(mergedCells: IMergedCells) {
-    this.canvas.options.mergedCells = this.canvas.options.mergedCells.filter(
+    this.sheet.options.mergedCells = this.sheet.options.mergedCells.filter(
       ({ row, col }) => {
         const shouldUnMerge =
           row.x >= mergedCells.row.x &&
@@ -150,13 +150,13 @@ class Merger {
       }
     );
 
-    this.canvas.selector.removeSelectedCells();
+    this.sheet.selector.removeSelectedCells();
 
-    this.canvas.eventEmitter.emit(events.merge.unMerge, mergedCells);
+    this.sheet.emit(events.merge.unMerge, mergedCells);
   }
 
   mergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCells;
+    const selectedCells = this.sheet.selector.selectedCells;
 
     if (!selectedCells.length) return;
 
@@ -166,7 +166,7 @@ class Merger {
   }
 
   unMergeSelectedCells() {
-    const selectedCells = this.canvas.selector.selectedCells;
+    const selectedCells = this.sheet.selector.selectedCells;
 
     if (!selectedCells.length) return;
 

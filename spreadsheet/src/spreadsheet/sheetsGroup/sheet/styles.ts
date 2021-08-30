@@ -20,7 +20,7 @@ export interface IColHeaderConfig {
   text: TextConfig;
 }
 
-export interface ICanvasStyles {
+export interface IStyles {
   backgroundColor: string;
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
@@ -44,7 +44,7 @@ export const performanceProperties = {
   listening: false,
 };
 
-export const sharedCanvasStyles = {
+export const sharedStyles = {
   gridLine: {
     ...performanceProperties,
     stroke: '#c6c6c6',
@@ -73,56 +73,56 @@ export const sharedCanvasStyles = {
   },
 };
 
-export const defaultCanvasStyles: ICanvasStyles = {
+export const defaultStyles: IStyles = {
   backgroundColor: 'white',
   frozenGridLine: {
-    ...sharedCanvasStyles.gridLine,
+    ...sharedStyles.gridLine,
     stroke: 'blue',
   },
   resizeGuideLine: {
-    ...sharedCanvasStyles.gridLine,
+    ...sharedStyles.gridLine,
     visible: false,
     stroke: 'blue',
   },
   rowResizeMarker: {
-    ...sharedCanvasStyles.resizeMarker,
+    ...sharedStyles.resizeMarker,
     height: resizeMarkerSize,
   },
   colResizeMarker: {
-    ...sharedCanvasStyles.resizeMarker,
+    ...sharedStyles.resizeMarker,
     width: resizeMarkerSize,
   },
   resizeLine: {
-    ...sharedCanvasStyles.gridLine,
+    ...sharedStyles.gridLine,
     hitStrokeWidth: 15,
     listening: true,
     draggable: true,
     opacity: 0.7,
   },
   gridLine: {
-    ...sharedCanvasStyles.gridLine,
+    ...sharedStyles.gridLine,
   },
   rowHeader: {
     rect: {
-      ...sharedCanvasStyles.headerRect,
+      ...sharedStyles.headerRect,
       width: 25,
     },
     text: {
-      ...sharedCanvasStyles.headerText,
+      ...sharedStyles.headerText,
     },
   },
   colHeader: {
     rect: {
-      ...sharedCanvasStyles.headerRect,
+      ...sharedStyles.headerRect,
       height: 20,
     },
     text: {
-      ...sharedCanvasStyles.headerText,
+      ...sharedStyles.headerText,
     },
   },
   topLeftRect: {
     ...performanceProperties,
-    fill: sharedCanvasStyles.headerRect.fill,
+    fill: sharedStyles.headerRect.fill,
   },
   selectionBorder: {
     ...performanceProperties,
@@ -130,13 +130,13 @@ export const defaultCanvasStyles: ICanvasStyles = {
     strokeWidth: 1,
   },
   selectionFirstCell: {
-    ...sharedCanvasStyles.selection,
+    ...sharedStyles.selection,
     strokeWidth: 2,
   },
   selection: {
-    ...sharedCanvasStyles.selection,
+    ...sharedStyles.selection,
     strokeWidth: 0,
     opacity: 0.1,
-    fill: '#4b89ff',
+    fill: '#0e65eb',
   },
 };

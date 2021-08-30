@@ -6,14 +6,14 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
-import Canvas, {
+import Sheet, {
   centerRectTwoInRectOne,
   hasOverlap,
   ICustomSizes,
   ISheetViewportPosition,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
-} from './Canvas';
+} from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 
@@ -52,10 +52,10 @@ class RowCol {
   private oppositeFunctions: IRowColFunctions;
   private isCol: boolean;
 
-  constructor(private type: RowColType, private canvas: Canvas) {
+  constructor(private type: RowColType, private sheet: Sheet) {
     this.type = type;
     this.isCol = this.type === 'col';
-    this.canvas = canvas;
+    this.sheet = sheet;
     this.headerGroupMap = new Map();
     this.rowColGroupMap = new Map();
     this.sheetViewportPosition = {
@@ -73,7 +73,7 @@ class RowCol {
       headerText: new Text(),
       group: new Group(),
       gridLine: new Line({
-        ...this.canvas.styles.gridLine,
+        ...this.sheet.styles.gridLine,
       }),
     };
     if (this.isCol) {
@@ -85,10 +85,10 @@ class RowCol {
         axis: 'y',
         size: 'height',
       };
-      this.shapes.headerText.setAttrs(this.canvas.styles.colHeader.text);
+      this.shapes.headerText.setAttrs(this.sheet.styles.colHeader.text);
       this.shapes.headerRect.setAttrs({
-        ...this.canvas.styles.colHeader.rect,
-        width: this.canvas.options[this.type].defaultSize,
+        ...this.sheet.styles.colHeader.rect,
+        width: this.sheet.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         const startCharCode = 'A'.charCodeAt(0);
@@ -102,9 +102,9 @@ class RowCol {
         return lineConfig;
       };
       this.getAvailableSize = () =>
-        this.canvas.options.width -
-        this.canvas.getViewportVector().x -
-        this.canvas.row.scrollBar.getBoundingClientRect().width;
+        this.sheet.options.width -
+        this.sheet.getViewportVector().x -
+        this.sheet.row.scrollBar.getBoundingClientRect().width;
     } else {
       this.functions = {
         axis: 'y',
@@ -114,10 +114,10 @@ class RowCol {
         axis: 'x',
         size: 'width',
       };
-      this.shapes.headerText.setAttrs(this.canvas.styles.rowHeader.text);
+      this.shapes.headerText.setAttrs(this.sheet.styles.rowHeader.text);
       this.shapes.headerRect.setAttrs({
-        ...this.canvas.styles.rowHeader.rect,
-        height: this.canvas.options[this.type].defaultSize,
+        ...this.sheet.styles.rowHeader.rect,
+        height: this.sheet.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         return (index + 1).toString();
@@ -129,21 +129,21 @@ class RowCol {
         return lineConfig;
       };
       this.getAvailableSize = () =>
-        this.canvas.options.height -
-        (this.canvas.toolbar?.toolbarEl?.getBoundingClientRect().height ?? 0) -
-        this.canvas.getViewportVector().y -
-        this.canvas.col.scrollBar.getBoundingClientRect().height;
+        this.sheet.options.height -
+        (this.sheet.toolbar?.toolbarEl?.getBoundingClientRect().height ?? 0) -
+        this.sheet.getViewportVector().y -
+        this.sheet.col.scrollBar.getBoundingClientRect().height;
     }
 
     this.scrollBar = new ScrollBar(
-      this.canvas,
+      this.sheet,
       this.type,
       this.isCol,
       this.functions
     );
 
     this.resizer = new Resizer(
-      canvas,
+      sheet,
       this.type,
       this.isCol,
       this.functions,
@@ -151,8 +151,8 @@ class RowCol {
     );
 
     this.shapes.group.cache({
-      ...this.canvas.getViewportVector(),
-      ...this.canvas.sheetViewportDimensions,
+      ...this.sheet.getViewportVector(),
+      ...this.sheet.sheetViewportDimensions,
     });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
@@ -167,8 +167,8 @@ class RowCol {
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
-    const defaultSize = this.canvas.options[this.type].defaultSize;
-    const sizes = this.canvas.options[this.type].sizes;
+    const defaultSize = this.sheet.options[this.type].defaultSize;
+    const sizes = this.sheet.options[this.type].sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -248,15 +248,15 @@ class RowCol {
 
     this.destroyOutOfViewportItems();
 
-    this.canvas.shapes.topLeftRect.moveToTop();
+    this.sheet.shapes.topLeftRect.moveToTop();
 
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
 
-  isNodeOutsideCanvas = (node: Node) => {
+  isNodeOutsideSheet = (node: Node) => {
     const isOverlapping = hasOverlap(node.getClientRect(), {
-      ...this.canvas.getViewportVector(),
-      ...this.canvas.sheetViewportDimensions,
+      ...this.sheet.getViewportVector(),
+      ...this.sheet.sheetViewportDimensions,
     });
 
     return !isOverlapping;
@@ -264,7 +264,7 @@ class RowCol {
 
   destroyOutOfViewportItems() {
     this.headerGroupMap.forEach((headerGroup, index) => {
-      if (this.isNodeOutsideCanvas(headerGroup)) {
+      if (this.isNodeOutsideSheet(headerGroup)) {
         headerGroup.destroy();
 
         this.headerGroupMap.delete(index);
@@ -272,7 +272,7 @@ class RowCol {
     });
 
     this.rowColGroupMap.forEach((group, index) => {
-      if (this.isNodeOutsideCanvas(group)) {
+      if (this.isNodeOutsideSheet(group)) {
         group.destroy();
 
         this.rowColGroupMap.delete(index);
@@ -281,23 +281,23 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.canvas.options[this.type].sizes);
+    const sizes = Object.values(this.sheet.options[this.type].sizes);
 
     const totalSizeDifference = sizes.reduce((currentSize, size) => {
-      return size - this.canvas.options[this.type].defaultSize + currentSize;
+      return size - this.sheet.options[this.type].defaultSize + currentSize;
     }, 0);
 
     return (
-      this.canvas.options[this.type].amount *
-        this.canvas.options[this.type].defaultSize +
+      this.sheet.options[this.type].amount *
+        this.sheet.options[this.type].defaultSize +
       totalSizeDifference
     );
   }
 
   getSize(index: number) {
     const size =
-      this.canvas.options[this.type].sizes[index] ??
-      this.canvas.options[this.type].defaultSize;
+      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.options[this.type].defaultSize;
 
     return size;
   }
@@ -337,13 +337,13 @@ class RowCol {
   }
 
   getIsFrozen(index: number) {
-    return isNil(this.canvas.options.frozenCells[this.type])
+    return isNil(this.sheet.options.frozenCells[this.type])
       ? false
-      : index <= this.canvas.options.frozenCells[this.type]!;
+      : index <= this.sheet.options.frozenCells[this.type]!;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.canvas.options.frozenCells[this.type];
+    return index === this.sheet.options.frozenCells[this.type];
   }
 
   draw(index: number, drawingAtX = false) {
@@ -365,7 +365,7 @@ class RowCol {
       ? drawingAtX
         ? prevHeader[this.functions.axis]() - size
         : prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
-      : this.canvas.getViewportVector()[this.functions.axis];
+      : this.sheet.getViewportVector()[this.functions.axis];
 
     const groupConfig: ShapeConfig = {
       index,
@@ -383,12 +383,12 @@ class RowCol {
     this.headerGroupMap.set(index, headerGroup);
 
     if (isFrozen) {
-      this.canvas.scrollGroups.xySticky.add(headerGroup);
+      this.sheet.scrollGroups.xySticky.add(headerGroup);
     } else {
       if (this.isCol) {
-        this.canvas.scrollGroups.ySticky.add(headerGroup);
+        this.sheet.scrollGroups.ySticky.add(headerGroup);
       } else {
-        this.canvas.scrollGroups.xSticky.add(headerGroup);
+        this.sheet.scrollGroups.xSticky.add(headerGroup);
       }
     }
   }
@@ -435,12 +435,12 @@ class RowCol {
 
     const isFrozen = this.getIsLastFrozen(index);
     const line = isFrozen
-      ? this.canvas.shapes.frozenGridLine
+      ? this.sheet.shapes.frozenGridLine
       : this.shapes.gridLine;
 
     const sheetSize =
-      this.canvas.sheetDimensions[this.oppositeFunctions.size] +
-      this.canvas.getViewportVector()[this.oppositeFunctions.axis];
+      this.sheet.sheetDimensions[this.oppositeFunctions.size] +
+      this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
     const lineConfig = this.getLineConfig(sheetSize);
     const gridLine = line.clone({
@@ -453,11 +453,11 @@ class RowCol {
     this.rowColGroupMap.set(index, group);
 
     if (isFrozen) {
-      this.canvas.scrollGroups.xySticky.add(group);
+      this.sheet.scrollGroups.xySticky.add(group);
 
       group.moveToBottom();
     } else {
-      this.canvas.scrollGroups.main.add(group);
+      this.sheet.scrollGroups.main.add(group);
     }
   }
 

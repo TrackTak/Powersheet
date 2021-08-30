@@ -7,6 +7,10 @@
     background: rgba(0, 0, 0, 0.08);
   }
 
+  &[data-active='true'] {
+    background-color: #e6f4ea;
+  }
+
   &:disabled {
     pointer-events: none;
     opacity: 0.38;

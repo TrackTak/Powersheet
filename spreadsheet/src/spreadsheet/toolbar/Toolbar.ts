@@ -201,6 +201,7 @@ class Toolbar {
     this.tooltip = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-tooltip`,
       touch: false,
+      delay: 300,
     });
 
     this.dropdown = delegate(this.toolbarEl, {
@@ -210,10 +211,18 @@ class Toolbar {
       placement: 'auto',
       interactive: true,
       arrow: false,
+      onHide: ({ reference }) => {
+        const button = reference as HTMLButtonElement;
+
+        delete button.dataset.active;
+      },
       content: (e) => {
-        const name = (e as HTMLButtonElement).dataset.name as DropdownIconName;
+        const button = e as HTMLButtonElement;
+        const name = button.dataset.name as DropdownIconName;
 
         if (!name) return '';
+
+        button.dataset.active = 'true';
 
         return this.dropdownIconMap[name].dropdownContent;
       },
@@ -275,6 +284,8 @@ class Toolbar {
   onStartSelection = (sheet: Sheet, selectedCell: Cell) => {
     const selectedCellId = selectedCell.id();
 
+    this.iconElementsMap.merge.button.disabled = true;
+
     if (sheet.cellsMap.has(selectedCellId)) {
       const cell = sheet.cellsMap.get(selectedCellId)!;
       const cellRect = cell.children?.find(
@@ -283,6 +294,10 @@ class Toolbar {
 
       this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
         cellRect.fill();
+
+      if (cell.attrs.isMerged) {
+        this.iconElementsMap.merge.button.disabled = false;
+      }
     } else {
       this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
         'white';
@@ -290,8 +305,7 @@ class Toolbar {
   };
 
   onMoveSelection = (sheet: Sheet, selectedCells: Cell[]) => {
-    if (selectedCells.length <= 1) {
-    }
+    this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
   };
 
   destroy() {

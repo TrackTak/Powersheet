@@ -265,21 +265,22 @@ export const createDropdownIconButton = (
     styles.dropdownIconButton,
     `${toolbarPrefix}-dropdown-icon-button`
   );
-  iconButtonValues.button.appendChild(createTooltip(name));
+
+  let arrowIconValues;
 
   if (createArrow) {
     const iconValues = createIcon('arrowDown');
-    const arrowIconValues = {
+    arrowIconValues = {
       arrowIcon: iconValues.icon,
       arrowIconContainer: iconValues.iconContainer,
     };
 
     iconButtonValues.button.appendChild(arrowIconValues.arrowIconContainer);
-
-    return { iconButtonValues, arrowIconValues };
   }
 
-  return { iconButtonValues };
+  iconButtonValues.button.appendChild(createTooltip(name));
+
+  return { iconButtonValues, arrowIconValues };
 };
 
 export const createDropdown = () => {
@@ -297,6 +298,14 @@ export const createIconButton = (name: IconElementsName) => {
   buttonContainer.classList.add(`${toolbarPrefix}-${name}-button-container`);
 
   button.dataset.name = name;
+
+  button.addEventListener('click', () => {
+    if (button.dataset.active) {
+      delete button.dataset.active;
+    } else {
+      button.dataset.active = 'true';
+    }
+  });
 
   button.classList.add(
     styles.iconButton,

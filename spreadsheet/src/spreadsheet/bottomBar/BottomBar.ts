@@ -14,7 +14,7 @@ class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetTab: HTMLButtonElement;
   menuSheetHeader: HTMLButtonElement;
-  sheetTabs: HTMLButtonElement[];
+  sheetTabs: HTMLDivElement[];
   allSheetsMenu: HTMLButtonElement[];
   contextSheetTabMenu: HTMLDivElement;
   menuSheetDropdownContent: HTMLDivElement;
@@ -173,12 +173,12 @@ class BottomBar implements IBottomBar {
 
     containerSheetTab.appendChild(sheetTab);
 
-    sheetTab.addEventListener('mouseup', (e) => {
+    sheetTab.addEventListener('mouseup', (e: MouseEvent) => {
       const buttonPressed = e.button;
       if (buttonPressed === 2) {
-        this.currentDropdownTab = e.target.parentElement;
+        this.currentDropdownTab = e.target!.parentElement as HTMLDivElement;
 
-        e.target.parentElement.appendChild(this.contextSheetTabMenu);
+        e.target!.parentElement.appendChild(this.contextSheetTabMenu);
         this.contextSheetTabMenu.style.display = 'block';
       }
     });
@@ -198,8 +198,9 @@ class BottomBar implements IBottomBar {
       sheetMenu.textContent = spanElement.textContent;
     });
 
-    window.addEventListener('click', (e) => {
-      const isClickInside = this.contextSheetTabMenu.contains(e.target);
+    window.addEventListener('click', (e: MouseEvent) => {
+      const target = e.target! as unknown as Node;
+      const isClickInside = this.contextSheetTabMenu.contains(target);
       if (isClickInside) {
       } else {
         this.contextSheetTabMenu.style.display = 'none';
@@ -225,21 +226,27 @@ class BottomBar implements IBottomBar {
     deleteSheetTab.className = 'btn-menuitem';
     deleteSheetTab.textContent = 'Delete';
 
-    deleteSheetTab.addEventListener('click', (e) => {
-      let element = e.target;
+    deleteSheetTab.addEventListener('click', (e: MouseEvent) => {
+      let element = e.target as unknown as HTMLElement;
 
       while (!element.classList.contains('container-btn-tab')) {
-        element = element.parentElement;
+        element = element.parentElement!;
       }
 
-      const elementIndex = [...element.parentElement.children].indexOf(element);
+      const containerButtonTab = element as HTMLButtonElement;
+
+      const childrenElements = Array.from(
+        containerButtonTab.parentElement!.children
+      );
+
+      const elementIndex = childrenElements.indexOf(containerButtonTab);
       const menuSheetDropdown = document.querySelector('.menusheet-dropdown')!;
 
       this.sheetTabs.splice(elementIndex, 1);
       this.allSheetsMenu.splice(elementIndex, 1);
 
       menuSheetDropdown.children[elementIndex].remove();
-      element.remove();
+      containerButtonTab.remove();
     });
 
     const renameSheetTab = document.createElement('button');
@@ -247,8 +254,9 @@ class BottomBar implements IBottomBar {
     renameSheetTab.textContent = 'Rename';
 
     renameSheetTab.addEventListener('click', () => {
-      const contentEditable =
-        this.currentDropdownTab!.querySelector('.btn-tab-span');
+      const contentEditable = this.currentDropdownTab!.querySelector(
+        '.btn-tab-span'
+      ) as HTMLElement;
 
       contentEditable.contentEditable = 'true';
       contentEditable.focus();
@@ -299,8 +307,9 @@ class BottomBar implements IBottomBar {
 
     window.addEventListener(
       'click',
-      (e) => {
-        const isClickInside = this.menuSheetDropdownContent.contains(e.target);
+      (e: MouseEvent) => {
+        const target = e.target! as unknown as Node;
+        const isClickInside = this.menuSheetDropdownContent.contains(target);
         if (isClickInside) {
         } else {
           this.menuSheetDropdownContent.style.display = 'none';

@@ -1,8 +1,9 @@
-import './bottomBar.css';
+import './bottomBar.scss';
 import plusIcon from '../../icons/plus-icon.svg';
 import sheetIcon from '../../icons/sheet-icon.svg';
 import leftIcon from '../../icons/left-icon.svg';
 import rightIcon from '../../icons/right-icon.svg';
+import { prefix } from '../utils';
 
 export interface IBottomBar extends IConstructorParams {}
 
@@ -10,6 +11,8 @@ interface IConstructorParams {
   addSheetTab: HTMLButtonElement;
   menuSheetHeader: HTMLButtonElement;
 }
+
+export const bottomBarPrefix = `${prefix}-bottom-bar`;
 class BottomBar implements IBottomBar {
   element!: HTMLDivElement;
   addSheetTab: HTMLButtonElement;
@@ -46,23 +49,23 @@ class BottomBar implements IBottomBar {
 
   private create() {
     this.element = document.createElement('div');
-    this.element.className = 'navbar';
+    this.element.className = `${bottomBarPrefix}-navbar`;
 
     const buttonWrapper = document.createElement('div');
-    buttonWrapper.className = 'wrapper';
+    buttonWrapper.className = `${bottomBarPrefix}-wrapper`;
 
     this.element.appendChild(buttonWrapper);
 
     buttonWrapper.appendChild(this.addSheetTab);
 
     const menuSheetContainer = document.createElement('div');
-    menuSheetContainer.className = 'menusheet-container';
+    menuSheetContainer.className = `${bottomBarPrefix}-menusheet-container`;
 
     buttonWrapper.appendChild(menuSheetContainer);
     this.tabContainer.appendChild(this.scrollsliderContainerTab);
 
-    this.tabContainer.className = 'tab';
-    this.scrollsliderContainerTab.className = 'scrollslider-container-tab';
+    this.tabContainer.className = `${bottomBarPrefix}-tab`;
+    this.scrollsliderContainerTab.className = `${bottomBarPrefix}-scrollslider-container-tab`;
 
     this.element.appendChild(this.tabContainer);
     this.element.appendChild(this.scrollSlider);
@@ -98,29 +101,29 @@ class BottomBar implements IBottomBar {
   //TO DO
   createScrollSlider() {
     const scrollSlider = document.createElement('div');
-    scrollSlider.className = 'scrollslider-arrow';
+    scrollSlider.className = `${bottomBarPrefix}-scrollslider-arrow`;
 
     const scrollSliderContent = document.createElement('div');
-    scrollSliderContent.className = 'scrollslider-content';
+    scrollSliderContent.className = `${bottomBarPrefix}-scrollslider-content`;
 
     const leftScrollSliderButton = document.createElement('button');
-    leftScrollSliderButton.className = 'left-scrollslider-btn';
+    leftScrollSliderButton.className = `${bottomBarPrefix}-left-scrollslider`;
 
     const rightScrollSliderButton = document.createElement('button');
-    rightScrollSliderButton.className = 'right-scrollslider-btn';
+    rightScrollSliderButton.className = `${bottomBarPrefix}-right-scrollslider`;
 
     const leftScrollImage = document.createElement('img');
 
     leftScrollImage.src = leftIcon;
     leftScrollImage.alt = 'left';
-    leftScrollImage.className = 'scroll-icon';
+    leftScrollImage.className = `${bottomBarPrefix}-scroll-icon`;
     leftScrollSliderButton.appendChild(leftScrollImage);
 
     const rightScrollImage = document.createElement('img');
 
     rightScrollImage.src = rightIcon;
     rightScrollImage.alt = 'right';
-    rightScrollImage.className = 'scroll-icon';
+    rightScrollImage.className = `${bottomBarPrefix}-scroll-icon`;
     rightScrollSliderButton.appendChild(rightScrollImage);
 
     let translate = 0;
@@ -158,16 +161,16 @@ class BottomBar implements IBottomBar {
 
   createSheetTab() {
     const sheetTab = document.createElement('div');
-    sheetTab.className = 'btn-tab';
+    sheetTab.className = `${bottomBarPrefix}-sheet-tab`;
 
     const spanElement = document.createElement('span');
-    spanElement.className = 'btn-tab-span';
+    spanElement.className = `${bottomBarPrefix}-sheet-tab-span`;
 
     spanElement.textContent = `Sheet${this.globalSheetIndex}`;
     sheetTab.appendChild(spanElement);
 
     const containerSheetTab = document.createElement('div');
-    containerSheetTab.className = 'container-btn-tab';
+    containerSheetTab.className = `${bottomBarPrefix}-container-sheet-tab`;
     containerSheetTab.dataset.globalSheetIndex =
       this.globalSheetIndex.toString();
 
@@ -217,19 +220,21 @@ class BottomBar implements IBottomBar {
 
   createContextSheetTabMenu() {
     const contextSheetTabMenu = document.createElement('div');
-    contextSheetTabMenu.className = 'dropdown-menu';
+    contextSheetTabMenu.className = `${bottomBarPrefix}-context-sheet-menu`;
 
     const sheetTabMenuItem = document.createElement('div');
-    sheetTabMenuItem.className = 'dropdown-menuitem';
+    sheetTabMenuItem.className = `${bottomBarPrefix}-sheet-menuitem`;
 
     const deleteSheetTab = document.createElement('button');
-    deleteSheetTab.className = 'btn-menuitem';
+    deleteSheetTab.className = `${bottomBarPrefix}-delete-sheet`;
     deleteSheetTab.textContent = 'Delete';
 
     deleteSheetTab.addEventListener('click', (e: MouseEvent) => {
       let element = e.target as unknown as HTMLElement;
 
-      while (!element.classList.contains('container-btn-tab')) {
+      while (
+        !element.classList.contains(`${bottomBarPrefix}-container-sheet-tab`)
+      ) {
         element = element.parentElement!;
       }
 
@@ -240,7 +245,9 @@ class BottomBar implements IBottomBar {
       );
 
       const elementIndex = childrenElements.indexOf(containerButtonTab);
-      const menuSheetDropdown = document.querySelector('.menusheet-dropdown')!;
+      const menuSheetDropdown = document.querySelector(
+        `${bottomBarPrefix}-menusheet-dropdown-content`
+      )!;
 
       this.sheetTabs.splice(elementIndex, 1);
       this.allSheetsMenu.splice(elementIndex, 1);
@@ -250,12 +257,12 @@ class BottomBar implements IBottomBar {
     });
 
     const renameSheetTab = document.createElement('button');
-    renameSheetTab.className = 'btn-menuitem';
+    renameSheetTab.className = `${bottomBarPrefix}-rename-sheet`;
     renameSheetTab.textContent = 'Rename';
 
     renameSheetTab.addEventListener('click', () => {
       const contentEditable = this.currentDropdownTab!.querySelector(
-        '.btn-tab-span'
+        `${bottomBarPrefix}-sheet-tab-span`
       ) as HTMLElement;
 
       contentEditable.contentEditable = 'true';
@@ -271,7 +278,7 @@ class BottomBar implements IBottomBar {
 
   createAddSheetTab() {
     const buttonPlus = document.createElement('button');
-    buttonPlus.className = 'btn-img';
+    buttonPlus.className = `${bottomBarPrefix}-plus-button-icon`;
 
     buttonPlus.addEventListener('click', () => {
       if (
@@ -288,7 +295,7 @@ class BottomBar implements IBottomBar {
 
     plusImage.src = plusIcon;
     plusImage.alt = 'plus';
-    plusImage.className = 'plus-icon';
+    plusImage.className = `${bottomBarPrefix}-plus-img-icon`;
     buttonPlus.appendChild(plusImage);
 
     return buttonPlus;
@@ -296,7 +303,7 @@ class BottomBar implements IBottomBar {
 
   createMenuSheetHeader() {
     const menuSheetHeader = document.createElement('button');
-    menuSheetHeader.className = 'btn-img';
+    menuSheetHeader.className = `${bottomBarPrefix}-menu-button-icon`;
 
     menuSheetHeader.addEventListener('click', (e) => {
       const sheetPressed = e.button;
@@ -326,7 +333,7 @@ class BottomBar implements IBottomBar {
 
     menuSheetImage.src = sheetIcon;
     menuSheetImage.alt = 'sheet';
-    menuSheetImage.className = 'sheet-icon';
+    menuSheetImage.className = `${bottomBarPrefix}-sheet-img-icon`;
 
     menuSheetHeader.appendChild(menuSheetImage);
 
@@ -336,7 +343,7 @@ class BottomBar implements IBottomBar {
   createMenuSheetDropdownContent() {
     const menuSheetDropdownContent = document.createElement('div');
 
-    menuSheetDropdownContent.className = 'menusheet-dropdown';
+    menuSheetDropdownContent.className = `${bottomBarPrefix}-menusheet-dropdown-content`;
     menuSheetDropdownContent.style.display = 'none';
 
     return menuSheetDropdownContent;
@@ -344,7 +351,7 @@ class BottomBar implements IBottomBar {
 
   createAllSheetsMenu() {
     const allSheetsMenu = document.createElement('button');
-    allSheetsMenu.className = 'btn-tab-2';
+    allSheetsMenu.className = `${bottomBarPrefix}-all-sheet-menu`;
     allSheetsMenu.dataset.globalSheetIndex = this.globalSheetIndex.toString();
 
     allSheetsMenu.textContent = `Sheet${this.globalSheetIndex}`;

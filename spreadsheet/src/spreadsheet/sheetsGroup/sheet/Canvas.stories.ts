@@ -2,6 +2,8 @@ import { Story, Meta } from '@storybook/html';
 import Canvas from './Canvas';
 import EventEmitter from 'eventemitter3';
 import { defaultOptions, IOptions } from '../../options';
+import 'tippy.js/dist/tippy.css';
+import './tippy.scss';
 
 export default {
   title: 'Canvas',

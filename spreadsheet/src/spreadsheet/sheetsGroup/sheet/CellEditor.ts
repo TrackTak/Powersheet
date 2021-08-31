@@ -1,54 +1,49 @@
-import EventEmitter from 'eventemitter3';
-import { Rect } from 'konva/lib/shapes/Rect';
 import { IRect } from 'konva/lib/types';
 import events from '../../events';
 import Canvas from './Canvas';
 import styles from './CellEditor.module.scss';
-import Selector from './Selector';
 
+import { DelegateInstance, delegate } from "tippy.js";
 class CellEditor {
   private textArea!: HTMLDivElement;
+  private cellTooltip: DelegateInstance;
   private isEditing = false;
-  private container: HTMLDivElement;
-  private sheet: Rect;
-  private rowHeader: Rect;
-  private colHeader: Rect;
-  private selector: Selector;
-  private eventEmitter: EventEmitter;
 
-  constructor(
-    canvas: Canvas,
-  ) {
-    this.container = canvas.container;
-    this.sheet = canvas.shapes.sheet;
-    this.rowHeader = canvas.row.shapes.headerRect;
-    this.colHeader = canvas.col.shapes.headerRect;
-    this.selector = canvas.selector;
-    this.eventEmitter = canvas.eventEmitter;
+  constructor(private canvas: Canvas) {
+    this.canvas = canvas;
 
     this.textArea = document.createElement('div');
     this.textArea.setAttribute("contentEditable", "true");
-
-    this.container.appendChild(this.textArea);
-    this.setInitialTextAreaStyles();
+    this.textArea.classList.add(styles.cellEditor);
+    this.cellTooltip = delegate(this.textArea, {
+      target: styles.cellEditor,
+      arrow: false,
+      placement: 'top-start',
+      theme: 'cell',
+      offset: [0, 5],
+    });
+    this.canvas.container.appendChild(this.textArea);
 
     window.addEventListener('keydown', this.keyHandler);
-    this.sheet.on('dblclick', this.showCellEditor);
-    this.sheet.on('click', this.hideCellEditor);
-    this.rowHeader.on('click', this.hideCellEditor);
-    this.colHeader.on('click', this.hideCellEditor);
-    this.eventEmitter.on(events.resize.col.start, this.hideCellEditor);
-    this.eventEmitter.on(events.resize.row.start, this.hideCellEditor);
+    this.canvas.shapes.sheet.on('dblclick', this.showCellEditor);
+    this.canvas.shapes.sheet.on('click', this.hideCellEditor);
+    this.canvas.row.shapes.headerGroup.on('click', this.hideCellEditor);
+    this.canvas.col.shapes.headerGroup.on('click', this.hideCellEditor);
+    this.canvas.eventEmitter.on(events.resize.col.start, this.hideCellEditor);
+    this.canvas.eventEmitter.on(events.resize.row.start, this.hideCellEditor);
+    this.canvas.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
+    this.canvas.eventEmitter.on(events.scroll.vertical, this.handleScroll);
   }
 
-  private setInitialTextAreaStyles = () => {
-    this.textArea.classList.add(styles.cellEditor);
-  };
-
   destroy() {
-    this.sheet.off('dblclick', this.showCellEditor);
-    this.sheet.off('click', this.hideCellEditor);
     window.removeEventListener('keydown', this.keyHandler);
+    this.canvas.shapes.sheet.off('dblclick', this.showCellEditor);
+    this.canvas.shapes.sheet.off('click', this.hideCellEditor);
+    this.canvas.row.shapes.headerGroup.off('click', this.hideCellEditor);
+    this.canvas.col.shapes.headerGroup.off('click', this.hideCellEditor);
+    this.canvas.eventEmitter.off(events.resize.col.start, this.hideCellEditor);
+    this.canvas.eventEmitter.off(events.resize.row.start, this.hideCellEditor);
+    this.cellTooltip.destroy();
   }
 
   private keyHandler = (e: KeyboardEvent) => {
@@ -65,8 +60,8 @@ class CellEditor {
     }
   };
 
-  showCellEditor = () => {
-    const selectedCell = this.selector.getSelectedCell();
+  private showCellEditor = () => {
+    const selectedCell = this.canvas.selector.getSelectedCell();
     const selectedCellSize = selectedCell.getClientRect();
     const absolutePosition = selectedCell.getAbsolutePosition();
     const cellPosition = {
@@ -81,18 +76,41 @@ class CellEditor {
     this.isEditing = true;
   };
 
-  hideCellEditor = () => {
+  private hideCellEditor = () => {
     this.textArea.style.display = 'none';
     this.isEditing = false;
   };
 
-  setTextAreaPosition = (position: IRect) => {
-    this.textArea.style.top = `${position.y}px`;
-    this.textArea.style.left = `${position.x}px`;
+  private setTextAreaPosition = (position: IRect) => {
+    this.textArea.style.top = `${position.y - 1}px`;
+    this.textArea.style.left = `${position.x - 1}px`;
     this.textArea.style.minWidth = `${position.width}px`;
     this.textArea.style.height = `${position.height}px`;
     this.textArea.style.lineHeight = `${position.height}px`;
   };
+
+  private hideCellTooltip = () => {
+    this.cellTooltip.hide();
+  };
+
+  private showCellTooltip = () => {
+    const selectedCell = this.canvas.selector.getSelectedCell().attrs.start;
+    const rowText = this.canvas.row.getHeaderText(selectedCell.row);
+    const colText = this.canvas.col.getHeaderText(selectedCell.col);
+    this.cellTooltip.setContent(`${colText}${rowText}`);
+    this.cellTooltip.show();
+  };
+
+  private handleScroll = () => {
+    const rowScrollOffset = this.canvas.row.scrollBar.scrollOffset;
+    const colScrollOffset = this.canvas.col.scrollBar.scrollOffset;
+
+    if (rowScrollOffset.index || colScrollOffset.index) {
+      this.showCellTooltip()
+    } else {
+      this.hideCellTooltip();
+    }
+  }
 }
 
 export default CellEditor;

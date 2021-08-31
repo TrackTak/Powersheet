@@ -345,11 +345,13 @@ class Sheet {
           const id = selectedCell.id();
           const clientRect = selectedCell.getClientRect();
           const cell = this.getNewCell(
-            id,
             clientRect,
             selectedCell.attrs.row,
             selectedCell.attrs.col,
             {
+              groupConfig: {
+                id,
+              },
               rectConfig: {
                 fill: value,
               },
@@ -477,7 +479,6 @@ class Sheet {
   }
 
   getNewCell(
-    id: string,
     rect: IRect,
     row: Vector2d,
     col: Vector2d,
@@ -488,7 +489,6 @@ class Sheet {
   ) {
     const groupConfig: NodeConfig = {
       ...config.groupConfig,
-      id,
       x: rect.x,
       y: rect.y,
       row,
@@ -506,6 +506,15 @@ class Sheet {
     cell.add(cellRect);
 
     return cell;
+  }
+
+  getCellRectFromCell(cellId: string) {
+    const cell = this.cellsMap.get(cellId)!;
+    const cellRect = cell.children?.find(
+      (x) => x.attrs.type === 'cellRect'
+    ) as Rect;
+
+    return cellRect;
   }
 
   destroyCell(cellId: string) {

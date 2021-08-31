@@ -21,9 +21,9 @@ class Merger {
 
   updateMergedCells() {
     this.sheet.options.mergedCells.forEach((mergedCells) => {
-      const { mergedCellId } = this.mergeCells(mergedCells);
+      const { id } = this.mergeCells(mergedCells);
 
-      this.sheet.cellsMap.get(mergedCellId)!.moveToTop();
+      this.sheet.cellsMap.get(id)!.moveToTop();
     });
   }
 
@@ -43,7 +43,7 @@ class Merger {
 
   private mergeCells(mergedCells: IMergedCells) {
     const { row, col } = mergedCells;
-    const mergedCellId = getCellId(row.x, col.x);
+    const id = getCellId(row.x, col.x);
     const startRow = this.sheet.row.rowColGroupMap.get(row.x);
     const startCol = this.sheet.col.rowColGroupMap.get(col.x);
     const shouldMerge = startCol && startRow ? true : false;
@@ -73,39 +73,45 @@ class Merger {
         width: width - offset * 2,
       };
 
-      const cell = this.sheet.getNewCell(mergedCellId, rect, row, col, {
+      let fill = 'white';
+
+      if (this.sheet.cellsMap.has(id)) {
+        const cellRect = this.sheet.getCellRectFromCell(id);
+
+        fill = cellRect.fill();
+      }
+
+      const cell = this.sheet.getNewCell(rect, row, col, {
         groupConfig: {
+          id,
           isMerged: true,
         },
         rectConfig: {
-          fill: 'white',
+          fill,
         },
       });
-
-      if (this.sheet.cellsMap.has(mergedCellId)) {
-        this.sheet.cellsMap.get(mergedCellId)!.destroy();
-      }
-
-      this.sheet.cellsMap.set(mergedCellId, cell);
 
       for (const ri of iterateSelection(mergedCells.row)) {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
 
           this.associatedMergedCellMap.set(id, cell);
+          this.sheet.destroyCell(id);
         }
       }
+
+      this.sheet.cellsMap.set(id, cell);
 
       this.sheet.drawCell(cell);
     }
 
-    return { mergedCellId, shouldMerge };
+    return { id, shouldMerge };
   }
 
   private destroyMergedCell(mergedCells: IMergedCells) {
-    const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+    const id = getCellId(mergedCells.row.x, mergedCells.col.x);
 
-    if (this.sheet.cellsMap.has(mergedCellId)) {
+    if (this.sheet.cellsMap.has(id)) {
       for (const ri of iterateSelection(mergedCells.row)) {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
@@ -115,7 +121,7 @@ class Merger {
       }
     }
 
-    this.sheet.destroyCell(mergedCellId);
+    this.sheet.destroyCell(id);
   }
 
   unMergeCells(mergedCells: IMergedCells) {

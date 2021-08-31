@@ -167,12 +167,12 @@ class Selector {
           if (!mergedCellsAddedMap.get(id)) {
             const rect = mergedCell.getClientRect();
             const cell = this.sheet.getNewCell(
-              id,
               rect,
               mergedCell.attrs.row,
               mergedCell.attrs.col,
               {
                 groupConfig: {
+                  id,
                   isMerged: true,
                 },
                 rectConfig,
@@ -200,7 +200,10 @@ class Selector {
             y: colGroup.attrs.index,
           };
 
-          const cell = this.sheet.getNewCell(id, rect, row, col, {
+          const cell = this.sheet.getNewCell(rect, row, col, {
+            groupConfig: {
+              id,
+            },
             rectConfig,
           });
 
@@ -236,7 +239,6 @@ class Selector {
       const existingCell = this.sheet.cellsMap.get(cell.id());
 
       if (existingCell) {
-        // cell.zIndex(existingCell.zIndex() + 1);
         cell.moveToTop();
       } else {
         cell.moveToBottom();
@@ -270,7 +272,6 @@ class Selector {
     };
 
     const cell = this.sheet.getNewCell(
-      'selectionBorderCell',
       rect,
       indexZeroCell.attrs.row,
       indexZeroCell.attrs.col,

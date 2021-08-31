@@ -5,6 +5,7 @@ import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
 import { Rect } from 'konva/lib/shapes/Rect';
+
 class CellEditor {
   private textArea!: HTMLDivElement;
   private cellTooltip: DelegateInstance;
@@ -28,19 +29,14 @@ class CellEditor {
     window.addEventListener('keydown', this.keyHandler);
     this.canvas.shapes.sheet.on('dblclick', this.showCellEditor);
     this.canvas.shapes.sheet.on('click', this.hideCellEditor);
-
     this.canvas.stage.on('click', this.hideCellEditor);
-
+    this.canvas.stage.on('mousedown', this.hideCellEditor);
     this.canvas.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.canvas.eventEmitter.on(events.scroll.vertical, this.handleScroll);
   }
 
   destroy() {
     window.removeEventListener('keydown', this.keyHandler);
-    this.canvas.shapes.sheet.off('dblclick', this.showCellEditor);
-    this.canvas.shapes.sheet.off('click', this.hideCellEditor);
-    this.canvas.row.shapes.headerGroup.off('click', this.hideCellEditor);
-    this.canvas.col.shapes.headerGroup.off('click', this.hideCellEditor);
     this.canvas.eventEmitter.off(events.resize.col.start, this.hideCellEditor);
     this.canvas.eventEmitter.off(events.resize.row.start, this.hideCellEditor);
     this.cellTooltip.destroy();
@@ -94,11 +90,13 @@ class CellEditor {
   };
 
   private showCellTooltip = () => {
-    const selectedCell = this.canvas.selector.getSelectedCell().attrs.start;
-    const rowText = this.canvas.row.getHeaderText(selectedCell.row);
-    const colText = this.canvas.col.getHeaderText(selectedCell.col);
-    this.cellTooltip.setContent(`${colText}${rowText}`);
-    this.cellTooltip.show();
+    if (this.isEditing) {
+      const selectedCell = this.canvas.selector.getSelectedCell().attrs.start;
+      const rowText = this.canvas.row.getHeaderText(selectedCell.row);
+      const colText = this.canvas.col.getHeaderText(selectedCell.col);
+      this.cellTooltip.setContent(`${colText}${rowText}`);
+      this.cellTooltip.show();
+    }
   };
 
   private handleScroll = () => {

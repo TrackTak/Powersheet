@@ -299,14 +299,6 @@ export const createIconButton = (name: IconElementsName) => {
 
   button.dataset.name = name;
 
-  button.addEventListener('click', () => {
-    if (button.dataset.active) {
-      delete button.dataset.active;
-    } else {
-      button.dataset.active = 'true';
-    }
-  });
-
   button.classList.add(
     styles.iconButton,
     `${toolbarPrefix}-icon-button`,

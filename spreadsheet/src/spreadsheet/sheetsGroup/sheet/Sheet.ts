@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
@@ -22,6 +22,7 @@ import RowCol from './RowCol';
 import events from '../../events';
 import Toolbar from '../../toolbar/Toolbar';
 import { NodeConfig } from 'konva/lib/Node';
+import { IconElementsName } from '../../toolbar/htmlElementHelpers';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -328,16 +329,14 @@ class Sheet {
     event: T,
     ...args: any[]
   ) {
-    const params: [Sheet, ...any[]] = [this, ...args];
-
     if (this.options.devMode) {
-      console.log(event, params);
+      console.log(event);
     }
 
-    this.eventEmitter.emit(event, ...params);
+    this.eventEmitter.emit(event, ...args);
   }
 
-  toolbarOnChange = (name: string, value: any) => {
+  toolbarOnChange = (name: IconElementsName, value: any) => {
     const selectedCells = this.selector.selectedCells;
 
     switch (name) {
@@ -345,33 +344,25 @@ class Sheet {
         selectedCells.forEach((selectedCell) => {
           const id = selectedCell.id();
           const clientRect = selectedCell.getClientRect();
-
-          const groupConfig: NodeConfig = {
-            x: clientRect.x,
-            y: clientRect.y,
-            row: selectedCell.attrs.row,
-            col: selectedCell.attrs.col,
-          };
-          const cell = this.shapes.cellGroup.clone(groupConfig) as Group;
-
-          const rect = new Rect({
-            type: 'cellRect',
-            fill: value,
-            width: clientRect.width,
-            height: clientRect.height,
-          });
-
-          cell.add(rect);
+          const cell = this.getNewCell(
+            id,
+            clientRect,
+            selectedCell.attrs.row,
+            selectedCell.attrs.col,
+            {
+              rectConfig: {
+                fill: value,
+              },
+            }
+          );
 
           if (this.cellsMap.has(id)) {
             this.cellsMap.get(id)!.destroy();
           }
 
-          this.cellsMap.set(selectedCell.attrs.id, cell);
+          this.cellsMap.set(id, cell);
 
           this.drawCell(cell);
-
-          this.selector.setOpacity(selectedCell);
 
           cell.moveToBottom();
         });
@@ -483,6 +474,48 @@ class Sheet {
 
     this.col.destroy();
     this.row.destroy();
+  }
+
+  getNewCell(
+    id: string,
+    rect: IRect,
+    row: Vector2d,
+    col: Vector2d,
+    config: {
+      groupConfig?: NodeConfig;
+      rectConfig?: RectConfig;
+    } = {}
+  ) {
+    const groupConfig: NodeConfig = {
+      ...config.groupConfig,
+      id,
+      x: rect.x,
+      y: rect.y,
+      row,
+      col,
+    };
+    const cell = this.shapes.cellGroup.clone(groupConfig) as Group;
+
+    const cellRect = new Rect({
+      ...config.rectConfig,
+      type: 'cellRect',
+      width: rect.width,
+      height: rect.height,
+    });
+
+    cell.add(cellRect);
+
+    return cell;
+  }
+
+  destroyCell(cellId: string) {
+    if (this.cellsMap.has(cellId)) {
+      const cell = this.cellsMap.get(cellId)!;
+
+      cell.destroy();
+
+      this.cellsMap.delete(cellId);
+    }
   }
 
   drawCell(cell: Cell) {

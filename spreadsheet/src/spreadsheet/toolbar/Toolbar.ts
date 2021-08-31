@@ -40,6 +40,7 @@ interface IConstructor {
 interface IIconElements {
   buttonContainer: HTMLDivElement;
   button: HTMLButtonElement;
+  active?: boolean;
   iconContainer: HTMLSpanElement;
   icon: HTMLElement;
   tooltip?: HTMLSpanElement;
@@ -98,11 +99,13 @@ class Toolbar {
   registeredFunctionNames: string[];
   options: IOptions;
   eventEmitter: EventEmitter;
+  focusedSheet: Sheet | null;
 
   constructor(params: IConstructor) {
     this.registeredFunctionNames = params.registeredFunctionNames;
     this.options = params.options;
     this.eventEmitter = params.eventEmitter;
+    this.focusedSheet = null;
 
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
@@ -204,6 +207,13 @@ class Toolbar {
       delay: 300,
     });
 
+    const setDropdownActive = (element: HTMLButtonElement, active: boolean) => {
+      const button = element as HTMLButtonElement;
+      const name = button.dataset.name as DropdownIconName;
+
+      this.setActive(this.iconElementsMap[name], active);
+    };
+
     this.dropdown = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-dropdown-icon-button`,
       trigger: 'click',
@@ -212,9 +222,10 @@ class Toolbar {
       interactive: true,
       arrow: false,
       onHide: ({ reference }) => {
-        const button = reference as HTMLButtonElement;
-
-        delete button.dataset.active;
+        setDropdownActive(reference as HTMLButtonElement, false);
+      },
+      onShow: ({ reference }) => {
+        setDropdownActive(reference as HTMLButtonElement, true);
       },
       content: (e) => {
         const button = e as HTMLButtonElement;
@@ -222,7 +233,7 @@ class Toolbar {
 
         if (!name) return '';
 
-        button.dataset.active = 'true';
+        setDropdownActive(e as HTMLButtonElement, true);
 
         return this.dropdownIconMap[name].dropdownContent;
       },
@@ -275,13 +286,42 @@ class Toolbar {
       this.toolbarEl.appendChild(group);
     });
 
-    this.setDisabled(this.iconElementsMap.merge, true);
+    this.iconElementsMap.merge.button.addEventListener(
+      'click',
+      this.onMergeClick
+    );
 
     this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
     this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
   }
 
+  getFocusedSheet() {
+    if (!this.focusedSheet) {
+      throw new Error('focusedSheet cannot be accessed if it is null');
+    }
+
+    return this.focusedSheet;
+  }
+
+  onMergeClick = () => {
+    const sheet = this.getFocusedSheet();
+
+    if (this.iconElementsMap.merge.active) {
+      sheet.merger.unMergeSelectedCells();
+
+      this.setMergedState(sheet.selector.selectedCells);
+
+      return;
+    }
+
+    if (!this.iconElementsMap.merge.button.disabled) {
+      this.focusedSheet?.merger.mergeSelectedCells();
+    }
+  };
+
   onStartSelection = (sheet: Sheet, selectedCell: Cell) => {
+    this.focusedSheet = sheet;
+
     const selectedCellId = selectedCell.id();
 
     this.iconElementsMap.merge.button.disabled = true;
@@ -294,19 +334,30 @@ class Toolbar {
 
       this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
         cellRect.fill();
-
-      if (cell.attrs.isMerged) {
-        this.iconElementsMap.merge.button.disabled = false;
-      }
     } else {
       this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
         'white';
     }
+
+    this.setMergedState([selectedCell]);
   };
 
-  onMoveSelection = (sheet: Sheet, selectedCells: Cell[]) => {
-    this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
+  onMoveSelection = (selectedCells: Cell[]) => {
+    this.setMergedState(selectedCells);
   };
+
+  setMergedState(selectedCells: Cell[]) {
+    const isActive =
+      selectedCells.length === 1 && selectedCells[0].attrs.isMerged;
+
+    if (isActive) {
+      this.iconElementsMap.merge.button.disabled = false;
+    } else {
+      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
+    }
+
+    this.setActive(this.iconElementsMap.merge, isActive);
+  }
 
   destroy() {
     this.eventEmitter.off(events.selector.startSelection);
@@ -352,6 +403,16 @@ class Toolbar {
       picker,
       colorPicker,
     };
+  }
+
+  setActive(iconElements: IIconElements, active: boolean) {
+    iconElements.active = active;
+
+    if (active) {
+      iconElements.button.classList.add('active');
+    } else {
+      iconElements.button.classList.remove('active');
+    }
   }
 
   setDisabled(iconElements: IIconElements, disabled: boolean) {

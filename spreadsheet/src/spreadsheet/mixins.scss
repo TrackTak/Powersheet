@@ -3,12 +3,12 @@
   border: none;
   background-color: transparent;
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.08);
+  &:global(.active) {
+    background-color: #e6f4ea;
   }
 
-  &[data-active='true'] {
-    background-color: #e6f4ea;
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
   }
 
   &:disabled {

@@ -1,43 +1,29 @@
-import { Shape } from 'konva/lib/Shape';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import events from '../../events';
 import { IMergedCells } from '../../options';
-import Sheet, { CellId, convertFromCellsToCellsRange } from './Sheet';
-import { performanceProperties } from './styles';
+import Sheet, {
+  Cell,
+  CellId,
+  convertFromCellsToCellsRange,
+  getCellId,
+} from './Sheet';
 import { iterateSelection } from './Selector';
-
-export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+import { IRect } from 'konva/lib/types';
 
 export type AssociatedMergedCellId = CellId;
 
-export type MergedCell = Shape;
-
-interface IShapes {
-  mergedCells: Rect;
-}
-
 class Merger {
-  associatedMergedCellMap: Map<AssociatedMergedCellId, MergedCell>;
-  mergedCellsMap: Map<CellId, MergedCell>;
-  private shapes: IShapes;
+  associatedMergedCellMap: Map<AssociatedMergedCellId, Cell>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.mergedCellsMap = new Map();
     this.associatedMergedCellMap = new Map();
-    this.shapes = {
-      mergedCells: new Rect({
-        ...performanceProperties,
-        fill: 'white',
-      }),
-    };
   }
 
   updateMergedCells() {
     this.sheet.options.mergedCells.forEach((mergedCells) => {
       const { mergedCellId } = this.mergeCells(mergedCells);
 
-      this.mergedCellsMap.get(mergedCellId)!.moveToTop();
+      this.sheet.cellsMap.get(mergedCellId)!.moveToTop();
     });
   }
 
@@ -80,34 +66,37 @@ class Merger {
 
       const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
       const offset = gridLineStrokeWidth;
-
-      const rectConfig: RectConfig = {
+      const rect: IRect = {
         x: startCol!.x() + offset,
         y: startRow!.y() + offset,
         height: height - offset * 2,
         width: width - offset * 2,
-        id: mergedCellId,
-        row,
-        col,
       };
 
-      const rect = this.shapes.mergedCells.clone(rectConfig) as Rect;
+      const cell = this.sheet.getNewCell(mergedCellId, rect, row, col, {
+        groupConfig: {
+          isMerged: true,
+        },
+        rectConfig: {
+          fill: 'white',
+        },
+      });
 
-      if (this.mergedCellsMap.has(mergedCellId)) {
-        this.mergedCellsMap.get(mergedCellId)!.destroy();
+      if (this.sheet.cellsMap.has(mergedCellId)) {
+        this.sheet.cellsMap.get(mergedCellId)!.destroy();
       }
+
+      this.sheet.cellsMap.set(mergedCellId, cell);
 
       for (const ri of iterateSelection(mergedCells.row)) {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
 
-          this.associatedMergedCellMap.set(id, rect);
+          this.associatedMergedCellMap.set(id, cell);
         }
       }
 
-      this.mergedCellsMap.set(mergedCellId, rect);
-
-      this.sheet.scrollGroups.main.add(rect);
+      this.sheet.drawCell(cell);
     }
 
     return { mergedCellId, shouldMerge };
@@ -116,9 +105,7 @@ class Merger {
   private destroyMergedCell(mergedCells: IMergedCells) {
     const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
 
-    if (this.mergedCellsMap.has(mergedCellId)) {
-      const mergedCell = this.mergedCellsMap.get(mergedCellId)!;
-
+    if (this.sheet.cellsMap.has(mergedCellId)) {
       for (const ri of iterateSelection(mergedCells.row)) {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
@@ -126,11 +113,9 @@ class Merger {
           this.associatedMergedCellMap.delete(id);
         }
       }
-
-      mergedCell.destroy();
-
-      this.mergedCellsMap.delete(mergedCellId);
     }
+
+    this.sheet.destroyCell(mergedCellId);
   }
 
   unMergeCells(mergedCells: IMergedCells) {

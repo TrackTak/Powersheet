@@ -1,25 +1,28 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
-import styles from './Canvas.module.scss';
+import styles from './Sheet.module.scss';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import {
-  defaultCanvasStyles,
-  ICanvasStyles,
+  defaultStyles,
   IColHeaderConfig,
   IRowHeaderConfig,
+  IStyles,
   performanceProperties,
-} from './canvasStyles';
+} from './styles';
 import { IOptions } from '../../options';
-import Selector from './Selector';
+import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
+import Toolbar from '../../toolbar/Toolbar';
+import { NodeConfig } from 'konva/lib/Node';
+import { IconElementsName } from '../../toolbar/htmlElementHelpers';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -27,9 +30,10 @@ interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
 
 interface IConstructor {
   stageConfig?: ICreateStageConfig;
-  styles?: Partial<ICanvasStyles>;
+  styles?: Partial<IStyles>;
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
+  toolbar?: Toolbar;
   options: IOptions;
   eventEmitter: EventEmitter;
 }
@@ -44,11 +48,12 @@ export interface ISheetViewportPosition {
   y: number;
 }
 
-export interface ICanvasShapes {
+interface IShapes {
   sheetGroup: Group;
   sheet: Rect;
   frozenGridLine: Line;
   topLeftRect: Rect;
+  cellGroup: Group;
 }
 
 export interface ICustomSizePosition {
@@ -73,7 +78,28 @@ export interface ICustomSizes {
 
 export type CellId = string;
 
+export type Cell = Group;
+
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const convertFromCellsToCellsRange = (groups: Group[]) => {
+  const getMin = (property: string) =>
+    Math.min(...groups.map((o) => o.attrs[property].x));
+  const getMax = (property: string) =>
+    Math.max(...groups.map((o) => o.attrs[property].y));
+
+  const row = {
+    x: getMin('row'),
+    y: getMax('row'),
+  };
+
+  const col = {
+    x: getMin('col'),
+    y: getMax('col'),
+  };
+
+  return { row, col };
+};
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
@@ -187,7 +213,7 @@ export const reverseVectorsIfStartBiggerThanEnd = (
   };
 };
 
-class Canvas {
+class Sheet {
   container: HTMLDivElement;
   stage: Stage;
   scrollGroups: IScrollGroups;
@@ -196,17 +222,21 @@ class Canvas {
   row: RowCol;
   selector: Selector;
   merger: Merger;
-  styles: ICanvasStyles;
-  shapes: ICanvasShapes;
+  styles: IStyles;
+  shapes: IShapes;
   sheetDimensions: IDimensions;
   sheetViewportDimensions: IDimensions;
+  cellsMap: Map<CellId, Cell>;
   eventEmitter: EventEmitter;
   options: IOptions;
+  toolbar?: Toolbar;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
-    this.styles = merge({}, defaultCanvasStyles, params.styles);
+    this.styles = merge({}, defaultStyles, params.styles);
     this.options = params.options;
+    this.toolbar = params.toolbar;
+    this.cellsMap = new Map();
 
     const that = this;
 
@@ -225,7 +255,10 @@ class Canvas {
     };
 
     this.container = document.createElement('div');
-    this.container.classList.add(`${prefix}-canvas`, styles.canvas);
+    this.container.classList.add(
+      `${prefix}-sheet-container`,
+      styles.sheetContainer
+    );
 
     this.stage = new Stage({
       container: this.container,
@@ -267,6 +300,9 @@ class Canvas {
         width: this.getViewportVector().x,
         height: this.getViewportVector().y,
       }),
+      cellGroup: new Group({
+        ...performanceProperties,
+      }),
     };
 
     this.shapes.frozenGridLine.cache();
@@ -284,8 +320,57 @@ class Canvas {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
 
+    this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
+
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
+
+  emit<T extends EventEmitter.EventNames<string | symbol>>(
+    event: T,
+    ...args: any[]
+  ) {
+    if (this.options.devMode) {
+      console.log(event);
+    }
+
+    this.eventEmitter.emit(event, ...args);
+  }
+
+  toolbarOnChange = (name: IconElementsName, value: any) => {
+    const selectedCells = this.selector.selectedCells;
+
+    switch (name) {
+      case 'backgroundColor': {
+        selectedCells.forEach((selectedCell) => {
+          const id = selectedCell.id();
+          const clientRect = selectedCell.getClientRect();
+          const cell = this.getNewCell(
+            clientRect,
+            selectedCell.attrs.row,
+            selectedCell.attrs.col,
+            {
+              groupConfig: {
+                id,
+                isMerged: selectedCell.attrs.isMerged,
+              },
+              rectConfig: {
+                fill: value,
+              },
+            }
+          );
+
+          if (this.cellsMap.has(id)) {
+            this.cellsMap.get(id)!.destroy();
+          }
+
+          this.cellsMap.set(id, cell);
+
+          this.drawCell(cell);
+        });
+        break;
+      }
+    }
+  };
 
   updateSheetDimensions() {
     this.sheetDimensions.width = this.col.getTotalSize();
@@ -325,7 +410,7 @@ class Canvas {
       this.col.scrollBar.getBoundingClientRect().height
     }px`;
 
-    this.eventEmitter.emit(events.canvas.load, e);
+    this.emit(events.sheet.load, e);
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
@@ -344,31 +429,30 @@ class Canvas {
       y: newEnd.x,
     });
 
-    for (let ri = rowIndexes.x; ri <= rowIndexes.y; ri++) {
-      for (let ci = colIndexes.x; ci <= colIndexes.y; ci++) {
-        const mergedCellId = getCellId(ri, ci);
-
+    for (const ri of iterateSelection(rowIndexes)) {
+      for (const ci of iterateSelection(colIndexes)) {
+        const existingCellId = getCellId(ri, ci);
         const mergedCell =
-          this.merger.associatedMergedCellMap.get(mergedCellId);
+          this.merger.associatedMergedCellMap.get(existingCellId);
 
         if (mergedCell) {
-          const start = mergedCell.attrs.start;
-          const end = mergedCell.attrs.end;
+          const row = mergedCell.attrs.row;
+          const col = mergedCell.attrs.col;
 
-          if (start.col < colIndexes.x) {
-            colIndexes.x = start.col;
+          if (col.x < colIndexes.x) {
+            colIndexes.x = col.x;
           }
 
-          if (start.row < rowIndexes.x) {
-            rowIndexes.x = start.row;
+          if (row.x < rowIndexes.x) {
+            rowIndexes.x = row.x;
           }
 
-          if (end.col > colIndexes.y) {
-            colIndexes.y = end.col;
+          if (col.y > colIndexes.y) {
+            colIndexes.y = col.y;
           }
 
-          if (end.row > rowIndexes.y) {
-            rowIndexes.y = end.row;
+          if (row.y > rowIndexes.y) {
+            rowIndexes.y = row.y;
           }
         }
       }
@@ -386,10 +470,81 @@ class Canvas {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
+    this.container.remove();
     this.stage.destroy();
 
     this.col.destroy();
     this.row.destroy();
+  }
+
+  getNewCell(
+    rect: IRect,
+    row: Vector2d,
+    col: Vector2d,
+    config: {
+      groupConfig?: NodeConfig;
+      rectConfig?: RectConfig;
+    } = {}
+  ) {
+    const groupConfig: NodeConfig = {
+      ...config.groupConfig,
+      x: rect.x,
+      y: rect.y,
+      row,
+      col,
+    };
+    const cell = this.shapes.cellGroup.clone(groupConfig) as Group;
+
+    const cellRect = new Rect({
+      ...config.rectConfig,
+      type: 'cellRect',
+      width: rect.width,
+      height: rect.height,
+    });
+
+    cell.add(cellRect);
+
+    return cell;
+  }
+
+  getCellRectFromCell(cellId: string) {
+    const cell = this.cellsMap.get(cellId)!;
+    const cellRect = cell.children?.find(
+      (x) => x.attrs.type === 'cellRect'
+    ) as Rect;
+
+    return cellRect;
+  }
+
+  destroyCell(cellId: string) {
+    if (this.cellsMap.has(cellId)) {
+      const cell = this.cellsMap.get(cellId)!;
+
+      cell.destroy();
+
+      this.cellsMap.delete(cellId);
+    }
+  }
+
+  drawCell(cell: Cell) {
+    const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
+    const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
+
+    if (isFrozenRow && isFrozenCol) {
+      this.scrollGroups.xySticky.add(cell);
+    } else if (isFrozenRow) {
+      this.scrollGroups.ySticky.add(cell);
+    } else if (isFrozenCol) {
+      this.scrollGroups.xSticky.add(cell);
+    } else {
+      this.scrollGroups.main.add(cell);
+    }
+
+    if (cell.attrs.isMerged) {
+      cell.moveToTop();
+    } else {
+      cell.moveToBottom();
+    }
   }
 
   drawTopLeftOffsetRect() {
@@ -414,4 +569,4 @@ class Canvas {
   }
 }
 
-export default Canvas;
+export default Sheet;

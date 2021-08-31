@@ -91,13 +91,12 @@ class Merger {
       }
 
       const gridLineStrokeWidth = this.canvas.styles.gridLine.strokeWidth!;
-      const offset = gridLineStrokeWidth;
 
       const rectConfig: RectConfig = {
-        x: startCol!.x() + offset,
-        y: startRow!.y() + offset,
-        height: height - offset * 2,
-        width: width - offset * 2,
+        x: startCol!.x() + gridLineStrokeWidth,
+        y: startRow!.y() + gridLineStrokeWidth,
+        height: height - gridLineStrokeWidth * 2,
+        width: width - gridLineStrokeWidth * 2,
         id: mergedCellId,
         start,
         end,

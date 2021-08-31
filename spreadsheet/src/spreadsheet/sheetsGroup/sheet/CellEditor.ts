@@ -3,7 +3,8 @@ import events from '../../events';
 import Canvas from './Canvas';
 import styles from './CellEditor.module.scss';
 
-import { DelegateInstance, delegate } from "tippy.js";
+import { DelegateInstance, delegate } from 'tippy.js';
+import { Rect } from 'konva/lib/shapes/Rect';
 class CellEditor {
   private textArea!: HTMLDivElement;
   private cellTooltip: DelegateInstance;
@@ -13,7 +14,7 @@ class CellEditor {
     this.canvas = canvas;
 
     this.textArea = document.createElement('div');
-    this.textArea.setAttribute("contentEditable", "true");
+    this.textArea.setAttribute('contentEditable', 'true');
     this.textArea.classList.add(styles.cellEditor);
     this.cellTooltip = delegate(this.textArea, {
       target: styles.cellEditor,
@@ -27,10 +28,9 @@ class CellEditor {
     window.addEventListener('keydown', this.keyHandler);
     this.canvas.shapes.sheet.on('dblclick', this.showCellEditor);
     this.canvas.shapes.sheet.on('click', this.hideCellEditor);
-    this.canvas.row.shapes.headerGroup.on('click', this.hideCellEditor);
-    this.canvas.col.shapes.headerGroup.on('click', this.hideCellEditor);
-    this.canvas.eventEmitter.on(events.resize.col.start, this.hideCellEditor);
-    this.canvas.eventEmitter.on(events.resize.row.start, this.hideCellEditor);
+
+    this.canvas.stage.on('click', this.hideCellEditor);
+
     this.canvas.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.canvas.eventEmitter.on(events.scroll.vertical, this.handleScroll);
   }
@@ -62,15 +62,15 @@ class CellEditor {
 
   private showCellEditor = () => {
     const selectedCell = this.canvas.selector.getSelectedCell();
-    const selectedCellSize = selectedCell.getClientRect();
+    const cellRect = selectedCell.children![0] as Rect;
     const absolutePosition = selectedCell.getAbsolutePosition();
     const cellPosition = {
       x: absolutePosition.x,
       y: absolutePosition.y,
-      width: selectedCellSize.width,
-      height: selectedCellSize.height,
+      width: cellRect.width(),
+      height: cellRect.height(),
     };
-    this.setTextAreaPosition(cellPosition);
+    this.setTextAreaPosition(cellPosition, cellRect.strokeWidth() / 2);
     this.textArea.style.display = 'initial';
     this.textArea.focus();
     this.isEditing = true;
@@ -81,12 +81,12 @@ class CellEditor {
     this.isEditing = false;
   };
 
-  private setTextAreaPosition = (position: IRect) => {
-    this.textArea.style.top = `${position.y - 1}px`;
-    this.textArea.style.left = `${position.x - 1}px`;
-    this.textArea.style.minWidth = `${position.width}px`;
-    this.textArea.style.height = `${position.height}px`;
-    this.textArea.style.lineHeight = `${position.height}px`;
+  private setTextAreaPosition = (position: IRect, offset: number) => {
+    this.textArea.style.top = `${position.y + offset}px`;
+    this.textArea.style.left = `${position.x + offset}px`;
+    this.textArea.style.minWidth = `${position.width - offset * 2}px`;
+    this.textArea.style.height = `${position.height - offset * 2}px`;
+    this.textArea.style.lineHeight = `${position.height - offset * 2}px`;
   };
 
   private hideCellTooltip = () => {
@@ -106,11 +106,11 @@ class CellEditor {
     const colScrollOffset = this.canvas.col.scrollBar.scrollOffset;
 
     if (rowScrollOffset.index || colScrollOffset.index) {
-      this.showCellTooltip()
+      this.showCellTooltip();
     } else {
       this.hideCellTooltip();
     }
-  }
+  };
 }
 
 export default CellEditor;

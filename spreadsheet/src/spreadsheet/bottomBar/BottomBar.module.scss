@@ -1,4 +1,4 @@
-.navbar {
+.bottomBar {
   background: #f5f6f7;
   box-shadow: 0 -1px 3px -1px rgb(169 164 164);
   position: fixed;
@@ -15,16 +15,22 @@
   flex-direction: row;
 }
 
+.tab {
+  background-color: #fff;
+  box-shadow: 0 0px 3px -1px rgb(169 164 164);
+  display: inline-block;
+}
+
 img {
   height: 13px;
   width: 13px;
 }
 
-.plus-icon {
+.plusImgIcon {
   margin: 0 20px;
 }
 
-.btn-img {
+.buttonIcon {
   border: 0;
   padding: 0;
   background: none;
@@ -32,19 +38,7 @@ img {
   margin: 7px;
 }
 
-.tab {
-  background-color: #fff;
-  box-shadow: 0 0px 3px -1px rgb(169 164 164);
-  display: inline-block;
-}
-
-.scrollslider-container-tab {
-  display: flex;
-  flex-direction: row;
-  transition: transform 0.2s ease-in;
-}
-
-.btn-tab {
+.sheetTab {
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -62,7 +56,22 @@ img {
     Arial, sans-serif;
 }
 
-.btn-tab-2 {
+.sheetTab:hover {
+  background-color: #ddd;
+}
+
+.sheetTabSpan:focus {
+  border: 2px solid #43cea2;
+  outline: none;
+  border-radius: 4px;
+  padding: 4px 22px 4px 4px;
+}
+
+.containerSheetTab {
+  position: relative;
+}
+
+.allSheetMenu {
   border: 0;
   padding: 0;
   background: none;
@@ -74,22 +83,11 @@ img {
   text-align: left;
 }
 
-.btn-tab-2:hover {
+.allSheetMenu:hover {
   background-color: #ddd;
 }
 
-.btn-tab:hover {
-  background-color: #ddd;
-}
-
-.btn-tab-span:focus {
-  border: 2px solid #43cea2;
-  outline: none;
-  border-radius: 4px;
-  padding: 4px 22px 4px 4px;
-}
-
-.dropdown-menu {
+.contextSheetMenu {
   height: 100px;
   bottom: 100%;
   position: absolute;
@@ -100,22 +98,11 @@ img {
   z-index: 100;
 }
 
-.btn-menuitem:hover {
+.buttonSheetAction:hover {
   background-color: #ddd;
 }
 
-.dropdown-menuitem {
-  color: #202124;
-  display: flex;
-  flex-direction: column;
-  white-space: nowrap;
-}
-
-.container-btn-tab {
-  position: relative;
-}
-
-.btn-menuitem {
+.buttonSheetAction {
   border: 0;
   padding: 0;
   background: none;
@@ -127,11 +114,18 @@ img {
   text-align: left;
 }
 
-.menusheet-container {
+.sheetMenuitem {
+  color: #202124;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.menusheetContainer {
   margin-right: 16px;
 }
 
-.menusheet-dropdown {
+.menusheetDropdownContent {
   bottom: 100%;
   position: absolute;
   border: 1px solid transparent;
@@ -147,7 +141,13 @@ img {
     Arial, sans-serif;
 }
 
-.scrollslider-arrow {
+.scrollsliderContainerTab {
+  display: flex;
+  flex-direction: row;
+  transition: transform 0.2s ease-in;
+}
+
+.scrollsliderArrow {
   overflow-x: hidden;
   overflow-y: hidden;
   white-space: nowrap;
@@ -155,12 +155,12 @@ img {
   display: none;
 }
 
-.scrollslider-content {
+.scrollsliderContent {
   display: none;
   align-content: space-between;
 }
 
-.left-scrollslider-btn {
+.leftScrollslider {
   left: 0;
   z-index: 1;
   border: 0;
@@ -169,7 +169,7 @@ img {
   margin-right: 5px;
 }
 
-.right-scrollslider-btn {
+.rightScrollslider {
   right: 0;
   z-index: 1;
   border: 0;
@@ -178,7 +178,7 @@ img {
   margin-left: 5px;
 }
 
-.scroll-icon {
+.scrollIcon {
   width: 10px;
   height: 12px;
 }

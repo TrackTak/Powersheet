@@ -46,10 +46,13 @@
     "node": ">=10"
   },
   "dependencies": {
+    "a-color-picker": "^1.2.1",
     "eventemitter3": "^4.0.7",
+    "hyperformula": "^1.1.0",
     "konva": "^8.1.1",
     "lodash": "^4.17.21",
     "sass": "^1.36.0",
+    "sentence-case": "^3.0.4",
     "tippy.js": "^6.3.1"
   },
   "devDependencies": {

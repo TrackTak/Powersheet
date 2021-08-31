@@ -2,7 +2,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
-import Canvas, { ICustomSizePosition } from '../Canvas';
+import Sheet, { ICustomSizePosition } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 
@@ -22,12 +22,12 @@ class ScrollBar {
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
 
   constructor(
-    private canvas: Canvas,
+    private sheet: Sheet,
     private type: RowColType,
     private isCol: boolean,
     private functions: IRowColFunctions
   ) {
-    this.canvas = canvas;
+    this.sheet = sheet;
     this.type = type;
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
@@ -59,9 +59,9 @@ class ScrollBar {
 
     this.scrollBarEl.addEventListener('scroll', this.throttledScroll);
 
-    this.canvas.stage.on('wheel', this.onWheel);
+    this.sheet.stage.on('wheel', this.onWheel);
 
-    this.canvas.container.appendChild(this.scrollBarEl);
+    this.sheet.container.appendChild(this.scrollBarEl);
   }
 
   getBoundingClientRect = () => {
@@ -71,7 +71,7 @@ class ScrollBar {
   setup() {
     this.updateCustomSizePositions();
 
-    this.scrollBarEl.style[this.functions.size] = `${this.canvas.stage[
+    this.scrollBarEl.style[this.functions.size] = `${this.sheet.stage[
       this.functions.size
     ]()}px`;
   }
@@ -79,14 +79,14 @@ class ScrollBar {
   updateCustomSizePositions() {
     let customSizeDifference = 0;
 
-    Object.keys(this.canvas.options[this.type].sizes).forEach((key) => {
+    Object.keys(this.sheet.options[this.type].sizes).forEach((key) => {
       const index = parseInt(key, 10);
-      const size = this.canvas.options[this.type].sizes[key];
+      const size = this.sheet.options[this.type].sizes[key];
       const axis =
-        index * this.canvas.options[this.type].defaultSize +
+        index * this.sheet.options[this.type].defaultSize +
         customSizeDifference;
 
-      customSizeDifference += size - this.canvas.options[this.type].defaultSize;
+      customSizeDifference += size - this.sheet.options[this.type].defaultSize;
 
       this.customSizePositions[index] = {
         axis,
@@ -95,8 +95,8 @@ class ScrollBar {
     });
 
     this.scrollEl.style[this.functions.size] = `${
-      this.canvas.sheetDimensions[this.functions.size] +
-      this.canvas.getViewportVector()[this.functions.axis]
+      this.sheet.sheetDimensions[this.functions.size] +
+      this.sheet.getViewportVector()[this.functions.axis]
     }px`;
   }
 
@@ -126,7 +126,7 @@ class ScrollBar {
         let newSize = size;
 
         if (axis < scroll) {
-          newSize -= this.canvas.options[this.type].defaultSize;
+          newSize -= this.sheet.options[this.type].defaultSize;
         }
 
         return totalSize + newSize;
@@ -137,45 +137,41 @@ class ScrollBar {
     const scrollAmount = scroll * -1;
     const scrollPercent =
       (scroll - totalSizeDifference) /
-      (this.canvas.sheetDimensions[this.functions.size] - totalSizeDifference);
+      (this.sheet.sheetDimensions[this.functions.size] - totalSizeDifference);
     const index = Math.trunc(
-      this.canvas.options[this.type].amount * scrollPercent
+      this.sheet.options[this.type].amount * scrollPercent
     );
 
-    this.canvas[this.type].sheetViewportPosition.x = index;
-    this.canvas[this.type].sheetViewportPosition.y = this.canvas[
+    this.sheet[this.type].sheetViewportPosition.x = index;
+    this.sheet[this.type].sheetViewportPosition.y = this.sheet[
       this.type
     ].calculateSheetViewportEndPosition(
-      this.canvas.stage[this.functions.size](),
-      this.canvas[this.type].sheetViewportPosition.x,
+      this.sheet.stage[this.functions.size](),
+      this.sheet[this.type].sheetViewportPosition.x,
       customSizeChanges
     );
 
     if (this.isCol) {
-      this.canvas.scrollGroups.ySticky.x(scrollAmount);
+      this.sheet.scrollGroups.ySticky.x(scrollAmount);
     } else {
-      this.canvas.scrollGroups.xSticky.y(scrollAmount);
+      this.sheet.scrollGroups.xSticky.y(scrollAmount);
     }
 
-    this.canvas.scrollGroups.main[this.functions.axis](scrollAmount);
+    this.sheet.scrollGroups.main[this.functions.axis](scrollAmount);
 
-    this.canvas.updateViewport();
+    this.sheet.updateViewport();
 
-    const item = this.canvas[this.type].headerGroupMap.get(index)!;
+    const item = this.sheet[this.type].headerGroupMap.get(index)!;
 
     this.scrollOffset = {
       index,
       size:
         scroll +
-        this.canvas.getViewportVector()[this.functions.axis] -
+        this.sheet.getViewportVector()[this.functions.axis] -
         item[this.functions.axis](),
     };
 
-    this.canvas.eventEmitter.emit(
-      events.scroll[this.scrollType],
-      e,
-      scrollAmount
-    );
+    this.sheet.emit(events.scroll[this.scrollType], e, scrollAmount);
   };
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -187,7 +183,7 @@ class ScrollBar {
       this.scrollBarEl.scrollBy(0, e.evt.deltaY);
     }
 
-    this.canvas.eventEmitter.emit(events.scrollWheel[this.scrollType], e);
+    this.sheet.emit(events.scrollWheel[this.scrollType], e);
   };
 
   destroy() {

@@ -351,6 +351,7 @@ class Sheet {
             {
               groupConfig: {
                 id,
+                isMerged: selectedCell.attrs.isMerged,
               },
               rectConfig: {
                 fill: value,
@@ -365,8 +366,6 @@ class Sheet {
           this.cellsMap.set(id, cell);
 
           this.drawCell(cell);
-
-          cell.moveToBottom();
         });
         break;
       }
@@ -539,6 +538,12 @@ class Sheet {
       this.scrollGroups.xSticky.add(cell);
     } else {
       this.scrollGroups.main.add(cell);
+    }
+
+    if (cell.attrs.isMerged) {
+      cell.moveToTop();
+    } else {
+      cell.moveToBottom();
     }
   }
 

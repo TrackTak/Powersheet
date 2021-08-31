@@ -280,7 +280,7 @@ class Selector {
       }
     );
 
-    this.sheet.drawCell(cell);
+    // this.sheet.drawCell(cell);
 
     this.selectionBorderCell = cell;
   }

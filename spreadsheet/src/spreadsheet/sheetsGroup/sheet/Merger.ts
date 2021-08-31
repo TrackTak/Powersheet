@@ -21,91 +21,90 @@ class Merger {
 
   updateMergedCells() {
     this.sheet.options.mergedCells.forEach((mergedCells) => {
-      const { id } = this.mergeCells(mergedCells);
+      const id = this.mergeCells(mergedCells);
+      const startRow = this.sheet.row.rowColGroupMap.get(mergedCells.row.x);
+      const startCol = this.sheet.col.rowColGroupMap.get(mergedCells.col.x);
+      const shouldMerge = startCol && startRow ? true : false;
 
-      this.sheet.cellsMap.get(id)!.moveToTop();
+      if (shouldMerge) {
+        this.sheet.cellsMap.get(id)!.moveToTop();
+      }
     });
   }
 
   addMergeCells(mergedCells: IMergedCells) {
+    const id = getCellId(mergedCells.row.x, mergedCells.col.x);
+    const existingTopLeftCell = this.sheet.cellsMap.get(id);
+
     this.unMergeCells(mergedCells);
+    this.mergeCells(mergedCells, existingTopLeftCell);
 
-    const { shouldMerge } = this.mergeCells(mergedCells);
+    this.sheet.options.mergedCells.push(mergedCells);
 
-    if (shouldMerge) {
-      this.sheet.options.mergedCells.push(mergedCells);
-
-      this.sheet.selector.removeSelectedCells();
-    }
+    this.sheet.selector.removeSelectedCells();
 
     this.sheet.emit(events.merge.add, mergedCells);
   }
 
-  private mergeCells(mergedCells: IMergedCells) {
+  private mergeCells(mergedCells: IMergedCells, existingTopLeftCell?: Cell) {
     const { row, col } = mergedCells;
     const id = getCellId(row.x, col.x);
     const startRow = this.sheet.row.rowColGroupMap.get(row.x);
     const startCol = this.sheet.col.rowColGroupMap.get(col.x);
-    const shouldMerge = startCol && startRow ? true : false;
+    let height = 0;
+    let width = 0;
 
-    if (shouldMerge) {
-      let height = 0;
-      let width = 0;
+    for (const index of iterateSelection(mergedCells.row)) {
+      const group = this.sheet.row.rowColGroupMap.get(index)!;
 
-      for (const index of iterateSelection(mergedCells.row)) {
-        const group = this.sheet.row.rowColGroupMap.get(index)!;
-
-        height += group.height();
-      }
-
-      for (const index of iterateSelection(mergedCells.col)) {
-        const group = this.sheet.col.rowColGroupMap.get(index)!;
-
-        width += group.width();
-      }
-
-      const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
-      const offset = gridLineStrokeWidth;
-      const rect: IRect = {
-        x: startCol!.x() + offset,
-        y: startRow!.y() + offset,
-        height: height - offset * 2,
-        width: width - offset * 2,
-      };
-
-      let fill = 'white';
-
-      if (this.sheet.cellsMap.has(id)) {
-        const cellRect = this.sheet.getCellRectFromCell(id);
-
-        fill = cellRect.fill();
-      }
-
-      const cell = this.sheet.getNewCell(rect, row, col, {
-        groupConfig: {
-          id,
-          isMerged: true,
-        },
-        rectConfig: {
-          fill,
-        },
-      });
-
-      for (const ri of iterateSelection(mergedCells.row)) {
-        for (const ci of iterateSelection(mergedCells.col)) {
-          const id = getCellId(ri, ci);
-
-          this.associatedMergedCellMap.set(id, cell);
-          this.sheet.destroyCell(id);
-        }
-      }
-
-      this.sheet.cellsMap.set(id, cell);
-
-      this.sheet.drawCell(cell);
+      height += group.height();
     }
 
-    return { id, shouldMerge };
+    for (const index of iterateSelection(mergedCells.col)) {
+      const group = this.sheet.col.rowColGroupMap.get(index)!;
+
+      width += group.width();
+    }
+
+    const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
+    const offset = gridLineStrokeWidth;
+    const rect: IRect = {
+      x: startCol!.x() + offset,
+      y: startRow!.y() + offset,
+      height: height - offset * 2,
+      width: width - offset * 2,
+    };
+
+    let existingTopLeftCellRect;
+
+    if (existingTopLeftCell) {
+      existingTopLeftCellRect = this.sheet.getCellRectFromCell(id);
+    }
+
+    const cell = this.sheet.getNewCell(rect, row, col, {
+      groupConfig: {
+        id,
+        isMerged: true,
+      },
+      rectConfig: {
+        fill: existingTopLeftCellRect?.fill() ?? 'white',
+      },
+    });
+
+    for (const ri of iterateSelection(mergedCells.row)) {
+      for (const ci of iterateSelection(mergedCells.col)) {
+        const id = getCellId(ri, ci);
+
+        this.associatedMergedCellMap.set(id, cell);
+        this.sheet.destroyCell(id);
+      }
+    }
+
+    this.sheet.cellsMap.set(id, cell);
+
+    this.sheet.drawCell(cell);
+
+    return id;
   }
 
   private destroyMergedCell(mergedCells: IMergedCells) {

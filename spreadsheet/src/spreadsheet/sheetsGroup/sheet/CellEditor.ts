@@ -78,10 +78,10 @@ class CellEditor {
   };
 
   private setTextAreaPosition = (position: IRect, offset: number) => {
-    this.textArea.style.top = `${position.y + offset}px`;
-    this.textArea.style.left = `${position.x + offset}px`;
-    this.textArea.style.minWidth = `${position.width - offset * 2}px`;
-    this.textArea.style.height = `${position.height - offset * 2}px`;
+    this.textArea.style.top = `${position.y}px`;
+    this.textArea.style.left = `${position.x}px`;
+    this.textArea.style.minWidth = `${position.width}px`;
+    this.textArea.style.height = `${position.height}px`;
     this.textArea.style.lineHeight = `${position.height - offset * 2}px`;
   };
 
@@ -91,9 +91,12 @@ class CellEditor {
 
   private showCellTooltip = () => {
     if (this.isEditing) {
-      const selectedCell = this.canvas.selector.getSelectedCell().attrs.start;
-      const rowText = this.canvas.row.getHeaderText(selectedCell.row);
-      const colText = this.canvas.col.getHeaderText(selectedCell.col);
+      const selectedCell = this.canvas.selector.getSelectedCell();
+      const row = selectedCell.attrs.row;
+      const col = selectedCell.attrs.col;
+      const rowText = this.canvas.row.getHeaderText(row.x);
+      const colText = this.canvas.col.getHeaderText(col.x);
+
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();
     }

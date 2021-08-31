@@ -261,7 +261,7 @@ class Selector {
   }
 
   getSelectedCell() {
-    return this.selectedRects[0];
+    return this.selectedCells[0];
   }
 }
 

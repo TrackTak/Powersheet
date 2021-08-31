@@ -285,12 +285,7 @@ class Canvas {
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
-    this.cellEditor = new CellEditor(
-      this.container,
-      this.shapes.sheet,
-      this.selector,
-      this.eventEmitter,
-    );
+    this.cellEditor = new CellEditor(this);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
@@ -334,8 +329,6 @@ class Canvas {
     }px`;
 
     this.eventEmitter.emit(events.canvas.load, e);
-
-    this.createCellEditor();
   };
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {

@@ -2,31 +2,43 @@ import EventEmitter from 'eventemitter3';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { IRect } from 'konva/lib/types';
 import events from '../../events';
+import Canvas from './Canvas';
 import styles from './CellEditor.module.scss';
 import Selector from './Selector';
 
 class CellEditor {
-  textArea!: HTMLTextAreaElement;
+  private textArea!: HTMLDivElement;
   private isEditing = false;
+  private container: HTMLDivElement;
+  private sheet: Rect;
+  private rowHeader: Rect;
+  private colHeader: Rect;
+  private selector: Selector;
+  private eventEmitter: EventEmitter;
 
   constructor(
-    private container: HTMLDivElement,
-    private sheet: Rect,
-    private selector: Selector,
-    private eventEmitter: EventEmitter
+    canvas: Canvas,
   ) {
-    this.container = container;
-    this.sheet = sheet;
-    this.selector = selector;
-    this.eventEmitter = eventEmitter;
+    this.container = canvas.container;
+    this.sheet = canvas.shapes.sheet;
+    this.rowHeader = canvas.row.shapes.headerRect;
+    this.colHeader = canvas.col.shapes.headerRect;
+    this.selector = canvas.selector;
+    this.eventEmitter = canvas.eventEmitter;
 
-    this.textArea = document.createElement('textarea');
+    this.textArea = document.createElement('div');
+    this.textArea.setAttribute("contentEditable", "true");
+
     this.container.appendChild(this.textArea);
     this.setInitialTextAreaStyles();
 
     window.addEventListener('keydown', this.keyHandler);
     this.sheet.on('dblclick', this.showCellEditor);
     this.sheet.on('click', this.hideCellEditor);
+    this.rowHeader.on('click', this.hideCellEditor);
+    this.colHeader.on('click', this.hideCellEditor);
+    this.eventEmitter.on(events.resize.col.start, this.hideCellEditor);
+    this.eventEmitter.on(events.resize.row.start, this.hideCellEditor);
   }
 
   private setInitialTextAreaStyles = () => {
@@ -40,7 +52,7 @@ class CellEditor {
   }
 
   private keyHandler = (e: KeyboardEvent) => {
-    e.preventDefault();
+    e.stopPropagation();
     switch (e.key) {
       case 'Enter':
       case 'Escape':
@@ -55,14 +67,14 @@ class CellEditor {
 
   showCellEditor = () => {
     const selectedCell = this.selector.getSelectedCell();
+    const selectedCellSize = selectedCell.getClientRect();
     const absolutePosition = selectedCell.getAbsolutePosition();
     const cellPosition = {
       x: absolutePosition.x,
       y: absolutePosition.y,
-      width: selectedCell.width(),
-      height: selectedCell.height(),
+      width: selectedCellSize.width,
+      height: selectedCellSize.height,
     };
-    console.log('abs', absolutePosition);
     this.setTextAreaPosition(cellPosition);
     this.textArea.style.display = 'initial';
     this.textArea.focus();
@@ -77,8 +89,9 @@ class CellEditor {
   setTextAreaPosition = (position: IRect) => {
     this.textArea.style.top = `${position.y}px`;
     this.textArea.style.left = `${position.x}px`;
-    this.textArea.style.width = `${position.width}px`;
+    this.textArea.style.minWidth = `${position.width}px`;
     this.textArea.style.height = `${position.height}px`;
+    this.textArea.style.lineHeight = `${position.height}px`;
   };
 }
 

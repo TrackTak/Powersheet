@@ -253,6 +253,10 @@ class Selector {
 
     this.selectionBorderCell = cell;
   }
+
+  getSelectedCell() {
+    return this.selectedCells[0];
+  }
 }
 
 export default Selector;

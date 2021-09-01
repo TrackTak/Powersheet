@@ -20,6 +20,7 @@ import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
+import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { NodeConfig } from 'konva/lib/Node';
 import { IconElementsName } from '../../toolbar/htmlElementHelpers';
@@ -247,6 +248,7 @@ class Sheet {
   cellsMap: Map<CellId, Cell>;
   eventEmitter: EventEmitter;
   options: IOptions;
+  cellEditor: CellEditor;
   toolbar?: Toolbar;
 
   constructor(params: IConstructor) {
@@ -334,6 +336,7 @@ class Sheet {
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
+    this.cellEditor = new CellEditor(this);
 
     this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
 
@@ -559,6 +562,7 @@ class Sheet {
 
     this.col.destroy();
     this.row.destroy();
+    this.cellEditor.destroy();
   }
 
   destroyCell(cellId: string) {

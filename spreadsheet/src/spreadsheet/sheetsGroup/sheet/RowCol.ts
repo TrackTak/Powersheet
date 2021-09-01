@@ -46,9 +46,9 @@ class RowCol {
   totalSize: number;
   shapes: IShapes;
   sheetViewportPosition: ISheetViewportPosition;
+  getHeaderText: (index: number) => string;
   private previousSheetViewportPosition: ISheetViewportPosition;
   private getAvailableSize: () => number;
-  private getHeaderText: (index: number) => string;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;

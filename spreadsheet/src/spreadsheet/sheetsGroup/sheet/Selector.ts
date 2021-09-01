@@ -69,9 +69,11 @@ class Selector {
 
     this.setCells(cells);
 
-    const cell = cells.find((x) => x.id() === this.selectedFirstCell!.id())!;
+    const cell = cells.find((x) => x.id() === this.selectedFirstCell?.id());
 
-    this.setFirstCell(cell);
+    if (cell) {
+      this.setFirstCell(cell);
+    }
 
     this.selectCells(cells);
   }

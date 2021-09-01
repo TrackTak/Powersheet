@@ -1,8 +1,12 @@
+import {
+  createAddSheetTab,
+  createAllSheetsMenu,
+  createContextSheetTabMenu,
+  createMenuSheetDropdownContent,
+  createMenuSheetHeader,
+  createSheetTab,
+} from './htmlElementHelpers';
 import styles from './BottomBar.module.scss';
-import plusIcon from '../../icons/plus-icon.svg';
-import sheetIcon from '../../icons/sheet-icon.svg';
-import leftIcon from '../../icons/left-icon.svg';
-import rightIcon from '../../icons/right-icon.svg';
 import { prefix } from '../utils';
 
 export interface IBottomBar extends IConstructorParams {}
@@ -21,23 +25,19 @@ class BottomBar implements IBottomBar {
   allSheetsMenu: HTMLButtonElement[];
   contextSheetTabMenu: HTMLDivElement;
   menuSheetDropdownContent: HTMLDivElement;
-  scrollSlider: HTMLDivElement;
   globalSheetIndex: number;
-  tabContainerMaxWidth: number;
   tabContainer: HTMLDivElement;
   scrollsliderContainerTab: HTMLDivElement;
   currentDropdownTab?: HTMLDivElement;
 
   constructor(params?: IConstructorParams) {
     this.globalSheetIndex = 1;
-    this.addSheetTab = params?.addSheetTab ?? this.createAddSheetTab();
-    this.menuSheetHeader =
-      params?.menuSheetHeader ?? this.createMenuSheetHeader();
-    this.sheetTabs = [this.createSheetTab()];
-    this.allSheetsMenu = [this.createAllSheetsMenu()];
-    this.contextSheetTabMenu = this.createContextSheetTabMenu();
-    this.menuSheetDropdownContent = this.createMenuSheetDropdownContent();
-    this.scrollSlider = this.createScrollSlider();
+    this.addSheetTab = params?.addSheetTab ?? this.setAddSheetTab();
+    this.menuSheetHeader = params?.menuSheetHeader ?? this.setMenuSheetHeader();
+    this.sheetTabs = [this.setSheetTab()];
+    this.allSheetsMenu = [this.setAllSheetsMenu()];
+    this.contextSheetTabMenu = this.setContextSheetTabMenu();
+    this.menuSheetDropdownContent = this.setMenuSheetDropdownContent();
     this.tabContainer = document.createElement('div');
     this.scrollsliderContainerTab = document.createElement('div');
     //TO DO
@@ -74,7 +74,7 @@ class BottomBar implements IBottomBar {
     );
 
     this.element.appendChild(this.tabContainer);
-    this.element.appendChild(this.scrollSlider);
+    // this.element.appendChild(this.scrollSlider);
 
     this.scrollsliderContainerTab.appendChild(this.sheetTabs[0]);
     menuSheetContainer.appendChild(this.menuSheetHeader);
@@ -83,7 +83,7 @@ class BottomBar implements IBottomBar {
 
     this.addSheetTab.addEventListener('click', () => {
       this.globalSheetIndex += 1;
-      const tabSheets = this.createSheetTab();
+      const tabSheets = this.setSheetTab();
 
       this.sheetTabs.push(tabSheets);
 
@@ -94,7 +94,7 @@ class BottomBar implements IBottomBar {
         this.scrollsliderContainerTab.appendChild(sheetTab);
       });
 
-      const menuSheetButton = this.createAllSheetsMenu();
+      const menuSheetButton = this.setAllSheetsMenu();
 
       this.allSheetsMenu.push(menuSheetButton);
 
@@ -104,88 +104,8 @@ class BottomBar implements IBottomBar {
     });
   }
 
-  //TO DO
-  createScrollSlider() {
-    const scrollSlider = document.createElement('div');
-    scrollSlider.classList.add(
-      styles.scrollsliderArrow,
-      `${bottomBarPrefix}-scrollslider-arrow`
-    );
-
-    const scrollSliderContent = document.createElement('div');
-    scrollSliderContent.classList.add(
-      styles.scrollsliderContent,
-      `${bottomBarPrefix}-scrollslider-content`
-    );
-
-    const leftScrollSliderButton = document.createElement('button');
-    leftScrollSliderButton.classList.add(
-      styles.leftScrollslider,
-      `${bottomBarPrefix}-left-scrollslider`
-    );
-
-    const rightScrollSliderButton = document.createElement('button');
-    rightScrollSliderButton.classList.add(
-      styles.rightScrollslider,
-      `${bottomBarPrefix}-right-scrollslider`
-    );
-
-    const leftScrollImage = document.createElement('img');
-
-    leftScrollImage.src = leftIcon;
-    leftScrollImage.alt = 'left';
-    leftScrollImage.classList.add(
-      styles.scrollIcon,
-      `${bottomBarPrefix}-scroll-icon`
-    );
-    leftScrollSliderButton.appendChild(leftScrollImage);
-
-    const rightScrollImage = document.createElement('img');
-
-    rightScrollImage.src = rightIcon;
-    rightScrollImage.alt = 'right';
-    rightScrollImage.classList.add(
-      styles.scrollIcon,
-      `${bottomBarPrefix}-scroll-icon`
-    );
-    rightScrollSliderButton.appendChild(rightScrollImage);
-
-    let translate = 0;
-
-    leftScrollSliderButton.addEventListener('click', () => {
-      if (translate >= 0) {
-        translate += 100;
-        this.scrollsliderContainerTab.style.transform =
-          'translateX(' + translate + 'px' + ')';
-      }
-    });
-
-    rightScrollSliderButton.addEventListener('click', () => {
-      const scrollSliderSheetTabs = this.sheetTabs[this.sheetTabs.length - 1];
-
-      const totalScrollWidth = this.sheetTabs.reduce((prev, curr) => {
-        return (prev += curr.getBoundingClientRect().width);
-      }, 0);
-
-      const remainingScrollWidth = totalScrollWidth - this.tabContainerMaxWidth;
-
-      if (translate >= 0) {
-        translate -= 100;
-        this.scrollsliderContainerTab.style.transform =
-          'translateX(' + translate + 'px' + ')';
-      }
-    });
-
-    scrollSlider.appendChild(scrollSliderContent);
-    scrollSliderContent.appendChild(leftScrollSliderButton);
-    scrollSliderContent.appendChild(rightScrollSliderButton);
-
-    return scrollSlider;
-  }
-
-  createSheetTab() {
-    const sheetTab = document.createElement('div');
-    sheetTab.classList.add(styles.sheetTab, `${bottomBarPrefix}-sheet-tab`);
+  setSheetTab() {
+    const sheetTab = createSheetTab();
 
     const spanElement = document.createElement('span');
     spanElement.classList.add(
@@ -248,12 +168,8 @@ class BottomBar implements IBottomBar {
     return containerSheetTab;
   }
 
-  createContextSheetTabMenu() {
-    const contextSheetTabMenu = document.createElement('div');
-    contextSheetTabMenu.classList.add(
-      styles.contextSheetMenu,
-      `${bottomBarPrefix}-context-sheet-menu`
-    );
+  setContextSheetTabMenu() {
+    const contextSheetTabMenu = createContextSheetTabMenu();
 
     const sheetTabMenuItem = document.createElement('div');
     sheetTabMenuItem.classList.add(
@@ -316,43 +232,26 @@ class BottomBar implements IBottomBar {
     return contextSheetTabMenu;
   }
 
-  createAddSheetTab() {
-    const buttonPlus = document.createElement('button');
-    buttonPlus.classList.add(
-      styles.buttonIcon,
-      `${bottomBarPrefix}-plus-button-icon`
-    );
+  setAddSheetTab() {
+    const buttonPlus = createAddSheetTab();
 
-    buttonPlus.addEventListener('click', () => {
-      if (
-        this.tabContainer.getBoundingClientRect().width >=
-        this.tabContainerMaxWidth
-      ) {
-        this.scrollSlider.style.display = 'block';
-      } else {
-        this.scrollSlider.style.display = 'none';
-      }
-    });
-
-    const plusImage = document.createElement('img');
-
-    plusImage.src = plusIcon;
-    plusImage.alt = 'plus';
-    plusImage.classList.add(
-      styles.plusImgIcon,
-      `${bottomBarPrefix}-plus-img-icon`
-    );
-    buttonPlus.appendChild(plusImage);
+    //TO DO
+    // buttonPlus.addEventListener('click', () => {
+    //   if (
+    //     this.tabContainer.getBoundingClientRect().width >=
+    //     this.tabContainerMaxWidth
+    //   ) {
+    //     this.scrollSlider.style.display = 'block';
+    //   } else {
+    //     this.scrollSlider.style.display = 'none';
+    //   }
+    // });
 
     return buttonPlus;
   }
 
-  createMenuSheetHeader() {
-    const menuSheetHeader = document.createElement('button');
-    menuSheetHeader.classList.add(
-      styles.buttonIcon,
-      `${bottomBarPrefix}-menu-button-icon`
-    );
+  setMenuSheetHeader() {
+    const menuSheetHeader = createMenuSheetHeader();
 
     menuSheetHeader.addEventListener('click', (e) => {
       const sheetPressed = e.button;
@@ -378,38 +277,20 @@ class BottomBar implements IBottomBar {
       e.preventDefault();
     });
 
-    const menuSheetImage = document.createElement('img');
-
-    menuSheetImage.src = sheetIcon;
-    menuSheetImage.alt = 'sheet';
-    menuSheetImage.classList.add(
-      styles.sheetImgIcon,
-      `${bottomBarPrefix}-sheet-img-icon`
-    );
-
-    menuSheetHeader.appendChild(menuSheetImage);
-
     return menuSheetHeader;
   }
 
-  createMenuSheetDropdownContent() {
-    const menuSheetDropdownContent = document.createElement('div');
+  setMenuSheetDropdownContent() {
+    const menuSheetDropdownContent = createMenuSheetDropdownContent();
 
-    menuSheetDropdownContent.classList.add(
-      styles.menusheetDropdownContent,
-      `${bottomBarPrefix}-menusheet-dropdown-content`
-    );
     menuSheetDropdownContent.style.display = 'none';
 
     return menuSheetDropdownContent;
   }
 
-  createAllSheetsMenu() {
-    const allSheetsMenu = document.createElement('button');
-    allSheetsMenu.classList.add(
-      styles.allSheetMenu,
-      `${bottomBarPrefix}-all-sheet-menu`
-    );
+  setAllSheetsMenu() {
+    const allSheetsMenu = createAllSheetsMenu();
+
     allSheetsMenu.dataset.globalSheetIndex = this.globalSheetIndex.toString();
 
     allSheetsMenu.textContent = `Sheet${this.globalSheetIndex}`;

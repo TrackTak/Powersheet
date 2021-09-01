@@ -1,10 +1,10 @@
 import { Group } from 'konva/lib/Group';
-import { KonvaEventObject } from 'konva/lib/Node';
+import { KonvaEventObject, Node } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet from './Sheet';
+import Sheet, { getCellRectFromCell, iterateXToY } from './Sheet';
 import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
@@ -142,13 +142,34 @@ class Resizer {
 
       this.sheet[this.type].draw(index);
 
+      const moveNode = (shape: Node) => {
+        const newAxis = shape[this.functions.axis]() + sizeChange;
+
+        shape[this.functions.axis](newAxis);
+      };
+
+      // TODO: Make cellsMap virtualized like groups later for performance
+      for (const cell of this.sheet.cellsMap.values()) {
+        const shouldMove = index < cell.attrs[this.type].x;
+        const shouldResize = index === cell.attrs[this.type].x;
+        const cellRect = getCellRectFromCell(cell);
+
+        if (shouldMove) {
+          moveNode(cellRect);
+        }
+
+        if (shouldResize) {
+          const newSize = cellRect[this.functions.size]() + sizeChange;
+
+          cellRect[this.functions.size](newSize);
+        }
+      }
+
       for (let i = index + 1; i < this.headerGroupMap.size; i++) {
         const item = this.headerGroupMap.get(i);
 
         if (item) {
-          const newAxis = item[this.functions.axis]() + sizeChange;
-
-          item[this.functions.axis](newAxis);
+          moveNode(item);
         }
       }
     }
@@ -215,11 +236,9 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    for (
-      let index = this.sheet[this.type].sheetViewportPosition.x;
-      index < this.sheet[this.type].sheetViewportPosition.y;
-      index++
-    ) {
+    for (const index of iterateXToY(
+      this.sheet[this.type].sheetViewportPosition
+    )) {
       this.sheet[this.type].draw(index);
     }
 

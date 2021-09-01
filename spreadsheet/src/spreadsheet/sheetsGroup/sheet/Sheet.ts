@@ -141,6 +141,18 @@ export const getIsFrozenRow = (ri: number, options: IOptions) => {
   return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
 };
 
+export function* iterateXToY(sheetViewportPosition: ISheetViewportPosition) {
+  for (
+    let index = sheetViewportPosition.x;
+    index < sheetViewportPosition.y;
+    index++
+  ) {
+    yield index;
+  }
+
+  return -Infinity;
+}
+
 export function* iteratePreviousUpToCurrent(
   previousSheetViewportPosition:
     | ISheetViewportPosition['x']
@@ -366,6 +378,14 @@ class Sheet {
       }
     }
   };
+
+  updateCells() {
+    for (const cell of this.cellsMap.values()) {
+      const cellRect = getCellRectFromCell(cell);
+
+      this.setCellFill(cell, cellRect.fill());
+    }
+  }
 
   setCellFill(cell: Cell, fill: string) {
     const id = cell.id();
@@ -604,6 +624,7 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
+    this.updateCells();
     this.row.scrollBar.updateCustomSizePositions();
     this.col.scrollBar.updateCustomSizePositions();
     this.merger.updateMergedCells();

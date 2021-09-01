@@ -28,7 +28,10 @@ class Merger {
       const shouldMerge = startCol && startRow ? true : false;
 
       if (shouldMerge) {
-        const id = this.mergeCells(mergedCells);
+        const id = getCellId(mergedCells.row.x, mergedCells.col.x);
+        const existingTopLeftCell = this.sheet.cellsMap.get(id)?.clone();
+
+        this.mergeCells(mergedCells, existingTopLeftCell);
 
         this.sheet.cellsMap.get(id)!.moveToTop();
       }
@@ -43,6 +46,8 @@ class Merger {
     this.mergeCells(mergedCells, existingTopLeftCell);
 
     this.sheet.options.mergedCells.push(mergedCells);
+
+    this.sheet.updateViewport();
 
     this.sheet.emit(events.merge.add, mergedCells);
   }
@@ -98,8 +103,6 @@ class Merger {
     this.setCellProperties(cell, {
       fill: existingTopLeftCellRect?.fill() ?? this.sheet.options.cell.fill,
     });
-
-    return id;
   }
 
   private setCellProperties(
@@ -178,6 +181,8 @@ class Merger {
         return !shouldDestroy;
       }
     );
+
+    this.sheet.updateViewport();
   }
 
   unMergeCells(mergedCells: IMergedCells) {

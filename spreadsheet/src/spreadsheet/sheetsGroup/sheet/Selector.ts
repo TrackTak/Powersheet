@@ -1,20 +1,13 @@
 import { Group } from 'konva/lib/Group';
-import { NodeConfig } from 'konva/lib/Node';
 import { Shape } from 'konva/lib/Shape';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import { Vector2d } from 'konva/lib/types';
+import { RectConfig } from 'konva/lib/shapes/Rect';
+import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Canvas from './Canvas';
-import { getCellId } from './Merger';
+import Sheet, { Cell, convertFromCellsToCellsRange, getCellId } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
   cols: Shape[];
-}
-
-interface IShapes {
-  selection: Rect;
-  selectionFirstCell: Rect;
 }
 
 interface ISelectionArea {
@@ -22,17 +15,21 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-interface ISelectedCell extends Group {}
+export function* iterateSelection(selection: Vector2d) {
+  for (let index = selection.x; index <= selection.y; index++) {
+    yield index;
+  }
+}
 
 class Selector {
-  shapes!: IShapes;
   isInSelectionMode: boolean;
   selectedCells: Group[];
-  selectedFirstCell: ISelectedCell | null;
+  selectionBorderCell: Group | null;
+  selectedFirstCell: Cell | null;
   private selectionArea: ISelectionArea;
 
-  constructor(private canvas: Canvas) {
-    this.canvas = canvas;
+  constructor(private sheet: Sheet) {
+    this.sheet = sheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -46,26 +43,22 @@ class Selector {
     };
 
     this.selectedFirstCell = null;
-
-    this.shapes = {
-      selectionFirstCell: new Rect({
-        ...this.canvas.styles.selectionFirstCell,
-        firstCell: true,
-      }),
-      selection: new Rect({
-        ...this.canvas.styles.selection,
-      }),
-    };
+    this.selectionBorderCell = null;
 
     this.selectedCells = [];
 
-    this.canvas.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.canvas.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
-    this.canvas.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.sheet.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
+    this.sheet.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
+    this.sheet.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.sheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
 
+  onSheetLoad = () => {
+    this.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+  };
+
   onSheetMouseDown = () => {
-    const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
+    const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
 
     const start = {
       x,
@@ -81,20 +74,40 @@ class Selector {
       end,
     };
 
-    const { rows, cols } = this.canvas.getRowColsBetweenVectors(start, end);
+    this.startSelection(start, end);
+
+    this.isInSelectionMode = true;
+  };
+
+  startSelection(start: Vector2d, end: Vector2d) {
+    if (this.selectedFirstCell) {
+      this.selectedFirstCell.destroy();
+    }
+
+    this.removeSelectedCells();
+
+    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
     const cells = this.convertFromRowColsToCells(
       rows,
       cols,
-      this.shapes.selectionFirstCell
+      this.sheet.styles.selectionFirstCell
     );
 
-    this.startSelection(cells);
-  };
+    this.selectCells(cells);
+
+    this.selectedFirstCell = cells[0];
+
+    this.sheet.emit(
+      events.selector.startSelection,
+      this.sheet,
+      this.selectedFirstCell
+    );
+  }
 
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
-      const { x, y } = this.canvas.shapes.sheet.getRelativePointerPosition();
+      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
 
       const start = {
         x: this.selectionArea.start.x,
@@ -106,7 +119,7 @@ class Selector {
         y,
       };
 
-      const { rows, cols } = this.canvas.getRowColsBetweenVectors(
+      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
         start,
         this.selectionArea.end
       );
@@ -114,99 +127,87 @@ class Selector {
       const cells = this.convertFromRowColsToCells(
         rows,
         cols,
-        this.shapes.selection
+        this.sheet.styles.selection
       );
 
       if (this.selectedCells.length !== cells.length) {
-        this.removeSelectedCells(false);
+        this.removeSelectedCells();
 
         this.selectCells(cells);
 
-        this.selectedFirstCell?.moveToTop();
+        this.sheet.emit(events.selector.moveSelection, cells);
       }
     }
   };
 
   onSheetMouseUp = () => {
     this.isInSelectionMode = false;
+
+    this.setSelectionBorder();
+
+    this.sheet.emit(events.selector.endSelection);
   };
-
-  startSelection(cells: ISelectedCell[]) {
-    this.removeSelectedCells();
-    this.isInSelectionMode = true;
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-  }
 
   convertFromRowColsToCells(
     rows: Group[],
     cols: Group[],
-    selectionShape: Rect
+    rectConfig?: RectConfig
   ) {
     const mergedCellsAddedMap = new Map();
-    const cells: ISelectedCell[] = [];
+    const cells: Cell[] = [];
 
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCell = this.canvas.merger.associatedMergedCellMap.get(id);
-        const group = new Group();
-
-        const pushToCells = (rectConfig: RectConfig) => {
-          const clone = selectionShape.clone(rectConfig) as Rect;
-
-          group.add(clone);
-          cells.push(group);
-        };
+        const mergedCell = this.sheet.merger.associatedMergedCellMap.get(id);
 
         if (mergedCell) {
           const id = mergedCell.id();
 
           if (!mergedCellsAddedMap.get(id)) {
-            const groupConfig: NodeConfig = {
-              id,
-              isMerged: true,
-              x: mergedCell.x(),
-              y: mergedCell.y(),
-              start: mergedCell.attrs.start,
-              end: mergedCell.attrs.end,
-            };
+            const rect = mergedCell.getClientRect();
+            const cell = this.sheet.getNewCell(
+              rect,
+              mergedCell.attrs.row,
+              mergedCell.attrs.col,
+              {
+                groupConfig: {
+                  id,
+                  isMerged: true,
+                },
+                rectConfig,
+              }
+            );
 
-            group.setAttrs(groupConfig);
+            cells.push(cell);
 
-            const rectConfig: RectConfig = {
-              width: mergedCell.width(),
-              height: mergedCell.height(),
-            };
-            pushToCells(rectConfig);
-
-            mergedCellsAddedMap.set(id, group);
+            mergedCellsAddedMap.set(id, cell);
           }
         } else {
-          const groupConfig: NodeConfig = {
-            id,
-            start: {
-              row: rowGroup.attrs.index,
-              col: colGroup.attrs.index,
-            },
-            end: {
-              row: rowGroup.attrs.index,
-              col: colGroup.attrs.index,
-            },
+          const rect: IRect = {
             x: colGroup.x(),
             y: rowGroup.y(),
-          };
-
-          group.setAttrs(groupConfig);
-
-          const rectConfig: RectConfig = {
             width: colGroup.width(),
             height: rowGroup.height(),
           };
+          const row = {
+            x: rowGroup.attrs.index,
+            y: rowGroup.attrs.index,
+          };
 
-          pushToCells(rectConfig);
+          const col = {
+            x: colGroup.attrs.index,
+            y: colGroup.attrs.index,
+          };
+
+          const cell = this.sheet.getNewCell(rect, row, col, {
+            groupConfig: {
+              id,
+            },
+            rectConfig,
+          });
+
+          cells.push(cell);
         }
       });
     });
@@ -214,7 +215,7 @@ class Selector {
     return cells;
   }
 
-  removeSelectedCells(removeFirstCell = true) {
+  removeSelectedCells() {
     this.selectedCells
       .filter((cell) => cell !== this.selectedFirstCell)
       .forEach((cell) => {
@@ -223,41 +224,65 @@ class Selector {
 
     this.selectedCells = [];
 
-    if (this.selectedFirstCell && removeFirstCell) {
-      this.selectedFirstCell.destroy();
-      this.selectedFirstCell = null;
+    if (this.selectionBorderCell) {
+      this.selectionBorderCell.destroy();
+      this.selectionBorderCell = null;
     }
   }
 
-  selectCells(cells: ISelectedCell[]) {
+  selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
-      const isFrozenRow = this.canvas.row.getIsFrozen(cell.attrs.start.row);
-      const isFrozenCol = this.canvas.col.getIsFrozen(cell.attrs.start.col);
-
       this.selectedCells.push(cell);
 
-      if (isFrozenRow && isFrozenCol) {
-        this.canvas.scrollGroups.xySticky.add(cell);
-      } else if (isFrozenRow) {
-        this.canvas.scrollGroups.ySticky.add(cell);
-      } else if (isFrozenCol) {
-        this.canvas.scrollGroups.xSticky.add(cell);
-      } else {
-        this.canvas.scrollGroups.main.add(cell);
-      }
+      this.sheet.drawCell(cell);
 
-      if (cell.attrs.isMerged) {
-        const mergedCell = this.canvas.merger.mergedCellsMap.get(
-          cell.attrs.id
-        )!;
+      const existingCell = this.sheet.cellsMap.get(cell.id());
 
-        cell.zIndex(mergedCell.zIndex() + 1);
+      if (existingCell) {
+        cell.moveToTop();
       } else {
         cell.moveToBottom();
       }
     });
+  }
 
-    this.canvas.eventEmitter.emit(events.selector.selectCells, cells);
+  setSelectionBorder() {
+    if (!this.selectedCells.length) return;
+
+    const { row, col } = convertFromCellsToCellsRange(this.selectedCells);
+
+    let totalWidth = 0;
+    let totalHeight = 0;
+
+    for (const ri of iterateSelection(row)) {
+      totalHeight += this.sheet.row.rowColGroupMap.get(ri)!.height();
+    }
+
+    for (const ci of iterateSelection(col)) {
+      totalWidth += this.sheet.col.rowColGroupMap.get(ci)!.width();
+    }
+
+    const indexZeroCell = this.selectedCells[0];
+
+    const rect: IRect = {
+      x: indexZeroCell.x(),
+      y: indexZeroCell.y(),
+      width: totalWidth,
+      height: totalHeight,
+    };
+
+    const cell = this.sheet.getNewCell(
+      rect,
+      indexZeroCell.attrs.row,
+      indexZeroCell.attrs.col,
+      {
+        rectConfig: this.sheet.styles.selectionBorder,
+      }
+    );
+
+    // this.sheet.drawCell(cell);
+
+    this.selectionBorderCell = cell;
   }
 }
 

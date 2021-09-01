@@ -215,10 +215,6 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.sheet.updateSheetDimensions();
-    this.sheet.selector.removeSelectedCells();
-    this.sheet[this.type].scrollBar.updateCustomSizePositions();
-
     for (
       let index = this.sheet[this.type].sheetViewportPosition.x;
       index < this.sheet[this.type].sheetViewportPosition.y;
@@ -227,7 +223,7 @@ class Resizer {
       this.sheet[this.type].draw(index);
     }
 
-    this.sheet.merger.updateMergedCells();
+    this.sheet.updateViewport();
 
     this.sheet.emit(events.resize[this.type].end, e, index, axis);
   };

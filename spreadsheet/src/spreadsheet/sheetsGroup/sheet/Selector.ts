@@ -1,7 +1,8 @@
 import { Shape } from 'konva/lib/Shape';
+import { RectConfig } from 'konva/lib/shapes/Rect';
 import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { Cell, convertFromCellsToCellsRange, getNewCell } from './Sheet';
+import Sheet, { Cell, getCellRectFromCell, getNewCell } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -55,6 +56,64 @@ class Selector {
     this.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
   };
 
+  updateSelectedCells() {
+    if (!this.selectedCells.length) return;
+
+    const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
+
+    const rows = this.sheet.row.convertFromRangeToGroups(row);
+    const cols = this.sheet.col.convertFromRangeToGroups(col);
+
+    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+
+    this.setCells(cells);
+
+    const cell = cells.find((x) => x.id() === this.selectedFirstCell!.id())!;
+
+    this.setFirstCell(cell);
+
+    this.selectCells(cells);
+  }
+
+  startSelection(start: Vector2d, end: Vector2d) {
+    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
+
+    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+
+    this.setFirstCell(cells[0]);
+    this.selectCells(cells);
+
+    this.sheet.emit(
+      events.selector.startSelection,
+      this.sheet,
+      this.selectedFirstCell
+    );
+  }
+
+  setFirstCell(cell: Cell) {
+    this.removeSelectedCells();
+
+    const firstCellRect = getCellRectFromCell(cell);
+
+    const rectConfig: RectConfig = this.sheet.styles.selectionFirstCell;
+
+    firstCellRect.setAttrs(rectConfig);
+
+    this.selectedFirstCell = cell;
+  }
+
+  setCells(cells: Cell[]) {
+    if (cells.length !== 1) {
+      cells.forEach((cell) => {
+        const rectConfig: RectConfig = this.sheet.styles.selection;
+        const rect = getCellRectFromCell(cell);
+
+        rect.setAttrs(rectConfig);
+      });
+    }
+  }
+
   onSheetMouseDown = () => {
     const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
 
@@ -77,30 +136,6 @@ class Selector {
     this.isInSelectionMode = true;
   };
 
-  startSelection(start: Vector2d, end: Vector2d) {
-    if (this.selectedFirstCell) {
-      this.selectedFirstCell.destroy();
-    }
-
-    this.removeSelectedCells();
-
-    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
-
-    const cells = this.sheet.convertFromRowColsToCells(rows, cols, {
-      rectConfig: this.sheet.styles.selectionFirstCell,
-    });
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-
-    this.sheet.emit(
-      events.selector.startSelection,
-      this.sheet,
-      this.selectedFirstCell
-    );
-  }
-
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
       const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
@@ -120,12 +155,12 @@ class Selector {
         this.selectionArea.end
       );
 
-      const cells = this.sheet.convertFromRowColsToCells(rows, cols, {
-        rectConfig: this.sheet.styles.selection,
-      });
+      const cells = this.sheet.convertFromRowColsToCells(rows, cols);
 
       if (this.selectedCells.length !== cells.length) {
-        this.removeSelectedCells();
+        this.setCells(cells);
+
+        this.removeSelectedCells(false);
 
         this.selectCells(cells);
 
@@ -142,7 +177,7 @@ class Selector {
     this.sheet.emit(events.selector.endSelection);
   };
 
-  removeSelectedCells() {
+  removeSelectedCells(destroySelectedFirstCell: boolean = true) {
     this.selectedCells
       .filter((cell) => cell !== this.selectedFirstCell)
       .forEach((cell) => {
@@ -150,6 +185,10 @@ class Selector {
       });
 
     this.selectedCells = [];
+
+    if (destroySelectedFirstCell && this.selectedFirstCell) {
+      this.selectedFirstCell.destroy();
+    }
 
     if (this.selectionBorderCell) {
       this.selectionBorderCell.destroy();
@@ -176,26 +215,27 @@ class Selector {
   setSelectionBorder() {
     if (!this.selectedCells.length) return;
 
-    const { row, col } = convertFromCellsToCellsRange(this.selectedCells);
+    const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    let totalWidth = 0;
-    let totalHeight = 0;
+    const rows = this.sheet.row.convertFromRangeToGroups(row);
+    const cols = this.sheet.col.convertFromRangeToGroups(col);
 
-    for (const ri of iterateSelection(row)) {
-      totalHeight += this.sheet.row.rowColGroupMap.get(ri)!.height();
-    }
+    const width = cols.reduce((prev, curr) => {
+      return (prev += curr.width());
+    }, 0);
 
-    for (const ci of iterateSelection(col)) {
-      totalWidth += this.sheet.col.rowColGroupMap.get(ci)!.width();
-    }
+    const height = rows.reduce((prev, curr) => {
+      return (prev += curr.height());
+    }, 0);
 
     const indexZeroCell = this.selectedCells[0];
 
     const rect: IRect = {
       x: indexZeroCell.x(),
       y: indexZeroCell.y(),
-      width: totalWidth,
-      height: totalHeight,
+      width,
+      height,
     };
 
     const cell = getNewCell(

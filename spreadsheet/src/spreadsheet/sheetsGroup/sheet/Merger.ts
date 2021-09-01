@@ -3,7 +3,6 @@ import { IMergedCells } from '../../options';
 import Sheet, {
   Cell,
   CellId,
-  convertFromCellsToCellsRange,
   getCellId,
   getCellRectFromCell,
   getNewCell,
@@ -24,12 +23,13 @@ class Merger {
 
   updateMergedCells() {
     this.sheet.options.mergedCells.forEach((mergedCells) => {
-      const id = this.mergeCells(mergedCells);
       const startRow = this.sheet.row.rowColGroupMap.get(mergedCells.row.x);
       const startCol = this.sheet.col.rowColGroupMap.get(mergedCells.col.x);
       const shouldMerge = startCol && startRow ? true : false;
 
       if (shouldMerge) {
+        const id = this.mergeCells(mergedCells);
+
         this.sheet.cellsMap.get(id)!.moveToTop();
       }
     });
@@ -44,8 +44,6 @@ class Merger {
 
     this.sheet.options.mergedCells.push(mergedCells);
 
-    this.sheet.selector.removeSelectedCells();
-
     this.sheet.emit(events.merge.add, mergedCells);
   }
 
@@ -54,28 +52,25 @@ class Merger {
     const id = getCellId(row.x, col.x);
     const startRow = this.sheet.row.rowColGroupMap.get(row.x);
     const startCol = this.sheet.col.rowColGroupMap.get(col.x);
-    let height = 0;
-    let width = 0;
 
-    for (const index of iterateSelection(mergedCells.row)) {
-      const group = this.sheet.row.rowColGroupMap.get(index)!;
+    const rows = this.sheet.row.convertFromRangeToGroups(mergedCells.row);
+    const cols = this.sheet.col.convertFromRangeToGroups(mergedCells.col);
 
-      height += group.height();
-    }
+    const width = cols.reduce((prev, curr) => {
+      return (prev += curr.width());
+    }, 0);
 
-    for (const index of iterateSelection(mergedCells.col)) {
-      const group = this.sheet.col.rowColGroupMap.get(index)!;
-
-      width += group.width();
-    }
+    const height = rows.reduce((prev, curr) => {
+      return (prev += curr.height());
+    }, 0);
 
     const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
     const offset = gridLineStrokeWidth;
     const rect: IRect = {
       x: startCol!.x() + offset,
       y: startRow!.y() + offset,
-      height: height - offset * 2,
       width: width - offset * 2,
+      height: height - offset * 2,
     };
 
     let existingTopLeftCellRect;
@@ -183,8 +178,6 @@ class Merger {
         return !shouldDestroy;
       }
     );
-
-    this.sheet.selector.removeSelectedCells();
   }
 
   unMergeCells(mergedCells: IMergedCells) {
@@ -205,8 +198,6 @@ class Merger {
       }
     });
 
-    this.sheet.selector.removeSelectedCells();
-
     this.sheet.emit(events.merge.unMerge, mergedCells);
   }
 
@@ -215,9 +206,10 @@ class Merger {
 
     if (!selectedCells.length) return;
 
-    const mergedCells = convertFromCellsToCellsRange(selectedCells);
+    const row = this.sheet.row.convertFromCellsToRange(selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(selectedCells);
 
-    this.addMergeCells(mergedCells);
+    this.addMergeCells({ row, col });
   }
 
   unMergeSelectedCells() {
@@ -225,9 +217,10 @@ class Merger {
 
     if (!selectedCells.length) return;
 
-    const mergedCells = convertFromCellsToCellsRange(selectedCells);
+    const row = this.sheet.row.convertFromCellsToRange(selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(selectedCells);
 
-    this.unMergeCells(mergedCells);
+    this.unMergeCells({ row, col });
   }
 }
 

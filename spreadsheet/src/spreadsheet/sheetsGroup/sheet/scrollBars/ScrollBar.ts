@@ -159,7 +159,7 @@ class ScrollBar {
 
     this.sheet.scrollGroups.main[this.functions.axis](scrollAmount);
 
-    this.sheet.updateViewport();
+    this.sheet.drawNextItems();
 
     const item = this.sheet[this.type].headerGroupMap.get(index)!;
 

@@ -119,25 +119,6 @@ export const getNewCell = (
   return cell;
 };
 
-export const convertFromCellsToCellsRange = (groups: Group[]) => {
-  const getMin = (property: string) =>
-    Math.min(...groups.map((o) => o.attrs[property].x));
-  const getMax = (property: string) =>
-    Math.max(...groups.map((o) => o.attrs[property].y));
-
-  const row = {
-    x: getMin('row'),
-    y: getMax('row'),
-  };
-
-  const col = {
-    x: getMin('col'),
-    y: getMax('col'),
-  };
-
-  return { row, col };
-};
-
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -431,7 +412,7 @@ class Sheet {
     });
 
     this.drawTopLeftOffsetRect();
-    this.updateViewport();
+    this.drawNextItems();
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -446,14 +427,7 @@ class Sheet {
     this.emit(events.sheet.load, e);
   };
 
-  convertFromRowColsToCells(
-    rows: Group[],
-    cols: Group[],
-    config: {
-      groupConfig?: NodeConfig;
-      rectConfig?: RectConfig;
-    } = {}
-  ) {
+  convertFromRowColsToCells(rows: Group[], cols: Group[]) {
     const mergedCellsAddedMap = new Map();
     const cells: Cell[] = [];
 
@@ -472,11 +446,9 @@ class Sheet {
             mergedCell.attrs.col,
             {
               groupConfig: {
-                ...config.groupConfig,
                 id,
                 isMerged: true,
               },
-              rectConfig: config.rectConfig,
             }
           );
 
@@ -504,10 +476,8 @@ class Sheet {
 
       const cell = getNewCell(rect, row, col, {
         groupConfig: {
-          ...config.groupConfig,
           id,
         },
-        rectConfig: config.rectConfig,
       });
 
       return cell;
@@ -626,8 +596,16 @@ class Sheet {
   }
 
   updateViewport() {
-    const colGenerator = this.col.updateViewport();
-    const rowGenerator = this.row.updateViewport();
+    this.updateSheetDimensions();
+    this.row.scrollBar.updateCustomSizePositions();
+    this.col.scrollBar.updateCustomSizePositions();
+    this.merger.updateMergedCells();
+    this.selector.updateSelectedCells();
+  }
+
+  drawNextItems() {
+    const colGenerator = this.col.drawNextItems();
+    const rowGenerator = this.row.drawNextItems();
 
     let colIteratorResult;
     let rowIteratorResult;
@@ -637,7 +615,7 @@ class Sheet {
       rowIteratorResult = rowGenerator.next();
     } while (!colIteratorResult.done || !rowIteratorResult.done);
 
-    this.merger.updateMergedCells();
+    this.updateViewport();
   }
 }
 

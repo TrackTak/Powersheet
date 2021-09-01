@@ -136,7 +136,6 @@ export const defaultStyles: IStyles = {
   selection: {
     ...sharedStyles.selection,
     strokeWidth: 0,
-    opacity: 0.1,
-    fill: '#0e65eb',
+    fill: 'rgb(14, 101, 235, 0.1)',
   },
 };

@@ -7,6 +7,7 @@ import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import Sheet, {
+  Cell,
   centerRectTwoInRectOne,
   hasOverlap,
   ICustomSizes,
@@ -16,6 +17,7 @@ import Sheet, {
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
+import { iterateSelection } from './Selector';
 
 interface IShapes {
   group: Group;
@@ -212,7 +214,7 @@ class RowCol {
     this.scrollBar.destroy();
   }
 
-  *updateViewport() {
+  *drawNextItems() {
     const generator = {
       x: iteratePreviousDownToCurrent(
         this.previousSheetViewportPosition.x,
@@ -251,6 +253,33 @@ class RowCol {
     this.sheet.shapes.topLeftRect.moveToTop();
 
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
+  }
+
+  convertFromCellsToRange(cells: Cell[]) {
+    const getMin = () => Math.min(...cells.map((o) => o.attrs[this.type].x));
+
+    const getMax = () => Math.max(...cells.map((o) => o.attrs[this.type].y));
+
+    const vector = {
+      x: getMin(),
+      y: getMax(),
+    };
+
+    return vector;
+  }
+
+  convertFromRangeToGroups(vector: Vector2d) {
+    const groups: Group[] = [];
+
+    for (const index of iterateSelection(vector)) {
+      const group = this.sheet[this.type].rowColGroupMap.get(index);
+
+      if (group) {
+        groups.push(group);
+      }
+    }
+
+    return groups;
   }
 
   isNodeOutsideSheet = (node: Node) => {

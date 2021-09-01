@@ -45,7 +45,7 @@ const Template: Story<IOptions> = (args) => {
 
 const defaultStoryArgs: IOptions = {
   ...defaultOptions,
-  devMode: false,
+  devMode: true,
 };
 
 export const Default = Template.bind({});

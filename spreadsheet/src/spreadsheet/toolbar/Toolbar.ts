@@ -316,6 +316,8 @@ class Toolbar {
 
     if (!this.iconElementsMap.merge.button.disabled) {
       this.focusedSheet?.merger.mergeSelectedCells();
+
+      this.setMergedState(sheet.selector.selectedCells);
     }
   };
 

@@ -436,9 +436,9 @@ class Sheet {
       const mergedCell = this.merger.associatedMergedCellMap.get(id);
 
       if (mergedCell) {
-        const id = mergedCell.id();
+        const mergedCellId = mergedCell.id();
 
-        if (!mergedCellsAddedMap.get(id)) {
+        if (!mergedCellsAddedMap.get(mergedCellId)) {
           const rect = mergedCell.getClientRect();
           const cell = getNewCell(
             rect,
@@ -446,16 +446,17 @@ class Sheet {
             mergedCell.attrs.col,
             {
               groupConfig: {
-                id,
+                id: mergedCellId,
                 isMerged: true,
               },
             }
           );
 
-          mergedCellsAddedMap.set(id, cell);
+          mergedCellsAddedMap.set(mergedCellId, cell);
 
           return cell;
         }
+        return null;
       }
 
       const rect: IRect = {
@@ -487,7 +488,9 @@ class Sheet {
       cols.forEach((colGroup) => {
         const cell = convertFromRowColToCell(rowGroup, colGroup);
 
-        cells.push(cell);
+        if (cell) {
+          cells.push(cell);
+        }
       });
     });
 

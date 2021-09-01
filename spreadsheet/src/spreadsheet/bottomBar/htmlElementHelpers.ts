@@ -81,7 +81,7 @@ export const createAllSheetsMenu = () => {
   const allSheetsMenu = document.createElement('button');
 
   allSheetsMenu.classList.add(
-    styles.allSheetMenu,
+    styles.allSheetsMenu,
     `${bottomBarPrefix}-all-sheet-menu`
   );
 

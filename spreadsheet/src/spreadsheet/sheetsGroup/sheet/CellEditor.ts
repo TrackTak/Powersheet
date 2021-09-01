@@ -66,7 +66,7 @@ class CellEditor {
       width: cellRect.width(),
       height: cellRect.height(),
     };
-    this.setTextAreaPosition(cellPosition, cellRect.strokeWidth() / 2);
+    this.setTextAreaPosition(cellPosition);
     this.textArea.style.display = 'initial';
     this.textArea.focus();
     this.isEditing = true;
@@ -77,12 +77,11 @@ class CellEditor {
     this.isEditing = false;
   };
 
-  private setTextAreaPosition = (position: IRect, offset: number) => {
+  private setTextAreaPosition = (position: IRect) => {
     this.textArea.style.top = `${position.y}px`;
     this.textArea.style.left = `${position.x}px`;
     this.textArea.style.minWidth = `${position.width}px`;
     this.textArea.style.height = `${position.height}px`;
-    this.textArea.style.lineHeight = `${position.height - offset * 2}px`;
   };
 
   private hideCellTooltip = () => {

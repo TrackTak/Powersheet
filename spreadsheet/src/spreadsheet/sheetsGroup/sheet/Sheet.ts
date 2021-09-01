@@ -53,7 +53,6 @@ interface IShapes {
   sheet: Rect;
   frozenGridLine: Line;
   topLeftRect: Rect;
-  cellGroup: Group;
 }
 
 export interface ICustomSizePosition {
@@ -81,6 +80,44 @@ export type CellId = string;
 export type Cell = Group;
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const getCellRectFromCell = (cell: Cell) => {
+  const cellRect = cell.children?.find(
+    (x) => x.attrs.type === 'cellRect'
+  ) as Rect;
+
+  return cellRect;
+};
+
+export const getNewCell = (
+  rect: IRect,
+  row: Vector2d,
+  col: Vector2d,
+  config: {
+    groupConfig?: NodeConfig;
+    rectConfig?: RectConfig;
+  } = {}
+) => {
+  const cell = new Group({
+    ...performanceProperties,
+    ...config.groupConfig,
+    x: rect.x,
+    y: rect.y,
+    row,
+    col,
+  });
+
+  const cellRect = new Rect({
+    ...config.rectConfig,
+    type: 'cellRect',
+    width: rect.width,
+    height: rect.height,
+  });
+
+  cell.add(cellRect);
+
+  return cell;
+};
 
 export const convertFromCellsToCellsRange = (groups: Group[]) => {
   const getMin = (property: string) =>
@@ -300,9 +337,6 @@ class Sheet {
         width: this.getViewportVector().x,
         height: this.getViewportVector().y,
       }),
-      cellGroup: new Group({
-        ...performanceProperties,
-      }),
     };
 
     this.shapes.frozenGridLine.cache();
@@ -342,35 +376,34 @@ class Sheet {
     switch (name) {
       case 'backgroundColor': {
         selectedCells.forEach((selectedCell) => {
-          const id = selectedCell.id();
-          const clientRect = selectedCell.getClientRect();
-          const cell = this.getNewCell(
-            clientRect,
-            selectedCell.attrs.row,
-            selectedCell.attrs.col,
-            {
-              groupConfig: {
-                id,
-                isMerged: selectedCell.attrs.isMerged,
-              },
-              rectConfig: {
-                fill: value,
-              },
-            }
-          );
-
-          if (this.cellsMap.has(id)) {
-            this.cellsMap.get(id)!.destroy();
-          }
-
-          this.cellsMap.set(id, cell);
-
-          this.drawCell(cell);
+          this.setCellFill(selectedCell, value);
         });
         break;
       }
     }
   };
+
+  setCellFill(cell: Cell, fill: string) {
+    const id = cell.id();
+    const clientRect = cell.getClientRect();
+    const newCell = getNewCell(clientRect, cell.attrs.row, cell.attrs.col, {
+      groupConfig: {
+        id,
+        isMerged: cell.attrs.isMerged,
+      },
+      rectConfig: {
+        fill,
+      },
+    });
+
+    if (this.cellsMap.has(id)) {
+      this.cellsMap.get(id)!.destroy();
+    }
+
+    this.cellsMap.set(id, newCell);
+
+    this.drawCell(newCell);
+  }
 
   updateSheetDimensions() {
     this.sheetDimensions.width = this.col.getTotalSize();
@@ -412,6 +445,84 @@ class Sheet {
 
     this.emit(events.sheet.load, e);
   };
+
+  convertFromRowColsToCells(
+    rows: Group[],
+    cols: Group[],
+    config: {
+      groupConfig?: NodeConfig;
+      rectConfig?: RectConfig;
+    } = {}
+  ) {
+    const mergedCellsAddedMap = new Map();
+    const cells: Cell[] = [];
+
+    const convertFromRowColToCell = (rowGroup: Group, colGroup: Group) => {
+      const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
+      const mergedCell = this.merger.associatedMergedCellMap.get(id);
+
+      if (mergedCell) {
+        const id = mergedCell.id();
+
+        if (!mergedCellsAddedMap.get(id)) {
+          const rect = mergedCell.getClientRect();
+          const cell = getNewCell(
+            rect,
+            mergedCell.attrs.row,
+            mergedCell.attrs.col,
+            {
+              groupConfig: {
+                ...config.groupConfig,
+                id,
+                isMerged: true,
+              },
+              rectConfig: config.rectConfig,
+            }
+          );
+
+          mergedCellsAddedMap.set(id, cell);
+
+          return cell;
+        }
+      }
+
+      const rect: IRect = {
+        x: colGroup.x(),
+        y: rowGroup.y(),
+        width: colGroup.width(),
+        height: rowGroup.height(),
+      };
+      const row = {
+        x: rowGroup.attrs.index,
+        y: rowGroup.attrs.index,
+      };
+
+      const col = {
+        x: colGroup.attrs.index,
+        y: colGroup.attrs.index,
+      };
+
+      const cell = getNewCell(rect, row, col, {
+        groupConfig: {
+          ...config.groupConfig,
+          id,
+        },
+        rectConfig: config.rectConfig,
+      });
+
+      return cell;
+    };
+
+    rows.forEach((rowGroup) => {
+      cols.forEach((colGroup) => {
+        const cell = convertFromRowColToCell(rowGroup, colGroup);
+
+        cells.push(cell);
+      });
+    });
+
+    return cells;
+  }
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
@@ -475,45 +586,6 @@ class Sheet {
 
     this.col.destroy();
     this.row.destroy();
-  }
-
-  getNewCell(
-    rect: IRect,
-    row: Vector2d,
-    col: Vector2d,
-    config: {
-      groupConfig?: NodeConfig;
-      rectConfig?: RectConfig;
-    } = {}
-  ) {
-    const groupConfig: NodeConfig = {
-      ...config.groupConfig,
-      x: rect.x,
-      y: rect.y,
-      row,
-      col,
-    };
-    const cell = this.shapes.cellGroup.clone(groupConfig) as Group;
-
-    const cellRect = new Rect({
-      ...config.rectConfig,
-      type: 'cellRect',
-      width: rect.width,
-      height: rect.height,
-    });
-
-    cell.add(cellRect);
-
-    return cell;
-  }
-
-  getCellRectFromCell(cellId: string) {
-    const cell = this.cellsMap.get(cellId)!;
-    const cellRect = cell.children?.find(
-      (x) => x.attrs.type === 'cellRect'
-    ) as Rect;
-
-    return cellRect;
   }
 
   destroyCell(cellId: string) {

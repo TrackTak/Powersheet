@@ -21,6 +21,10 @@ export interface IRowColOptions {
   sizes: ISizes;
 }
 
+export interface ICellOptions {
+  fill: string;
+}
+
 export interface IOptions {
   width: number;
   height: number;
@@ -29,6 +33,7 @@ export interface IOptions {
   frozenCells: IFrozenCells;
   mergedCells: IMergedCells[];
   devMode: boolean;
+  cell: ICellOptions;
 }
 
 export const defaultOptions: IOptions = {
@@ -48,5 +53,8 @@ export const defaultOptions: IOptions = {
   },
   frozenCells: {},
   mergedCells: [],
+  cell: {
+    fill: 'white',
+  },
   devMode: false,
 };

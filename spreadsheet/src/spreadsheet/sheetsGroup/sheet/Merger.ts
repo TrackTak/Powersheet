@@ -5,9 +5,12 @@ import Sheet, {
   CellId,
   convertFromCellsToCellsRange,
   getCellId,
+  getCellRectFromCell,
+  getNewCell,
 } from './Sheet';
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
+import { parseColor } from 'a-color-picker';
 
 export type AssociatedMergedCellId = CellId;
 
@@ -34,9 +37,9 @@ class Merger {
 
   addMergeCells(mergedCells: IMergedCells) {
     const id = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const existingTopLeftCell = this.sheet.cellsMap.get(id);
+    const existingTopLeftCell = this.sheet.cellsMap.get(id)?.clone();
 
-    this.unMergeCells(mergedCells);
+    this.destroyExistingMergedCells(mergedCells);
     this.mergeCells(mergedCells, existingTopLeftCell);
 
     this.sheet.options.mergedCells.push(mergedCells);
@@ -78,16 +81,13 @@ class Merger {
     let existingTopLeftCellRect;
 
     if (existingTopLeftCell) {
-      existingTopLeftCellRect = this.sheet.getCellRectFromCell(id);
+      existingTopLeftCellRect = getCellRectFromCell(existingTopLeftCell);
     }
 
-    const cell = this.sheet.getNewCell(rect, row, col, {
+    const cell = getNewCell(rect, row, col, {
       groupConfig: {
         id,
         isMerged: true,
-      },
-      rectConfig: {
-        fill: existingTopLeftCellRect?.fill() ?? 'white',
       },
     });
 
@@ -100,17 +100,51 @@ class Merger {
       }
     }
 
-    this.sheet.cellsMap.set(id, cell);
-
-    this.sheet.drawCell(cell);
+    this.setCellProperties(cell, {
+      fill: existingTopLeftCellRect?.fill() ?? this.sheet.options.cell.fill,
+    });
 
     return id;
+  }
+
+  private setCellProperties(
+    cell: Cell,
+    properties: {
+      fill?: string;
+    }
+  ) {
+    const { fill } = properties;
+
+    if (fill) {
+      this.sheet.setCellFill(cell, fill);
+    }
+  }
+
+  private setMergedCellPropertiesToCells(mergedCell: Cell) {
+    const outFormat = 'rgbacss';
+    const cellRect = getCellRectFromCell(mergedCell);
+    const fill = parseColor(cellRect.fill(), outFormat);
+    const parsedOptionsFill = parseColor(
+      this.sheet.options.cell.fill,
+      outFormat
+    );
+    const rows = this.sheet.row.getItemsBetweenIndexes(mergedCell.attrs.row);
+    const cols = this.sheet.col.getItemsBetweenIndexes(mergedCell.attrs.col);
+    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+
+    cells.forEach((cell) => {
+      this.setCellProperties(cell, {
+        fill: fill !== parsedOptionsFill ? fill : undefined,
+      });
+    });
   }
 
   private destroyMergedCell(mergedCells: IMergedCells) {
     const id = getCellId(mergedCells.row.x, mergedCells.col.x);
 
     if (this.sheet.cellsMap.has(id)) {
+      this.sheet.destroyCell(id);
+
       for (const ri of iterateSelection(mergedCells.row)) {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
@@ -119,26 +153,57 @@ class Merger {
         }
       }
     }
-
-    this.sheet.destroyCell(id);
   }
 
-  unMergeCells(mergedCells: IMergedCells) {
+  private getAreMergedCellsOverlapping(
+    firstMergedCells: IMergedCells,
+    secondMergedCells: IMergedCells
+  ) {
+    const areMergedCellsOverlapping =
+      firstMergedCells.row.x >= secondMergedCells.row.x &&
+      firstMergedCells.col.x >= secondMergedCells.col.x &&
+      firstMergedCells.row.y <= secondMergedCells.row.y &&
+      firstMergedCells.col.y <= secondMergedCells.col.y;
+
+    return areMergedCellsOverlapping;
+  }
+
+  private destroyExistingMergedCells(mergedCells: IMergedCells) {
     this.sheet.options.mergedCells = this.sheet.options.mergedCells.filter(
       ({ row, col }) => {
-        const shouldUnMerge =
-          row.x >= mergedCells.row.x &&
-          col.x >= mergedCells.col.x &&
-          row.y <= mergedCells.row.y &&
-          col.y <= mergedCells.col.y;
+        const shouldDestroy = this.getAreMergedCellsOverlapping(
+          { row, col },
+          mergedCells
+        );
 
-        if (shouldUnMerge) {
+        if (shouldDestroy) {
           this.destroyMergedCell({ row, col });
         }
 
-        return !shouldUnMerge;
+        return !shouldDestroy;
       }
     );
+
+    this.sheet.selector.removeSelectedCells();
+  }
+
+  unMergeCells(mergedCells: IMergedCells) {
+    const id = getCellId(mergedCells.row.x, mergedCells.col.x);
+    const mergedCell = this.sheet.cellsMap.get(id)?.clone();
+    const allMergedCells = [...this.sheet.options.mergedCells];
+
+    this.destroyExistingMergedCells(mergedCells);
+
+    allMergedCells.forEach(({ row, col }) => {
+      const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
+        { row, col },
+        mergedCells
+      );
+
+      if (areMergedCellsOverlapping && mergedCell) {
+        this.setMergedCellPropertiesToCells(mergedCell);
+      }
+    });
 
     this.sheet.selector.removeSelectedCells();
 

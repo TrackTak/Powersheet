@@ -26,44 +26,30 @@ class CellEditor {
     });
     this.sheet.container.appendChild(this.textArea);
 
-    window.addEventListener('keydown', this.keyHandler);
-    this.sheet.shapes.sheet.on('dblclick', this.showCellEditor);
-    this.sheet.shapes.sheet.on('click', this.hideCellEditor);
-    this.sheet.stage.on('click', this.hideCellEditor);
-    this.sheet.stage.on('mousedown', this.hideCellEditor);
     this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
 
-    this.textArea.addEventListener('input', (e) => {
-      // @ts-ignore
-      const textContent = e.target.textContent;
+    this.textArea.addEventListener('input', (e) => this.handleInput(e));
 
-      if (this.sheet.formulaBar) {
-        this.sheet.formulaBar.editableContent.textContent = textContent;
-      }
-    });
+    this.showCellEditor();
+
+  }
+
+  handleInput(e: Event) {
+    const target = e.target as HTMLDivElement;
+    const textContent = target.textContent;
+
+    if (this.sheet.formulaBar) {
+      this.sheet.formulaBar.editableContent.textContent = textContent;
+    }
   }
 
   destroy() {
-    window.removeEventListener('keydown', this.keyHandler);
-    this.sheet.eventEmitter.off(events.resize.col.start, this.hideCellEditor);
-    this.sheet.eventEmitter.off(events.resize.row.start, this.hideCellEditor);
     this.cellTooltip.destroy();
+    this.textArea.remove();
+    this.sheet.formulaBar!.editableContent.textContent = null;
+    this.textArea.removeEventListener('input', this.handleInput);
   }
-
-  private keyHandler = (e: KeyboardEvent) => {
-    e.stopPropagation();
-    switch (e.key) {
-      case 'Enter':
-      case 'Escape':
-        this.hideCellEditor();
-        break;
-      default:
-        if (!this.isEditing) {
-          this.showCellEditor();
-        }
-    }
-  };
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.getSelectedCell();
@@ -78,12 +64,6 @@ class CellEditor {
     this.setTextAreaPosition(cellPosition, cellRect.strokeWidth() / 2);
     this.textArea.style.display = 'initial';
     this.textArea.focus();
-    this.isEditing = true;
-  };
-
-  private hideCellEditor = () => {
-    this.textArea.style.display = 'none';
-    this.isEditing = false;
   };
 
   private setTextAreaPosition = (position: IRect, offset: number) => {

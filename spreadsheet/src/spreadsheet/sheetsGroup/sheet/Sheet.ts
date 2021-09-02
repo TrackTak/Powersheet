@@ -232,7 +232,7 @@ class Sheet {
   cellsMap: Map<CellId, Cell>;
   eventEmitter: EventEmitter;
   options: IOptions;
-  cellEditor: CellEditor;
+  cellEditor?: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
 
@@ -325,11 +325,43 @@ class Sheet {
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
-    this.cellEditor = new CellEditor(this);
+
+    this.shapes.sheet.on('dblclick', this.createCellEditor);
+    window.addEventListener('keydown', this.keyHandler); // TODO where's best to attach?
 
     this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+  }
+
+  keyHandler = (e: KeyboardEvent) => {
+    e.stopPropagation();
+    switch (e.key) {
+      case 'Enter':
+      case 'Escape':
+        this.destroyCellEditor();
+        break;
+      default:
+        if (!this.cellEditor) {
+          this.createCellEditor();
+        }
+    }
+  }
+
+  createCellEditor = () => {
+    this.cellEditor = new CellEditor(this);
+    this.shapes.sheet.on('click', this.destroyCellEditor);
+    this.stage.on('mousedown', this.destroyCellEditor);
+  }
+
+  destroyCellEditor = () => {
+    if (this.cellEditor) {
+      this.cellEditor.destroy();
+      this.shapes.sheet.off('click', this.destroyCellEditor);
+      this.stage.off('click', this.destroyCellEditor);
+      this.stage.off('mousedown', this.destroyCellEditor);
+      this.cellEditor = undefined;
+    }
   }
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
@@ -476,13 +508,16 @@ class Sheet {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
+    window.removeEventListener('keydown', this.keyHandler);
 
     this.container.remove();
     this.stage.destroy();
 
     this.col.destroy();
     this.row.destroy();
-    this.cellEditor.destroy();
+
+    this.shapes.sheet.off('dblclick', this.createCellEditor);
+    this.cellEditor?.destroy();
   }
 
   getNewCell(

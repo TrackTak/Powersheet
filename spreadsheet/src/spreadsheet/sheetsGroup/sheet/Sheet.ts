@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
@@ -22,7 +22,7 @@ import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
-import { NodeConfig } from 'konva/lib/Node';
+import { BorderIconName } from '../../toolbar/htmlElementHelpers';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -79,6 +79,19 @@ export type CellId = string;
 
 export type Cell = Group;
 
+// This is for canvas not making odd lines crisp looking
+// https://stackoverflow.com/questions/7530593/html5-canvas-and-line-width/7531540#7531540
+export const offsetLineValue = (val: number) => {
+  if (val % 1 === 0) return val + 0.5;
+
+  return val;
+};
+
+export const makeLineCrisp = (line: Line) => {
+  line.x(offsetLineValue(line.x()));
+  line.y(offsetLineValue(line.y()));
+};
+
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
 export const getCellRectFromCell = (cell: Cell) => {
@@ -87,36 +100,6 @@ export const getCellRectFromCell = (cell: Cell) => {
   ) as Rect;
 
   return cellRect;
-};
-
-export const getNewCell = (
-  rect: IRect,
-  row: Vector2d,
-  col: Vector2d,
-  config: {
-    groupConfig?: NodeConfig;
-    rectConfig?: RectConfig;
-  } = {}
-) => {
-  const cell = new Group({
-    ...performanceProperties,
-    ...config.groupConfig,
-    x: rect.x,
-    y: rect.y,
-    row,
-    col,
-  });
-
-  const cellRect = new Rect({
-    ...config.rectConfig,
-    type: 'cellRect',
-    width: rect.width,
-    height: rect.height,
-  });
-
-  cell.add(cellRect);
-
-  return cell;
 };
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
@@ -367,26 +350,135 @@ class Sheet {
     }
   }
 
+  private *setBorder(borderCells: Cell[], type: BorderIconName) {
+    for (let index = 0; index < borderCells.length; index++) {
+      const borderCell = borderCells[index];
+
+      const id = borderCell.id();
+      const existingCell = this.cellsMap.get(id);
+      const cell = existingCell
+        ? existingCell
+        : this.getNewCell(
+            id,
+            borderCell.getClientRect(),
+            borderCell.attrs.row,
+            borderCell.attrs.col
+          );
+
+      const clientRect = cell.getClientRect();
+
+      const line = new Line({
+        ...performanceProperties,
+        type,
+        stroke: 'black',
+        strokeWidth: this.styles.gridLine.strokeWidth,
+      });
+
+      yield { clientRect, line };
+
+      makeLineCrisp(line);
+
+      cell.add(line);
+
+      this.cellsMap.set(id, cell);
+
+      this.drawCell(cell);
+
+      cell.moveToTop();
+    }
+  }
+
+  setBorderBottom(cells: Cell[]) {
+    const row = this.row.convertFromCellsToRange(cells);
+    const bottomCells = this.selector.selectedCells.filter(
+      (cell) => cell.attrs.row.y === row.y
+    );
+
+    for (const { clientRect, line } of this.setBorder(
+      bottomCells,
+      'borderBottom'
+    )) {
+      line.y(clientRect.height);
+      line.points([0, 0, clientRect.width, 0]);
+    }
+  }
+
+  setBorderRight(cells: Cell[]) {
+    const col = this.col.convertFromCellsToRange(cells);
+    const rightCells = this.selector.selectedCells.filter(
+      (cell) => cell.attrs.col.y === col.y
+    );
+
+    for (const { clientRect, line } of this.setBorder(
+      rightCells,
+      'borderRight'
+    )) {
+      line.x(clientRect.width);
+      line.points([0, 0, 0, clientRect.height]);
+    }
+  }
+
+  setBorderTop(cells: Cell[]) {
+    const row = this.row.convertFromCellsToRange(cells);
+    const topCells = this.selector.selectedCells.filter(
+      (cell) => cell.attrs.row.x === row.x
+    );
+
+    for (const { clientRect, line } of this.setBorder(topCells, 'borderTop')) {
+      line.points([0, 0, clientRect.width, 0]);
+    }
+  }
+
+  setBorderLeft(cells: Cell[]) {
+    const col = this.col.convertFromCellsToRange(cells);
+    const leftCells = this.selector.selectedCells.filter(
+      (cell) => cell.attrs.col.x === col.x
+    );
+
+    for (const { clientRect, line } of this.setBorder(
+      leftCells,
+      'borderLeft'
+    )) {
+      line.points([0, 0, 0, clientRect.height]);
+    }
+  }
+
   setCellFill(cell: Cell, fill: string) {
-    const id = cell.id();
-    const clientRect = cell.getClientRect();
-    const newCell = getNewCell(clientRect, cell.attrs.row, cell.attrs.col, {
-      groupConfig: {
-        id,
-        isMerged: cell.attrs.isMerged,
-      },
-      rectConfig: {
-        fill,
-      },
+    // const id = cell.id();
+    // const clientRect = cell.getClientRect();
+    // const newCell = this.getCell(
+    //   id,
+    //   clientRect,
+    //   cell.attrs.row,
+    //   cell.attrs.col
+    // );
+    const cellRect = getCellRectFromCell(cell);
+
+    cellRect.setAttr('fill', fill);
+  }
+
+  getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {
+    const cell = new Group({
+      ...performanceProperties,
+      x: rect.x,
+      y: rect.y,
+      row,
+      col,
     });
 
-    if (this.cellsMap.has(id)) {
-      this.cellsMap.get(id)!.destroy();
+    if (id) {
+      cell.id(id);
     }
 
-    this.cellsMap.set(id, newCell);
+    const cellRect = new Rect({
+      type: 'cellRect',
+      width: rect.width,
+      height: rect.height,
+    });
 
-    this.drawCell(newCell);
+    cell.add(cellRect);
+
+    return cell;
   }
 
   updateSheetDimensions() {
@@ -445,16 +537,11 @@ class Sheet {
 
         if (!mergedCellsAddedMap.get(mergedCellId)) {
           const rect = mergedCell.getClientRect();
-          const cell = getNewCell(
+          const cell = this.getNewCell(
+            mergedCellId,
             rect,
             mergedCell.attrs.row,
-            mergedCell.attrs.col,
-            {
-              groupConfig: {
-                id: mergedCellId,
-                isMerged: true,
-              },
-            }
+            mergedCell.attrs.col
           );
 
           mergedCellsAddedMap.set(mergedCellId, cell);
@@ -480,11 +567,7 @@ class Sheet {
         y: colGroup.attrs.index,
       };
 
-      const cell = getNewCell(rect, row, col, {
-        groupConfig: {
-          id,
-        },
-      });
+      const cell = this.getNewCell(id, rect, row, col);
 
       return cell;
     };
@@ -587,6 +670,7 @@ class Sheet {
   drawCell(cell: Cell) {
     const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
+    const isMerged = !!this.merger.associatedMergedCellMap.get(cell.id() ?? '');
 
     if (isFrozenRow && isFrozenCol) {
       this.scrollGroups.xySticky.add(cell);
@@ -598,7 +682,7 @@ class Sheet {
       this.scrollGroups.main.add(cell);
     }
 
-    if (cell.attrs.isMerged) {
+    if (isMerged) {
       cell.moveToTop();
     } else {
       cell.moveToBottom();

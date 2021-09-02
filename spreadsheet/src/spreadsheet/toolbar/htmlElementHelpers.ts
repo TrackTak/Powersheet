@@ -21,13 +21,14 @@ export type BorderIconSecondRowsName =
   | 'borderBottom'
   | 'borderNone';
 
+export type BorderIconName = BorderIconFirstRowsName | BorderIconSecondRowsName;
+
 export type HorizontalAlignName = 'alignLeft' | 'alignCenter' | 'alignRight';
 
 export type VerticalAlignName = 'alignTop' | 'alignMiddle' | 'alignBottom';
 
 export type InnerDropdownIconName =
-  | BorderIconFirstRowsName
-  | BorderIconSecondRowsName
+  | BorderIconName
   | HorizontalAlignName
   | VerticalAlignName;
 

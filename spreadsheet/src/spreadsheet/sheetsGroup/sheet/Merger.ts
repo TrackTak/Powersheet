@@ -1,12 +1,6 @@
 import events from '../../events';
 import { IMergedCells } from '../../options';
-import Sheet, {
-  Cell,
-  CellId,
-  getCellId,
-  getCellRectFromCell,
-  getNewCell,
-} from './Sheet';
+import Sheet, { Cell, CellId, getCellId, getCellRectFromCell } from './Sheet';
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
 import { parseColor } from 'a-color-picker';
@@ -84,12 +78,7 @@ class Merger {
       existingTopLeftCellRect = getCellRectFromCell(existingTopLeftCell);
     }
 
-    const cell = getNewCell(rect, row, col, {
-      groupConfig: {
-        id,
-        isMerged: true,
-      },
-    });
+    const cell = this.sheet.getNewCell(id, rect, row, col);
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
@@ -100,9 +89,13 @@ class Merger {
       }
     }
 
+    this.sheet.cellsMap.set(id, cell);
+
     this.setCellProperties(cell, {
       fill: existingTopLeftCellRect?.fill() ?? this.sheet.options.cell.fill,
     });
+
+    this.sheet.drawCell(cell);
   }
 
   private setCellProperties(
@@ -134,6 +127,8 @@ class Merger {
       this.setCellProperties(cell, {
         fill: fill !== parsedOptionsFill ? fill : undefined,
       });
+
+      this.sheet.drawCell(cell);
     });
   }
 

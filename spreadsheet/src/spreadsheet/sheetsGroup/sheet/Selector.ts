@@ -2,7 +2,7 @@ import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { Cell, getCellRectFromCell, getNewCell } from './Sheet';
+import Sheet, { Cell, getCellRectFromCell } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -86,6 +86,9 @@ class Selector {
     this.setFirstCell(cells[0]);
     this.selectCells(cells);
 
+    this.sheet.toolbar?.setFocusedSheet(this.sheet);
+    this.sheet.toolbar?.setToolbarState();
+
     this.sheet.emit(
       events.selector.startSelection,
       this.sheet,
@@ -166,6 +169,8 @@ class Selector {
 
         this.selectCells(cells);
 
+        this.sheet.toolbar?.setToolbarState();
+
         this.sheet.emit(events.selector.moveSelection, cells);
       }
     }
@@ -217,41 +222,43 @@ class Selector {
   setSelectionBorder() {
     if (!this.selectedCells.length) return;
 
-    const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
-    const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
+    // const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    // const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    const rows = this.sheet.row.convertFromRangeToGroups(row);
-    const cols = this.sheet.col.convertFromRangeToGroups(col);
+    // const rows = this.sheet.row.convertFromRangeToGroups(row);
+    // const cols = this.sheet.col.convertFromRangeToGroups(col);
 
-    const width = cols.reduce((prev, curr) => {
-      return (prev += curr.width());
-    }, 0);
+    // const width = cols.reduce((prev, curr) => {
+    //   return (prev += curr.width());
+    // }, 0);
 
-    const height = rows.reduce((prev, curr) => {
-      return (prev += curr.height());
-    }, 0);
+    // const height = rows.reduce((prev, curr) => {
+    //   return (prev += curr.height());
+    // }, 0);
 
-    const indexZeroCell = this.selectedCells[0];
+    // const indexZeroCell = this.selectedCells[0];
 
-    const rect: IRect = {
-      x: indexZeroCell.x(),
-      y: indexZeroCell.y(),
-      width,
-      height,
-    };
+    // const rect: IRect = {
+    //   x: indexZeroCell.x(),
+    //   y: indexZeroCell.y(),
+    //   width,
+    //   height,
+    // };
 
-    const cell = getNewCell(
-      rect,
-      indexZeroCell.attrs.row,
-      indexZeroCell.attrs.col,
-      {
-        rectConfig: this.sheet.styles.selectionBorder,
-      }
-    );
+    // const cell = this.sheet.getCell(
+    //   null,
+    //   rect,
+    //   indexZeroCell.attrs.row,
+    //   indexZeroCell.attrs.col
+    // );
+
+    // const cellRect = getCellRectFromCell(cell);
+
+    // cellRect.setAttrs(this.sheet.styles.selectionBorder);
 
     // this.sheet.drawCell(cell);
 
-    this.selectionBorderCell = cell;
+    // this.selectionBorderCell = cell;
   }
 
   getSelectedCell() {

@@ -3,7 +3,6 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../options';
-import events from '../events';
 import Sheet, { Cell } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
@@ -298,9 +297,6 @@ class Toolbar {
     });
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
-
-    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
-    this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
   }
 
   getFocusedSheet() {
@@ -316,8 +312,8 @@ class Toolbar {
 
     switch (name) {
       case 'backgroundColor': {
-        sheet.selector.selectedCells.forEach((selectedCell) => {
-          sheet.setCellFill(selectedCell, value);
+        sheet.selector.selectedCells.forEach((cell) => {
+          sheet.setCellFill(cell, value);
         });
         break;
       }
@@ -343,21 +339,38 @@ class Toolbar {
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
         break;
       }
-      case 'borderAll': {
+      case 'borderBottom': {
+        sheet.setBorderBottom(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderRight': {
+        sheet.setBorderRight(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderTop': {
+        sheet.setBorderTop(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderLeft': {
+        sheet.setBorderLeft(sheet.selector.selectedCells);
         break;
       }
     }
   };
 
-  onStartSelection = (sheet: Sheet, selectedCell: Cell) => {
+  setFocusedSheet(sheet: Sheet) {
     this.focusedSheet = sheet;
+  }
 
-    const selectedCellId = selectedCell.id();
+  setToolbarState = () => {
+    const sheet = this.getFocusedSheet();
+    const selectedCells = sheet.selector.selectedCells;
+    const firstSelectedCell = sheet.selector.selectedFirstCell;
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellsMap.has(selectedCellId)) {
-      const cell = sheet.cellsMap.get(selectedCellId)!;
+    if (sheet.cellsMap.has(firstSelectedCell!.id())) {
+      const cell = sheet.cellsMap.get(firstSelectedCell!.id())!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;
@@ -369,16 +382,17 @@ class Toolbar {
         'white';
     }
 
-    this.setMergedState([selectedCell]);
-  };
-
-  onMoveSelection = (selectedCells: Cell[]) => {
     this.setMergedState(selectedCells);
   };
 
   setMergedState(selectedCells: Cell[]) {
-    const isActive =
-      selectedCells.length === 1 && selectedCells[0].attrs.isMerged;
+    const cell = selectedCells[0];
+    const isMerged =
+      !!this.getFocusedSheet().merger.associatedMergedCellMap.get(
+        cell.id() ?? ''
+      );
+
+    const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {
       this.iconElementsMap.merge.button.disabled = false;
@@ -390,9 +404,6 @@ class Toolbar {
   }
 
   destroy() {
-    this.eventEmitter.off(events.selector.startSelection);
-    this.eventEmitter.off(events.selector.moveSelection);
-
     this.toolbarEl.remove();
     this.tooltip.destroy();
   }

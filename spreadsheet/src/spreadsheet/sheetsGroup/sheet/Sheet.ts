@@ -15,7 +15,7 @@ import {
   IStyles,
   performanceProperties,
 } from './styles';
-import { IOptions } from '../../options';
+import { IFrozenCells, IOptions } from '../../options';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
@@ -23,7 +23,6 @@ import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { NodeConfig } from 'konva/lib/Node';
-import { IconElementsName } from '../../toolbar/htmlElementHelpers';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -141,12 +140,8 @@ export const getIsFrozenRow = (ri: number, options: IOptions) => {
   return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
 };
 
-export function* iterateXToY(sheetViewportPosition: ISheetViewportPosition) {
-  for (
-    let index = sheetViewportPosition.x;
-    index < sheetViewportPosition.y;
-    index++
-  ) {
+export function* iterateXToY(vector: Vector2d) {
+  for (let index = vector.x; index < vector.y; index++) {
     yield index;
   }
 
@@ -350,8 +345,6 @@ class Sheet {
     this.merger = new Merger(this);
     this.cellEditor = new CellEditor(this);
 
-    this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
-
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
@@ -365,19 +358,6 @@ class Sheet {
 
     this.eventEmitter.emit(event, ...args);
   }
-
-  toolbarOnChange = (name: IconElementsName, value: any) => {
-    const selectedCells = this.selector.selectedCells;
-
-    switch (name) {
-      case 'backgroundColor': {
-        selectedCells.forEach((selectedCell) => {
-          this.setCellFill(selectedCell, value);
-        });
-        break;
-      }
-    }
-  };
 
   updateCells() {
     for (const cell of this.cellsMap.values()) {
@@ -593,6 +573,13 @@ class Sheet {
 
       this.cellsMap.delete(cellId);
     }
+  }
+
+  setFrozenCells(frozenCells: IFrozenCells) {
+    this.options.frozenCells = frozenCells;
+
+    this.row.drawViewport();
+    this.col.drawViewport();
   }
 
   drawCell(cell: Cell) {

@@ -14,6 +14,7 @@ import Sheet, {
   ISheetViewportPosition,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
+  iterateXToY,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
@@ -329,6 +330,14 @@ class RowCol {
       this.sheet.options[this.type].defaultSize;
 
     return size;
+  }
+
+  drawViewport() {
+    for (const index of iterateXToY(
+      this.sheet[this.type].sheetViewportPosition
+    )) {
+      this.sheet[this.type].draw(index);
+    }
   }
 
   getIndexesBetweenVectors(position: Vector2d) {

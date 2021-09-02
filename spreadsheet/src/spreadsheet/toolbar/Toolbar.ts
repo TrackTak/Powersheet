@@ -131,10 +131,21 @@ class Toolbar {
       switch (name) {
         case 'backgroundColor': {
           this.setDropdownColorPicker(name);
+
+          this.colorPickerElementsMap.backgroundColor.picker.on(
+            'change',
+            (_, color) => {
+              this.setValue(name, color);
+            }
+          );
           break;
         }
         case 'color': {
           this.setDropdownColorPicker(name);
+
+          this.colorPickerElementsMap.color.picker.on('change', (_, color) => {
+            this.setValue(name, color);
+          });
           break;
         }
         case 'borderAll': {
@@ -286,10 +297,13 @@ class Toolbar {
       this.toolbarEl.appendChild(group);
     });
 
-    this.iconElementsMap.merge.button.addEventListener(
-      'click',
-      this.onMergeClick
-    );
+    Object.keys(this.iconElementsMap).forEach((key) => {
+      const name = key as IconElementsName;
+
+      this.iconElementsMap[name].button.addEventListener('click', () =>
+        this.setValue(name)
+      );
+    });
 
     this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
     this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
@@ -303,21 +317,44 @@ class Toolbar {
     return this.focusedSheet;
   }
 
-  onMergeClick = () => {
+  setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.getFocusedSheet();
+    const selectedCells = sheet.selector.selectedCells;
 
-    if (this.iconElementsMap.merge.active) {
-      sheet.merger.unMergeSelectedCells();
+    switch (name) {
+      case 'backgroundColor': {
+        selectedCells.forEach((selectedCell) => {
+          sheet.setCellFill(selectedCell, value);
+        });
+        break;
+      }
+      case 'merge': {
+        if (this.iconElementsMap.merge.active) {
+          sheet.merger.unMergeSelectedCells();
 
-      this.setMergedState(sheet.selector.selectedCells);
+          this.setMergedState(selectedCells);
 
-      return;
-    }
+          break;
+        }
 
-    if (!this.iconElementsMap.merge.button.disabled) {
-      this.focusedSheet?.merger.mergeSelectedCells();
+        if (!this.iconElementsMap.merge.button.disabled) {
+          sheet.merger.mergeSelectedCells();
 
-      this.setMergedState(sheet.selector.selectedCells);
+          this.setMergedState(selectedCells);
+        }
+
+        break;
+      }
+      case 'freeze': {
+        if (this.iconElementsMap.freeze.active) {
+          break;
+        }
+
+        const { row, col } = sheet.selector.selectedFirstCell?.attrs;
+
+        sheet.setFrozenCells({ row: row.x, col: col.x });
+        break;
+      }
     }
   };
 
@@ -393,10 +430,6 @@ class Toolbar {
     this.setDropdownContent(name, dropdownContent);
 
     const colorBar = createColorBar(picker);
-
-    picker.on('change', (_, color) => {
-      this.eventEmitter.emit(events.toolbar.change, name, color);
-    });
 
     this.iconElementsMap[name].button.appendChild(colorBar);
 

@@ -4,7 +4,7 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { getCellRectFromCell, iterateXToY } from './Sheet';
+import Sheet, { getCellRectFromCell } from './Sheet';
 import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
@@ -236,12 +236,7 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    for (const index of iterateXToY(
-      this.sheet[this.type].sheetViewportPosition
-    )) {
-      this.sheet[this.type].draw(index);
-    }
-
+    this.sheet[this.type].drawViewport();
     this.sheet.updateViewport();
 
     this.sheet.emit(events.resize[this.type].end, e, index, axis);

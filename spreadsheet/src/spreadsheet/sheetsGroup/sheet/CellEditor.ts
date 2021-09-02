@@ -33,6 +33,15 @@ class CellEditor {
     this.sheet.stage.on('mousedown', this.hideCellEditor);
     this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
+
+    this.textArea.addEventListener('input', (e) => {
+      // @ts-ignore
+      const textContent = e.target.textContent;
+
+      if (this.sheet.formulaBar) {
+        this.sheet.formulaBar.editableContent.textContent = textContent;
+      }
+    });
   }
 
   destroy() {

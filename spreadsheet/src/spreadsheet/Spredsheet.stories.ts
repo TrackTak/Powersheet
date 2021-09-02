@@ -29,6 +29,7 @@ const buildSpreadsheet = (args: IOptions) => {
 
   const sheet = new Sheet({
     toolbar,
+    formulaBar,
     options,
     eventEmitter,
   });

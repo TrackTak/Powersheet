@@ -1,3 +1,4 @@
+import { EventEmitter } from 'eventemitter3';
 import { IRect } from 'konva/lib/types';
 import events from '../../events';
 import Sheet from './Sheet';
@@ -33,6 +34,15 @@ class CellEditor {
     this.sheet.stage.on('mousedown', this.hideCellEditor);
     this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
+
+    this.textArea.addEventListener('input', (e) => {
+      // @ts-ignore
+      const textContent = e.target.textContent;
+
+      if (this.sheet.formulaBar) {
+        this.sheet.formulaBar.textarea.textContent = textContent;
+      }
+    });
   }
 
   destroy() {

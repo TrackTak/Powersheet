@@ -1,4 +1,4 @@
-@import '../mixins.scss';
+@import '../styles.scss';
 
 $iconSize: 18px;
 
@@ -97,19 +97,11 @@ $iconSize: 18px;
 }
 
 .iconContainer {
-  position: relative;
-  overflow: hidden;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
+  @include iconContainer;
 }
 
 .icon {
-  background-image: url('./icons.svg');
-  position: absolute;
-  width: 262px;
-  height: 444px;
-  opacity: 0.65;
+  @include icons;
 
   &.undo {
     left: 0;

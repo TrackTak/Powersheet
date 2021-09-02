@@ -1,7 +1,5 @@
 @import '../styles.scss';
 
-$iconSize: 18px;
-
 .toolbar {
   display: flex;
   align-items: center;
@@ -288,7 +286,6 @@ $iconSize: 18px;
     top: -3 * $iconSize;
   }
   &.formula {
-    left: -7 * $iconSize;
-    top: -3 * $iconSize;
+    @include formula;
   }
 }

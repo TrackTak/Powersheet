@@ -1,7 +1,5 @@
 @import '../styles.scss';
 
-$iconSize: 18px;
-
 .formulaBar {
   position: relative;
   background: #fff;
@@ -13,12 +11,12 @@ $iconSize: 18px;
   padding: 5px;
 }
 
-.textareaContainer {
+.editableContentContainer {
   display: flex;
   align-items: center;
 }
 
-.textarea {
+.editableContent {
   outline: none;
   flex: 1 1;
 }
@@ -30,9 +28,7 @@ $iconSize: 18px;
 
 .icon {
   @include icons;
-
   &.formula {
-    left: -7 * $iconSize;
-    top: -3 * $iconSize;
+    @include formula;
   }
 }

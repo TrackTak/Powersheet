@@ -1,4 +1,6 @@
-@mixin button() {
+$iconSize: 18px;
+
+@mixin button {
   cursor: pointer;
   border: none;
   background-color: transparent;
@@ -31,4 +33,9 @@
   height: 444px;
   opacity: 0.65;
   background-image: url('../../icons/icons.svg');
+}
+
+@mixin formula {
+  left: -7 * $iconSize;
+  top: -3 * $iconSize;
 }

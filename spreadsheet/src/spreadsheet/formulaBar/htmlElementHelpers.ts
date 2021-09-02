@@ -5,19 +5,19 @@ export const formulaBarPrefix = `${prefix}-formula-bar`;
 
 export const createFormulaEditorArea = () => {
   const editorArea = document.createElement('div');
-  const textareaContainer = document.createElement('div');
+  const editableContentContainer = document.createElement('div');
   const iconContainer = document.createElement('div');
   const icon = document.createElement('div');
-  const textarea = document.createElement('div');
+  const editableContent = document.createElement('div');
 
   editorArea.classList.add(
     styles.editorArea,
     `${formulaBarPrefix}-editor-area`
   );
 
-  textareaContainer.classList.add(
-    styles.textareaContainer,
-    `${formulaBarPrefix}-textarea-container`
+  editableContentContainer.classList.add(
+    styles.editableContentContainer,
+    `${formulaBarPrefix}-editable-content-container`
   );
 
   iconContainer.classList.add(
@@ -32,12 +32,15 @@ export const createFormulaEditorArea = () => {
     `${formulaBarPrefix}-formula`
   );
 
-  textarea.classList.add(styles.textarea, `${formulaBarPrefix}-textarea`);
+  editableContent.classList.add(
+    styles.editableContent,
+    `${formulaBarPrefix}-editable-content`
+  );
 
-  editorArea.appendChild(textareaContainer);
-  textareaContainer.appendChild(iconContainer);
-  textareaContainer.appendChild(textarea);
+  editorArea.appendChild(editableContentContainer);
+  editableContentContainer.appendChild(iconContainer);
+  editableContentContainer.appendChild(editableContent);
   iconContainer.appendChild(icon);
 
-  return { editorArea, textareaContainer, textarea };
+  return { editorArea, editableContentContainer, editableContent };
 };

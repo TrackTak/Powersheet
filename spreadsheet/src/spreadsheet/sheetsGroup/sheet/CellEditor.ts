@@ -1,4 +1,3 @@
-import { EventEmitter } from 'eventemitter3';
 import { IRect } from 'konva/lib/types';
 import events from '../../events';
 import Sheet from './Sheet';
@@ -40,7 +39,7 @@ class CellEditor {
       const textContent = e.target.textContent;
 
       if (this.sheet.formulaBar) {
-        this.sheet.formulaBar.textarea.textContent = textContent;
+        this.sheet.formulaBar.editableContent.textContent = textContent;
       }
     });
   }

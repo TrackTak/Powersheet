@@ -7,33 +7,26 @@ export const formulaBarPrefix = `${prefix}-formula-bar`;
 class FormulaBar {
   formulaBarEl: HTMLDivElement;
   editorArea: HTMLDivElement;
-  textareaContainer: HTMLDivElement;
-  textarea: HTMLDivElement;
+  editableContentContainer: HTMLDivElement;
+  editableContent: HTMLDivElement;
 
   constructor() {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const { editorArea, textareaContainer, textarea } =
-      this.setFormulaEditorArea();
-
-    this.editorArea = editorArea;
-    this.textareaContainer = textareaContainer;
-    this.textarea = textarea;
-  }
-
-  setFormulaEditorArea() {
-    const { editorArea, textareaContainer, textarea } =
+    const { editorArea, editableContentContainer, editableContent } =
       createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
-    textareaContainer.addEventListener('click', () => {
-      textarea.contentEditable = 'true';
-      textarea.focus();
+    editableContentContainer.addEventListener('click', () => {
+      editableContent.contentEditable = 'true';
+      editableContent.focus();
     });
 
-    return { editorArea, textareaContainer, textarea };
+    this.editorArea = editorArea;
+    this.editableContentContainer = editableContentContainer;
+    this.editableContent = editableContent;
   }
 }
 

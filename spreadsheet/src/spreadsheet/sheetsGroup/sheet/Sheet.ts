@@ -416,6 +416,8 @@ class Sheet {
 
     this.drawTopLeftOffsetRect();
     this.drawNextItems();
+    // TODO: Remove when it's fixed in scroll
+    this.updateViewport();
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -630,7 +632,7 @@ class Sheet {
       rowIteratorResult = rowGenerator.next();
     } while (!colIteratorResult.done || !rowIteratorResult.done);
 
-    this.updateViewport();
+    // this.updateViewport();
   }
 }
 

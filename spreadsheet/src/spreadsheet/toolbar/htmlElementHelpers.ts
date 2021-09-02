@@ -7,12 +7,14 @@ export const toolbarPrefix = `${prefix}-toolbar`;
 
 export type ColorPickerIconName = 'backgroundColor' | 'color';
 
-export type BorderIconName =
+export type BorderIconFirstRowsName =
   | 'borderAll'
   | 'borderInside'
   | 'borderHorizontal'
   | 'borderVertical'
-  | 'borderOutside'
+  | 'borderOutside';
+
+export type BorderIconSecondRowsName =
   | 'borderLeft'
   | 'borderTop'
   | 'borderRight'
@@ -24,16 +26,17 @@ export type HorizontalAlignName = 'alignLeft' | 'alignCenter' | 'alignRight';
 export type VerticalAlignName = 'alignTop' | 'alignMiddle' | 'alignBottom';
 
 export type InnerDropdownIconName =
-  | BorderIconName
+  | BorderIconFirstRowsName
+  | BorderIconSecondRowsName
   | HorizontalAlignName
   | VerticalAlignName;
 
 export type DropdownIconName =
   | ColorPickerIconName
-  | 'function'
-  | 'alignMiddle'
-  | 'alignLeft'
-  | 'borderAll';
+  | 'functions'
+  | 'verticalAlign'
+  | 'horizontalAlign'
+  | 'borders';
 
 export const toggleIconNames = <const>[
   'undo',
@@ -45,13 +48,13 @@ export const toggleIconNames = <const>[
   'color',
   'backgroundColor',
   'merge',
-  'alignLeft',
-  'alignMiddle',
+  'horizontalAlign',
+  'verticalAlign',
   'textWrap',
-  'function',
+  'functions',
   'freeze',
   'ellipsis',
-  'borderAll',
+  'borders',
   'export',
   'formula',
 ];
@@ -60,8 +63,6 @@ export type IconElementsName =
   | DropdownIconName
   | InnerDropdownIconName
   | typeof toggleIconNames[number];
-
-type CreateIconButtonReturnType = ReturnType<typeof createIconButton>;
 
 export const createGroup = (elements: HTMLElement[]) => {
   const group = document.createElement('div');
@@ -137,44 +138,32 @@ export const createColorBar = (picker: ACPController) => {
 export const createBordersContent = () => {
   const dropdownContent = createDropdownContent(styles.borders);
 
-  const firstBordersRow: [
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType
-  ] = [
-    createIconButton('borderAll'),
-    createIconButton('borderInside'),
-    createIconButton('borderHorizontal'),
-    createIconButton('borderVertical'),
-    createIconButton('borderOutside'),
-  ];
+  const firstBordersRow = {
+    borderAll: createIconButton('borderAll'),
+    borderInside: createIconButton('borderInside'),
+    borderHorizontal: createIconButton('borderHorizontal'),
+    borderVertical: createIconButton('borderVertical'),
+    borderOutside: createIconButton('borderOutside'),
+  };
 
-  const secondBordersRow: [
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType
-  ] = [
-    createIconButton('borderLeft'),
-    createIconButton('borderTop'),
-    createIconButton('borderRight'),
-    createIconButton('borderBottom'),
-    createIconButton('borderNone'),
-  ];
+  const secondBordersRow = {
+    borderLeft: createIconButton('borderLeft'),
+    borderTop: createIconButton('borderTop'),
+    borderRight: createIconButton('borderRight'),
+    borderBottom: createIconButton('borderBottom'),
+    borderNone: createIconButton('borderNone'),
+  };
 
   const borderGroups: [HTMLDivElement, HTMLDivElement] = [
     document.createElement('div'),
     document.createElement('div'),
   ];
 
-  firstBordersRow.forEach((border) => {
+  Object.values(firstBordersRow).forEach((border) => {
     borderGroups[0].appendChild(border.buttonContainer);
   });
 
-  secondBordersRow.forEach((border) => {
+  Object.values(secondBordersRow).forEach((border) => {
     borderGroups[1].appendChild(border.buttonContainer);
   });
 
@@ -193,17 +182,13 @@ export const createBordersContent = () => {
 export const createVerticalAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
-  const aligns: [
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType
-  ] = [
-    createIconButton('alignTop'),
-    createIconButton('alignMiddle'),
-    createIconButton('alignBottom'),
-  ];
+  const aligns = {
+    alignTop: createIconButton('alignTop'),
+    alignMiddle: createIconButton('alignMiddle'),
+    alignBottom: createIconButton('alignBottom'),
+  };
 
-  aligns.forEach((align) => {
+  Object.values(aligns).forEach((align) => {
     dropdownContent.appendChild(align.buttonContainer);
   });
 
@@ -213,17 +198,13 @@ export const createVerticalAlignContent = () => {
 export const createHorizontalAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
-  const aligns: [
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType,
-    CreateIconButtonReturnType
-  ] = [
-    createIconButton('alignLeft'),
-    createIconButton('alignCenter'),
-    createIconButton('alignRight'),
-  ];
+  const aligns = {
+    alignLeft: createIconButton('alignLeft'),
+    alignCenter: createIconButton('alignCenter'),
+    alignRight: createIconButton('alignRight'),
+  };
 
-  aligns.forEach((align) => {
+  Object.values(aligns).forEach((align) => {
     dropdownContent.appendChild(align.buttonContainer);
   });
 
@@ -260,6 +241,7 @@ export const createDropdownIconButton = (
   createArrow: boolean = false
 ) => {
   const iconButtonValues = createIconButton(name);
+  const tooltip = createTooltip(name);
 
   iconButtonValues.button.classList.add(
     styles.dropdownIconButton,
@@ -278,9 +260,9 @@ export const createDropdownIconButton = (
     iconButtonValues.button.appendChild(arrowIconValues.arrowIconContainer);
   }
 
-  iconButtonValues.button.appendChild(createTooltip(name));
+  iconButtonValues.button.appendChild(tooltip);
 
-  return { iconButtonValues, arrowIconValues };
+  return { iconButtonValues, arrowIconValues, tooltip };
 };
 
 export const createDropdown = () => {

@@ -159,7 +159,8 @@ $iconSize: 18px;
     left: -11 * $iconSize;
     top: 0;
   }
-  &.alignLeft {
+  &.alignLeft,
+  &.horizontalAlign {
     left: -12 * $iconSize;
     top: 0;
   }
@@ -175,7 +176,8 @@ $iconSize: 18px;
     left: -1 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.alignMiddle {
+  &.alignMiddle,
+  &.verticalAlign {
     left: -2 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -191,7 +193,7 @@ $iconSize: 18px;
     left: -5 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.function {
+  &.functions {
     left: -6 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -223,7 +225,8 @@ $iconSize: 18px;
     left: -13 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.borderAll {
+  &.borderAll,
+  &.borders {
     left: 0;
     top: -2 * $iconSize;
   }

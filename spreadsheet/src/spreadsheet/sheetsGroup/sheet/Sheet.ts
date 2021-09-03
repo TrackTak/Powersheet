@@ -24,6 +24,7 @@ import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { BorderIconName } from '../../toolbar/htmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
+import { Shape, ShapeConfig } from 'konva/lib/Shape';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -95,6 +96,33 @@ export const makeLineCrisp = (line: Line) => {
 };
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
+  const cellBorder = cell.children?.find((x) => x.attrs.type === type) as Line;
+
+  return cellBorder;
+};
+
+export const getOtherCellChildren = (
+  cell: Cell,
+  typesToFilterOut: string[]
+) => {
+  const otherChildren = cell.children
+    ?.filter((x) => typesToFilterOut.every((z) => z !== x.attrs.type))
+    .map((x) => x.clone());
+
+  return otherChildren ?? [];
+};
+
+export const setCellChildren = (
+  cell: Cell,
+  children: (Group | Shape<ShapeConfig>)[]
+) => {
+  if (children.length) {
+    cell.destroyChildren();
+    cell.add(...children);
+  }
+};
 
 export const getCellRectFromCell = (cell: Cell) => {
   const cellRect = cell.children?.find(
@@ -357,19 +385,20 @@ class Sheet {
   private *setBorder(borderCells: Cell[], type: BorderIconName) {
     for (let index = 0; index < borderCells.length; index++) {
       const borderCell = borderCells[index];
-
       const id = borderCell.id();
       const existingCell = this.cellsMap.get(id);
-      const cell = existingCell
-        ? existingCell
-        : this.getNewCell(
-            id,
-            borderCell.getClientRect(),
-            borderCell.attrs.row,
-            borderCell.attrs.col
-          );
 
-      const clientRect = cell.getClientRect();
+      const cell = this.getNewCell(
+        id,
+        borderCell.getClientRect(),
+        borderCell.attrs.row,
+        borderCell.attrs.col
+      );
+
+      const clientRect = cell.getClientRect({
+        skipStroke: true,
+        skipShadow: true,
+      });
 
       const line = new Line({
         ...performanceProperties,
@@ -377,6 +406,14 @@ class Sheet {
         stroke: 'black',
         strokeWidth: this.styles.gridLine.strokeWidth,
       });
+
+      if (existingCell) {
+        const otherChildren = getOtherCellChildren(existingCell, [type]);
+
+        setCellChildren(cell, otherChildren);
+
+        this.cellsMap.get(id)!.destroy();
+      }
 
       yield { clientRect, line };
 
@@ -392,11 +429,77 @@ class Sheet {
     }
   }
 
+  clearBorders(cells: Cell[]) {
+    cells.forEach((cell) => {
+      const id = cell.id();
+      const existingCell = this.cellsMap.get(id);
+
+      if (existingCell) {
+        const types: BorderIconName[] = [
+          'borderLeft',
+          'borderTop',
+          'borderRight',
+          'borderBottom',
+          'borderVertical',
+          'borderHorizontal',
+        ];
+        const otherChildren = getOtherCellChildren(existingCell, types);
+
+        setCellChildren(existingCell, otherChildren);
+      }
+    });
+  }
+
+  setBordersAll(cells: Cell[]) {
+    this.setBordersInside(cells);
+    this.setBordersOutside(cells);
+  }
+
+  setBordersInside(cells: Cell[]) {
+    this.setBordersHorizontal(cells);
+    this.setBordersVertical(cells);
+  }
+
+  setBordersHorizontal(cells: Cell[]) {
+    const row = this.row.convertFromCellsToRange(cells);
+    const horizontalCells = cells.filter(
+      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
+    );
+
+    for (const { clientRect, line } of this.setBorder(
+      horizontalCells,
+      'borderHorizontal'
+    )) {
+      line.y(clientRect.height);
+      line.points([0, 0, clientRect.width, 0]);
+    }
+  }
+
+  setBordersVertical(cells: Cell[]) {
+    const col = this.col.convertFromCellsToRange(cells);
+    const verticalCells = cells.filter(
+      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
+    );
+
+    for (const { clientRect, line } of this.setBorder(
+      verticalCells,
+      'borderVertical'
+    )) {
+      line.x(clientRect.width);
+      line.points([0, 0, 0, clientRect.height]);
+    }
+  }
+
+  setBordersOutside(cells: Cell[]) {
+    this.setBorderBottom(cells);
+    this.setBorderLeft(cells);
+    this.setBorderRight(cells);
+    this.setBorderTop(cells);
+  }
+
   setBorderBottom(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
-    const bottomCells = this.selector.selectedCells.filter(
-      (cell) => cell.attrs.row.y === row.y
-    );
+    const bottomCells = cells.filter((cell) => cell.attrs.row.y === row.y);
 
     for (const { clientRect, line } of this.setBorder(
       bottomCells,
@@ -409,9 +512,7 @@ class Sheet {
 
   setBorderRight(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
-    const rightCells = this.selector.selectedCells.filter(
-      (cell) => cell.attrs.col.y === col.y
-    );
+    const rightCells = cells.filter((cell) => cell.attrs.col.y === col.y);
 
     for (const { clientRect, line } of this.setBorder(
       rightCells,
@@ -424,9 +525,7 @@ class Sheet {
 
   setBorderTop(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
-    const topCells = this.selector.selectedCells.filter(
-      (cell) => cell.attrs.row.x === row.x
-    );
+    const topCells = cells.filter((cell) => cell.attrs.row.x === row.x);
 
     for (const { clientRect, line } of this.setBorder(topCells, 'borderTop')) {
       line.points([0, 0, clientRect.width, 0]);
@@ -435,9 +534,7 @@ class Sheet {
 
   setBorderLeft(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
-    const leftCells = this.selector.selectedCells.filter(
-      (cell) => cell.attrs.col.x === col.x
-    );
+    const leftCells = cells.filter((cell) => cell.attrs.col.x === col.x);
 
     for (const { clientRect, line } of this.setBorder(
       leftCells,

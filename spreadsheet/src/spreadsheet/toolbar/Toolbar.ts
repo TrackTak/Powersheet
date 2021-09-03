@@ -355,6 +355,30 @@ class Toolbar {
         sheet.setBorderLeft(sheet.selector.selectedCells);
         break;
       }
+      case 'borderVertical': {
+        sheet.setBordersVertical(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderHorizontal': {
+        sheet.setBordersHorizontal(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderInside': {
+        sheet.setBordersInside(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderAll': {
+        sheet.setBordersAll(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderNone': {
+        sheet.clearBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderOutside': {
+        sheet.setBordersOutside(sheet.selector.selectedCells);
+        break;
+      }
     }
   };
 

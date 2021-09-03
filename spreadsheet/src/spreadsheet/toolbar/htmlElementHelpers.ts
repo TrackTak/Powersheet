@@ -298,7 +298,7 @@ export const createIconButton = (name: IconElementsName) => {
 
 export const createIcon = (name: string) => {
   const iconContainer = document.createElement('span');
-  const icon = document.createElement('i');
+  const icon = document.createElement('div');
 
   iconContainer.classList.add(
     styles.iconContainer,

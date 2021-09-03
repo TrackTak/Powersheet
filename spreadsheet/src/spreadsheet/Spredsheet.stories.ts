@@ -6,6 +6,7 @@ import Toolbar from './toolbar/Toolbar';
 import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
+import FormulaBar from './formulaBar/FormulaBar';
 
 export default {
   title: 'Spreadsheet',
@@ -24,13 +25,17 @@ const buildSpreadsheet = (args: IOptions) => {
     eventEmitter,
   });
 
+  const formulaBar = new FormulaBar();
+
   const sheet = new Sheet({
     toolbar,
+    formulaBar,
     options,
     eventEmitter,
   });
 
   spreadsheet.appendChild(toolbar.toolbarEl);
+  spreadsheet.appendChild(formulaBar.formulaBarEl);
   spreadsheet.appendChild(sheet.container);
 
   return {

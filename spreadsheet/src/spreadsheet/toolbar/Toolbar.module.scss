@@ -1,6 +1,4 @@
-@import '../mixins.scss';
-
-$iconSize: 18px;
+@import '../styles.scss';
 
 .toolbar {
   display: flex;
@@ -97,19 +95,11 @@ $iconSize: 18px;
 }
 
 .iconContainer {
-  position: relative;
-  overflow: hidden;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
+  @include iconContainer;
 }
 
 .icon {
-  background-image: url('./icons.svg');
-  position: absolute;
-  width: 262px;
-  height: 444px;
-  opacity: 0.65;
+  @include icons;
 
   &.undo {
     left: 0;
@@ -299,7 +289,6 @@ $iconSize: 18px;
     top: -3 * $iconSize;
   }
   &.formula {
-    left: -7 * $iconSize;
-    top: -3 * $iconSize;
+    @include formula;
   }
 }

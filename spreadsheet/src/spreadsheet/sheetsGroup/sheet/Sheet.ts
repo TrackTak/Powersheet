@@ -23,6 +23,7 @@ import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { BorderIconName } from '../../toolbar/htmlElementHelpers';
+import FormulaBar from '../../formulaBar/FormulaBar';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -34,6 +35,7 @@ interface IConstructor {
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
   toolbar?: Toolbar;
+  formulaBar?: FormulaBar;
   options: IOptions;
   eventEmitter: EventEmitter;
 }
@@ -240,12 +242,14 @@ class Sheet {
   options: IOptions;
   cellEditor: CellEditor;
   toolbar?: Toolbar;
+  formulaBar?: FormulaBar;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
     this.styles = merge({}, defaultStyles, params.styles);
     this.options = params.options;
     this.toolbar = params.toolbar;
+    this.formulaBar = params.formulaBar;
     this.cellsMap = new Map();
 
     const that = this;

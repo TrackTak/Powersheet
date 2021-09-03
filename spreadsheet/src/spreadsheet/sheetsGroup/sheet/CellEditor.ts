@@ -62,7 +62,6 @@ class CellEditor {
       height: cellRect.height(),
     };
     this.setTextAreaPosition(cellPosition, cellRect.strokeWidth() / 2);
-    this.textArea.style.display = 'initial';
     this.textArea.focus();
   };
 

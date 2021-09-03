@@ -4,7 +4,6 @@ import Sheet from './Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
-import { Rect } from 'konva/lib/shapes/Rect';
 
 class CellEditor {
   private textArea!: HTMLDivElement;
@@ -67,15 +66,8 @@ class CellEditor {
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.getSelectedCell();
-    const cellRect = selectedCell.children![0] as Rect;
-    const absolutePosition = selectedCell.getAbsolutePosition();
-    const cellPosition = {
-      x: absolutePosition.x,
-      y: absolutePosition.y,
-      width: cellRect.width(),
-      height: cellRect.height(),
-    };
-    this.setTextAreaPosition(cellPosition, cellRect.strokeWidth() / 2);
+
+    this.setTextAreaPosition(selectedCell.getClientRect());
     this.textArea.style.display = 'initial';
     this.textArea.focus();
     this.isEditing = true;
@@ -86,11 +78,11 @@ class CellEditor {
     this.isEditing = false;
   };
 
-  private setTextAreaPosition = (position: IRect, offset: number) => {
-    this.textArea.style.top = `${position.y - offset}px`;
-    this.textArea.style.left = `${position.x - offset}px`;
-    this.textArea.style.minWidth = `${position.width + offset * 2}px`;
-    this.textArea.style.height = `${position.height + offset * 2}px`;
+  private setTextAreaPosition = (position: IRect) => {
+    this.textArea.style.top = `${position.y}px`;
+    this.textArea.style.left = `${position.x}px`;
+    this.textArea.style.minWidth = `${position.width}px`;
+    this.textArea.style.height = `${position.height}px`;
   };
 
   private hideCellTooltip = () => {

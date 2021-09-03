@@ -1,6 +1,6 @@
 import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Sheet, { Cell, getCellRectFromCell } from './Sheet';
 
@@ -104,6 +104,16 @@ class Selector {
     const rectConfig: RectConfig = this.sheet.styles.selectionFirstCell;
 
     firstCellRect.setAttrs(rectConfig);
+
+    const cellRect = getCellRectFromCell(cell);
+
+    const offsetAmount = cellRect.strokeWidth() / 2;
+
+    cell.x(cell.x() + offsetAmount);
+    cell.y(cell.y() + offsetAmount);
+
+    cellRect.width(cellRect.width() - cellRect.strokeWidth());
+    cellRect.height(cellRect.height() - cellRect.strokeWidth());
 
     this.selectedFirstCell = cell;
   }

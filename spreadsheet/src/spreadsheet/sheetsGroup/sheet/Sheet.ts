@@ -235,6 +235,7 @@ class Sheet {
   cellEditor?: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  lastClickTime: number = (new Date()).getTime();
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -326,12 +327,41 @@ class Sheet {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
 
-    this.shapes.sheet.on('dblclick', this.createCellEditor);
-    window.addEventListener('keydown', this.keyHandler); // TODO where's best to attach?
+    this.shapes.sheet.on('click', () => this.handleClick());
+    this.container.tabIndex = 1;
+    this.container.addEventListener('keydown', (e) => this.keyHandler(e));
 
     this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
+  }
+
+  handleClick = () => {
+    if (this.cellEditor) {
+      this.destroyCellEditor();
+      return;
+    }
+    const timeNow = (new Date()).getTime();
+    const delayTime = 500;
+    const viewportVector = this.getViewportVector();
+    const previousSelectedCell = this.selector.previousSelectedCell;
+    if (!previousSelectedCell) {
+      return;
+    }
+    const selectedCellPosition = {
+      x: previousSelectedCell.getAbsolutePosition().x - viewportVector.x,
+      y: previousSelectedCell.getAbsolutePosition().y - viewportVector.y,
+      width: previousSelectedCell.getClientRect().width,
+      height: previousSelectedCell.getClientRect().height
+    };
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+    const isInCellX = x >= selectedCellPosition.x && x <= selectedCellPosition.x + selectedCellPosition.width;
+    const isInCellY = y >= selectedCellPosition.y && y <= selectedCellPosition.y + selectedCellPosition.height;
+    const isClickedInCell = isInCellX && isInCellY;
+    if (isClickedInCell && timeNow <= (this.lastClickTime + delayTime)) {
+        this.createCellEditor();
+    }
+    this.lastClickTime = timeNow;
   }
 
   keyHandler = (e: KeyboardEvent) => {
@@ -350,15 +380,12 @@ class Sheet {
 
   createCellEditor = () => {
     this.cellEditor = new CellEditor(this);
-    this.shapes.sheet.on('click', this.destroyCellEditor);
     this.stage.on('mousedown', this.destroyCellEditor);
   }
 
   destroyCellEditor = () => {
     if (this.cellEditor) {
       this.cellEditor.destroy();
-      this.shapes.sheet.off('click', this.destroyCellEditor);
-      this.stage.off('click', this.destroyCellEditor);
       this.stage.off('mousedown', this.destroyCellEditor);
       this.cellEditor = undefined;
     }
@@ -508,7 +535,6 @@ class Sheet {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
-    window.removeEventListener('keydown', this.keyHandler);
 
     this.container.remove();
     this.stage.destroy();
@@ -516,7 +542,6 @@ class Sheet {
     this.col.destroy();
     this.row.destroy();
 
-    this.shapes.sheet.off('dblclick', this.createCellEditor);
     this.cellEditor?.destroy();
   }
 

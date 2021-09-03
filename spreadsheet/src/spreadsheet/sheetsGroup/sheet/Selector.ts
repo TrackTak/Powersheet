@@ -26,6 +26,7 @@ class Selector {
   selectedCells: Group[];
   selectionBorderCell: Group | null;
   selectedFirstCell: Cell | null;
+  previousSelectedCell?: Cell;
   private selectionArea: ISelectionArea;
 
   constructor(private sheet: Sheet) {
@@ -80,6 +81,7 @@ class Selector {
   };
 
   startSelection(start: Vector2d, end: Vector2d) {
+    this.previousSelectedCell = this.selectedFirstCell?.clone();
     if (this.selectedFirstCell) {
       this.selectedFirstCell.destroy();
     }

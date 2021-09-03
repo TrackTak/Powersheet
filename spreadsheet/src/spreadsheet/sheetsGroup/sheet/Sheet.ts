@@ -385,19 +385,22 @@ class Sheet {
   private *setBorder(borderCells: Cell[], type: BorderIconName) {
     for (let index = 0; index < borderCells.length; index++) {
       const borderCell = borderCells[index];
+
       const id = borderCell.id();
       const existingCell = this.cellsMap.get(id);
 
       const cell = this.getNewCell(
         id,
-        borderCell.getClientRect(),
+        borderCell.getClientRect({
+          // @ts-ignore
+          relativeTo: borderCell.parent,
+        }),
         borderCell.attrs.row,
         borderCell.attrs.col
       );
 
       const clientRect = cell.getClientRect({
         skipStroke: true,
-        skipShadow: true,
       });
 
       const line = new Line({
@@ -415,15 +418,15 @@ class Sheet {
         this.cellsMap.get(id)!.destroy();
       }
 
-      yield { clientRect, line };
-
-      makeLineCrisp(line);
-
-      cell.add(line);
-
       this.cellsMap.set(id, cell);
 
       this.drawCell(cell);
+
+      cell.add(line);
+
+      yield { clientRect, line };
+
+      makeLineCrisp(line);
 
       cell.moveToTop();
     }
@@ -545,17 +548,25 @@ class Sheet {
   }
 
   setCellFill(cell: Cell, fill: string) {
-    // const id = cell.id();
-    // const clientRect = cell.getClientRect();
-    // const newCell = this.getCell(
-    //   id,
-    //   clientRect,
-    //   cell.attrs.row,
-    //   cell.attrs.col
-    // );
-    const cellRect = getCellRectFromCell(cell);
+    const id = cell.id();
+    const clientRect = cell.getClientRect();
+    const newCell = this.getNewCell(
+      id,
+      clientRect,
+      cell.attrs.row,
+      cell.attrs.col
+    );
+    const cellRect = getCellRectFromCell(newCell);
 
     cellRect.setAttr('fill', fill);
+
+    if (this.cellsMap.has(id)) {
+      this.cellsMap.get(id)!.destroy();
+    }
+
+    this.cellsMap.set(id, newCell);
+
+    this.drawCell(newCell);
   }
 
   getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {

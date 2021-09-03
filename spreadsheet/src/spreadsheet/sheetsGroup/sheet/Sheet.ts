@@ -105,7 +105,7 @@ export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
 
 export const getOtherCellChildren = (
   cell: Cell,
-  typesToFilterOut: string[]
+  typesToFilterOut: string[] = []
 ) => {
   const otherChildren = cell.children
     ?.filter((x) => typesToFilterOut.every((z) => z !== x.attrs.type))
@@ -384,22 +384,21 @@ class Sheet {
 
   private *setBorder(borderCells: Cell[], type: BorderIconName) {
     for (let index = 0; index < borderCells.length; index++) {
-      const borderCell = borderCells[index];
+      const cell = borderCells[index];
 
-      const id = borderCell.id();
+      const id = cell.id();
       const existingCell = this.cellsMap.get(id);
-
-      const cell = this.getNewCell(
+      const newCell = this.getNewCell(
         id,
-        borderCell.getClientRect({
+        cell.getClientRect({
           // @ts-ignore
-          relativeTo: borderCell.parent,
+          relativeTo: cell.parent,
         }),
-        borderCell.attrs.row,
-        borderCell.attrs.col
+        cell.attrs.row,
+        cell.attrs.col
       );
 
-      const clientRect = cell.getClientRect({
+      const clientRect = newCell.getClientRect({
         skipStroke: true,
       });
 
@@ -413,22 +412,22 @@ class Sheet {
       if (existingCell) {
         const otherChildren = getOtherCellChildren(existingCell, [type]);
 
-        setCellChildren(cell, otherChildren);
+        setCellChildren(newCell, otherChildren);
 
         this.cellsMap.get(id)!.destroy();
       }
 
-      this.cellsMap.set(id, cell);
+      newCell.add(line);
 
-      this.drawCell(cell);
+      this.cellsMap.set(id, newCell);
 
-      cell.add(line);
+      this.drawCell(newCell);
 
       yield { clientRect, line };
 
       makeLineCrisp(line);
 
-      cell.moveToTop();
+      line.moveToTop();
     }
   }
 
@@ -549,20 +548,28 @@ class Sheet {
 
   setCellFill(cell: Cell, fill: string) {
     const id = cell.id();
-    const clientRect = cell.getClientRect();
+    const existingCell = this.cellsMap.get(id);
     const newCell = this.getNewCell(
       id,
-      clientRect,
+      cell.getClientRect({
+        // @ts-ignore
+        relativeTo: cell.parent,
+      }),
       cell.attrs.row,
       cell.attrs.col
     );
+
+    if (existingCell) {
+      const otherChildren = getOtherCellChildren(existingCell);
+
+      setCellChildren(newCell, otherChildren);
+
+      this.cellsMap.get(id)!.destroy();
+    }
+
     const cellRect = getCellRectFromCell(newCell);
 
     cellRect.setAttr('fill', fill);
-
-    if (this.cellsMap.has(id)) {
-      this.cellsMap.get(id)!.destroy();
-    }
 
     this.cellsMap.set(id, newCell);
 

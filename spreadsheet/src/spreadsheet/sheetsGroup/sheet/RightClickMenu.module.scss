@@ -1,0 +1,25 @@
+.rightClickMenuEl {
+  display: block;
+  left: 947px;
+  top: 203px;
+  max-height: 750px;
+  bottom: auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.buttonContent {
+  border: 0;
+  padding: 2px 22px 4px 4px;
+  background: none;
+  cursor: pointer;
+  margin: 7px;
+}
+
+.buttonContent:hover {
+  background: rgba(0, 0, 0, 0.05);
+}

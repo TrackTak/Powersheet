@@ -1,5 +1,4 @@
-import { Group } from 'konva/lib/Group';
-import { KonvaEventObject, Node } from 'konva/lib/Node';
+import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
@@ -131,14 +130,45 @@ class Resizer {
 
   resize(index: number, newSize: number) {
     const size =
-      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.data[this.type].sizes[index] ??
       this.sheet.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sheet.options[this.type].sizes[index] = newSize;
+      this.sheet.data[this.type].sizes[index] = newSize;
 
-      this.sheet[this.type].draw(index);
+      // this.sheet[this.type].draw(index);
+
+      // const moveNode = (shape: Node) => {
+      //   const newAxis = shape[this.functions.axis]() + sizeChange;
+
+      //   shape[this.functions.axis](newAxis);
+      // };
+
+      // // TODO: Make cellsMap virtualized like groups later for performance
+      // for (const cell of this.sheet.cellsMap.values()) {
+      //   const shouldMove = index < cell.attrs[this.type].x;
+      //   const shouldResize = index === cell.attrs[this.type].x;
+      //   const cellRect = getCellRectFromCell(cell);
+
+      //   if (shouldMove) {
+      //     moveNode(cellRect);
+      //   }
+
+      //   if (shouldResize) {
+      //     const newSize = cellRect[this.functions.size]() + sizeChange;
+
+      //     cellRect[this.functions.size](newSize);
+      //   }
+      // }
+
+      // for (let i = index + 1; i < this.headerGroupMap.size; i++) {
+      //   const item = this.headerGroupMap.get(i);
+
+      //   if (item) {
+      //     moveNode(item);
+      //   }
+      // }
     }
   }
 
@@ -203,7 +233,6 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.sheet[this.type].drawViewport();
     this.sheet.updateViewport();
 
     this.sheet.emit(events.resize[this.type].end, e, index, axis);

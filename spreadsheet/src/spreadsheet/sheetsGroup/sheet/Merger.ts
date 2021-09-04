@@ -1,6 +1,11 @@
 import events from '../../events';
-import { IMergedCells } from '../../options';
-import Sheet, { Cell, CellId, getCellId, getCellRectFromCell } from './Sheet';
+import Sheet, {
+  Cell,
+  CellId,
+  getCellId,
+  getCellRectFromCell,
+  IMergedCells,
+} from './Sheet';
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
 import { parseColor } from 'a-color-picker';
@@ -16,7 +21,7 @@ class Merger {
   }
 
   updateMergedCells() {
-    this.sheet.options.mergedCells.forEach((mergedCells) => {
+    this.sheet.data.mergedCells.forEach((mergedCells) => {
       const startRow = this.sheet.row.rowColGroupMap.get(mergedCells.row.x);
       const startCol = this.sheet.col.rowColGroupMap.get(mergedCells.col.x);
       const shouldMerge = startCol && startRow ? true : false;
@@ -39,7 +44,7 @@ class Merger {
     this.destroyExistingMergedCells(mergedCells);
     this.mergeCells(mergedCells, existingTopLeftCell);
 
-    this.sheet.options.mergedCells.push(mergedCells);
+    this.sheet.data.mergedCells.push(mergedCells);
 
     this.sheet.updateViewport();
 
@@ -92,7 +97,9 @@ class Merger {
     this.sheet.cellsMap.set(id, cell);
 
     this.setCellProperties(cell, {
-      fill: existingTopLeftCellRect?.fill() ?? this.sheet.options.cell.fill,
+      fill:
+        existingTopLeftCellRect?.fill() ??
+        this.sheet.options.cellStyle.backgroundColor,
     });
 
     this.sheet.drawCell(cell);
@@ -116,7 +123,7 @@ class Merger {
     const cellRect = getCellRectFromCell(mergedCell);
     const fill = parseColor(cellRect.fill(), outFormat);
     const parsedOptionsFill = parseColor(
-      this.sheet.options.cell.fill,
+      this.sheet.options.cellStyle.backgroundColor,
       outFormat
     );
     const rows = this.sheet.row.getItemsBetweenIndexes(mergedCell.attrs.row);
@@ -162,7 +169,7 @@ class Merger {
   }
 
   private destroyExistingMergedCells(mergedCells: IMergedCells) {
-    this.sheet.options.mergedCells = this.sheet.options.mergedCells.filter(
+    this.sheet.data.mergedCells = this.sheet.data.mergedCells.filter(
       ({ row, col }) => {
         const shouldDestroy = this.getAreMergedCellsOverlapping(
           { row, col },
@@ -183,7 +190,7 @@ class Merger {
   unMergeCells(mergedCells: IMergedCells) {
     const id = getCellId(mergedCells.row.x, mergedCells.col.x);
     const mergedCell = this.sheet.cellsMap.get(id)?.clone();
-    const allMergedCells = [...this.sheet.options.mergedCells];
+    const allMergedCells = [...this.sheet.data.mergedCells];
 
     this.destroyExistingMergedCells(mergedCells);
 

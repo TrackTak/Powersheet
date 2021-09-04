@@ -15,7 +15,7 @@ import {
   IStyles,
   performanceProperties,
 } from './styles';
-import { IFrozenCells, IOptions } from '../../options';
+import { ICellStyle, IOptions } from '../../options';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
@@ -38,6 +38,7 @@ interface IConstructor {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   options: IOptions;
+  data: IData;
   eventEmitter: EventEmitter;
 }
 
@@ -63,6 +64,38 @@ export interface ICustomSizePosition {
   size: number;
 }
 
+export type CellId = string;
+
+export interface IFrozenCells {
+  row?: number;
+  col?: number;
+}
+
+export interface IMergedCells {
+  row: Vector2d;
+  col: Vector2d;
+}
+
+export interface ISizes {
+  [index: string]: number;
+}
+
+export interface ICellStyles {
+  [index: CellId]: ICellStyle;
+}
+
+export interface IRowColData {
+  sizes: ISizes;
+}
+
+export interface IData {
+  frozenCells: IFrozenCells;
+  mergedCells: IMergedCells[];
+  cellStyles: ICellStyles;
+  row: IRowColData;
+  col: IRowColData;
+}
+
 export interface ILayers {
   mainLayer: Layer;
 }
@@ -77,8 +110,6 @@ export interface IScrollGroups {
 export interface ICustomSizes {
   size: number;
 }
-
-export type CellId = string;
 
 export type Cell = Group;
 
@@ -173,8 +204,8 @@ export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   };
 };
 
-export const getIsFrozenRow = (ri: number, options: IOptions) => {
-  return isNil(options.frozenCells.row) ? false : ri <= options.frozenCells.row;
+export const getIsFrozenRow = (ri: number, data: IData) => {
+  return isNil(data.frozenCells.row) ? false : ri <= data.frozenCells.row;
 };
 
 export function* iterateXToY(vector: Vector2d) {
@@ -292,6 +323,7 @@ class Sheet {
   cellsMap: Map<CellId, Cell>;
   eventEmitter: EventEmitter;
   options: IOptions;
+  data: IData;
   cellEditor: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
@@ -300,6 +332,7 @@ class Sheet {
     this.eventEmitter = params.eventEmitter;
     this.styles = merge({}, defaultStyles, params.styles);
     this.options = params.options;
+    this.data = params.data;
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.cellsMap = new Map();
@@ -424,7 +457,7 @@ class Sheet {
 
       // this.setCellFill(cell, cellRect.fill());
 
-      this.updateBorder(cell);
+      // this.updateBorder(cell);
     }
   }
 
@@ -674,7 +707,7 @@ class Sheet {
     });
   }
 
-  setCellFill(cell: Cell, fill: string) {
+  setCellBackgroundColor(cell: Cell, backgroundColor: string) {
     const id = cell.id();
     const existingCell = this.cellsMap.get(id);
     const newCell = this.getNewCell(
@@ -697,7 +730,7 @@ class Sheet {
 
     const cellRect = getCellRectFromCell(newCell);
 
-    cellRect.setAttr('fill', fill);
+    cellRect.setAttr('fill', backgroundColor);
 
     this.cellsMap.set(id, newCell);
 
@@ -908,10 +941,10 @@ class Sheet {
   }
 
   setFrozenCells(frozenCells: IFrozenCells) {
-    this.options.frozenCells = frozenCells;
+    this.data.frozenCells = frozenCells;
 
-    this.row.drawViewport();
-    this.col.drawViewport();
+    // this.row.drawViewport();
+    // this.col.drawViewport();
   }
 
   drawCell(cell: Cell) {
@@ -958,9 +991,9 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
+    this.row.updateViewport();
+    this.col.updateViewport();
     this.updateCells();
-    this.row.scrollBar.updateCustomSizePositions();
-    this.col.scrollBar.updateCustomSizePositions();
     this.merger.updateMergedCells();
     this.selector.updateSelectedCells();
   }

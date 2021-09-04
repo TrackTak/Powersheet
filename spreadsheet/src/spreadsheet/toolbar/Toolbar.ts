@@ -3,7 +3,7 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../options';
-import Sheet, { Cell } from '../sheetsGroup/sheet/Sheet';
+import Sheet, { Cell, IData } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -33,6 +33,7 @@ export interface IToolbarActionGroups {
 interface IConstructor {
   registeredFunctionNames: string[];
   options: IOptions;
+  data: IData;
   eventEmitter: EventEmitter;
 }
 
@@ -78,12 +79,14 @@ class Toolbar {
   dropdown: DelegateInstance;
   registeredFunctionNames: string[];
   options: IOptions;
+  data: IData;
   eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
 
   constructor(params: IConstructor) {
     this.registeredFunctionNames = params.registeredFunctionNames;
     this.options = params.options;
+    this.data = params.data;
     this.eventEmitter = params.eventEmitter;
     this.focusedSheet = null;
 
@@ -313,7 +316,7 @@ class Toolbar {
     switch (name) {
       case 'backgroundColor': {
         sheet.selector.selectedCells.forEach((cell) => {
-          sheet.setCellFill(cell, value);
+          sheet.setCellBackgroundColor(cell, value);
         });
         break;
       }
@@ -467,8 +470,7 @@ class Toolbar {
 
   isFreezeActive() {
     return (
-      !isNil(this.options.frozenCells.col) &&
-      !isNil(this.options.frozenCells.row)
+      !isNil(this.data.frozenCells.col) && !isNil(this.data.frozenCells.row)
     );
   }
 

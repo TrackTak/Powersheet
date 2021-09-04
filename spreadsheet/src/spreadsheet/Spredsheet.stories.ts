@@ -1,5 +1,5 @@
 import { Story, Meta } from '@storybook/html';
-import Sheet from './sheetsGroup/sheet/Sheet';
+import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
 import EventEmitter from 'eventemitter3';
 import { defaultOptions, IOptions } from './options';
 import Toolbar from './toolbar/Toolbar';
@@ -12,15 +12,22 @@ export default {
   title: 'Spreadsheet',
 } as Meta;
 
-const buildSpreadsheet = (args: IOptions) => {
+interface IArgs {
+  options: IOptions;
+  data: IData;
+}
+
+const buildSpreadsheet = (args: IArgs) => {
   const spreadsheet = document.createElement('div');
   const registeredFunctionNames =
     HyperFormula.getRegisteredFunctionNames('enGB');
   const eventEmitter = new EventEmitter();
-  const options = args;
+  const options = args.options;
+  const data: IData = args.data;
 
   const toolbar = new Toolbar({
     registeredFunctionNames,
+    data,
     options,
     eventEmitter,
   });
@@ -30,6 +37,7 @@ const buildSpreadsheet = (args: IOptions) => {
   const sheet = new Sheet({
     toolbar,
     formulaBar,
+    data,
     options,
     eventEmitter,
   });
@@ -44,13 +52,26 @@ const buildSpreadsheet = (args: IOptions) => {
   };
 };
 
-const Template: Story<IOptions> = (args) => {
+const Template: Story<IArgs> = (args) => {
   return buildSpreadsheet(args).spreadsheet;
 };
 
-const defaultStoryArgs: IOptions = {
-  ...defaultOptions,
-  devMode: true,
+const defaultStoryArgs: IArgs = {
+  options: {
+    ...defaultOptions,
+    devMode: true,
+  },
+  data: {
+    frozenCells: {},
+    mergedCells: [],
+    cellStyles: {},
+    row: {
+      sizes: {},
+    },
+    col: {
+      sizes: {},
+    },
+  },
 };
 
 export const Default = Template.bind({});
@@ -61,9 +82,12 @@ export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
   ...defaultStoryArgs,
-  frozenCells: {
-    row: 0,
-    col: 0,
+  data: {
+    ...defaultStoryArgs.data,
+    frozenCells: {
+      row: 0,
+      col: 0,
+    },
   },
 };
 
@@ -71,35 +95,41 @@ export const MergedCells = Template.bind({});
 
 MergedCells.args = {
   ...defaultStoryArgs,
-  mergedCells: [
-    {
-      row: {
-        x: 3,
-        y: 4,
+  data: {
+    ...defaultStoryArgs.data,
+    mergedCells: [
+      {
+        row: {
+          x: 3,
+          y: 4,
+        },
+        col: {
+          x: 1,
+          y: 2,
+        },
       },
-      col: {
-        x: 1,
-        y: 2,
-      },
-    },
-  ],
+    ],
+  },
 };
 
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
   ...defaultStoryArgs,
-  col: {
-    ...defaultStoryArgs.col,
-    sizes: {
-      '3': 70,
+  data: {
+    ...defaultStoryArgs.data,
+    col: {
+      ...defaultStoryArgs.data.col,
+      sizes: {
+        '3': 70,
+      },
     },
-  },
-  row: {
-    ...defaultStoryArgs.row,
-    sizes: {
-      '1': 250,
-      '5': 100,
+    row: {
+      ...defaultStoryArgs.data.row,
+      sizes: {
+        '1': 250,
+        '5': 100,
+      },
     },
   },
 };

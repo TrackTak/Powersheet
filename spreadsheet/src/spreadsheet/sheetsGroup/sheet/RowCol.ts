@@ -168,7 +168,7 @@ class RowCol {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
     const defaultSize = this.sheet.options[this.type].defaultSize;
-    const sizes = this.sheet.options[this.type].sizes;
+    const sizes = this.sheet.data[this.type].sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -308,7 +308,7 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.sheet.options[this.type].sizes);
+    const sizes = Object.values(this.sheet.data[this.type].sizes);
 
     const totalSizeDifference = sizes.reduce((currentSize, size) => {
       return size - this.sheet.options[this.type].defaultSize + currentSize;
@@ -323,18 +323,19 @@ class RowCol {
 
   getSize(index: number) {
     const size =
-      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.data[this.type].sizes[index] ??
       this.sheet.options[this.type].defaultSize;
 
     return size;
   }
 
-  drawViewport() {
+  updateViewport() {
     for (const index of iterateXToY(
       this.sheet[this.type].sheetViewportPosition
     )) {
       this.sheet[this.type].draw(index);
     }
+    this.scrollBar.updateCustomSizePositions();
   }
 
   getIndexesBetweenVectors(position: Vector2d) {
@@ -372,13 +373,13 @@ class RowCol {
   }
 
   getIsFrozen(index: number) {
-    return isNil(this.sheet.options.frozenCells[this.type])
+    return isNil(this.sheet.data.frozenCells[this.type])
       ? false
-      : index <= this.sheet.options.frozenCells[this.type]!;
+      : index <= this.sheet.data.frozenCells[this.type]!;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.sheet.options.frozenCells[this.type];
+    return index === this.sheet.data.frozenCells[this.type];
   }
 
   draw(index: number, drawingAtX = false) {

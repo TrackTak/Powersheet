@@ -4,8 +4,8 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { getCellRectFromCell } from './Sheet';
-import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
+import Sheet from './Sheet';
+import { IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -22,14 +22,12 @@ class Resizer {
     private sheet: Sheet,
     private type: RowColType,
     private isCol: boolean,
-    private functions: IRowColFunctions,
-    private headerGroupMap: Map<HeaderGroupId, Group>
+    private functions: IRowColFunctions
   ) {
     this.sheet = sheet;
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;
-    this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
       x: 0,
@@ -141,37 +139,6 @@ class Resizer {
       this.sheet.options[this.type].sizes[index] = newSize;
 
       this.sheet[this.type].draw(index);
-
-      const moveNode = (shape: Node) => {
-        const newAxis = shape[this.functions.axis]() + sizeChange;
-
-        shape[this.functions.axis](newAxis);
-      };
-
-      // TODO: Make cellsMap virtualized like groups later for performance
-      for (const cell of this.sheet.cellsMap.values()) {
-        const shouldMove = index < cell.attrs[this.type].x;
-        const shouldResize = index === cell.attrs[this.type].x;
-        const cellRect = getCellRectFromCell(cell);
-
-        if (shouldMove) {
-          moveNode(cellRect);
-        }
-
-        if (shouldResize) {
-          const newSize = cellRect[this.functions.size]() + sizeChange;
-
-          cellRect[this.functions.size](newSize);
-        }
-      }
-
-      for (let i = index + 1; i < this.headerGroupMap.size; i++) {
-        const item = this.headerGroupMap.get(i);
-
-        if (item) {
-          moveNode(item);
-        }
-      }
     }
   }
 

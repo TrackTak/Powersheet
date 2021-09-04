@@ -9,6 +9,8 @@ import { isNil } from 'lodash';
 import Sheet, {
   Cell,
   centerRectTwoInRectOne,
+  getGridLineGroupFromScrollGroup,
+  getHeaderGroupFromScrollGroup,
   hasOverlap,
   ICustomSizes,
   ISheetViewportPosition,
@@ -146,13 +148,7 @@ class RowCol {
       this.functions
     );
 
-    this.resizer = new Resizer(
-      sheet,
-      this.type,
-      this.isCol,
-      this.functions,
-      this.headerGroupMap
-    );
+    this.resizer = new Resizer(sheet, this.type, this.isCol, this.functions);
 
     this.shapes.group.cache({
       ...this.sheet.getViewportVector(),
@@ -422,12 +418,24 @@ class RowCol {
     this.headerGroupMap.set(index, headerGroup);
 
     if (isFrozen) {
-      this.sheet.scrollGroups.xySticky.add(headerGroup);
+      const xyStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky
+      );
+
+      xyStickyHeaderGroup.add(headerGroup);
     } else {
       if (this.isCol) {
-        this.sheet.scrollGroups.ySticky.add(headerGroup);
+        const yStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.ySticky
+        );
+
+        yStickyHeaderGroup.add(headerGroup);
       } else {
-        this.sheet.scrollGroups.xSticky.add(headerGroup);
+        const xStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.xSticky
+        );
+
+        xStickyHeaderGroup.add(headerGroup);
       }
     }
   }
@@ -494,11 +502,19 @@ class RowCol {
     this.rowColGroupMap.set(index, group);
 
     if (isFrozen) {
-      this.sheet.scrollGroups.xySticky.add(group);
+      const xyStickyGridLineGroup = getGridLineGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky
+      );
+
+      xyStickyGridLineGroup.add(group);
 
       group.moveToBottom();
     } else {
-      this.sheet.scrollGroups.main.add(group);
+      const mainGridLineGroup = getGridLineGroupFromScrollGroup(
+        this.sheet.scrollGroups.main
+      );
+
+      mainGridLineGroup.add(group);
     }
   }
 

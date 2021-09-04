@@ -340,35 +340,35 @@ class Toolbar {
         break;
       }
       case 'borderBottom': {
-        sheet.setBorderBottom(sheet.selector.selectedCells);
+        sheet.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
-        sheet.setBorderRight(sheet.selector.selectedCells);
+        sheet.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
-        sheet.setBorderTop(sheet.selector.selectedCells);
+        sheet.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
-        sheet.setBorderLeft(sheet.selector.selectedCells);
+        sheet.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
-        sheet.setBordersVertical(sheet.selector.selectedCells);
+        sheet.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
-        sheet.setBordersHorizontal(sheet.selector.selectedCells);
+        sheet.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
-        sheet.setBordersInside(sheet.selector.selectedCells);
+        sheet.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderAll': {
-        sheet.setBordersAll(sheet.selector.selectedCells);
+        sheet.setAllBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderNone': {
@@ -376,7 +376,7 @@ class Toolbar {
         break;
       }
       case 'borderOutside': {
-        sheet.setBordersOutside(sheet.selector.selectedCells);
+        sheet.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
     }

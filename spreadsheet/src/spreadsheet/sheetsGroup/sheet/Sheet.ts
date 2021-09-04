@@ -22,7 +22,7 @@ import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
-import { BorderIconName } from '../../toolbar/htmlElementHelpers';
+import { BorderIconName, borderTypes } from '../../toolbar/htmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 
@@ -97,12 +97,6 @@ export const makeLineCrisp = (line: Line) => {
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
-export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
-  const cellBorder = cell.children?.find((x) => x.attrs.type === type) as Line;
-
-  return cellBorder;
-};
-
 export const getOtherCellChildren = (
   cell: Cell,
   typesToFilterOut: string[] = []
@@ -130,6 +124,36 @@ export const getCellRectFromCell = (cell: Cell) => {
   ) as Rect;
 
   return cellRect;
+};
+
+export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
+  const cellBorder = cell.children?.find((x) => x.attrs.type === type) as Line;
+
+  return cellBorder;
+};
+
+export const getGridLineGroupFromScrollGroup = (scrollGroup: Group) => {
+  const gridLineGroup = scrollGroup.children?.find(
+    (x) => x.attrs.type === 'gridLine'
+  ) as Group;
+
+  return gridLineGroup;
+};
+
+export const getHeaderGroupFromScrollGroup = (scrollGroup: Group) => {
+  const headerGroup = scrollGroup.children?.find(
+    (x) => x.attrs.type === 'header'
+  ) as Group;
+
+  return headerGroup;
+};
+
+export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
+  const cellGroup = scrollGroup.children?.find(
+    (x) => x.attrs.type === 'cell'
+  ) as Group;
+
+  return cellGroup;
 };
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
@@ -320,6 +344,26 @@ class Sheet {
       xySticky: new Group(),
     };
 
+    Object.values(this.scrollGroups).forEach((scrollGroup: Group) => {
+      // The order added here matters as it determines the zIndex for konva
+
+      const cellGroup = new Group({
+        type: 'cell',
+      });
+
+      const gridLineGroup = new Group({
+        type: 'gridLine',
+      });
+
+      const headerGroup = new Group({
+        type: 'header',
+      });
+
+      scrollGroup.add(cellGroup);
+      scrollGroup.add(headerGroup);
+      scrollGroup.add(gridLineGroup);
+    });
+
     Object.values(this.layers).forEach((layer) => {
       this.stage.add(layer);
     });
@@ -378,57 +422,110 @@ class Sheet {
     for (const cell of this.cellsMap.values()) {
       const cellRect = getCellRectFromCell(cell);
 
-      this.setCellFill(cell, cellRect.fill());
+      // this.setCellFill(cell, cellRect.fill());
+
+      this.updateBorder(cell);
     }
   }
 
-  private *setBorder(borderCells: Cell[], type: BorderIconName) {
-    for (let index = 0; index < borderCells.length; index++) {
-      const cell = borderCells[index];
+  updateBorder(cell: Cell) {
+    borderTypes.forEach((type) => {
+      const border = getCellBorderFromCell(cell, type);
 
-      const id = cell.id();
-      const existingCell = this.cellsMap.get(id);
-      const newCell = this.getNewCell(
-        id,
-        cell.getClientRect({
-          // @ts-ignore
-          relativeTo: cell.parent,
-        }),
-        cell.attrs.row,
-        cell.attrs.col
-      );
-
-      const clientRect = newCell.getClientRect({
-        skipStroke: true,
-      });
-
-      const line = new Line({
-        ...performanceProperties,
-        type,
-        stroke: 'black',
-        strokeWidth: this.styles.gridLine.strokeWidth,
-      });
-
-      if (existingCell) {
-        const otherChildren = getOtherCellChildren(existingCell, [type]);
-
-        setCellChildren(newCell, otherChildren);
-
-        this.cellsMap.get(id)!.destroy();
+      switch (border?.attrs.type as BorderIconName) {
+        case 'borderLeft':
+          this.setLeftBorder(cell);
+          break;
+        case 'borderTop':
+          this.setTopBorder(cell);
+          break;
+        case 'borderRight':
+          this.setRightBorder(cell);
+          break;
+        case 'borderBottom':
+          this.setBottomBorder(cell);
+          break;
+        case 'borderVertical':
+          this.setVerticalBorder(cell);
+          break;
+        case 'borderHorizontal':
+          this.setHorizontalBorder(cell);
+          break;
       }
+    });
+  }
 
-      newCell.add(line);
+  private *setBorder(cell: Cell, type: BorderIconName) {
+    const id = cell.id();
+    const existingCell = this.cellsMap.get(id);
 
-      this.cellsMap.set(id, newCell);
+    const newCell = this.getNewCell(
+      id,
+      cell.getClientRect({
+        // @ts-ignore
+        relativeTo: cell.parent,
+      }),
+      cell.attrs.row,
+      cell.attrs.col
+    );
 
-      this.drawCell(newCell);
+    let clientRect = newCell.getClientRect({
+      skipStroke: true,
+    });
 
-      yield { clientRect, line };
+    const line = new Line({
+      ...performanceProperties,
+      type,
+      stroke: 'black',
+      strokeWidth: this.styles.gridLine.strokeWidth,
+    });
 
-      makeLineCrisp(line);
+    const returnObj = { cell, clientRect, line };
 
-      line.moveToTop();
+    // if (existingCell?.children?.find((x) => x.attrs.type === type)) {
+    //   yield returnObj;
+    // }
+
+    // if (existingCell) {
+    //   clientRect = existingCell.getClientRect({
+    //     skipStroke: true,
+    //   });
+
+    //   existingCell.add(line);
+    // } else {
+    //   newCell.add(line);
+
+    //   this.cellsMap.set(id, newCell);
+
+    //   this.drawCell(newCell);
+    // }
+
+    if (existingCell) {
+      clientRect = existingCell.getClientRect({
+        skipStroke: true,
+        // @ts-ignore
+        relativeTo: existingCell?.parent,
+      });
+      const otherChildren = getOtherCellChildren(existingCell, [type]);
+
+      setCellChildren(newCell, otherChildren);
+
+      this.cellsMap.get(id)!.destroy();
     }
+
+    newCell.add(line);
+
+    this.cellsMap.set(id, newCell);
+
+    this.drawCell(newCell);
+
+    line.moveToTop();
+
+    yield returnObj;
+
+    makeLineCrisp(line);
+
+    // return returnObj;
   }
 
   clearBorders(cells: Cell[]) {
@@ -437,113 +534,144 @@ class Sheet {
       const existingCell = this.cellsMap.get(id);
 
       if (existingCell) {
-        const types: BorderIconName[] = [
-          'borderLeft',
-          'borderTop',
-          'borderRight',
-          'borderBottom',
-          'borderVertical',
-          'borderHorizontal',
-        ];
-        const otherChildren = getOtherCellChildren(existingCell, types);
+        const otherChildren = getOtherCellChildren(existingCell, borderTypes);
 
         setCellChildren(existingCell, otherChildren);
       }
     });
   }
 
-  setBordersAll(cells: Cell[]) {
-    this.setBordersInside(cells);
-    this.setBordersOutside(cells);
+  setAllBorders(cells: Cell[]) {
+    this.setOutsideBorders(cells);
+    this.setInsideBorders(cells);
   }
 
-  setBordersInside(cells: Cell[]) {
-    this.setBordersHorizontal(cells);
-    this.setBordersVertical(cells);
+  setInsideBorders(cells: Cell[]) {
+    this.setHorizontalBorders(cells);
+    this.setVerticalBorders(cells);
   }
 
-  setBordersHorizontal(cells: Cell[]) {
+  setOutsideBorders(cells: Cell[]) {
+    this.setBottomBorders(cells);
+    this.setLeftBorders(cells);
+    this.setRightBorders(cells);
+    this.setTopBorders(cells);
+  }
+
+  setHorizontalBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderHorizontal');
+    const { line, clientRect } = generator.next().value!;
+
+    line.y(clientRect.height);
+    line.points([0, 0, clientRect.width, 0]);
+
+    generator.next();
+  }
+
+  setHorizontalBorders(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
     const horizontalCells = cells.filter(
       (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
     );
 
-    for (const { clientRect, line } of this.setBorder(
-      horizontalCells,
-      'borderHorizontal'
-    )) {
-      line.y(clientRect.height);
-      line.points([0, 0, clientRect.width, 0]);
-    }
+    horizontalCells.forEach((cell) => {
+      this.setHorizontalBorder(cell);
+    });
   }
 
-  setBordersVertical(cells: Cell[]) {
+  setVerticalBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderVertical');
+    const { line, clientRect } = generator.next().value!;
+
+    line.x(clientRect.width);
+    line.points([0, 0, 0, clientRect.height]);
+
+    generator.next();
+  }
+
+  setVerticalBorders(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
     const verticalCells = cells.filter(
       (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
     );
 
-    for (const { clientRect, line } of this.setBorder(
-      verticalCells,
-      'borderVertical'
-    )) {
-      line.x(clientRect.width);
-      line.points([0, 0, 0, clientRect.height]);
-    }
+    verticalCells.forEach((cell) => {
+      this.setVerticalBorder(cell);
+    });
   }
 
-  setBordersOutside(cells: Cell[]) {
-    this.setBorderBottom(cells);
-    this.setBorderLeft(cells);
-    this.setBorderRight(cells);
-    this.setBorderTop(cells);
+  setBottomBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderBottom');
+    const { line, clientRect } = generator.next().value!;
+
+    line.y(clientRect.height);
+    line.points([0, 0, clientRect.width, 0]);
+
+    generator.next();
   }
 
-  setBorderBottom(cells: Cell[]) {
+  setBottomBorders(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
     const bottomCells = cells.filter((cell) => cell.attrs.row.y === row.y);
 
-    for (const { clientRect, line } of this.setBorder(
-      bottomCells,
-      'borderBottom'
-    )) {
-      line.y(clientRect.height);
-      line.points([0, 0, clientRect.width, 0]);
-    }
+    bottomCells.forEach((cell) => {
+      this.setBottomBorder(cell);
+    });
   }
 
-  setBorderRight(cells: Cell[]) {
+  setRightBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderRight');
+    const { line, clientRect } = generator.next().value!;
+
+    line.x(clientRect.width);
+    line.points([0, 0, 0, clientRect.height]);
+
+    generator.next();
+  }
+
+  setRightBorders(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
     const rightCells = cells.filter((cell) => cell.attrs.col.y === col.y);
 
-    for (const { clientRect, line } of this.setBorder(
-      rightCells,
-      'borderRight'
-    )) {
-      line.x(clientRect.width);
-      line.points([0, 0, 0, clientRect.height]);
-    }
+    rightCells.forEach((cell) => {
+      this.setRightBorder(cell);
+    });
   }
 
-  setBorderTop(cells: Cell[]) {
+  setTopBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderTop');
+    const { line, clientRect } = generator.next().value!;
+
+    line.points([0, 0, clientRect.width, 0]);
+
+    generator.next();
+  }
+
+  setTopBorders(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
     const topCells = cells.filter((cell) => cell.attrs.row.x === row.x);
 
-    for (const { clientRect, line } of this.setBorder(topCells, 'borderTop')) {
-      line.points([0, 0, clientRect.width, 0]);
-    }
+    topCells.forEach((cell) => {
+      this.setTopBorder(cell);
+    });
   }
 
-  setBorderLeft(cells: Cell[]) {
+  setLeftBorder(cell: Cell) {
+    const generator = this.setBorder(cell, 'borderLeft');
+    const { line, clientRect } = generator.next().value!;
+
+    line.points([0, 0, 0, clientRect.height]);
+
+    generator.next();
+  }
+
+  setLeftBorders(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
     const leftCells = cells.filter((cell) => cell.attrs.col.x === col.x);
 
-    for (const { clientRect, line } of this.setBorder(
-      leftCells,
-      'borderLeft'
-    )) {
-      line.points([0, 0, 0, clientRect.height]);
-    }
+    leftCells.forEach((cell) => {
+      this.setLeftBorder(cell);
+    });
   }
 
   setCellFill(cell: Cell, fill: string) {
@@ -792,13 +920,27 @@ class Sheet {
     const isMerged = !!this.merger.associatedMergedCellMap.get(cell.id() ?? '');
 
     if (isFrozenRow && isFrozenCol) {
-      this.scrollGroups.xySticky.add(cell);
+      const xyStickyCellGroup = getCellGroupFromScrollGroup(
+        this.scrollGroups.xySticky
+      );
+
+      xyStickyCellGroup.add(cell);
     } else if (isFrozenRow) {
-      this.scrollGroups.ySticky.add(cell);
+      const yStickyCellGroup = getCellGroupFromScrollGroup(
+        this.scrollGroups.ySticky
+      );
+
+      yStickyCellGroup.add(cell);
     } else if (isFrozenCol) {
-      this.scrollGroups.xSticky.add(cell);
+      const xStickyCellGroup = getCellGroupFromScrollGroup(
+        this.scrollGroups.xSticky
+      );
+
+      xStickyCellGroup.add(cell);
     } else {
-      this.scrollGroups.main.add(cell);
+      const mainCellGroup = getCellGroupFromScrollGroup(this.scrollGroups.main);
+
+      mainCellGroup.add(cell);
     }
 
     if (isMerged) {

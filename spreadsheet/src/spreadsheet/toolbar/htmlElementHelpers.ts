@@ -39,6 +39,22 @@ export type DropdownIconName =
   | 'horizontalAlign'
   | 'borders';
 
+export const borderTypes: [
+  BorderIconName,
+  BorderIconName,
+  BorderIconName,
+  BorderIconName,
+  BorderIconName,
+  BorderIconName
+] = [
+  'borderLeft',
+  'borderTop',
+  'borderRight',
+  'borderBottom',
+  'borderVertical',
+  'borderHorizontal',
+];
+
 export const toggleIconNames = <const>[
   'undo',
   'redo',

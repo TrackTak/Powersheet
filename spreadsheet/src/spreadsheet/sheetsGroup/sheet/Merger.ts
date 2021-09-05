@@ -73,10 +73,10 @@ class Merger {
     const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
 
     const rect: IRect = {
-      x: startCol!.x() + gridLineStrokeWidth,
-      y: startRow!.y() + gridLineStrokeWidth,
-      width: width - gridLineStrokeWidth,
-      height: height - gridLineStrokeWidth,
+      x: startCol!.x() + gridLineStrokeWidth * 2,
+      y: startRow!.y() + gridLineStrokeWidth * 2,
+      width: width - gridLineStrokeWidth * 2,
+      height: height - gridLineStrokeWidth * 2,
     };
 
     let existingTopLeftCellRect;

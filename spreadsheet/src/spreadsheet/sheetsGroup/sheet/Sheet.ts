@@ -521,11 +521,7 @@ class Sheet {
   }
 
   private *setBorder(id: CellId, type: BorderStyleOption) {
-    const cell = this.convertFromCellIdToCell(id);
-
-    const clientRect = cell.getClientRect({
-      skipStroke: true,
-    });
+    const { cell, clientRect } = this.drawNewCell(id, [type]);
 
     const line = new Line({
       ...performanceProperties,
@@ -533,16 +529,6 @@ class Sheet {
       stroke: 'black',
       strokeWidth: this.styles.gridLine.strokeWidth,
     });
-
-    if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
-        type,
-      ]);
-
-      setCellChildren(cell, otherChildren);
-
-      this.cellsMap.get(id)!.destroy();
-    }
 
     const borders = this.data.cellStyles[id]?.borders ?? [];
 
@@ -553,11 +539,7 @@ class Sheet {
       };
     }
 
-    this.cellsMap.set(id, cell);
-
     cell.add(line);
-
-    this.drawCell(cell);
 
     line.moveToTop();
 
@@ -694,15 +676,7 @@ class Sheet {
   }
 
   setCellBackgroundColor(id: CellId, backgroundColor: string) {
-    const cell = this.convertFromCellIdToCell(id);
-
-    if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!);
-
-      setCellChildren(cell, otherChildren);
-
-      this.cellsMap.get(id)!.destroy();
-    }
+    const { cell } = this.drawNewCell(id);
 
     this.data.cellStyles[id] = {
       ...this.data.cellStyles[id],
@@ -712,10 +686,6 @@ class Sheet {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
-
-    this.cellsMap.set(id, cell);
-
-    this.drawCell(cell);
   }
 
   getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {
@@ -957,10 +927,36 @@ class Sheet {
     // this.col.drawViewport();
   }
 
+  drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
+    const cell = this.convertFromCellIdToCell(id);
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
+
+    if (this.cellsMap.has(id)) {
+      const children = getOtherCellChildren(
+        this.cellsMap.get(id)!,
+        childrenToFilterOut
+      );
+
+      setCellChildren(cell, children);
+
+      this.cellsMap.get(id)!.destroy();
+    }
+
+    this.cellsMap.set(id, cell);
+
+    this.drawCell(cell);
+
+    return { cell, clientRect };
+  }
+
   drawCell(cell: Cell) {
+    const id = cell.id();
+
     const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
-    const isMerged = !!this.merger.associatedMergedCellMap.get(cell.id() ?? '');
+    const isMerged = !!this.merger.associatedMergedCellMap.get(id ?? '');
 
     if (isFrozenRow && isFrozenCol) {
       const xyStickyCellGroup = getCellGroupFromScrollGroup(

@@ -12,6 +12,8 @@ import { parseColor } from 'a-color-picker';
 
 export type AssociatedMergedCellId = CellId;
 
+const defaultCellFill = 'white';
+
 class Merger {
   associatedMergedCellMap: Map<AssociatedMergedCellId, Cell>;
 
@@ -97,10 +99,8 @@ class Merger {
     this.sheet.cellsMap.set(id, cell);
 
     this.setCellProperties(cell, {
-      fill: existingTopLeftCellRect?.fill() ?? 'white',
+      fill: existingTopLeftCellRect?.fill() ?? defaultCellFill,
     });
-
-    this.sheet.drawCell(cell);
   }
 
   private setCellProperties(
@@ -112,7 +112,7 @@ class Merger {
     const { fill } = properties;
 
     if (fill) {
-      this.sheet.setCellFill(cell, fill);
+      this.sheet.setCellBackgroundColor(cell.id(), fill);
     }
   }
 
@@ -120,10 +120,7 @@ class Merger {
     const outFormat = 'rgbacss';
     const cellRect = getCellRectFromCell(mergedCell);
     const fill = parseColor(cellRect.fill(), outFormat);
-    const parsedOptionsFill = parseColor(
-      this.sheet.options.cellStyle.backgroundColor,
-      outFormat
-    );
+    const parsedOptionsFill = parseColor(defaultCellFill, outFormat);
     const rows = this.sheet.row.getItemsBetweenIndexes(mergedCell.attrs.row);
     const cols = this.sheet.col.getItemsBetweenIndexes(mergedCell.attrs.col);
     const cells = this.sheet.convertFromRowColsToCells(rows, cols);
@@ -199,7 +196,7 @@ class Merger {
       );
 
       if (areMergedCellsOverlapping && mergedCell) {
-        this.setMergedCellPropertiesToCells(mergedCell);
+        // this.setMergedCellPropertiesToCells(mergedCell);
       }
     });
 

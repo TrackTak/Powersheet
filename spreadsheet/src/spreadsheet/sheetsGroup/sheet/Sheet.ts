@@ -472,7 +472,8 @@ class Sheet {
     this.eventEmitter.emit(event, ...args);
   }
 
-  updateCellStyles() {
+  updateCells() {
+    console.log(this.data.cellStyles);
     Object.keys(this.data.cellStyles).forEach((id) => {
       const cellStyle = this.data.cellStyles[id];
 
@@ -597,22 +598,24 @@ class Sheet {
   setHorizontalBorders(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
     const horizontalCells = cells.filter(
-      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
+      (cell) => cell.attrs.row.x > row.x && cell.attrs.row.y <= row.y
     );
 
     horizontalCells.forEach((cell) => {
-      this.setBottomBorder(cell.attrs.id);
+      this.setTopBorder(cell.attrs.id);
     });
   }
 
   setVerticalBorders(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
     const verticalCells = cells.filter(
-      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
+      (cell) => cell.attrs.col.x > col.x && cell.attrs.col.y <= col.y
     );
 
+    console.log(verticalCells);
+
     verticalCells.forEach((cell) => {
-      this.setRightBorder(cell.attrs.id);
+      this.setLeftBorder(cell.attrs.id);
     });
   }
 
@@ -1000,7 +1003,7 @@ class Sheet {
     this.updateSheetDimensions();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.updateCellStyles();
+    this.updateCells();
     this.merger.updateMergedCells();
     this.selector.updateSelectedCells();
   }

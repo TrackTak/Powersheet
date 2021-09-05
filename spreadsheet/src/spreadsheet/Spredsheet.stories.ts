@@ -141,11 +141,15 @@ CellStyles.args = {
   data: {
     ...defaultStoryArgs.data,
     cellStyles: {
-      '0_0': {
-        backgroundColor: 'yellow',
+      '1_0': {
+        backgroundColor: 'red',
       },
       '3_3': {
-        borders: ['borderBottom', 'borderRight'],
+        borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+        backgroundColor: 'yellow',
+      },
+      '4_5': {
+        borders: ['borderBottom', 'borderTop'],
       },
     },
   },

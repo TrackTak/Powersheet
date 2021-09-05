@@ -486,6 +486,13 @@ class Sheet {
     this.eventEmitter.emit(event, ...args);
   }
 
+  setCellStyle(id: CellId, newStyle: ICellStyle) {
+    this.data.cellStyles[id] = {
+      ...this.data.cellStyles[id],
+      ...newStyle,
+    };
+  }
+
   updateCells() {
     Object.keys(this.data.cellStyles).forEach((id) => {
       const cellStyle = this.data.cellStyles[id];
@@ -546,10 +553,9 @@ class Sheet {
     const borders = this.data.cellStyles[id]?.borders ?? [];
 
     if (borders.indexOf(type) === -1) {
-      this.data.cellStyles[id] = {
-        ...this.data.cellStyles[id],
+      this.setCellStyle(id, {
         borders: [...borders, type],
-      };
+      });
     }
 
     cell.add(line);
@@ -573,10 +579,9 @@ class Sheet {
         setCellChildren(cell, otherChildren);
       }
 
-      this.data.cellStyles[id] = {
-        ...this.data.cellStyles[id],
+      this.setCellStyle(id, {
         borders: [],
-      };
+      });
     });
   }
 
@@ -712,10 +717,9 @@ class Sheet {
   setCellBackgroundColor(id: CellId, backgroundColor: string) {
     const { cell } = this.drawNewCell(id);
 
-    this.data.cellStyles[id] = {
-      ...this.data.cellStyles[id],
+    this.setCellStyle(id, {
       backgroundColor,
-    };
+    });
 
     const cellRect = getCellRectFromCell(cell);
 
@@ -1026,9 +1030,9 @@ class Sheet {
     this.updateSheetDimensions();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.updateCells();
     this.merger.updateMergedCells();
     this.selector.updateSelectedCells();
+    this.updateCells();
   }
 
   drawNextItems() {

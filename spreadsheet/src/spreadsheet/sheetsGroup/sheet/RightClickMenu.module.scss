@@ -1,3 +1,5 @@
+@import '../../styles.scss';
+
 .rightClickMenuEl {
   display: block;
   left: 947px;
@@ -12,14 +14,20 @@
   align-items: flex-start;
 }
 
+.insert-row:before {
+  content: '';
+  height: 0;
+  padding: 0;
+  margin: 5px 0;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 .buttonContent {
+  @include button;
   border: 0;
   padding: 2px 22px 4px 4px;
   background: none;
   cursor: pointer;
   margin: 7px;
-}
-
-.buttonContent:hover {
-  background: rgba(0, 0, 0, 0.05);
 }

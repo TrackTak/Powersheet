@@ -2,13 +2,19 @@ import { prefix } from './../../utils';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
+import { createGroup } from '../../toolbar/htmlElementHelpers';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
+
+export interface IRightClickMenuActionGroups {
+  elements: HTMLElement[];
+}
 
 class RightClickMenu {
   rightClickMenuEl: HTMLDivElement;
   menuItem: HTMLDivElement;
   dropdown: Instance<Props>;
+  rightClickMenuActionGroups: IRightClickMenuActionGroups[];
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -29,47 +35,36 @@ class RightClickMenu {
 
     content.classList.add(styles.content, `${rightClickMenuPrefix}-content`);
 
-    const arrayElements = [
+    this.rightClickMenuActionGroups = [
       {
-        text: 'Comment',
+        elements: [
+          this.createButtonContent('Comment', 'comment'),
+          this.createButtonContent('Copy', 'copy'),
+          this.createButtonContent('Cut', 'cut'),
+          this.createButtonContent('Paste', 'paste'),
+          this.createButtonContent('Paste values only', 'paste-values'),
+          this.createButtonContent('Paste format only', 'paste-format'),
+        ],
       },
       {
-        text: 'Copy',
+        elements: [
+          this.createButtonContent('Insert row', 'insert-row'),
+          this.createButtonContent('Insert column', 'insert-column'),
+        ],
       },
       {
-        text: 'Cut',
-      },
-      {
-        text: 'Paste',
-      },
-      {
-        text: 'Paste values only',
-      },
-      {
-        text: 'Paste format only',
-      },
-      {
-        text: 'Insert row',
-      },
-      {
-        text: 'Insert column',
-      },
-      {
-        text: 'Delete row',
-      },
-      {
-        text: 'Delete column',
+        elements: [
+          this.createButtonContent('Delete row', 'delete-row'),
+          this.createButtonContent('Delete column', 'delete-column'),
+          this.createButtonContent('Hide', 'hide'),
+        ],
       },
     ];
 
-    arrayElements.forEach((element) => {
-      const elements = content.appendChild(
-        this.createButtonContentMenu(element.text)
-      );
-      elements.classList.add(
-        styles.buttonContent,
-        `${rightClickMenuPrefix}-button-content`
-      );
+    this.rightClickMenuActionGroups.forEach(({ elements }) => {
+      const group = createGroup(elements, rightClickMenuPrefix);
+
+      content.appendChild(group);
     });
 
     this.dropdown = tippy(this.sheet.container, {
@@ -99,9 +94,17 @@ class RightClickMenu {
     this.rightClickMenuEl.appendChild(this.menuItem);
   }
 
-  createButtonContentMenu(name: string) {
+  createButtonContent(name: string, className: string) {
     const button = document.createElement('button');
+
     button.textContent = name;
+
+    button.classList.add(
+      styles.buttonContent,
+      styles[className],
+      `${rightClickMenuPrefix}-${className}`,
+      `${rightClickMenuPrefix}-button-content`
+    );
 
     return button;
   }

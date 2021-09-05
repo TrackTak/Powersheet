@@ -281,7 +281,7 @@ class Toolbar {
     ];
 
     this.toolbarActionGroups.forEach(({ elements }) => {
-      const group = createGroup(elements);
+      const group = createGroup(elements, toolbarPrefix);
 
       this.toolbarEl.appendChild(group);
     });

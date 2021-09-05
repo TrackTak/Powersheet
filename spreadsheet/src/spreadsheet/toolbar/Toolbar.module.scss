@@ -40,11 +40,11 @@
   @include group;
   &:after {
     content: '';
-    border-right: 1px solid #e0e2e4;
+    background-color: #e0e2e4;
     margin-left: 6px;
-    margin-right: 5px;
-    height: 18px;
-    align-self: center;
+    margin-right: 6px;
+    display: block;
+    width: 1px;
   }
 
   &:last-of-type:after {

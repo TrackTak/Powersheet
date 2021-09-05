@@ -3,6 +3,7 @@ import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
 import { createGroup } from '../../htmlElementHelpers';
+import { createButtonContent } from './rightClickMenuHtmlHelpers';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -38,25 +39,22 @@ class RightClickMenu {
     this.rightClickMenuActionGroups = [
       {
         elements: [
-          this.createButtonContent('Comment', 'comment'),
-          this.createButtonContent('Copy', 'copy'),
-          this.createButtonContent('Cut', 'cut'),
-          this.createButtonContent('Paste', 'paste'),
-          this.createButtonContent('Paste values only', 'paste-values'),
-          this.createButtonContent('Paste format only', 'paste-format'),
+          createButtonContent('Comment', 'comment'),
+          createButtonContent('Copy', 'copy'),
+          createButtonContent('Cut', 'cut'),
+          createButtonContent('Paste', 'paste'),
         ],
       },
       {
         elements: [
-          this.createButtonContent('Insert row', 'insert-row'),
-          this.createButtonContent('Insert column', 'insert-column'),
+          createButtonContent('Insert row', 'insert-row'),
+          createButtonContent('Insert column', 'insert-column'),
         ],
       },
       {
         elements: [
-          this.createButtonContent('Delete row', 'delete-row'),
-          this.createButtonContent('Delete column', 'delete-column'),
-          this.createButtonContent('Hide', 'hide'),
+          createButtonContent('Delete row', 'delete-row'),
+          createButtonContent('Delete column', 'delete-column'),
         ],
       },
     ];
@@ -112,21 +110,6 @@ class RightClickMenu {
     });
 
     this.rightClickMenuEl.appendChild(this.menuItem);
-  }
-
-  createButtonContent(name: string, className: string) {
-    const button = document.createElement('button');
-
-    button.textContent = name;
-
-    button.classList.add(
-      styles.buttonContent,
-      styles[className],
-      `${rightClickMenuPrefix}-${className}`,
-      `${rightClickMenuPrefix}-button-content`
-    );
-
-    return button;
   }
 }
 

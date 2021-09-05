@@ -1031,8 +1031,8 @@ class Sheet {
     this.row.updateViewport();
     this.col.updateViewport();
     this.merger.updateMergedCells();
-    this.selector.updateSelectedCells();
     this.updateCells();
+    this.selector.updateSelectedCells();
   }
 
   drawNextItems() {

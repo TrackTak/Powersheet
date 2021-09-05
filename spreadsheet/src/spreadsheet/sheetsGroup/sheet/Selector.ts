@@ -219,13 +219,7 @@ class Selector {
 
       this.sheet.drawCell(cell);
 
-      const existingCell = this.sheet.cellsMap.get(cell.id());
-
-      if (existingCell) {
-        cell.moveToTop();
-      } else {
-        cell.moveToBottom();
-      }
+      cell.moveToTop();
     });
   }
 

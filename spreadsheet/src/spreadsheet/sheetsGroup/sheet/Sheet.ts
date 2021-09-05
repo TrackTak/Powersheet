@@ -208,6 +208,14 @@ export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   return cellGroup;
 };
 
+export const getMergedCellGroupFromScrollGroup = (scrollGroup: Group) => {
+  const cellGroup = scrollGroup.children?.find(
+    (x) => x.attrs.type === 'mergedCell'
+  ) as Group;
+
+  return cellGroup;
+};
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -399,10 +407,12 @@ class Sheet {
     };
 
     Object.values(this.scrollGroups).forEach((scrollGroup: Group) => {
-      // The order added here matters as it determines the zIndex for konva
-
       const cellGroup = new Group({
         type: 'cell',
+      });
+
+      const mergedCellGroup = new Group({
+        type: 'mergedCell',
       });
 
       const gridLineGroup = new Group({
@@ -413,9 +423,11 @@ class Sheet {
         type: 'header',
       });
 
+      // The order added here matters as it determines the zIndex for konva
       scrollGroup.add(cellGroup);
-      scrollGroup.add(headerGroup);
       scrollGroup.add(gridLineGroup);
+      scrollGroup.add(mergedCellGroup);
+      scrollGroup.add(headerGroup);
     });
 
     Object.values(this.layers).forEach((layer) => {
@@ -473,7 +485,6 @@ class Sheet {
   }
 
   updateCells() {
-    console.log(this.data.cellStyles);
     Object.keys(this.data.cellStyles).forEach((id) => {
       const cellStyle = this.data.cellStyles[id];
 
@@ -557,6 +568,11 @@ class Sheet {
 
         setCellChildren(cell, otherChildren);
       }
+
+      this.data.cellStyles[id] = {
+        ...this.data.cellStyles[id],
+        borders: [],
+      };
     });
   }
 
@@ -957,27 +973,25 @@ class Sheet {
     const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
     const isMerged = !!this.merger.associatedMergedCellMap.get(id ?? '');
+    const getCellGroupMethod = (scrollGroup: Group) =>
+      isMerged
+        ? getMergedCellGroupFromScrollGroup(scrollGroup)
+        : getCellGroupFromScrollGroup(scrollGroup);
 
     if (isFrozenRow && isFrozenCol) {
-      const xyStickyCellGroup = getCellGroupFromScrollGroup(
-        this.scrollGroups.xySticky
-      );
+      const xyStickyCellGroup = getCellGroupMethod(this.scrollGroups.xySticky);
 
       xyStickyCellGroup.add(cell);
     } else if (isFrozenRow) {
-      const yStickyCellGroup = getCellGroupFromScrollGroup(
-        this.scrollGroups.ySticky
-      );
+      const yStickyCellGroup = getCellGroupMethod(this.scrollGroups.ySticky);
 
       yStickyCellGroup.add(cell);
     } else if (isFrozenCol) {
-      const xStickyCellGroup = getCellGroupFromScrollGroup(
-        this.scrollGroups.xSticky
-      );
+      const xStickyCellGroup = getCellGroupMethod(this.scrollGroups.xSticky);
 
       xStickyCellGroup.add(cell);
     } else {
-      const mainCellGroup = getCellGroupFromScrollGroup(this.scrollGroups.main);
+      const mainCellGroup = getCellGroupMethod(this.scrollGroups.main);
 
       mainCellGroup.add(cell);
     }

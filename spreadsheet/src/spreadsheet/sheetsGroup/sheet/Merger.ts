@@ -75,8 +75,8 @@ class Merger {
     const rect: IRect = {
       x: startCol!.x() + gridLineStrokeWidth,
       y: startRow!.y() + gridLineStrokeWidth,
-      width: width - gridLineStrokeWidth * 2,
-      height: height - gridLineStrokeWidth * 2,
+      width: width - gridLineStrokeWidth,
+      height: height - gridLineStrokeWidth,
     };
 
     let existingTopLeftCellRect;
@@ -95,8 +95,6 @@ class Merger {
         this.sheet.destroyCell(id);
       }
     }
-
-    this.sheet.cellsMap.set(id, cell);
 
     this.setCellProperties(cell, {
       fill: existingTopLeftCellRect?.fill() ?? defaultCellFill,

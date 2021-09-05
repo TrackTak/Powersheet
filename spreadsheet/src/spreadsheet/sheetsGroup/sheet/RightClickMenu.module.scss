@@ -1,33 +1,30 @@
 @import '../../styles.scss';
 
-.rightClickMenuEl {
-  display: block;
-  left: 947px;
-  top: 203px;
-  max-height: 750px;
-  bottom: auto;
-}
+@include tippyContentNoPadding;
 
 .content {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
 }
 
-.insert-row:before {
-  content: '';
-  height: 0;
-  padding: 0;
-  margin: 5px 0;
-  border: none;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+.group {
+  @include group;
+  flex-direction: column;
+  align-items: flex-start;
+  &:after {
+    content: '';
+    width: 300px;
+    display: inline-block;
+    margin: 5px 0;
+    border-bottom: 1px solid #e0e2e4;
+  }
+  &:last-of-type:after {
+    display: none;
+  }
 }
 
 .buttonContent {
   @include button;
-  border: 0;
-  padding: 2px 22px 4px 4px;
-  background: none;
-  cursor: pointer;
-  margin: 7px;
+  @include buttonAction;
+  width: 100%;
 }

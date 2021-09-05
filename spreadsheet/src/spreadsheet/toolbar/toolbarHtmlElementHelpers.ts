@@ -63,21 +63,6 @@ export type IconElementsName =
 
 type CreateIconButtonReturnType = ReturnType<typeof createIconButton>;
 
-export const createGroup = (
-  elements: HTMLElement[],
-  classNamePrefix: string
-) => {
-  const group = document.createElement('div');
-
-  group.classList.add(styles.group, `${classNamePrefix}-group`);
-
-  elements.forEach((element) => {
-    group.appendChild(element);
-  });
-
-  return group;
-};
-
 export const createTooltip = (name: string) => {
   const tooltip = document.createElement('span');
 

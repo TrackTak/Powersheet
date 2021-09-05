@@ -2,7 +2,7 @@ import { prefix } from './../../utils';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
-import { createGroup } from '../../toolbar/htmlElementHelpers';
+import { createGroup } from '../../htmlElementHelpers';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -62,7 +62,7 @@ class RightClickMenu {
     ];
 
     this.rightClickMenuActionGroups.forEach(({ elements }) => {
-      const group = createGroup(elements, rightClickMenuPrefix);
+      const group = createGroup(elements, styles.group, rightClickMenuPrefix);
 
       content.appendChild(group);
     });
@@ -81,9 +81,29 @@ class RightClickMenu {
       hideOnClick: true,
     });
 
+    const hideDropdown = () => {
+      this.dropdown.disable();
+      this.dropdown.hide();
+    };
+
+    const showDropdown = () => {
+      this.dropdown.enable();
+      this.dropdown.show();
+    };
+
+    hideDropdown();
+
     this.sheet.stage.on('click', (e) => {
+      if (e.evt.button === 0) {
+        hideDropdown();
+      }
+
       if (e.evt.button === 2) {
-        this.dropdown.show();
+        if (this.dropdown.state.isShown) {
+          hideDropdown();
+        } else {
+          showDropdown();
+        }
       }
     });
 

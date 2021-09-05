@@ -23,7 +23,7 @@ import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { NodeConfig } from 'konva/lib/Node';
-import { IconElementsName } from '../../toolbar/htmlElementHelpers';
+import { IconElementsName } from '../../toolbar/toolbarHtmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
 

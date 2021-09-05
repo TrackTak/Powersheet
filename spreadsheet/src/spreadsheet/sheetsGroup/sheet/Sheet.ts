@@ -23,8 +23,9 @@ import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
 import { NodeConfig } from 'konva/lib/Node';
-import { IconElementsName } from '../../toolbar/htmlElementHelpers';
+import { IconElementsName } from '../../toolbar/toolbarHtmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
+import RightClickMenu from './RightClickMenu';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -235,6 +236,7 @@ class Sheet {
   cellEditor: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  rightClickMenu?: RightClickMenu;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -326,6 +328,7 @@ class Sheet {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
     this.cellEditor = new CellEditor(this);
+    this.rightClickMenu = new RightClickMenu(this);
 
     this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
 

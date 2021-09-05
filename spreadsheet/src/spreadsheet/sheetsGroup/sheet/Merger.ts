@@ -14,6 +14,8 @@ export type AssociatedMergedCellId = CellId;
 
 const defaultCellFill = 'white';
 
+export const mergedRectOffset = 0.3;
+
 class Merger {
   associatedMergedCellMap: Map<AssociatedMergedCellId, Cell>;
 
@@ -73,10 +75,10 @@ class Merger {
     const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
 
     const rect: IRect = {
-      x: startCol!.x() + gridLineStrokeWidth * 2,
-      y: startRow!.y() + gridLineStrokeWidth * 2,
-      width: width - gridLineStrokeWidth * 2,
-      height: height - gridLineStrokeWidth * 2,
+      x: startCol!.x() + gridLineStrokeWidth + mergedRectOffset,
+      y: startRow!.y() + gridLineStrokeWidth + mergedRectOffset,
+      width: width - gridLineStrokeWidth - mergedRectOffset,
+      height: height - gridLineStrokeWidth - mergedRectOffset,
     };
 
     let existingTopLeftCellRect;
@@ -100,6 +102,8 @@ class Merger {
       fill: existingTopLeftCellRect?.fill() ?? defaultCellFill,
     });
   }
+
+  getRectOffset() {}
 
   private setCellProperties(
     cell: Cell,
@@ -178,6 +182,10 @@ class Merger {
     );
 
     this.sheet.updateViewport();
+  }
+
+  getIsCellMerged(id: CellId) {
+    return !!this.associatedMergedCellMap.get(id ?? '');
   }
 
   unMergeCells(mergedCells: IMergedCells) {

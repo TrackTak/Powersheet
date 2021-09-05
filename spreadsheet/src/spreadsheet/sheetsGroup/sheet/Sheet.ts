@@ -17,7 +17,7 @@ import {
 } from './styles';
 import { IOptions } from '../../options';
 import Selector, { iterateSelection } from './Selector';
-import Merger from './Merger';
+import Merger, { mergedRectOffset } from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
@@ -124,17 +124,19 @@ export interface ICustomSizes {
 
 export type Cell = Group;
 
+type operator = 'add' | 'subtract';
+
 // This is for canvas not making odd lines crisp looking
 // https://stackoverflow.com/questions/7530593/html5-canvas-and-line-width/7531540#7531540
-export const offsetLineValue = (val: number) => {
-  if (val % 1 === 0) return val + 0.5;
+export const offsetShapeValue = (val: number, operator: operator = 'add') => {
+  if (val % 1 === 0) return operator === 'add' ? val + 0.5 : val - 0.5;
 
   return val;
 };
 
-export const makeLineCrisp = (line: Line) => {
-  line.x(offsetLineValue(line.x()));
-  line.y(offsetLineValue(line.y()));
+export const makeShapeCrisp = (shape: Shape, operator?: operator) => {
+  shape.x(offsetShapeValue(shape.x(), operator));
+  shape.y(offsetShapeValue(shape.y(), operator));
 };
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
@@ -556,7 +558,9 @@ class Sheet {
 
     yield { cell, clientRect, line };
 
-    makeLineCrisp(line);
+    if (!this.merger.getIsCellMerged(id)) {
+      makeShapeCrisp(line);
+    }
   }
 
   clearBorders(ids: CellId[]) {
@@ -610,8 +614,6 @@ class Sheet {
       (cell) => cell.attrs.col.x > col.x && cell.attrs.col.y <= col.y
     );
 
-    console.log(verticalCells);
-
     verticalCells.forEach((cell) => {
       this.setLeftBorder(cell.attrs.id);
     });
@@ -623,6 +625,10 @@ class Sheet {
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
+
+    if (this.merger.getIsCellMerged(id)) {
+      line.y(line.y() + this.styles.gridLine.strokeWidth! + mergedRectOffset);
+    }
 
     generator.next();
   }
@@ -643,6 +649,10 @@ class Sheet {
     line.x(clientRect.width);
     line.points([0, 0, 0, clientRect.height]);
 
+    if (this.merger.getIsCellMerged(id)) {
+      line.x(line.x() + this.styles.gridLine.strokeWidth! + mergedRectOffset);
+    }
+
     generator.next();
   }
 
@@ -661,6 +671,10 @@ class Sheet {
 
     line.points([0, 0, clientRect.width, 0]);
 
+    if (this.merger.getIsCellMerged(id)) {
+      line.y(line.y() - mergedRectOffset);
+    }
+
     generator.next();
   }
 
@@ -678,6 +692,10 @@ class Sheet {
     const { line, clientRect } = generator.next().value!;
 
     line.points([0, 0, 0, clientRect.height]);
+
+    if (this.merger.getIsCellMerged(id)) {
+      line.x(line.x() - mergedRectOffset);
+    }
 
     generator.next();
   }
@@ -972,9 +990,8 @@ class Sheet {
 
     const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
-    const isMerged = !!this.merger.associatedMergedCellMap.get(id ?? '');
     const getCellGroupMethod = (scrollGroup: Group) =>
-      isMerged
+      this.merger.getIsCellMerged(id)
         ? getMergedCellGroupFromScrollGroup(scrollGroup)
         : getCellGroupFromScrollGroup(scrollGroup);
 
@@ -996,11 +1013,7 @@ class Sheet {
       mainCellGroup.add(cell);
     }
 
-    if (isMerged) {
-      cell.moveToTop();
-    } else {
-      cell.moveToBottom();
-    }
+    cell.moveToTop();
   }
 
   drawTopLeftOffsetRect() {

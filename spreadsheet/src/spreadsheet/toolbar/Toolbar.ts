@@ -416,11 +416,7 @@ class Toolbar {
 
   setMergedState(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged =
-      !!this.getFocusedSheet().merger.associatedMergedCellMap.get(
-        cell.id() ?? ''
-      );
-
+    const isMerged = this.getFocusedSheet().merger.getIsCellMerged(cell.id());
     const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {

@@ -17,7 +17,7 @@ import Sheet, {
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
   iterateXToY,
-  makeLineCrisp,
+  makeShapeCrisp,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
@@ -495,7 +495,7 @@ class RowCol {
       [this.functions.axis]: size,
     }) as Line;
 
-    makeLineCrisp(gridLine);
+    makeShapeCrisp(gridLine);
 
     group.add(gridLine);
 

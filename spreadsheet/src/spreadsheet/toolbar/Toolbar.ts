@@ -315,8 +315,10 @@ class Toolbar {
 
     switch (name) {
       case 'backgroundColor': {
+        if (!value) break;
+
         sheet.selector.selectedCells.forEach((cell) => {
-          sheet.setCellBackgroundColor(cell, value);
+          sheet.setCellBackgroundColor(cell.id(), value);
         });
         break;
       }
@@ -375,7 +377,7 @@ class Toolbar {
         break;
       }
       case 'borderNone': {
-        sheet.clearBorders(sheet.selector.selectedCells);
+        sheet.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
         break;
       }
       case 'borderOutside': {

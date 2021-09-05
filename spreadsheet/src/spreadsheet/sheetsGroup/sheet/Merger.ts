@@ -97,9 +97,7 @@ class Merger {
     this.sheet.cellsMap.set(id, cell);
 
     this.setCellProperties(cell, {
-      fill:
-        existingTopLeftCellRect?.fill() ??
-        this.sheet.options.cellStyle.backgroundColor,
+      fill: existingTopLeftCellRect?.fill() ?? 'white',
     });
 
     this.sheet.drawCell(cell);

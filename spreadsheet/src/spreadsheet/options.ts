@@ -1,7 +1,3 @@
-export interface ICellStyle {
-  backgroundColor: string;
-}
-
 export interface IRowColOptions {
   amount: number;
   minSize: number;
@@ -14,7 +10,6 @@ export interface IOptions {
   row: IRowColOptions;
   col: IRowColOptions;
   devMode: boolean;
-  cellStyle: ICellStyle;
 }
 
 export const defaultOptions: IOptions = {
@@ -29,9 +24,6 @@ export const defaultOptions: IOptions = {
     amount: 26,
     minSize: 60,
     defaultSize: 100,
-  },
-  cellStyle: {
-    backgroundColor: 'white',
   },
   devMode: false,
 };

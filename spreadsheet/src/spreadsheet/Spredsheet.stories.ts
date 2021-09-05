@@ -133,3 +133,20 @@ DifferentSizeCells.args = {
     },
   },
 };
+
+export const CellStyles = Template.bind({});
+
+CellStyles.args = {
+  ...defaultStoryArgs,
+  data: {
+    ...defaultStoryArgs.data,
+    cellStyles: {
+      '0_0': {
+        backgroundColor: 'yellow',
+      },
+      '3_3': {
+        borders: ['borderBottom', 'borderRight'],
+      },
+    },
+  },
+};

@@ -255,7 +255,6 @@ class RowCol {
 
   convertFromCellsToRange(cells: Cell[]) {
     const getMin = () => Math.min(...cells.map((o) => o.attrs[this.type].x));
-
     const getMax = () => Math.max(...cells.map((o) => o.attrs[this.type].y));
 
     const vector = {

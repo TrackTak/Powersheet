@@ -1,9 +1,8 @@
-import { Group } from 'konva/lib/Group';
 import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { Cell, convertFromCellsToCellsRange, getCellId } from './Sheet';
+import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -23,8 +22,8 @@ export function* iterateSelection(selection: Vector2d) {
 
 class Selector {
   isInSelectionMode: boolean;
-  selectedCells: Group[];
-  selectionBorderCell: Group | null;
+  selectedCells: Cell[];
+  selectionBorderCell: Cell | null;
   selectedFirstCell: Cell | null;
   previousSelectedCell?: Cell;
   private selectionArea: ISelectionArea;
@@ -48,15 +47,89 @@ class Selector {
 
     this.selectedCells = [];
 
-    this.sheet.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.sheet.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
-    this.sheet.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
+    this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
     this.sheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
 
   onSheetLoad = () => {
     this.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
   };
+
+  updateSelectedCells() {
+    if (!this.selectedCells.length) return;
+
+    const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
+
+    const rows = this.sheet.row.convertFromRangeToGroups(row);
+    const cols = this.sheet.col.convertFromRangeToGroups(col);
+
+    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+
+    this.setCells(cells);
+
+    const cell = cells.find((x) => x.id() === this.selectedFirstCell?.id());
+
+    if (cell) {
+      this.setFirstCell(cell);
+    }
+
+    this.selectCells(cells);
+  }
+
+  startSelection(start: Vector2d, end: Vector2d) {
+    this.previousSelectedCell = this.selectedFirstCell?.clone();
+    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
+
+    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+
+    this.setFirstCell(cells[0]);
+    this.selectCells(cells);
+
+    this.sheet.toolbar?.setFocusedSheet(this.sheet);
+    this.sheet.toolbar?.setToolbarState();
+
+    this.sheet.emit(
+      events.selector.startSelection,
+      this.sheet,
+      this.selectedFirstCell
+    );
+  }
+
+  setFirstCell(cell: Cell) {
+    this.removeSelectedCells();
+
+    const firstCellRect = getCellRectFromCell(cell);
+
+    const rectConfig: RectConfig = this.sheet.styles.selectionFirstCell;
+
+    firstCellRect.setAttrs(rectConfig);
+
+    const offsetAmount = firstCellRect.strokeWidth() / 2;
+
+    cell.x(cell.x() + offsetAmount);
+    cell.y(cell.y() + offsetAmount);
+
+    firstCellRect.width(firstCellRect.width() - firstCellRect.strokeWidth());
+    firstCellRect.height(firstCellRect.height() - firstCellRect.strokeWidth());
+
+    makeShapeCrisp(firstCellRect);
+
+    this.selectedFirstCell = cell;
+  }
+
+  setCells(cells: Cell[]) {
+    if (cells.length !== 1) {
+      cells.forEach((cell) => {
+        const rectConfig: RectConfig = this.sheet.styles.selection;
+        const rect = getCellRectFromCell(cell);
+
+        rect.setAttrs(rectConfig);
+      });
+    }
+  }
 
   onSheetMouseDown = () => {
     const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
@@ -80,33 +153,6 @@ class Selector {
     this.isInSelectionMode = true;
   };
 
-  startSelection(start: Vector2d, end: Vector2d) {
-    this.previousSelectedCell = this.selectedFirstCell?.clone();
-    if (this.selectedFirstCell) {
-      this.selectedFirstCell.destroy();
-    }
-
-    this.removeSelectedCells();
-
-    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
-
-    const cells = this.convertFromRowColsToCells(
-      rows,
-      cols,
-      this.sheet.styles.selectionFirstCell
-    );
-
-    this.selectCells(cells);
-
-    this.selectedFirstCell = cells[0];
-
-    this.sheet.emit(
-      events.selector.startSelection,
-      this.sheet,
-      this.selectedFirstCell
-    );
-  }
-
   onSheetMouseMove = () => {
     if (this.isInSelectionMode) {
       const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
@@ -126,16 +172,16 @@ class Selector {
         this.selectionArea.end
       );
 
-      const cells = this.convertFromRowColsToCells(
-        rows,
-        cols,
-        this.sheet.styles.selection
-      );
+      const cells = this.sheet.convertFromRowColsToCells(rows, cols);
 
       if (this.selectedCells.length !== cells.length) {
-        this.removeSelectedCells();
+        this.setCells(cells);
+
+        this.removeSelectedCells(false);
 
         this.selectCells(cells);
+
+        this.sheet.toolbar?.setToolbarState();
 
         this.sheet.emit(events.selector.moveSelection, cells);
       }
@@ -150,74 +196,7 @@ class Selector {
     this.sheet.emit(events.selector.endSelection);
   };
 
-  convertFromRowColsToCells(
-    rows: Group[],
-    cols: Group[],
-    rectConfig?: RectConfig
-  ) {
-    const mergedCellsAddedMap = new Map();
-    const cells: Cell[] = [];
-
-    rows.forEach((rowGroup) => {
-      cols.forEach((colGroup) => {
-        const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCell = this.sheet.merger.associatedMergedCellMap.get(id);
-
-        if (mergedCell) {
-          const id = mergedCell.id();
-
-          if (!mergedCellsAddedMap.get(id)) {
-            const rect = mergedCell.getClientRect();
-            const cell = this.sheet.getNewCell(
-              rect,
-              mergedCell.attrs.row,
-              mergedCell.attrs.col,
-              {
-                groupConfig: {
-                  id,
-                  isMerged: true,
-                },
-                rectConfig,
-              }
-            );
-
-            cells.push(cell);
-
-            mergedCellsAddedMap.set(id, cell);
-          }
-        } else {
-          const rect: IRect = {
-            x: colGroup.x(),
-            y: rowGroup.y(),
-            width: colGroup.width(),
-            height: rowGroup.height(),
-          };
-          const row = {
-            x: rowGroup.attrs.index,
-            y: rowGroup.attrs.index,
-          };
-
-          const col = {
-            x: colGroup.attrs.index,
-            y: colGroup.attrs.index,
-          };
-
-          const cell = this.sheet.getNewCell(rect, row, col, {
-            groupConfig: {
-              id,
-            },
-            rectConfig,
-          });
-
-          cells.push(cell);
-        }
-      });
-    });
-
-    return cells;
-  }
-
-  removeSelectedCells() {
+  removeSelectedCells(destroySelectedFirstCell: boolean = true) {
     this.selectedCells
       .filter((cell) => cell !== this.selectedFirstCell)
       .forEach((cell) => {
@@ -225,6 +204,10 @@ class Selector {
       });
 
     this.selectedCells = [];
+
+    if (destroySelectedFirstCell && this.selectedFirstCell) {
+      this.selectedFirstCell.destroy();
+    }
 
     if (this.selectionBorderCell) {
       this.selectionBorderCell.destroy();
@@ -238,57 +221,50 @@ class Selector {
 
       this.sheet.drawCell(cell);
 
-      const existingCell = this.sheet.cellsMap.get(cell.id());
-
-      if (existingCell) {
-        cell.moveToTop();
-      } else {
-        cell.moveToBottom();
-      }
+      cell.moveToTop();
     });
   }
 
   setSelectionBorder() {
     if (!this.selectedCells.length) return;
 
-    const { row, col } = convertFromCellsToCellsRange(this.selectedCells);
+    // const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    // const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    let totalWidth = 0;
-    let totalHeight = 0;
+    // const rows = this.sheet.row.convertFromRangeToGroups(row);
+    // const cols = this.sheet.col.convertFromRangeToGroups(col);
 
-    for (const ri of iterateSelection(row)) {
-      totalHeight += this.sheet.row.rowColGroupMap.get(ri)!.height();
-    }
+    // const width = cols.reduce((prev, curr) => {
+    //   return (prev += curr.width());
+    // }, 0);
 
-    for (const ci of iterateSelection(col)) {
-      totalWidth += this.sheet.col.rowColGroupMap.get(ci)!.width();
-    }
+    // const height = rows.reduce((prev, curr) => {
+    //   return (prev += curr.height());
+    // }, 0);
 
-    const indexZeroCell = this.selectedCells[0];
+    // const indexZeroCell = this.selectedCells[0];
 
-    const rect: IRect = {
-      x: indexZeroCell.x(),
-      y: indexZeroCell.y(),
-      width: totalWidth,
-      height: totalHeight,
-    };
+    // const rect: IRect = {
+    //   x: indexZeroCell.x(),
+    //   y: indexZeroCell.y(),
+    //   width,
+    //   height,
+    // };
 
-    const cell = this.sheet.getNewCell(
-      rect,
-      indexZeroCell.attrs.row,
-      indexZeroCell.attrs.col,
-      {
-        rectConfig: this.sheet.styles.selectionBorder,
-      }
-    );
+    // const cell = this.sheet.getCell(
+    //   null,
+    //   rect,
+    //   indexZeroCell.attrs.row,
+    //   indexZeroCell.attrs.col
+    // );
+
+    // const cellRect = getCellRectFromCell(cell);
+
+    // cellRect.setAttrs(this.sheet.styles.selectionBorder);
 
     // this.sheet.drawCell(cell);
 
-    this.selectionBorderCell = cell;
-  }
-
-  getSelectedCell() {
-    return this.selectedCells[0];
+    // this.selectionBorderCell = cell;
   }
 }
 

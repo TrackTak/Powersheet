@@ -1,0 +1,32 @@
+@import '../../styles.scss';
+
+@include tippyContentNoPadding;
+
+.content {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+}
+
+.group {
+  @include group;
+  flex-direction: column;
+  align-items: flex-start;
+  &:after {
+    content: '';
+    width: 100%;
+    display: block;
+    height: 1px;
+    background-color: #e0e2e4;
+    margin: 5px 0;
+  }
+  &:last-of-type:after {
+    display: none;
+  }
+}
+
+.buttonContent {
+  @include button;
+  @include buttonAction;
+  width: 100%;
+}

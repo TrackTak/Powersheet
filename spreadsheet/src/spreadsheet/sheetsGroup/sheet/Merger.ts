@@ -3,7 +3,6 @@ import Sheet, {
   Cell,
   CellId,
   getCellId,
-  getCellRectFromCell,
   IMergedCells,
   makeShapeCrisp,
 } from './Sheet';
@@ -31,10 +30,7 @@ class Merger {
       const shouldMerge = startCol && startRow ? true : false;
 
       if (shouldMerge) {
-        const id = getCellId(mergedCells.row.x, mergedCells.col.x);
-        const existingTopLeftCell = this.sheet.cellsMap.get(id)?.clone();
-
-        this.mergeCells(mergedCells, existingTopLeftCell);
+        this.mergeCells(mergedCells);
       }
     });
 
@@ -42,11 +38,8 @@ class Merger {
   }
 
   addMergeCells(mergedCells: IMergedCells) {
-    const id = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const existingTopLeftCell = this.sheet.cellsMap.get(id)?.clone();
-
     this.destroyExistingMergedCells(mergedCells);
-    this.mergeCells(mergedCells, existingTopLeftCell);
+    this.mergeCells(mergedCells);
 
     this.sheet.data.mergedCells.push(mergedCells);
 
@@ -55,7 +48,7 @@ class Merger {
     this.sheet.emit(events.merge.add, mergedCells);
   }
 
-  private mergeCells(mergedCells: IMergedCells, existingTopLeftCell?: Cell) {
+  private mergeCells(mergedCells: IMergedCells) {
     const { row, col } = mergedCells;
     const mergedCellId = getCellId(row.x, col.x);
     const startRow = this.sheet.row.rowColGroupMap.get(row.x);
@@ -78,12 +71,6 @@ class Merger {
       width: width,
       height: height,
     };
-
-    let existingTopLeftCellRect;
-
-    if (existingTopLeftCell) {
-      existingTopLeftCellRect = getCellRectFromCell(existingTopLeftCell);
-    }
 
     const mergedCell = this.sheet.getNewCell(mergedCellId, rect, row, col);
 
@@ -116,9 +103,18 @@ class Merger {
     this.sheet.cellsMap.set(mergedCellId, mergedCell);
 
     this.resetCellStylesForAssociatedCells(mergedCell);
+    this.setCellStyleFromExisting(mergedCellId);
+  }
 
-    this.sheet.setCellStyle(mergedCellId, {
-      backgroundColor: existingTopLeftCellRect?.fill() ?? defaultCellFill,
+  private setCellStyleFromExisting(
+    newCellId: CellId,
+    existingCellId: CellId = newCellId
+  ) {
+    const cellStyle = this.sheet.data.cellStyles[existingCellId];
+
+    this.sheet.setCellStyle(newCellId, {
+      backgroundColor: cellStyle?.backgroundColor ?? defaultCellFill,
+      borders: cellStyle?.borders,
     });
   }
 
@@ -135,23 +131,15 @@ class Merger {
   }
 
   private setMergedCellStylesToCells(mergedCell: Cell) {
-    const id = mergedCell.id();
-    const outFormat = 'rgbacss';
-    const cellStyle = this.sheet.data.cellStyles[id];
-    const fill = parseColor(
-      cellStyle.backgroundColor ?? defaultCellFill,
-      outFormat
-    );
-    const borders = cellStyle.borders;
+    const mergedCellid = mergedCell.id();
     const rows = this.sheet.row.getItemsBetweenIndexes(mergedCell.attrs.row);
     const cols = this.sheet.col.getItemsBetweenIndexes(mergedCell.attrs.col);
     const cells = this.sheet.convertFromRowColsToCells(rows, cols);
 
     cells.forEach((cell) => {
-      this.sheet.setCellStyle(cell.id(), {
-        backgroundColor: fill,
-        borders,
-      });
+      const id = cell.id();
+
+      this.setCellStyleFromExisting(id, mergedCellid);
     });
   }
 

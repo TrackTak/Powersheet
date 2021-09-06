@@ -131,7 +131,10 @@ type operator = 'add' | 'subtract';
 
 // This is for canvas not making odd lines crisp looking
 // https://stackoverflow.com/questions/7530593/html5-canvas-and-line-width/7531540#7531540
-export const offsetShapeValue = (val: number, operator: operator = 'add') => {
+export const offsetShapeValue = (
+  val: number,
+  operator: operator = 'subtract'
+) => {
   if (val % 1 === 0) return operator === 'add' ? val + 0.5 : val - 0.5;
 
   return val;

@@ -494,7 +494,7 @@ class RowCol {
       [this.functions.axis]: size,
     }) as Line;
 
-    makeShapeCrisp(gridLine, 'subtract');
+    makeShapeCrisp(gridLine);
 
     group.add(gridLine);
 
@@ -524,9 +524,7 @@ class RowCol {
     };
     const clone = this.resizer.shapes.resizeLine.clone(lineConfig) as Line;
 
-    clone[this.functions.axis](
-      offsetShapeValue(clone[this.functions.axis](), 'subtract')
-    );
+    clone[this.functions.axis](offsetShapeValue(clone[this.functions.axis]()));
 
     return clone;
   }

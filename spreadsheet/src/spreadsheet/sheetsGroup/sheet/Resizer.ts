@@ -121,7 +121,7 @@ class Resizer {
     this.shapes.resizeGuideLine.x(x);
     this.shapes.resizeGuideLine.y(y);
 
-    makeShapeCrisp(this.shapes.resizeGuideLine, 'subtract');
+    makeShapeCrisp(this.shapes.resizeGuideLine);
 
     this.shapes.resizeGuideLine.show();
   }

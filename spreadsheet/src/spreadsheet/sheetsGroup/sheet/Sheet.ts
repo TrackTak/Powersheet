@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
@@ -53,7 +53,6 @@ export interface ISheetViewportPosition {
 }
 
 interface IShapes {
-  sheetGroup: Group;
   sheet: Rect;
   frozenGridLine: Line;
   topLeftRect: Rect;
@@ -186,12 +185,12 @@ export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
   return cellBorder;
 };
 
-export const getGridLineGroupFromScrollGroup = (scrollGroup: Group) => {
-  const gridLineGroup = scrollGroup.children?.find(
-    (x) => x.attrs.type === 'gridLine'
+export const getSheetGroupFromScrollGroup = (scrollGroup: Group) => {
+  const sheetGroup = scrollGroup.children?.find(
+    (x) => x.attrs.type === 'sheet'
   ) as Group;
 
-  return gridLineGroup;
+  return sheetGroup;
 };
 
 export const getHeaderGroupFromScrollGroup = (scrollGroup: Group) => {
@@ -202,8 +201,16 @@ export const getHeaderGroupFromScrollGroup = (scrollGroup: Group) => {
   return headerGroup;
 };
 
+export const getGridLineGroupFromScrollGroup = (scrollGroup: Group) => {
+  const gridLineGroup = getSheetGroupFromScrollGroup(
+    scrollGroup
+  ).children?.find((x) => x.attrs.type === 'gridLine') as Group;
+
+  return gridLineGroup;
+};
+
 export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
-  const cellGroup = scrollGroup.children?.find(
+  const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
     (x) => x.attrs.type === 'cell'
   ) as Group;
 
@@ -211,7 +218,7 @@ export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
 };
 
 export const getMergedCellGroupFromScrollGroup = (scrollGroup: Group) => {
-  const cellGroup = scrollGroup.children?.find(
+  const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
     (x) => x.attrs.type === 'mergedCell'
   ) as Group;
 
@@ -409,27 +416,37 @@ class Sheet {
     };
 
     Object.values(this.scrollGroups).forEach((scrollGroup: Group) => {
+      const sheetGroup = new Group({
+        ...performanceProperties,
+        ...this.getViewportVector(),
+        listening: true,
+        type: 'sheet',
+      });
+
       const cellGroup = new Group({
+        ...performanceProperties,
         type: 'cell',
       });
 
       const mergedCellGroup = new Group({
+        ...performanceProperties,
         type: 'mergedCell',
       });
 
       const gridLineGroup = new Group({
+        ...performanceProperties,
         type: 'gridLine',
       });
 
       const headerGroup = new Group({
+        ...performanceProperties,
+        listening: true,
         type: 'header',
       });
 
       // The order added here matters as it determines the zIndex for konva
-      scrollGroup.add(cellGroup);
-      scrollGroup.add(gridLineGroup);
-      scrollGroup.add(mergedCellGroup);
-      scrollGroup.add(headerGroup);
+      sheetGroup.add(cellGroup, gridLineGroup, mergedCellGroup);
+      scrollGroup.add(sheetGroup, headerGroup);
     });
 
     Object.values(this.layers).forEach((layer) => {
@@ -437,12 +454,9 @@ class Sheet {
     });
 
     this.shapes = {
-      sheetGroup: new Group({
-        ...performanceProperties,
-        listening: true,
-      }),
       sheet: new Rect({
         ...performanceProperties,
+        type: 'sheet',
         listening: true,
         opacity: 0,
       }),
@@ -456,11 +470,9 @@ class Sheet {
       }),
     };
 
+    this.layers.mainLayer.add(this.shapes.sheet);
+
     this.shapes.frozenGridLine.cache();
-
-    this.shapes.sheetGroup.add(this.shapes.sheet);
-
-    this.layers.mainLayer.add(this.shapes.sheetGroup);
 
     Object.values(this.scrollGroups).forEach((group) => {
       this.layers.mainLayer.add(group);
@@ -768,12 +780,14 @@ class Sheet {
     this.stage.width(this.col.totalSize + this.getViewportVector().x);
     this.stage.height(this.row.totalSize + this.getViewportVector().y);
 
-    this.shapes.sheetGroup.setAttrs(this.getViewportVector());
+    const sheetConfig: RectConfig = {
+      width: this.col.totalSize,
+      height: this.row.totalSize,
+      x: this.getViewportVector().x,
+      y: this.getViewportVector().y,
+    };
 
-    this.shapes.sheet.setAttrs({
-      width: this.sheetViewportDimensions.width,
-      height: this.sheetViewportDimensions.height,
-    });
+    this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
     this.drawNextItems();

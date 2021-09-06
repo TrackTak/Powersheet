@@ -46,9 +46,9 @@ class Selector {
 
     this.selectedCells = [];
 
-    this.sheet.shapes.sheetGroup.on('mousedown', this.onSheetMouseDown);
-    this.sheet.shapes.sheetGroup.on('mousemove', this.onSheetMouseMove);
-    this.sheet.shapes.sheetGroup.on('mouseup', this.onSheetMouseUp);
+    this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
+    this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
     this.sheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
 

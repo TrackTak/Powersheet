@@ -18,6 +18,7 @@ import Sheet, {
   iteratePreviousUpToCurrent,
   iterateXToY,
   makeShapeCrisp,
+  offsetShapeValue,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
@@ -150,10 +151,6 @@ class RowCol {
 
     this.resizer = new Resizer(sheet, this.type, this.isCol, this.functions);
 
-    this.shapes.group.cache({
-      ...this.sheet.getViewportVector(),
-      ...this.sheet.sheetViewportDimensions,
-    });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
 
@@ -475,7 +472,9 @@ class RowCol {
     const groupConfig: ShapeConfig = {
       index,
       [this.functions.size]: size,
-      [this.functions.axis]: headerGroup[this.functions.axis](),
+      [this.functions.axis]:
+        headerGroup[this.functions.axis]() -
+        this.sheet.getViewportVector()[this.functions.axis],
     };
 
     const group = this.shapes.group.clone(groupConfig) as Group;
@@ -495,7 +494,7 @@ class RowCol {
       [this.functions.axis]: size,
     }) as Line;
 
-    makeShapeCrisp(gridLine);
+    makeShapeCrisp(gridLine, 'subtract');
 
     group.add(gridLine);
 
@@ -524,6 +523,10 @@ class RowCol {
       [this.functions.axis]: size,
     };
     const clone = this.resizer.shapes.resizeLine.clone(lineConfig) as Line;
+
+    clone[this.functions.axis](
+      offsetShapeValue(clone[this.functions.axis](), 'subtract')
+    );
 
     return clone;
   }

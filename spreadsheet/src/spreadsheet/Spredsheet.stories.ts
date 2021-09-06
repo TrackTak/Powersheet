@@ -97,11 +97,6 @@ MergedCells.args = {
   ...defaultStoryArgs,
   data: {
     ...defaultStoryArgs.data,
-    cellStyles: {
-      '4_1': {
-        backgroundColor: '#ffd1d1',
-      },
-    },
     mergedCells: [
       {
         row: {
@@ -157,5 +152,17 @@ CellStyles.args = {
         borders: ['borderBottom', 'borderTop'],
       },
     },
+    mergedCells: [
+      {
+        row: {
+          x: 3,
+          y: 3,
+        },
+        col: {
+          x: 3,
+          y: 4,
+        },
+      },
+    ],
   },
 };

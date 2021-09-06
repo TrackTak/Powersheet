@@ -585,9 +585,7 @@ class Sheet {
 
     yield { cell, clientRect, line };
 
-    if (!this.merger.getIsCellMerged(id)) {
-      makeShapeCrisp(line);
-    }
+    makeShapeCrisp(line);
   }
 
   clearBorders(ids: CellId[]) {
@@ -626,22 +624,22 @@ class Sheet {
   setHorizontalBorders(cells: Cell[]) {
     const row = this.row.convertFromCellsToRange(cells);
     const horizontalCells = cells.filter(
-      (cell) => cell.attrs.row.x > row.x && cell.attrs.row.y <= row.y
+      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
     );
 
     horizontalCells.forEach((cell) => {
-      this.setTopBorder(cell.attrs.id);
+      this.setBottomBorder(cell.attrs.id);
     });
   }
 
   setVerticalBorders(cells: Cell[]) {
     const col = this.col.convertFromCellsToRange(cells);
     const verticalCells = cells.filter(
-      (cell) => cell.attrs.col.x > col.x && cell.attrs.col.y <= col.y
+      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
     );
 
     verticalCells.forEach((cell) => {
-      this.setLeftBorder(cell.attrs.id);
+      this.setRightBorder(cell.attrs.id);
     });
   }
 
@@ -651,10 +649,6 @@ class Sheet {
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
-
-    if (this.merger.getIsCellMerged(id)) {
-      line.y(line.y() + this.styles.gridLine.strokeWidth!);
-    }
 
     generator.next();
   }
@@ -674,10 +668,6 @@ class Sheet {
 
     line.x(clientRect.width);
     line.points([0, 0, 0, clientRect.height]);
-
-    if (this.merger.getIsCellMerged(id)) {
-      line.x(line.x() + this.styles.gridLine.strokeWidth!);
-    }
 
     generator.next();
   }

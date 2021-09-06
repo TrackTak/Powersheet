@@ -8,7 +8,6 @@ import Sheet, {
 } from './Sheet';
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
-import { parseColor } from 'a-color-picker';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 
 export type AssociatedMergedCellId = CellId;
@@ -33,8 +32,6 @@ class Merger {
         this.mergeCells(mergedCells);
       }
     });
-
-    // this.removeGridLinesForMergedCells();
   }
 
   addMergeCells(mergedCells: IMergedCells) {

@@ -228,6 +228,8 @@ class Toolbar {
       arrow: false,
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
+
+        this.focusedSheet?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -294,9 +296,9 @@ class Toolbar {
     Object.keys(this.iconElementsMap).forEach((key) => {
       const name = key as IconElementsName;
 
-      this.iconElementsMap[name].button.addEventListener('click', () =>
-        this.setValue(name)
-      );
+      this.iconElementsMap[name].button.addEventListener('click', () => {
+        this.setValue(name);
+      });
     });
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
@@ -312,7 +314,6 @@ class Toolbar {
 
   setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.getFocusedSheet();
-
     switch (name) {
       case 'backgroundColor': {
         if (!value) break;

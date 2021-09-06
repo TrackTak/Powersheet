@@ -782,7 +782,6 @@ class Sheet {
 
     this.drawTopLeftOffsetRect();
     this.drawNextItems();
-    // TODO: Remove when it's fixed in scroll
     this.updateViewport();
 
     this.col.resizer.setResizeGuideLinePoints();
@@ -1050,13 +1049,6 @@ class Sheet {
     this.merger.updateMergedCells();
     this.updateCells();
     this.selector.updateSelectedCells();
-
-    const mergedCells = getMergedCellGroupFromScrollGroup(
-      this.scrollGroups.main
-    );
-
-    console.log(mergedCells);
-    console.log(this.data.cellStyles);
   }
 
   drawNextItems() {
@@ -1070,8 +1062,6 @@ class Sheet {
       colIteratorResult = colGenerator.next();
       rowIteratorResult = rowGenerator.next();
     } while (!colIteratorResult.done || !rowIteratorResult.done);
-
-    // this.updateViewport();
   }
 }
 

@@ -488,11 +488,11 @@ class RowCol {
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const lineConfig = this.getLineConfig(sheetSize);
-    const gridLine = line.clone({
-      ...lineConfig,
+    const lineConfig = {
+      ...this.getLineConfig(sheetSize),
       [this.functions.axis]: size,
-    }) as Line;
+    };
+    const gridLine = line.clone(lineConfig) as Line;
 
     makeShapeCrisp(gridLine);
 

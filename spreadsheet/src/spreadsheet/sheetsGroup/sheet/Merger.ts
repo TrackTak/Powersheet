@@ -9,12 +9,12 @@ import Sheet, {
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
 import { parseColor } from 'a-color-picker';
+import { Line, LineConfig } from 'konva/lib/shapes/Line';
+import { performanceProperties } from './styles';
 
 export type AssociatedMergedCellId = CellId;
 
 const defaultCellFill = 'white';
-
-export const mergedRectOffset = 0.3;
 
 class Merger {
   associatedMergedCellMap: Map<AssociatedMergedCellId, Cell>;
@@ -73,10 +73,10 @@ class Merger {
     const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
 
     const rect: IRect = {
-      x: startCol!.x() + gridLineStrokeWidth + mergedRectOffset,
-      y: startRow!.y() + gridLineStrokeWidth + mergedRectOffset,
-      width: width - gridLineStrokeWidth - mergedRectOffset,
-      height: height - gridLineStrokeWidth - mergedRectOffset,
+      x: startCol!.x(),
+      y: startRow!.y(),
+      width: width,
+      height: height,
     };
 
     let existingTopLeftCellRect;
@@ -95,6 +95,12 @@ class Merger {
         this.sheet.destroyCell(id);
       }
     }
+
+    // const colLine = this.sheet.col.shapes.gridLine.clone();
+    // const rowLine = this.sheet.row.shapes.gridLine.clone();
+
+    // colLine.x(width);
+    // rowLine.y(height);
 
     this.sheet.setCellStyle(id, {
       backgroundColor: existingTopLeftCellRect?.fill() ?? defaultCellFill,

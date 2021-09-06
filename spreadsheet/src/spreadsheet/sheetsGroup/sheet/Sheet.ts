@@ -17,7 +17,7 @@ import {
 } from './styles';
 import { IOptions } from '../../options';
 import Selector, { iterateSelection } from './Selector';
-import Merger, { mergedRectOffset } from './Merger';
+import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
@@ -453,7 +453,7 @@ class Sheet {
       });
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(cellGroup, gridLineGroup, mergedCellGroup);
+      sheetGroup.add(cellGroup, mergedCellGroup, gridLineGroup);
       scrollGroup.add(sheetGroup, headerGroup);
     });
 
@@ -653,7 +653,7 @@ class Sheet {
     line.points([0, 0, clientRect.width, 0]);
 
     if (this.merger.getIsCellMerged(id)) {
-      line.y(line.y() + this.styles.gridLine.strokeWidth! + mergedRectOffset);
+      line.y(line.y() + this.styles.gridLine.strokeWidth!);
     }
 
     generator.next();
@@ -676,7 +676,7 @@ class Sheet {
     line.points([0, 0, 0, clientRect.height]);
 
     if (this.merger.getIsCellMerged(id)) {
-      line.x(line.x() + this.styles.gridLine.strokeWidth! + mergedRectOffset);
+      line.x(line.x() + this.styles.gridLine.strokeWidth!);
     }
 
     generator.next();
@@ -697,10 +697,6 @@ class Sheet {
 
     line.points([0, 0, clientRect.width, 0]);
 
-    if (this.merger.getIsCellMerged(id)) {
-      line.y(line.y() - mergedRectOffset);
-    }
-
     generator.next();
   }
 
@@ -718,10 +714,6 @@ class Sheet {
     const { line, clientRect } = generator.next().value!;
 
     line.points([0, 0, 0, clientRect.height]);
-
-    if (this.merger.getIsCellMerged(id)) {
-      line.x(line.x() - mergedRectOffset);
-    }
 
     generator.next();
   }

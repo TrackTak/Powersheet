@@ -39,3 +39,19 @@ $iconSize: 18px;
   left: -7 * $iconSize;
   top: -3 * $iconSize;
 }
+
+@mixin group {
+  display: flex;
+}
+
+@mixin buttonAction {
+  padding: 10px 5px;
+  padding-left: 10px;
+  text-align: left;
+}
+
+@mixin tippyContentNoPadding {
+  :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
+    padding: 0;
+  }
+}

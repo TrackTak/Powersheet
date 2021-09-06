@@ -22,9 +22,13 @@ import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
 import Toolbar from '../../toolbar/Toolbar';
-import { BorderIconName, borderTypes } from '../../toolbar/htmlElementHelpers';
-import FormulaBar from '../../formulaBar/FormulaBar';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import {
+  BorderIconName,
+  borderTypes,
+} from '../../toolbar/toolbarHtmlElementHelpers';
+import FormulaBar from '../../formulaBar/FormulaBar';
+import RightClickMenu from './RightClickMenu';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -365,6 +369,7 @@ class Sheet {
   cellEditor: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  rightClickMenu?: RightClickMenu;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -483,6 +488,7 @@ class Sheet {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
     this.cellEditor = new CellEditor(this);
+    this.rightClickMenu = new RightClickMenu(this);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }

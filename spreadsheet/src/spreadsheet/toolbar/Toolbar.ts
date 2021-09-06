@@ -12,7 +12,6 @@ import {
   createColorPickerContent,
   createDropdownIconButton,
   createFunctionDropdownContent,
-  createGroup,
   createHorizontalAlignContent,
   createIconButton,
   createTooltip,
@@ -23,7 +22,8 @@ import {
   toggleIconNames,
   toolbarPrefix,
   VerticalAlignName,
-} from './htmlElementHelpers';
+} from './toolbarHtmlElementHelpers';
+import { createGroup } from '../htmlElementHelpers';
 import { isNil } from 'lodash';
 
 export interface IToolbarActionGroups {
@@ -286,7 +286,7 @@ class Toolbar {
     ];
 
     this.toolbarActionGroups.forEach(({ elements }) => {
-      const group = createGroup(elements);
+      const group = createGroup(elements, styles.group, toolbarPrefix);
 
       this.toolbarEl.appendChild(group);
     });

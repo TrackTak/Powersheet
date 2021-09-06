@@ -336,11 +336,11 @@ class Toolbar {
       }
       case 'freeze': {
         if (this.iconElementsMap.freeze.active) {
-          sheet.setFrozenCells({});
+          sheet.data.frozenCells = {};
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.setFrozenCells({ row: row.x, col: col.x });
+          sheet.data.frozenCells = { row: row.x, col: col.x };
         }
 
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());

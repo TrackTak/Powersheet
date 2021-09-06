@@ -973,13 +973,6 @@ class Sheet {
     }
   }
 
-  setFrozenCells(frozenCells: IFrozenCells) {
-    this.data.frozenCells = frozenCells;
-
-    // this.row.drawViewport();
-    // this.col.drawViewport();
-  }
-
   drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
     const cell = this.convertFromCellIdToCell(id);
 

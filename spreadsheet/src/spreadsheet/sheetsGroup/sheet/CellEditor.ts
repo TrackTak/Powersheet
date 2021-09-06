@@ -65,7 +65,7 @@ class CellEditor {
   };
 
   private showCellEditor = () => {
-    const selectedCell = this.sheet.selector.getSelectedCell();
+    const selectedCell = this.sheet.selector.selectedFirstCell!;
 
     this.setTextAreaPosition(selectedCell.getClientRect());
     this.textArea.style.display = 'initial';
@@ -91,7 +91,7 @@ class CellEditor {
 
   private showCellTooltip = () => {
     if (this.isEditing) {
-      const selectedCell = this.sheet.selector.getSelectedCell();
+      const selectedCell = this.sheet.selector.selectedFirstCell!;
       const row = selectedCell.attrs.row;
       const col = selectedCell.attrs.col;
       const rowText = this.sheet.row.getHeaderText(row.x);

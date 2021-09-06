@@ -314,6 +314,7 @@ class Toolbar {
 
   setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.getFocusedSheet();
+
     switch (name) {
       case 'backgroundColor': {
         if (!value) break;
@@ -385,6 +386,10 @@ class Toolbar {
         sheet.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
+    }
+
+    if (name !== 'backgroundColor') {
+      sheet.updateViewport();
     }
   };
 

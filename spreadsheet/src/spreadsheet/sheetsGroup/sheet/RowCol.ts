@@ -43,6 +43,14 @@ export type HeaderGroupId = number;
 
 export type RowColGroupId = number;
 
+export const getGridLineFromRowColGroup = (group: Group) => {
+  const gridLine = group.children?.find(
+    (x) => x.attrs.type === 'gridLine'
+  ) as Line;
+
+  return gridLine;
+};
+
 class RowCol {
   resizer: Resizer;
   scrollBar: ScrollBar;
@@ -81,6 +89,7 @@ class RowCol {
       group: new Group(),
       gridLine: new Line({
         ...this.sheet.styles.gridLine,
+        type: 'gridLine',
       }),
     };
     if (this.isCol) {
@@ -488,7 +497,7 @@ class RowCol {
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const lineConfig = {
+    const lineConfig: LineConfig = {
       ...this.getLineConfig(sheetSize),
       [this.functions.axis]: size,
     };

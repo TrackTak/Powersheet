@@ -5,23 +5,23 @@ import Sheet, {
   getCellId,
   getCellRectFromCell,
   IMergedCells,
+  makeShapeCrisp,
 } from './Sheet';
 import { iterateSelection } from './Selector';
 import { IRect } from 'konva/lib/types';
 import { parseColor } from 'a-color-picker';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
-import { performanceProperties } from './styles';
 
 export type AssociatedMergedCellId = CellId;
 
 const defaultCellFill = 'white';
 
 class Merger {
-  associatedMergedCellMap: Map<AssociatedMergedCellId, Cell>;
+  associatedMergedCellIdMap: Map<AssociatedMergedCellId, CellId>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.associatedMergedCellMap = new Map();
+    this.associatedMergedCellIdMap = new Map();
   }
 
   updateMergedCells() {
@@ -37,6 +37,8 @@ class Merger {
         this.mergeCells(mergedCells, existingTopLeftCell);
       }
     });
+
+    // this.removeGridLinesForMergedCells();
   }
 
   addMergeCells(mergedCells: IMergedCells) {
@@ -55,7 +57,7 @@ class Merger {
 
   private mergeCells(mergedCells: IMergedCells, existingTopLeftCell?: Cell) {
     const { row, col } = mergedCells;
-    const id = getCellId(row.x, col.x);
+    const mergedCellId = getCellId(row.x, col.x);
     const startRow = this.sheet.row.rowColGroupMap.get(row.x);
     const startCol = this.sheet.col.rowColGroupMap.get(col.x);
 
@@ -70,8 +72,6 @@ class Merger {
       return (prev += curr.height());
     }, 0);
 
-    const gridLineStrokeWidth = this.sheet.styles.gridLine.strokeWidth!;
-
     const rect: IRect = {
       x: startCol!.x(),
       y: startRow!.y(),
@@ -85,29 +85,56 @@ class Merger {
       existingTopLeftCellRect = getCellRectFromCell(existingTopLeftCell);
     }
 
-    const cell = this.sheet.getNewCell(id, rect, row, col);
+    const mergedCell = this.sheet.getNewCell(mergedCellId, rect, row, col);
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
         const id = getCellId(ri, ci);
 
-        this.associatedMergedCellMap.set(id, cell);
+        this.associatedMergedCellIdMap.set(id, mergedCellId);
         this.sheet.destroyCell(id);
       }
     }
 
-    // const colLine = this.sheet.col.shapes.gridLine.clone();
-    // const rowLine = this.sheet.row.shapes.gridLine.clone();
+    const colLineConfig: LineConfig = {
+      x: width,
+      points: [0, 0, 0, height],
+    };
+    const rowLineConfig: LineConfig = {
+      y: height,
+      points: [0, 0, width, 0],
+    };
 
-    // colLine.x(width);
-    // rowLine.y(height);
+    const colLine = this.sheet.col.shapes.gridLine.clone(colLineConfig) as Line;
+    const rowLine = this.sheet.row.shapes.gridLine.clone(rowLineConfig) as Line;
 
-    this.sheet.setCellStyle(id, {
+    makeShapeCrisp(colLine);
+    makeShapeCrisp(rowLine);
+
+    mergedCell.add(colLine, rowLine);
+
+    this.sheet.cellsMap.set(mergedCellId, mergedCell);
+
+    this.resetCellStylesForAssociatedCells(mergedCell);
+
+    this.sheet.setCellStyle(mergedCellId, {
       backgroundColor: existingTopLeftCellRect?.fill() ?? defaultCellFill,
     });
   }
 
-  private setMergedCellPropertiesToCells(mergedCell: Cell) {
+  private resetCellStylesForAssociatedCells(mergedCell: Cell) {
+    for (const ri of iterateSelection(mergedCell.attrs.row)) {
+      for (const ci of iterateSelection(mergedCell.attrs.col)) {
+        const id = getCellId(ri, ci);
+
+        if (id !== mergedCell.id()) {
+          delete this.sheet.data.cellStyles[id];
+        }
+      }
+    }
+  }
+
+  private setMergedCellStylesToCells(mergedCell: Cell) {
     const id = mergedCell.id();
     const outFormat = 'rgbacss';
     const cellStyle = this.sheet.data.cellStyles[id];
@@ -138,7 +165,7 @@ class Merger {
         for (const ci of iterateSelection(mergedCells.col)) {
           const id = getCellId(ri, ci);
 
-          this.associatedMergedCellMap.delete(id);
+          this.associatedMergedCellIdMap.delete(id);
         }
       }
     }
@@ -175,7 +202,7 @@ class Merger {
   }
 
   getIsCellMerged(id: CellId) {
-    return !!this.associatedMergedCellMap.get(id ?? '');
+    return this.associatedMergedCellIdMap.has(id ?? '');
   }
 
   unMergeCells(mergedCells: IMergedCells) {
@@ -192,7 +219,7 @@ class Merger {
       );
 
       if (areMergedCellsOverlapping && mergedCell) {
-        this.setMergedCellPropertiesToCells(mergedCell);
+        this.setMergedCellStylesToCells(mergedCell);
       }
     });
 

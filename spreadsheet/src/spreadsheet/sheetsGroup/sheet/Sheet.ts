@@ -453,7 +453,7 @@ class Sheet {
       });
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(cellGroup, mergedCellGroup, gridLineGroup);
+      sheetGroup.add(cellGroup, gridLineGroup, mergedCellGroup);
       scrollGroup.add(sheetGroup, headerGroup);
     });
 
@@ -827,10 +827,17 @@ class Sheet {
   }
 
   private getConvertedMergedCell(mergedCell: Cell) {
-    const rect = mergedCell.getClientRect();
+    const rect = getCellRectFromCell(mergedCell);
+    // We don't use getClientRect as we don't want the
+    // mergedCells gridLines taken into account
     const cell = this.getNewCell(
       mergedCell.id(),
-      rect,
+      {
+        x: mergedCell.x(),
+        y: mergedCell.y(),
+        width: rect.width(),
+        height: rect.height(),
+      },
       mergedCell.attrs.row,
       mergedCell.attrs.col
     );
@@ -840,9 +847,11 @@ class Sheet {
 
   convertFromRowColToCell(rowGroup: Group, colGroup: Group) {
     const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-    const mergedCell = this.merger.associatedMergedCellMap.get(id);
+    const mergedCellId = this.merger.associatedMergedCellIdMap.get(id);
 
-    if (mergedCell) {
+    if (mergedCellId) {
+      const mergedCell = this.cellsMap.get(mergedCellId)!;
+
       return this.getConvertedMergedCell(mergedCell);
     }
 
@@ -874,11 +883,11 @@ class Sheet {
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCell = this.merger.associatedMergedCellMap.get(id);
+        const mergedCellId = this.merger.associatedMergedCellIdMap.get(id);
         let cell;
 
-        if (mergedCell) {
-          const mergedCellId = mergedCell.id();
+        if (mergedCellId) {
+          const mergedCell = this.cellsMap.get(mergedCellId)!;
 
           if (!mergedCellsAddedMap?.get(mergedCellId)) {
             cell = this.getConvertedMergedCell(mergedCell);
@@ -917,10 +926,12 @@ class Sheet {
     for (const ri of iterateSelection(rowIndexes)) {
       for (const ci of iterateSelection(colIndexes)) {
         const existingCellId = getCellId(ri, ci);
-        const mergedCell =
-          this.merger.associatedMergedCellMap.get(existingCellId);
+        const mergedCellId =
+          this.merger.associatedMergedCellIdMap.get(existingCellId);
 
-        if (mergedCell) {
+        if (mergedCellId) {
+          const mergedCell = this.cellsMap.get(mergedCellId)!;
+
           const row = mergedCell.attrs.row;
           const col = mergedCell.attrs.col;
 
@@ -982,6 +993,7 @@ class Sheet {
 
   drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
     const cell = this.convertFromCellIdToCell(id);
+
     const clientRect = cell.getClientRect({
       skipStroke: true,
     });
@@ -1048,6 +1060,13 @@ class Sheet {
     this.merger.updateMergedCells();
     this.updateCells();
     this.selector.updateSelectedCells();
+
+    const mergedCells = getMergedCellGroupFromScrollGroup(
+      this.scrollGroups.main
+    );
+
+    console.log(mergedCells);
+    console.log(this.data.cellStyles);
   }
 
   drawNextItems() {

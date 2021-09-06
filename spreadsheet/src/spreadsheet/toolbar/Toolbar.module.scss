@@ -145,7 +145,8 @@
     left: -11 * $iconSize;
     top: 0;
   }
-  &.alignLeft {
+  &.alignLeft,
+  &.horizontalAlign {
     left: -12 * $iconSize;
     top: 0;
   }
@@ -161,7 +162,8 @@
     left: -1 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.alignMiddle {
+  &.alignMiddle,
+  &.verticalAlign {
     left: -2 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -177,7 +179,7 @@
     left: -5 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.function {
+  &.functions {
     left: -6 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -209,7 +211,8 @@
     left: -13 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.borderAll {
+  &.borderAll,
+  &.borders {
     left: 0;
     top: -2 * $iconSize;
   }

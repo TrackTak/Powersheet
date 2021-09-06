@@ -7,15 +7,22 @@ import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import Sheet, {
+  Cell,
   centerRectTwoInRectOne,
+  getGridLineGroupFromScrollGroup,
+  getHeaderGroupFromScrollGroup,
   hasOverlap,
   ICustomSizes,
   ISheetViewportPosition,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
+  iterateXToY,
+  makeShapeCrisp,
+  offsetShapeValue,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
+import { iterateSelection } from './Selector';
 
 interface IShapes {
   group: Group;
@@ -35,6 +42,14 @@ export interface IRowColFunctions {
 export type HeaderGroupId = number;
 
 export type RowColGroupId = number;
+
+export const getGridLineFromRowColGroup = (group: Group) => {
+  const gridLine = group.children?.find(
+    (x) => x.attrs.type === 'gridLine'
+  ) as Line;
+
+  return gridLine;
+};
 
 class RowCol {
   resizer: Resizer;
@@ -74,6 +89,7 @@ class RowCol {
       group: new Group(),
       gridLine: new Line({
         ...this.sheet.styles.gridLine,
+        type: 'gridLine',
       }),
     };
     if (this.isCol) {
@@ -142,18 +158,8 @@ class RowCol {
       this.functions
     );
 
-    this.resizer = new Resizer(
-      sheet,
-      this.type,
-      this.isCol,
-      this.functions,
-      this.headerGroupMap
-    );
+    this.resizer = new Resizer(sheet, this.type, this.isCol, this.functions);
 
-    this.shapes.group.cache({
-      ...this.sheet.getViewportVector(),
-      ...this.sheet.sheetViewportDimensions,
-    });
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
 
@@ -168,7 +174,7 @@ class RowCol {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
     const defaultSize = this.sheet.options[this.type].defaultSize;
-    const sizes = this.sheet.options[this.type].sizes;
+    const sizes = this.sheet.data[this.type].sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -212,7 +218,7 @@ class RowCol {
     this.scrollBar.destroy();
   }
 
-  *updateViewport() {
+  *drawNextItems() {
     const generator = {
       x: iteratePreviousDownToCurrent(
         this.previousSheetViewportPosition.x,
@@ -253,6 +259,32 @@ class RowCol {
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
 
+  convertFromCellsToRange(cells: Cell[]) {
+    const getMin = () => Math.min(...cells.map((o) => o.attrs[this.type].x));
+    const getMax = () => Math.max(...cells.map((o) => o.attrs[this.type].y));
+
+    const vector = {
+      x: getMin(),
+      y: getMax(),
+    };
+
+    return vector;
+  }
+
+  convertFromRangeToGroups(vector: Vector2d) {
+    const groups: Group[] = [];
+
+    for (const index of iterateSelection(vector)) {
+      const group = this.sheet[this.type].rowColGroupMap.get(index);
+
+      if (group) {
+        groups.push(group);
+      }
+    }
+
+    return groups;
+  }
+
   isNodeOutsideSheet = (node: Node) => {
     const isOverlapping = hasOverlap(node.getClientRect(), {
       ...this.sheet.getViewportVector(),
@@ -281,7 +313,7 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.sheet.options[this.type].sizes);
+    const sizes = Object.values(this.sheet.data[this.type].sizes);
 
     const totalSizeDifference = sizes.reduce((currentSize, size) => {
       return size - this.sheet.options[this.type].defaultSize + currentSize;
@@ -296,10 +328,19 @@ class RowCol {
 
   getSize(index: number) {
     const size =
-      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.data[this.type].sizes[index] ??
       this.sheet.options[this.type].defaultSize;
 
     return size;
+  }
+
+  updateViewport() {
+    for (const index of iterateXToY(
+      this.sheet[this.type].sheetViewportPosition
+    )) {
+      this.sheet[this.type].draw(index);
+    }
+    this.scrollBar.updateCustomSizePositions();
   }
 
   getIndexesBetweenVectors(position: Vector2d) {
@@ -337,13 +378,13 @@ class RowCol {
   }
 
   getIsFrozen(index: number) {
-    return isNil(this.sheet.options.frozenCells[this.type])
+    return isNil(this.sheet.data.frozenCells[this.type])
       ? false
-      : index <= this.sheet.options.frozenCells[this.type]!;
+      : index <= this.sheet.data.frozenCells[this.type]!;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.sheet.options.frozenCells[this.type];
+    return index === this.sheet.data.frozenCells[this.type];
   }
 
   draw(index: number, drawingAtX = false) {
@@ -383,12 +424,24 @@ class RowCol {
     this.headerGroupMap.set(index, headerGroup);
 
     if (isFrozen) {
-      this.sheet.scrollGroups.xySticky.add(headerGroup);
+      const xyStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky
+      );
+
+      xyStickyHeaderGroup.add(headerGroup);
     } else {
       if (this.isCol) {
-        this.sheet.scrollGroups.ySticky.add(headerGroup);
+        const yStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.ySticky
+        );
+
+        yStickyHeaderGroup.add(headerGroup);
       } else {
-        this.sheet.scrollGroups.xSticky.add(headerGroup);
+        const xStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.xSticky
+        );
+
+        xStickyHeaderGroup.add(headerGroup);
       }
     }
   }
@@ -428,7 +481,9 @@ class RowCol {
     const groupConfig: ShapeConfig = {
       index,
       [this.functions.size]: size,
-      [this.functions.axis]: headerGroup[this.functions.axis](),
+      [this.functions.axis]:
+        headerGroup[this.functions.axis]() -
+        this.sheet.getViewportVector()[this.functions.axis],
     };
 
     const group = this.shapes.group.clone(groupConfig) as Group;
@@ -442,22 +497,32 @@ class RowCol {
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const lineConfig = this.getLineConfig(sheetSize);
-    const gridLine = line.clone({
-      ...lineConfig,
+    const lineConfig: LineConfig = {
+      ...this.getLineConfig(sheetSize),
       [this.functions.axis]: size,
-    }) as Line;
+    };
+    const gridLine = line.clone(lineConfig) as Line;
+
+    makeShapeCrisp(gridLine);
 
     group.add(gridLine);
 
     this.rowColGroupMap.set(index, group);
 
     if (isFrozen) {
-      this.sheet.scrollGroups.xySticky.add(group);
+      const xyStickyGridLineGroup = getGridLineGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky
+      );
+
+      xyStickyGridLineGroup.add(group);
 
       group.moveToBottom();
     } else {
-      this.sheet.scrollGroups.main.add(group);
+      const mainGridLineGroup = getGridLineGroupFromScrollGroup(
+        this.sheet.scrollGroups.main
+      );
+
+      mainGridLineGroup.add(group);
     }
   }
 
@@ -467,6 +532,8 @@ class RowCol {
       [this.functions.axis]: size,
     };
     const clone = this.resizer.shapes.resizeLine.clone(lineConfig) as Line;
+
+    clone[this.functions.axis](offsetShapeValue(clone[this.functions.axis]()));
 
     return clone;
   }

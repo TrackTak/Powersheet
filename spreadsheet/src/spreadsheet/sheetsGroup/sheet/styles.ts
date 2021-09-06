@@ -94,6 +94,7 @@ export const defaultStyles: IStyles = {
   },
   resizeLine: {
     ...sharedStyles.gridLine,
+    stroke: '#8a8a8a',
     hitStrokeWidth: 15,
     listening: true,
     draggable: true,
@@ -136,7 +137,6 @@ export const defaultStyles: IStyles = {
   selection: {
     ...sharedStyles.selection,
     strokeWidth: 0,
-    opacity: 0.1,
-    fill: '#0e65eb',
+    fill: 'rgb(14, 101, 235, 0.1)',
   },
 };

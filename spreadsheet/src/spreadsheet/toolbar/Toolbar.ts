@@ -3,11 +3,9 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import EventEmitter from 'eventemitter3';
 import { IOptions } from '../options';
-import events from '../events';
-import Sheet, { Cell } from '../sheetsGroup/sheet/Sheet';
+import Sheet, { Cell, IData } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
-  BorderIconName,
   ColorPickerIconName,
   createBordersContent,
   createColorBar,
@@ -26,6 +24,7 @@ import {
   VerticalAlignName,
 } from './toolbarHtmlElementHelpers';
 import { createGroup } from '../htmlElementHelpers';
+import { isNil } from 'lodash';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -34,6 +33,7 @@ export interface IToolbarActionGroups {
 interface IConstructor {
   registeredFunctionNames: string[];
   options: IOptions;
+  data: IData;
   eventEmitter: EventEmitter;
 }
 
@@ -49,6 +49,7 @@ interface IIconElements {
 interface IDropdownElements {
   arrowContainer?: HTMLSpanElement;
   arrowIcon?: HTMLElement;
+  tooltip: HTMLSpanElement;
   dropdownContent: HTMLDivElement;
 }
 
@@ -60,24 +61,6 @@ interface IColorPickerElements {
 
 interface IBorderElements {
   borderGroups: [HTMLDivElement, HTMLDivElement];
-  firstBordersRow: [
-    IIconElements,
-    IIconElements,
-    IIconElements,
-    IIconElements,
-    IIconElements
-  ];
-  secondBordersRow: [
-    IIconElements,
-    IIconElements,
-    IIconElements,
-    IIconElements,
-    IIconElements
-  ];
-}
-
-interface IAlignElements {
-  aligns: [IIconElements, IIconElements, IIconElements];
 }
 
 interface IFunctionElement {
@@ -89,21 +72,21 @@ class Toolbar {
   iconElementsMap: Record<IconElementsName, IIconElements>;
   dropdownIconMap: Record<DropdownIconName, IDropdownElements>;
   colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
-  borderElementsMap: Record<BorderIconName, IBorderElements>;
-  horizontalAlignElementsMap: Record<HorizontalAlignName, IAlignElements>;
-  verticalAlignElementsMap: Record<VerticalAlignName, IAlignElements>;
+  borderElements: IBorderElements;
   functionElement: IFunctionElement;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
   registeredFunctionNames: string[];
   options: IOptions;
+  data: IData;
   eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
 
   constructor(params: IConstructor) {
     this.registeredFunctionNames = params.registeredFunctionNames;
     this.options = params.options;
+    this.data = params.data;
     this.eventEmitter = params.eventEmitter;
     this.focusedSheet = null;
 
@@ -116,28 +99,31 @@ class Toolbar {
       ColorPickerIconName,
       IColorPickerElements
     >;
-    this.borderElementsMap = {} as Record<BorderIconName, IBorderElements>;
-    this.horizontalAlignElementsMap = {} as Record<
-      HorizontalAlignName,
-      IAlignElements
-    >;
-    this.verticalAlignElementsMap = {} as Record<
-      VerticalAlignName,
-      IAlignElements
-    >;
+    this.borderElements = {} as IBorderElements;
     this.functionElement = {} as IFunctionElement;
 
     toggleIconNames.forEach((name) => {
       switch (name) {
         case 'backgroundColor': {
           this.setDropdownColorPicker(name);
+
+          this.colorPickerElementsMap.backgroundColor.picker.on(
+            'change',
+            (_, color) => {
+              this.setValue(name, color);
+            }
+          );
           break;
         }
         case 'color': {
           this.setDropdownColorPicker(name);
+
+          this.colorPickerElementsMap.color.picker.on('change', (_, color) => {
+            this.setValue(name, color);
+          });
           break;
         }
-        case 'borderAll': {
+        case 'borders': {
           const {
             dropdownContent,
             borderGroups,
@@ -147,34 +133,53 @@ class Toolbar {
 
           this.setDropdownContent(name, dropdownContent, true);
 
-          this.borderElementsMap[name] = {
+          this.borderElements = {
             borderGroups,
-            firstBordersRow,
-            secondBordersRow,
           };
+
+          const setBorders = (bordersRow: Object) => {
+            Object.keys(bordersRow).forEach((key) => {
+              const name = key as IconElementsName;
+              // @ts-ignore
+              const value = bordersRow[key];
+
+              this.iconElementsMap[name] = value;
+            });
+          };
+
+          setBorders(firstBordersRow);
+          setBorders(secondBordersRow);
+
           break;
         }
-        case 'alignLeft': {
+        case 'horizontalAlign': {
           const { dropdownContent, aligns } = createHorizontalAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
-          this.horizontalAlignElementsMap[name] = {
-            aligns,
-          };
+          Object.keys(aligns).forEach((key) => {
+            const name = key as HorizontalAlignName;
+            const value = aligns[name];
+
+            this.iconElementsMap[name] = value;
+          });
+
           break;
         }
-        case 'alignMiddle': {
+        case 'verticalAlign': {
           const { dropdownContent, aligns } = createVerticalAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
-          this.verticalAlignElementsMap[name] = {
-            aligns,
-          };
+          Object.keys(aligns).forEach((key) => {
+            const name = key as VerticalAlignName;
+            const value = aligns[name];
+
+            this.iconElementsMap[name] = value;
+          });
           break;
         }
-        case 'function': {
+        case 'functions': {
           const { dropdownContent, registeredFunctionButtons } =
             createFunctionDropdownContent(this.registeredFunctionNames);
 
@@ -223,6 +228,8 @@ class Toolbar {
       arrow: false,
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
+
+        this.focusedSheet?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -257,21 +264,21 @@ class Toolbar {
       {
         elements: [
           icons.backgroundColor.buttonContainer,
-          icons.borderAll.buttonContainer,
+          icons.borders.buttonContainer,
           icons.merge.buttonContainer,
         ],
       },
       {
         elements: [
-          icons.alignLeft.buttonContainer,
-          icons.alignMiddle.buttonContainer,
+          icons.horizontalAlign.buttonContainer,
+          icons.verticalAlign.buttonContainer,
           icons.textWrap.buttonContainer,
         ],
       },
       {
         elements: [
           icons.freeze.buttonContainer,
-          icons.function.buttonContainer,
+          icons.functions.buttonContainer,
           icons.formula.buttonContainer,
         ],
       },
@@ -286,13 +293,15 @@ class Toolbar {
       this.toolbarEl.appendChild(group);
     });
 
-    this.iconElementsMap.merge.button.addEventListener(
-      'click',
-      this.onMergeClick
-    );
+    Object.keys(this.iconElementsMap).forEach((key) => {
+      const name = key as IconElementsName;
 
-    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
-    this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
+      this.iconElementsMap[name].button.addEventListener('click', () => {
+        this.setValue(name);
+      });
+    });
+
+    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
   }
 
   getFocusedSheet() {
@@ -303,31 +312,100 @@ class Toolbar {
     return this.focusedSheet;
   }
 
-  onMergeClick = () => {
+  setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.getFocusedSheet();
 
-    if (this.iconElementsMap.merge.active) {
-      sheet.merger.unMergeSelectedCells();
+    switch (name) {
+      case 'backgroundColor': {
+        if (!value) break;
 
-      this.setMergedState(sheet.selector.selectedCells);
+        sheet.selector.selectedCells.forEach((cell) => {
+          sheet.setCellBackgroundColor(cell.id(), value);
+        });
+        break;
+      }
+      case 'merge': {
+        if (this.iconElementsMap.merge.active) {
+          sheet.merger.unMergeSelectedCells();
+        } else if (!this.iconElementsMap.merge.button.disabled) {
+          sheet.merger.mergeSelectedCells();
+        }
+        this.setMergedState(sheet.selector.selectedCells);
 
-      return;
+        break;
+      }
+      case 'freeze': {
+        if (this.iconElementsMap.freeze.active) {
+          sheet.data.frozenCells = {};
+        } else {
+          const { row, col } = sheet.selector.selectedFirstCell?.attrs;
+
+          sheet.data.frozenCells = { row: row.x, col: col.x };
+        }
+
+        this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+        break;
+      }
+      case 'borderBottom': {
+        sheet.setBottomBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderRight': {
+        sheet.setRightBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderTop': {
+        sheet.setTopBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderLeft': {
+        sheet.setLeftBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderVertical': {
+        sheet.setVerticalBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderHorizontal': {
+        sheet.setHorizontalBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderInside': {
+        sheet.setInsideBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderAll': {
+        sheet.setAllBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderNone': {
+        sheet.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        break;
+      }
+      case 'borderOutside': {
+        sheet.setOutsideBorders(sheet.selector.selectedCells);
+        break;
+      }
     }
 
-    if (!this.iconElementsMap.merge.button.disabled) {
-      this.focusedSheet?.merger.mergeSelectedCells();
+    if (name !== 'backgroundColor') {
+      sheet.updateViewport();
     }
   };
 
-  onStartSelection = (sheet: Sheet, selectedCell: Cell) => {
+  setFocusedSheet(sheet: Sheet) {
     this.focusedSheet = sheet;
+  }
 
-    const selectedCellId = selectedCell.id();
+  setToolbarState = () => {
+    const sheet = this.getFocusedSheet();
+    const selectedCells = sheet.selector.selectedCells;
+    const firstSelectedCell = sheet.selector.selectedFirstCell;
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellsMap.has(selectedCellId)) {
-      const cell = sheet.cellsMap.get(selectedCellId)!;
+    if (sheet.cellsMap.has(firstSelectedCell!.id())) {
+      const cell = sheet.cellsMap.get(firstSelectedCell!.id())!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;
@@ -339,16 +417,13 @@ class Toolbar {
         'white';
     }
 
-    this.setMergedState([selectedCell]);
-  };
-
-  onMoveSelection = (selectedCells: Cell[]) => {
     this.setMergedState(selectedCells);
   };
 
   setMergedState(selectedCells: Cell[]) {
-    const isActive =
-      selectedCells.length === 1 && selectedCells[0].attrs.isMerged;
+    const cell = selectedCells[0];
+    const isMerged = this.getFocusedSheet().merger.getIsCellMerged(cell.id());
+    const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {
       this.iconElementsMap.merge.button.disabled = false;
@@ -360,9 +435,6 @@ class Toolbar {
   }
 
   destroy() {
-    this.eventEmitter.off(events.selector.startSelection);
-    this.eventEmitter.off(events.selector.moveSelection);
-
     this.toolbarEl.remove();
     this.tooltip.destroy();
   }
@@ -372,15 +444,14 @@ class Toolbar {
     dropdownContent: HTMLDivElement,
     createArrow?: boolean
   ) {
-    const { iconButtonValues, arrowIconValues } = createDropdownIconButton(
-      name,
-      createArrow
-    );
+    const { iconButtonValues, arrowIconValues, tooltip } =
+      createDropdownIconButton(name, createArrow);
 
     this.iconElementsMap[name] = iconButtonValues;
 
     this.dropdownIconMap[name] = {
       dropdownContent,
+      tooltip,
       ...arrowIconValues,
     };
   }
@@ -392,10 +463,6 @@ class Toolbar {
 
     const colorBar = createColorBar(picker);
 
-    picker.on('change', (_, color) => {
-      this.eventEmitter.emit(events.toolbar.change, name, color);
-    });
-
     this.iconElementsMap[name].button.appendChild(colorBar);
 
     this.colorPickerElementsMap[name] = {
@@ -403,6 +470,12 @@ class Toolbar {
       picker,
       colorPicker,
     };
+  }
+
+  isFreezeActive() {
+    return (
+      !isNil(this.data.frozenCells.col) && !isNil(this.data.frozenCells.row)
+    );
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

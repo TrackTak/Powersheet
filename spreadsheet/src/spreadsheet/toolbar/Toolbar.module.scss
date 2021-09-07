@@ -1,6 +1,4 @@
-@import '../mixins.scss';
-
-$iconSize: 18px;
+@import '../styles.scss';
 
 .toolbar {
   display: flex;
@@ -8,16 +6,12 @@ $iconSize: 18px;
   background: #f5f6f7;
   border-bottom: 1px solid #e0e2e4;
 
-  :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
-    padding: 0;
-  }
+  @include tippyContentNoPadding;
 }
 
 .functionName {
   @include button();
-  padding: 10px 5px;
-  padding-left: 10px;
-  text-align: left;
+  @include buttonAction;
 }
 
 .dropdownContent {
@@ -43,14 +37,14 @@ $iconSize: 18px;
 }
 
 .group {
-  display: flex;
+  @include group;
   &:after {
     content: '';
-    border-right: 1px solid #e0e2e4;
+    background-color: #e0e2e4;
     margin-left: 6px;
-    margin-right: 5px;
-    height: 18px;
-    align-self: center;
+    margin-right: 6px;
+    display: block;
+    width: 1px;
   }
 
   &:last-of-type:after {
@@ -97,19 +91,11 @@ $iconSize: 18px;
 }
 
 .iconContainer {
-  position: relative;
-  overflow: hidden;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
+  @include iconContainer;
 }
 
 .icon {
-  background-image: url('./icons.svg');
-  position: absolute;
-  width: 262px;
-  height: 444px;
-  opacity: 0.65;
+  @include icons;
 
   &.undo {
     left: 0;
@@ -159,7 +145,8 @@ $iconSize: 18px;
     left: -11 * $iconSize;
     top: 0;
   }
-  &.alignLeft {
+  &.alignLeft,
+  &.horizontalAlign {
     left: -12 * $iconSize;
     top: 0;
   }
@@ -175,7 +162,8 @@ $iconSize: 18px;
     left: -1 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.alignMiddle {
+  &.alignMiddle,
+  &.verticalAlign {
     left: -2 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -191,7 +179,7 @@ $iconSize: 18px;
     left: -5 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.function {
+  &.functions {
     left: -6 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -223,7 +211,8 @@ $iconSize: 18px;
     left: -13 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.borderAll {
+  &.borderAll,
+  &.borders {
     left: 0;
     top: -2 * $iconSize;
   }
@@ -296,7 +285,6 @@ $iconSize: 18px;
     top: -3 * $iconSize;
   }
   &.formula {
-    left: -7 * $iconSize;
-    top: -3 * $iconSize;
+    @include formula;
   }
 }

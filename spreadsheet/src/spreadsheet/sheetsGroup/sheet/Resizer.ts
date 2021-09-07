@@ -1,11 +1,10 @@
-import { Group } from 'konva/lib/Group';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet from './Sheet';
-import { HeaderGroupId, IRowColFunctions, RowColType } from './RowCol';
+import Sheet, { makeShapeCrisp } from './Sheet';
+import { IRowColFunctions, RowColType } from './RowCol';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -22,14 +21,12 @@ class Resizer {
     private sheet: Sheet,
     private type: RowColType,
     private isCol: boolean,
-    private functions: IRowColFunctions,
-    private headerGroupMap: Map<HeaderGroupId, Group>
+    private functions: IRowColFunctions
   ) {
     this.sheet = sheet;
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;
-    this.headerGroupMap = headerGroupMap;
 
     this.resizeStartPos = {
       x: 0,
@@ -42,9 +39,7 @@ class Resizer {
     };
 
     this.shapes = {
-      resizeMarker: new Rect({
-        ...this.sheet.getViewportVector(),
-      }),
+      resizeMarker: new Rect(),
       resizeGuideLine: new Line({
         ...this.sheet.styles.resizeGuideLine,
       }),
@@ -82,7 +77,6 @@ class Resizer {
     this.shapes.resizeLine.cache();
 
     this.sheet.layers.mainLayer.add(this.shapes.resizeMarker);
-    this.sheet.layers.mainLayer.add(this.shapes.resizeLine);
     this.sheet.layers.mainLayer.add(this.shapes.resizeGuideLine);
   }
 
@@ -114,16 +108,21 @@ class Resizer {
     let x = 0;
     let y = 0;
 
+    const clientRect = target.getClientRect();
+
     if (this.isCol) {
-      x = target.parent!.x() + target.x();
+      x = clientRect.x;
       y = this.sheet.layers.mainLayer.y() * -1;
     } else {
       x = this.sheet.layers.mainLayer.x() * -1;
-      y = target.parent!.y() + target.y();
+      y = clientRect.y;
     }
 
     this.shapes.resizeGuideLine.x(x);
     this.shapes.resizeGuideLine.y(y);
+
+    makeShapeCrisp(this.shapes.resizeGuideLine);
+
     this.shapes.resizeGuideLine.show();
   }
 
@@ -133,24 +132,12 @@ class Resizer {
 
   resize(index: number, newSize: number) {
     const size =
-      this.sheet.options[this.type].sizes[index] ??
+      this.sheet.data[this.type].sizes[index] ??
       this.sheet.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sheet.options[this.type].sizes[index] = newSize;
-
-      this.sheet[this.type].draw(index);
-
-      for (let i = index + 1; i < this.headerGroupMap.size; i++) {
-        const item = this.headerGroupMap.get(i);
-
-        if (item) {
-          const newAxis = item[this.functions.axis]() + sizeChange;
-
-          item[this.functions.axis](newAxis);
-        }
-      }
+      this.sheet.data[this.type].sizes[index] = newSize;
     }
   }
 
@@ -215,19 +202,7 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.sheet.updateSheetDimensions();
-    this.sheet.selector.removeSelectedCells();
-    this.sheet[this.type].scrollBar.updateCustomSizePositions();
-
-    for (
-      let index = this.sheet[this.type].sheetViewportPosition.x;
-      index < this.sheet[this.type].sheetViewportPosition.y;
-      index++
-    ) {
-      this.sheet[this.type].draw(index);
-    }
-
-    this.sheet.merger.updateMergedCells();
+    this.sheet.updateViewport();
 
     this.sheet.emit(events.resize[this.type].end, e, index, axis);
   };

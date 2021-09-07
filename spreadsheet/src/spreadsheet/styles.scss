@@ -1,0 +1,57 @@
+$iconSize: 18px;
+
+@mixin button {
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+
+  &:global(.active) {
+    background-color: #e6f4ea;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.38;
+  }
+}
+
+@mixin iconContainer {
+  position: relative;
+  overflow: hidden;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+}
+
+@mixin icons {
+  position: absolute;
+  width: 262px;
+  height: 444px;
+  opacity: 0.65;
+  background-image: url('../../icons/icons.svg');
+}
+
+@mixin formula {
+  left: -7 * $iconSize;
+  top: -3 * $iconSize;
+}
+
+@mixin group {
+  display: flex;
+}
+
+@mixin buttonAction {
+  padding: 10px 5px;
+  padding-left: 10px;
+  text-align: left;
+}
+
+@mixin tippyContentNoPadding {
+  :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
+    padding: 0;
+  }
+}

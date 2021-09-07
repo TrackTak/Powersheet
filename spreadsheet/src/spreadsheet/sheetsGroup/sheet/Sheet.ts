@@ -208,12 +208,12 @@ export const getHeaderGroupFromScrollGroup = (scrollGroup: Group) => {
   return headerGroup;
 };
 
-export const getGridLineGroupFromScrollGroup = (scrollGroup: Group) => {
-  const gridLineGroup = getSheetGroupFromScrollGroup(
-    scrollGroup
-  ).children?.find((x) => x.attrs.type === 'gridLine') as Group;
+export const getRowColGroupFromScrollGroup = (scrollGroup: Group) => {
+  const rowColGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
+    (x) => x.attrs.type === 'rowCol'
+  ) as Group;
 
-  return gridLineGroup;
+  return rowColGroup;
 };
 
 export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
@@ -300,24 +300,6 @@ export function* iteratePreviousDownToCurrent(
 
   return -Infinity;
 }
-
-// Use center-center distance check for non-rotated rects.
-// https://longviewcoder.com/2021/02/04/html5-canvas-viewport-optimisation-with-konva/
-export const hasOverlap = (rectOne: IRect, rectTwo: IRect) => {
-  const diff = {
-    x: Math.abs(
-      rectOne.x + rectOne.width / 2 - (rectTwo.x + rectTwo.width / 2)
-    ),
-    y: Math.abs(
-      rectOne.y + rectOne.height / 2 - (rectTwo.y + rectTwo.height / 2)
-    ),
-  };
-  const compWidth = (rectOne.width + rectTwo.width) / 2;
-  const compHeight = (rectOne.height + rectTwo.height) / 2;
-  const hasOverlap = diff.x <= compWidth && diff.y <= compHeight;
-
-  return hasOverlap;
-};
 
 export const reverseVectorsIfStartBiggerThanEnd = (
   start: Vector2d,
@@ -441,9 +423,9 @@ class Sheet {
         type: 'mergedCell',
       });
 
-      const gridLineGroup = new Group({
+      const rowColGroup = new Group({
         ...performanceProperties,
-        type: 'gridLine',
+        type: 'rowCol',
       });
 
       const headerGroup = new Group({
@@ -453,7 +435,7 @@ class Sheet {
       });
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(cellGroup, gridLineGroup, mergedCellGroup);
+      sheetGroup.add(cellGroup, rowColGroup, mergedCellGroup);
       scrollGroup.add(sheetGroup, headerGroup);
     });
 

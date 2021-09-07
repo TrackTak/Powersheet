@@ -1,5 +1,4 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -9,11 +8,10 @@ import { isNil } from 'lodash';
 import Sheet, {
   Cell,
   centerRectTwoInRectOne,
-  getGridLineGroupFromScrollGroup,
   getHeaderGroupFromScrollGroup,
-  hasOverlap,
   ICustomSizes,
   ISheetViewportPosition,
+  getRowColGroupFromScrollGroup,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
   iterateXToY,
@@ -285,31 +283,29 @@ class RowCol {
     return groups;
   }
 
-  isNodeOutsideSheet = (node: Node) => {
-    const isOverlapping = hasOverlap(node.getClientRect(), {
-      ...this.sheet.getViewportVector(),
-      ...this.sheet.sheetViewportDimensions,
-    });
-
-    return !isOverlapping;
-  };
-
   destroyOutOfViewportItems() {
-    this.headerGroupMap.forEach((headerGroup, index) => {
-      if (this.isNodeOutsideSheet(headerGroup)) {
-        headerGroup.destroy();
-
-        this.headerGroupMap.delete(index);
-      }
-    });
-
-    this.rowColGroupMap.forEach((group, index) => {
-      if (this.isNodeOutsideSheet(group)) {
-        group.destroy();
-
-        this.rowColGroupMap.delete(index);
-      }
-    });
+    // this.headerGroupMap.forEach((headerGroup) => {
+    //   if (
+    //     !headerGroup.isClientRectOnScreen({
+    //       x: -this.sheet.getViewportVector().x,
+    //       y: -this.sheet.getViewportVector().y,
+    //     })
+    //   ) {
+    //     headerGroup.destroy();
+    //     this.headerGroupMap.delete(headerGroup.attrs.index);
+    //   }
+    // });
+    // this.rowColGroupMap.forEach((group) => {
+    //   if (
+    //     !group.isClientRectOnScreen({
+    //       x: -this.sheet.getViewportVector().x,
+    //       y: -this.sheet.getViewportVector().y,
+    //     })
+    //   ) {
+    //     group.destroy();
+    //     this.rowColGroupMap.delete(group.attrs.index);
+    //   }
+    // });
   }
 
   getTotalSize() {
@@ -510,7 +506,7 @@ class RowCol {
     this.rowColGroupMap.set(index, group);
 
     if (isFrozen) {
-      const xyStickyGridLineGroup = getGridLineGroupFromScrollGroup(
+      const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );
 
@@ -518,7 +514,7 @@ class RowCol {
 
       group.moveToBottom();
     } else {
-      const mainGridLineGroup = getGridLineGroupFromScrollGroup(
+      const mainGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.main
       );
 

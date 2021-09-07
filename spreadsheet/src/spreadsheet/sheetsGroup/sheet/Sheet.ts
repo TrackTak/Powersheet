@@ -515,14 +515,15 @@ class Sheet {
     if (!previousSelectedCell) {
       return;
     }
-    const selectedCellPosition = this.selector.selectedFirstCell!.getClientRect();;
+    const previousSelectedCellPosition = previousSelectedCell.getClientRect();
     const { x, y } = {
       // TODO - Better way than using viewport vector here?
       x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
       y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
     };
-    const isInCellX = x >= selectedCellPosition.x && x <= selectedCellPosition.x + selectedCellPosition.width;
-    const isInCellY = y >= selectedCellPosition.y && y <= selectedCellPosition.y + selectedCellPosition.height;
+    console.log(previousSelectedCellPosition, this.selector.selectedFirstCell?.getClientRect(), x, y)
+    const isInCellX = x >= previousSelectedCellPosition.x && x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
+    const isInCellY = y >= previousSelectedCellPosition.y && y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
     const isClickedInCell = isInCellX && isInCellY;
     if (isClickedInCell && timeNow <= (this.lastClickTime + delayTime)) {
         this.createCellEditor();

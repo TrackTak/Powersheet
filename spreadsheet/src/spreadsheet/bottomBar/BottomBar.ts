@@ -5,20 +5,21 @@ import {
   createMenuSheetDropdownContent,
   createMenuSheetHeader,
   createSheetTab,
-} from './htmlElementHelpers';
+} from './bottomBarHtmlElementHelpers';
 import styles from './BottomBar.module.scss';
 import { prefix } from '../utils';
+import EventEmitter from 'eventemitter3';
 
-export interface IBottomBar extends IConstructorParams {}
-
-interface IConstructorParams {
+interface IConstructor {
+  eventEmitter: EventEmitter;
   addSheetTab: HTMLButtonElement;
   menuSheetHeader: HTMLButtonElement;
 }
 
 export const bottomBarPrefix = `${prefix}-bottom-bar`;
-class BottomBar implements IBottomBar {
-  element!: HTMLDivElement;
+
+class BottomBar {
+  bottomBarEl!: HTMLDivElement;
   addSheetTab: HTMLButtonElement;
   menuSheetHeader: HTMLButtonElement;
   sheetTabs: HTMLDivElement[];
@@ -29,8 +30,11 @@ class BottomBar implements IBottomBar {
   tabContainer: HTMLDivElement;
   scrollsliderContainerTab: HTMLDivElement;
   currentDropdownTab?: HTMLDivElement;
+  eventEmitter: EventEmitter;
 
-  constructor(params?: IConstructorParams) {
+  constructor(params: IConstructor) {
+    this.eventEmitter = params.eventEmitter;
+
     this.globalSheetIndex = 1;
     this.addSheetTab = params?.addSheetTab ?? this.setAddSheetTab();
     this.menuSheetHeader = params?.menuSheetHeader ?? this.setMenuSheetHeader();
@@ -48,13 +52,13 @@ class BottomBar implements IBottomBar {
   }
 
   private create() {
-    this.element = document.createElement('div');
-    this.element.classList.add(styles.bottomBar, `${bottomBarPrefix}`);
+    this.bottomBarEl = document.createElement('div');
+    this.bottomBarEl.classList.add(styles.bottomBar, `${bottomBarPrefix}`);
 
     const buttonWrapper = document.createElement('div');
     buttonWrapper.classList.add(styles.wrapper, `${bottomBarPrefix}-wrapper`);
 
-    this.element.appendChild(buttonWrapper);
+    this.bottomBarEl.appendChild(buttonWrapper);
 
     buttonWrapper.appendChild(this.addSheetTab);
 
@@ -73,8 +77,8 @@ class BottomBar implements IBottomBar {
       `${bottomBarPrefix}-scrollslider-container-tab`
     );
 
-    this.element.appendChild(this.tabContainer);
-    // this.element.appendChild(this.scrollSlider);
+    this.bottomBarEl.appendChild(this.tabContainer);
+    // this.bottomBarEl.appendChild(this.scrollSlider);
 
     this.scrollsliderContainerTab.appendChild(this.sheetTabs[0]);
     menuSheetContainer.appendChild(this.menuSheetHeader);

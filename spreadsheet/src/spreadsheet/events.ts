@@ -13,6 +13,9 @@ const events = {
   toolbar: {
     change: 't-change',
   },
+  cellEditor: {
+    change: 'ce-change',
+  },
   resize: {
     row: {
       start: 'rr-start',

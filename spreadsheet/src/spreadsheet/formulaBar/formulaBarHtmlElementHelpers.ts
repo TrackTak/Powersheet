@@ -1,5 +1,5 @@
 import styles from './FormulaBar.module.scss';
-import { prefix } from './../utils';
+import { prefix } from '../utils';
 
 export const formulaBarPrefix = `${prefix}-formula-bar`;
 

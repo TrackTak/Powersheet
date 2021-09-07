@@ -21,13 +21,11 @@ import Merger from './Merger';
 import RowCol from './RowCol';
 import events from '../../events';
 import CellEditor from './CellEditor';
-import Toolbar from '../../toolbar/Toolbar';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import {
   BorderIconName,
   borderTypes,
 } from '../../toolbar/toolbarHtmlElementHelpers';
-import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
@@ -39,8 +37,6 @@ interface IConstructor {
   styles?: Partial<IStyles>;
   rowHeaderConfig?: IRowHeaderConfig;
   colHeaderConfig?: IColHeaderConfig;
-  toolbar?: Toolbar;
-  formulaBar?: FormulaBar;
   options: IOptions;
   data: IData;
   eventEmitter: EventEmitter;
@@ -352,8 +348,6 @@ class Sheet {
   options: IOptions;
   data: IData;
   cellEditor: CellEditor;
-  toolbar?: Toolbar;
-  formulaBar?: FormulaBar;
   rightClickMenu?: RightClickMenu;
 
   constructor(params: IConstructor) {
@@ -361,8 +355,6 @@ class Sheet {
     this.styles = merge({}, defaultStyles, params.styles);
     this.options = params.options;
     this.data = params.data;
-    this.toolbar = params.toolbar;
-    this.formulaBar = params.formulaBar;
     this.cellsMap = new Map();
 
     const that = this;

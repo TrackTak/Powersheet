@@ -7,6 +7,7 @@ import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import FormulaBar from './formulaBar/FormulaBar';
+import BottomBar from './bottomBar/BottomBar';
 
 export default {
   title: 'Spreadsheet',
@@ -32,19 +33,39 @@ const buildSpreadsheet = (args: IArgs) => {
     eventEmitter,
   });
 
-  const formulaBar = new FormulaBar();
+  const formulaBar = new FormulaBar({
+    eventEmitter,
+  });
 
   const sheet = new Sheet({
-    toolbar,
-    formulaBar,
     data,
     options,
     eventEmitter,
   });
 
+  sheet.row.getAvailableSize = () => {
+    return (
+      sheet.options.height -
+      toolbar.toolbarEl.getBoundingClientRect().height -
+      sheet.getViewportVector().y -
+      sheet.col.scrollBar.getBoundingClientRect().height
+    );
+  };
+
+  sheet.col.getAvailableSize = () => {
+    return (
+      sheet.options.width -
+      sheet.getViewportVector().x -
+      sheet.row.scrollBar.getBoundingClientRect().width
+    );
+  };
+
+  const bottomBar = new BottomBar();
+
   spreadsheet.appendChild(toolbar.toolbarEl);
   spreadsheet.appendChild(formulaBar.formulaBarEl);
   spreadsheet.appendChild(sheet.container);
+  spreadsheet.appendChild(bottomBar.bottomBarEl);
 
   return {
     sheet,

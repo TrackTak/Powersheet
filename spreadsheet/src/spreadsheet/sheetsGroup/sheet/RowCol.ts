@@ -58,8 +58,8 @@ class RowCol {
   shapes: IShapes;
   sheetViewportPosition: ISheetViewportPosition;
   getHeaderText: (index: number) => string;
+  getAvailableSize!: () => number;
   private previousSheetViewportPosition: ISheetViewportPosition;
-  private getAvailableSize: () => number;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
@@ -115,10 +115,6 @@ class RowCol {
         };
         return lineConfig;
       };
-      this.getAvailableSize = () =>
-        this.sheet.options.width -
-        this.sheet.getViewportVector().x -
-        this.sheet.row.scrollBar.getBoundingClientRect().width;
     } else {
       this.functions = {
         axis: 'y',
@@ -142,11 +138,6 @@ class RowCol {
         };
         return lineConfig;
       };
-      this.getAvailableSize = () =>
-        this.sheet.options.height -
-        (this.sheet.toolbar?.toolbarEl?.getBoundingClientRect().height ?? 0) -
-        this.sheet.getViewportVector().y -
-        this.sheet.col.scrollBar.getBoundingClientRect().height;
     }
 
     this.scrollBar = new ScrollBar(

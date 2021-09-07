@@ -25,6 +25,7 @@ import {
 } from './toolbarHtmlElementHelpers';
 import { createGroup } from '../htmlElementHelpers';
 import { isNil } from 'lodash';
+import events from '../events';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -302,18 +303,23 @@ class Toolbar {
     });
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+
+    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
+    this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
   }
 
-  getFocusedSheet() {
-    if (!this.focusedSheet) {
-      throw new Error('focusedSheet cannot be accessed if it is null');
-    }
+  onStartSelection = (sheet: Sheet) => {
+    this.focusedSheet = sheet;
 
-    return this.focusedSheet;
-  }
+    this.setToolbarState();
+  };
+
+  onMoveSelection = () => {
+    this.setToolbarState();
+  };
 
   setValue = (name: IconElementsName, value?: any) => {
-    const sheet = this.getFocusedSheet();
+    const sheet = this.focusedSheet!;
 
     switch (name) {
       case 'backgroundColor': {
@@ -393,12 +399,8 @@ class Toolbar {
     }
   };
 
-  setFocusedSheet(sheet: Sheet) {
-    this.focusedSheet = sheet;
-  }
-
   setToolbarState = () => {
-    const sheet = this.getFocusedSheet();
+    const sheet = this.focusedSheet!;
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
 
@@ -422,7 +424,7 @@ class Toolbar {
 
   setMergedState(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged = this.getFocusedSheet().merger.getIsCellMerged(cell.id());
+    const isMerged = this.focusedSheet!.merger.getIsCellMerged(cell.id());
     const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {

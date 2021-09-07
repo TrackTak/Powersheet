@@ -37,9 +37,7 @@ class CellEditor {
       // @ts-ignore
       const textContent = e.target.textContent;
 
-      if (this.sheet.formulaBar) {
-        this.sheet.formulaBar.editableContent.textContent = textContent;
-      }
+      this.sheet.eventEmitter.emit(events.cellEditor.change, textContent);
     });
   }
 

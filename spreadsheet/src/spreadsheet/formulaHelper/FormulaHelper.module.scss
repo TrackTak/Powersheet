@@ -7,7 +7,6 @@
 .formulaHelperListContainer {
   background: white;
   max-height: 250px;
-  width: 250px;
   overflow-y: auto;
 }
 
@@ -15,6 +14,7 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  width: 250px;
 
   li {
     height: 50px;

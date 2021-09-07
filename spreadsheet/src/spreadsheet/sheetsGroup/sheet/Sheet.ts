@@ -29,6 +29,7 @@ import {
 } from '../../toolbar/toolbarHtmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
+import { HyperFormula } from 'hyperformula';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -371,6 +372,7 @@ class Sheet {
   cellEditor?: CellEditor;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  hyperFormula?: HyperFormula;
   lastClickTime: number = (new Date()).getTime();
   data: IData;
   rightClickMenu?: RightClickMenu;
@@ -491,13 +493,12 @@ class Sheet {
     this.row = new RowCol('row', this);
     this.selector = new Selector(this);
     this.merger = new Merger(this);
+    this.rightClickMenu = new RightClickMenu(this);
 
     this.shapes.sheet.on('click', () => this.handleClick());
     this.container.tabIndex = 1;
     this.container.addEventListener('keydown', (e) => this.keyHandler(e));
 
-    this.eventEmitter.on(events.toolbar.change, this.toolbarOnChange);
-    this.rightClickMenu = new RightClickMenu(this);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
@@ -514,13 +515,12 @@ class Sheet {
     if (!previousSelectedCell) {
       return;
     }
-    const selectedCellPosition = {
-      x: previousSelectedCell.getAbsolutePosition().x - viewportVector.x,
-      y: previousSelectedCell.getAbsolutePosition().y - viewportVector.y,
-      width: previousSelectedCell.getClientRect().width,
-      height: previousSelectedCell.getClientRect().height
+    const selectedCellPosition = this.selector.selectedFirstCell!.getClientRect();;
+    const { x, y } = {
+      // TODO - Better way than using viewport vector here?
+      x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
+      y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
     };
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
     const isInCellX = x >= selectedCellPosition.x && x <= selectedCellPosition.x + selectedCellPosition.width;
     const isInCellY = y >= selectedCellPosition.y && y <= selectedCellPosition.y + selectedCellPosition.height;
     const isClickedInCell = isInCellX && isInCellY;

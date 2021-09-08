@@ -15,41 +15,35 @@ class SheetsGroup {
     this.activeSheet = null;
 
     this.sheetsGroupEl = document.createElement('div');
-    this.sheetsGroupEl.classList.add(`${prefix}-sheetsGroup`);
+    this.sheetsGroupEl.classList.add(`${prefix}-sheets-group`);
 
-    if (spreadsheet.data) {
-      spreadsheet.data.forEach((data) => {
+    this.bottomBar = new BottomBar(this);
+
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+
+    window.addEventListener('DOMContentLoaded', this.onLoad);
+  }
+
+  onLoad = () => {
+    if (this.spreadsheet.data) {
+      this.spreadsheet.data.forEach((data) => {
         this.createNewSheet(data);
       });
     } else {
       this.createNewSheet();
     }
+  };
 
-    this.bottomBar = new BottomBar(this);
-
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+  destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onLoad);
   }
 
   createNewSheet(data?: IData) {
+    if (this.activeSheet) {
+      this.activeSheet.destroy();
+    }
+
     const sheet = new Sheet(this, data);
-
-    sheet.row.getAvailableSize = () => {
-      return (
-        this.spreadsheet.options.height -
-        (this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
-          0) -
-        sheet.getViewportVector().y -
-        sheet.col.scrollBar.getBoundingClientRect().height
-      );
-    };
-
-    sheet.col.getAvailableSize = () => {
-      return (
-        this.spreadsheet.options.width -
-        sheet.getViewportVector().x -
-        sheet.row.scrollBar.getBoundingClientRect().width
-      );
-    };
 
     this.sheets.push(sheet);
 

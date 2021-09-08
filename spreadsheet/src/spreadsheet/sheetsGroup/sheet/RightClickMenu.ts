@@ -4,7 +4,6 @@ import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
 import { createGroup } from '../../htmlElementHelpers';
 import { createButtonContent } from './rightClickMenuHtmlHelpers';
-import Spreadsheet from '../../Spreadsheet';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -17,11 +16,9 @@ class RightClickMenu {
   menuItem: HTMLDivElement;
   dropdown: Instance<Props>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
-  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.rightClickMenuEl = document.createElement('div');
     this.menuItem = document.createElement('div');
 

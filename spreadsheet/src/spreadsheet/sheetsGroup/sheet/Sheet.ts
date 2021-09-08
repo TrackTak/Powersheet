@@ -8,7 +8,6 @@ import { performanceProperties } from '../../styles';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
-import events from '../../events';
 import CellEditor from './CellEditor';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import {
@@ -308,8 +307,8 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 
 class Sheet {
   scrollGroups: IScrollGroups;
-  stage: Stage;
   sheetEl: HTMLDivElement;
+  stage: Stage;
   layer: Layer;
   col: RowCol;
   row: RowCol;
@@ -337,13 +336,7 @@ class Sheet {
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.sheetsGroup.sheetsGroupEl.appendChild(this.sheetEl);
-
-    this.stage = new Stage({
-      container: this.sheetEl,
-    });
-
-    this.layer = new Layer();
+    this.sheetsGroup.sheetsGroupEl.prepend(this.sheetEl);
 
     this.scrollGroups = {
       main: new Group(),
@@ -403,8 +396,14 @@ class Sheet {
       }),
     };
 
-    this.layer.add(this.shapes.sheet);
+    this.stage = new Stage({
+      container: this.sheetEl,
+    });
+
+    this.layer = new Layer();
+
     this.stage.add(this.layer);
+    this.layer.add(this.shapes.sheet);
 
     this.shapes.frozenGridLine.cache();
 
@@ -419,7 +418,33 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
     this.rightClickMenu = new RightClickMenu(this);
 
-    window.addEventListener('DOMContentLoaded', this.onLoad);
+    this.updateSheetDimensions();
+
+    this.stage.width(this.col.totalSize + this.getViewportVector().x);
+    this.stage.height(this.row.totalSize + this.getViewportVector().y);
+
+    const sheetConfig: RectConfig = {
+      width: this.col.totalSize,
+      height: this.row.totalSize,
+      x: this.getViewportVector().x,
+      y: this.getViewportVector().y,
+    };
+
+    this.shapes.sheet.setAttrs(sheetConfig);
+
+    this.drawTopLeftOffsetRect();
+    this.drawNextItems();
+    this.updateViewport();
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
+
+    this.col.scrollBar.setup();
+    this.row.scrollBar.setup();
+
+    this.row.scrollBar.scrollBarEl.style.bottom = `${
+      this.col.scrollBar.getBoundingClientRect().height
+    }px`;
   }
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
@@ -695,38 +720,6 @@ class Sheet {
     };
   }
 
-  onLoad = (e: Event) => {
-    this.updateSheetDimensions();
-
-    this.stage.width(this.col.totalSize + this.getViewportVector().x);
-    this.stage.height(this.row.totalSize + this.getViewportVector().y);
-
-    const sheetConfig: RectConfig = {
-      width: this.col.totalSize,
-      height: this.row.totalSize,
-      x: this.getViewportVector().x,
-      y: this.getViewportVector().y,
-    };
-
-    this.shapes.sheet.setAttrs(sheetConfig);
-
-    this.drawTopLeftOffsetRect();
-    this.drawNextItems();
-    this.updateViewport();
-
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
-
-    this.col.scrollBar.setup();
-    this.row.scrollBar.setup();
-
-    this.row.scrollBar.scrollBarEl.style.bottom = `${
-      this.col.scrollBar.getBoundingClientRect().height
-    }px`;
-
-    this.emit(events.sheet.load, e);
-  };
-
   convertFromCellIdToCell(id: CellId) {
     const { row, col } = convertFromCellIdToRowCol(id);
     const rowGroup = this.row.rowColGroupMap.get(row);
@@ -883,8 +876,7 @@ class Sheet {
   }
 
   destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onLoad);
-
+    this.sheetEl.remove();
     this.stage.destroy();
     this.col.destroy();
     this.row.destroy();

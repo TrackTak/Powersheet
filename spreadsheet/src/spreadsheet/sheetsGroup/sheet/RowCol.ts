@@ -4,7 +4,6 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
-import { isNil } from 'lodash';
 import Sheet, {
   Cell,
   centerRectTwoInRectOne,
@@ -118,6 +117,12 @@ class RowCol {
         };
         return lineConfig;
       };
+      // this.getAvailableSize = () => {
+      //   return (
+      //     this.spreadsheet.options.width - this.sheet.getViewportVector().x // -
+      //     // this.sheet.row.scrollBar.getBoundingClientRect().width
+      //   );
+      // };
     } else {
       this.functions = {
         axis: 'y',
@@ -141,6 +146,15 @@ class RowCol {
         };
         return lineConfig;
       };
+      // this.getAvailableSize = () => {
+      //   return (
+      //     this.spreadsheet.options.height -
+      //     (this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
+      //       0) -
+      //     this.sheet.getViewportVector().y -
+      //     this.scrollBar.getBoundingClientRect().height
+      //   );
+      // };
     }
 
     this.scrollBar = new ScrollBar(
@@ -155,7 +169,20 @@ class RowCol {
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
 
-    window.addEventListener('DOMContentLoaded', this.onLoad);
+    const yIndex = this.calculateSheetViewportEndPosition(
+      this.spreadsheet.options[this.functions.size],
+      0
+    );
+
+    let sumOfSizes = 0;
+
+    for (let index = 0; index < yIndex; index++) {
+      sumOfSizes += this.getSize(index);
+    }
+
+    this.totalSize = sumOfSizes;
+
+    this.sheetViewportPosition.y = yIndex;
   }
 
   calculateSheetViewportEndPosition = (
@@ -187,26 +214,7 @@ class RowCol {
     return i;
   };
 
-  onLoad = () => {
-    const yIndex = this.calculateSheetViewportEndPosition(
-      this.getAvailableSize(),
-      0
-    );
-
-    let sumOfSizes = 0;
-
-    for (let index = 0; index < yIndex; index++) {
-      sumOfSizes += this.getSize(index);
-    }
-
-    this.totalSize = sumOfSizes;
-
-    this.sheetViewportPosition.y = yIndex;
-  };
-
   destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onLoad);
-
     this.scrollBar.destroy();
   }
 

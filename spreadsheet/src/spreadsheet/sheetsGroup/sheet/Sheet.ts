@@ -29,6 +29,7 @@ import {
 } from '../../toolbar/toolbarHtmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
+import Comment from './Comment';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -41,6 +42,7 @@ interface IConstructor {
   colHeaderConfig?: IColHeaderConfig;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  comment?: Comment;
   options: IOptions;
   data: IData;
   eventEmitter: EventEmitter;
@@ -373,6 +375,7 @@ class Sheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   rightClickMenu?: RightClickMenu;
+  comment?: Comment;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -492,6 +495,7 @@ class Sheet {
     this.merger = new Merger(this);
     this.cellEditor = new CellEditor(this);
     this.rightClickMenu = new RightClickMenu(this);
+    this.comment = new Comment(this);
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }

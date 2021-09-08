@@ -1,30 +1,21 @@
 import { rotatePoint } from './../../utils';
+import Konva from 'konva';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { prefix } from '../../utils';
 import Sheet from './Sheet';
 import styles from './Comment.module.scss';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
-import Konva from 'konva';
 
 export const commentPrefix = `${prefix}-comment`;
 
 class Comment {
   textarea: HTMLTextAreaElement;
   container: Instance<Props>;
-  line: Line;
+  commentMarkerConfig: LineConfig;
+
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.line = new Line({
-      stroke: 'orange',
-      fill: 'orange',
-      strokeWidth: 2,
-      offsetX: -6,
-      offsetY: 1,
-      points: [0, 5, 5, 5, 0, 0],
-      closed: true,
-    });
-
-    this.line.cache();
+    this.commentMarkerConfig = this.sheet.styles.commentMarker;
 
     const container = document.createElement('div');
     this.textarea = document.createElement('textarea');
@@ -57,30 +48,37 @@ class Comment {
     const id = selectedFirstCell.id();
     const { cell, clientRect } = this.sheet.drawNewCell(id);
 
-    const lineConfig: LineConfig = {
+    const commentMarker = new Line({
+      ...this.commentMarkerConfig,
       x: clientRect.width,
-    };
+    });
 
-    const line = this.line.clone(lineConfig) as Line;
+    cell.add(commentMarker);
 
-    cell.add(line);
-
-    const rotateAroundCenter = (line: Line<LineConfig>, rotation: number) => {
-      const topLeft = { x: -line.width() / 2, y: -line.height() / 2 };
-      const current = rotatePoint(topLeft, Konva.getAngle(line.rotation()));
+    const rotateAroundCenter = (
+      commentMarker: Line<LineConfig>,
+      rotation: number
+    ) => {
+      const topLeft = {
+        x: -commentMarker.width() / 2,
+        y: -commentMarker.height() / 2,
+      };
+      const current = rotatePoint(
+        topLeft,
+        Konva.getAngle(commentMarker.rotation())
+      );
       const rotated = rotatePoint(topLeft, Konva.getAngle(rotation));
       const dx = rotated.x - current.x,
         dy = rotated.y - current.y;
 
-      line.rotation(rotation);
-      line.x(line.x() + dx);
-      line.y(line.y() + dy);
+      commentMarker.rotation(rotation);
+      commentMarker.x(commentMarker.x() + dx);
+      commentMarker.y(commentMarker.y() + dy);
     };
 
-    rotateAroundCenter(line, 180);
+    rotateAroundCenter(commentMarker, 180);
 
     this.container.setContent(this.textarea);
-    //task move css konva line
   }
 }
 

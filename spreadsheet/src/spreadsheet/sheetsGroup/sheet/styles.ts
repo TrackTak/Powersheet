@@ -34,6 +34,7 @@ export interface IStyles {
   selectionFirstCell: RectConfig;
   selection: RectConfig;
   selectionBorder: RectConfig;
+  commentMarker: LineConfig;
 }
 
 export const resizeMarkerSize = 7;
@@ -44,7 +45,7 @@ export const performanceProperties = {
   listening: false,
 };
 
-export const sharedStyles = {
+const sharedStyles = {
   gridLine: {
     ...performanceProperties,
     stroke: '#c6c6c6',
@@ -138,5 +139,15 @@ export const defaultStyles: IStyles = {
     ...sharedStyles.selection,
     strokeWidth: 0,
     fill: 'rgb(14, 101, 235, 0.1)',
+  },
+  commentMarker: {
+    ...performanceProperties,
+    stroke: 'orange',
+    fill: 'orange',
+    strokeWidth: 2,
+    offsetX: -6,
+    offsetY: 1,
+    points: [0, 5, 5, 5, 0, 0],
+    closed: true,
   },
 };

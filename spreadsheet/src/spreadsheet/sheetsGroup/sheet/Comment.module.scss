@@ -1,1 +1,10 @@
 @import '../../styles.scss';
+
+.textarea {
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  width: 100%;
+  height: 100px;
+}

@@ -39,7 +39,7 @@ class CellEditor {
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
     this.formulaHelper = new FormulaHelper(formulas);
-    this.textAreaContainer.appendChild(this.formulaHelper.formulaHelperContainerEl);
+    this.textAreaContainer.appendChild(this.formulaHelper.formulaHelperEl);
 
     this.showCellEditor();
   }

@@ -1,30 +1,23 @@
 import { DelegateInstance, delegate } from 'tippy.js';
 import styles from './FormulaHelper.module.scss';
-import { prefix } from './../utils';
 import isEmpty from 'lodash/isEmpty';
-
-export const formulaHelperPrefix = `${prefix}-formula-helper`;
+import { createList, createWrapperContent } from './htmlElementHelpers';
 
 class FormulaHelper {
-  formulaHelperContainerEl: HTMLDivElement;
-  private formulaHelperEl: HTMLDivElement;
+  formulaHelperEl: HTMLDivElement;
   private formulaHelperListContainerEl: HTMLDivElement;
   private helper: DelegateInstance;
   private list?: HTMLUListElement;
 
   constructor(private formulas: string[]) {
-    this.formulaHelperListContainerEl = document.createElement("div");
-    this.formulaHelperListContainerEl.classList.add(styles.formulaHelperListContainer);
-
-    this.formulaHelperEl = document.createElement('div');
-    this.formulaHelperEl.classList.add(styles.formulaHelper, formulaHelperPrefix);
-    this.formulaHelperEl.appendChild(this.formulaHelperListContainerEl)
-
-    this.formulaHelperContainerEl = document.createElement("div");
-    this.formulaHelperContainerEl.appendChild(this.formulaHelperEl);
-
+    const {
+      formulaHelperListContainerEl,
+      formulaHelperEl,
+    } = createWrapperContent();
+    this.formulaHelperListContainerEl = formulaHelperListContainerEl;
+    this.formulaHelperEl = formulaHelperEl;
     this.formulas = formulas;
-    this.helper = delegate(this.formulaHelperEl, {
+    this.helper = delegate(formulaHelperEl, {
       target: styles.formulaHelper,
       arrow: false,
       placement: 'bottom',
@@ -48,14 +41,7 @@ class FormulaHelper {
   }
 
   private updateList(formulas: string[]) {
-    // this.list?.remove
-    const list = document.createElement("ul");
-    list.classList.add(styles.list);
-    formulas.forEach((formula) => {
-      const listItem = document.createElement("li");
-      listItem.textContent = formula;
-      list.appendChild(listItem);
-    });
+    const list = createList(formulas);
     if (this.list) {
       this.formulaHelperListContainerEl?.replaceChild(list, this.list);
     } else {

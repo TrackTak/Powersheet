@@ -3,44 +3,28 @@ import { prefix } from './../utils';
 
 export const formulaHelperPrefix = `${prefix}-formula-helper`;
 
-export const createFormulaEditorArea = () => {
-  const editorArea = document.createElement('div');
-  const editableContentContainer = document.createElement('div');
-  const iconContainer = document.createElement('div');
-  const icon = document.createElement('div');
-  const editableContent = document.createElement('div');
+export const createList = (formulas: string[]) => {
+  const list = document.createElement("ul");
+    list.classList.add(styles.list, `${formulaHelperPrefix}-list`);
+    formulas.forEach((formula) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = formula;
+      list.appendChild(listItem);
+    });
 
-  editorArea.classList.add(
-    styles.editorArea,
-    `${formulaHelperPrefix}-editor-area`
-  );
-
-  editableContentContainer.classList.add(
-    styles.editableContentContainer,
-    `${formulaHelperPrefix}-editable-content-container`
-  );
-
-  iconContainer.classList.add(
-    styles.iconContainer,
-    `${formulaHelperPrefix}-icon-container`
-  );
-
-  icon.classList.add(
-    styles.icon,
-    styles.formula,
-    `${formulaHelperPrefix}-icon`,
-    `${formulaHelperPrefix}-formula`
-  );
-
-  editableContent.classList.add(
-    styles.editableContent,
-    `${formulaHelperPrefix}-editable-content`
-  );
-
-  editorArea.appendChild(editableContentContainer);
-  editableContentContainer.appendChild(iconContainer);
-  editableContentContainer.appendChild(editableContent);
-  iconContainer.appendChild(icon);
-
-  return { editorArea, editableContentContainer, editableContent };
+    return list;
 };
+
+export const createWrapperContent = () => {
+  const formulaHelperListContainerEl = document.createElement("div");
+  formulaHelperListContainerEl.classList.add(styles.formulaHelperListContainer);
+
+  const formulaHelperEl = document.createElement('div');
+  formulaHelperEl.classList.add(styles.formulaHelper, formulaHelperPrefix);
+  formulaHelperEl.appendChild(formulaHelperListContainerEl)
+
+  return {
+    formulaHelperListContainerEl,
+    formulaHelperEl,
+  }
+}

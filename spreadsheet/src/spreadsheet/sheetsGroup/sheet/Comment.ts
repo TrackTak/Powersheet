@@ -1,8 +1,10 @@
+import { rotatePoint } from './../../utils';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { prefix } from '../../utils';
 import Sheet from './Sheet';
 import styles from './Comment.module.scss';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
+import Konva from 'konva';
 
 export const commentPrefix = `${prefix}-comment`;
 
@@ -16,8 +18,9 @@ class Comment {
       stroke: 'orange',
       fill: 'orange',
       strokeWidth: 2,
+      offsetX: -6,
+      offsetY: 1,
       points: [0, 5, 5, 5, 0, 0],
-      rotationDeg: 180,
       closed: true,
     });
 
@@ -58,11 +61,26 @@ class Comment {
       x: clientRect.width,
     };
 
-    const clone = this.line.clone(lineConfig) as Line;
+    const line = this.line.clone(lineConfig) as Line;
 
-    cell.add(clone);
+    cell.add(line);
+
+    const rotateAroundCenter = (line: Line<LineConfig>, rotation: number) => {
+      const topLeft = { x: -line.width() / 2, y: -line.height() / 2 };
+      const current = rotatePoint(topLeft, Konva.getAngle(line.rotation()));
+      const rotated = rotatePoint(topLeft, Konva.getAngle(rotation));
+      const dx = rotated.x - current.x,
+        dy = rotated.y - current.y;
+
+      line.rotation(rotation);
+      line.x(line.x() + dx);
+      line.y(line.y() + dy);
+    };
+
+    rotateAroundCenter(line, 180);
 
     this.container.setContent(this.textarea);
+    //task move css konva line
   }
 }
 

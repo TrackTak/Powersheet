@@ -1,9 +1,7 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import EventEmitter from 'eventemitter3';
-import { IOptions } from '../options';
-import Sheet, { Cell, IData } from '../sheetsGroup/sheet/Sheet';
+import { Cell } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -24,18 +22,11 @@ import {
   VerticalAlignName,
 } from './toolbarHtmlElementHelpers';
 import { createGroup } from '../htmlElementHelpers';
-import { isNil } from 'lodash';
 import events from '../events';
+import Spreadsheet from '../Spreadsheet';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
-}
-
-interface IConstructor {
-  registeredFunctionNames: string[];
-  options: IOptions;
-  data: IData;
-  eventEmitter: EventEmitter;
 }
 
 interface IIconElements {
@@ -78,19 +69,9 @@ class Toolbar {
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
-  registeredFunctionNames: string[];
-  options: IOptions;
-  data: IData;
-  eventEmitter: EventEmitter;
-  focusedSheet: Sheet | null;
 
-  constructor(params: IConstructor) {
-    this.registeredFunctionNames = params.registeredFunctionNames;
-    this.options = params.options;
-    this.data = params.data;
-    this.eventEmitter = params.eventEmitter;
-    this.focusedSheet = null;
-
+  constructor(private spreadsheet: Spreadsheet) {
+    this.spreadsheet = spreadsheet;
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
@@ -182,7 +163,9 @@ class Toolbar {
         }
         case 'functions': {
           const { dropdownContent, registeredFunctionButtons } =
-            createFunctionDropdownContent(this.registeredFunctionNames);
+            createFunctionDropdownContent(
+              this.spreadsheet.registeredFunctionNames
+            );
 
           this.setDropdownContent(name, dropdownContent, true);
 
@@ -230,7 +213,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
 
-        this.focusedSheet?.updateViewport();
+        this.spreadsheet.focusedSheet?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -304,13 +287,19 @@ class Toolbar {
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
 
-    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
-    this.eventEmitter.on(events.selector.moveSelection, this.onMoveSelection);
+    this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
+
+    this.spreadsheet.eventEmitter.on(
+      events.selector.startSelection,
+      this.onStartSelection
+    );
+    this.spreadsheet.eventEmitter.on(
+      events.selector.moveSelection,
+      this.onMoveSelection
+    );
   }
 
-  onStartSelection = (sheet: Sheet) => {
-    this.focusedSheet = sheet;
-
+  onStartSelection = () => {
     this.setToolbarState();
   };
 
@@ -319,7 +308,7 @@ class Toolbar {
   };
 
   setValue = (name: IconElementsName, value?: any) => {
-    const sheet = this.focusedSheet!;
+    const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
       case 'backgroundColor': {
@@ -342,7 +331,7 @@ class Toolbar {
       }
       case 'freeze': {
         if (this.iconElementsMap.freeze.active) {
-          sheet.data.frozenCells = {};
+          delete sheet.data.frozenCells;
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
@@ -400,7 +389,7 @@ class Toolbar {
   };
 
   setToolbarState = () => {
-    const sheet = this.focusedSheet!;
+    const sheet = this.spreadsheet.focusedSheet!;
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
 
@@ -424,7 +413,9 @@ class Toolbar {
 
   setMergedState(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged = this.focusedSheet!.merger.getIsCellMerged(cell.id());
+    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellMerged(
+      cell.id()
+    );
     const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {
@@ -475,9 +466,7 @@ class Toolbar {
   }
 
   isFreezeActive() {
-    return (
-      !isNil(this.data.frozenCells.col) && !isNil(this.data.frozenCells.row)
-    );
+    return !!this.spreadsheet.focusedSheet?.data.frozenCells;
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

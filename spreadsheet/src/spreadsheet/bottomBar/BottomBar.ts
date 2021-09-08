@@ -8,13 +8,7 @@ import {
 } from './bottomBarHtmlElementHelpers';
 import styles from './BottomBar.module.scss';
 import { prefix } from '../utils';
-import EventEmitter from 'eventemitter3';
-
-interface IConstructor {
-  eventEmitter: EventEmitter;
-  addSheetTab: HTMLButtonElement;
-  menuSheetHeader: HTMLButtonElement;
-}
+import SheetsGroup from '../sheetsGroup/SheetsGroup';
 
 export const bottomBarPrefix = `${prefix}-bottom-bar`;
 
@@ -30,14 +24,13 @@ class BottomBar {
   tabContainer: HTMLDivElement;
   scrollsliderContainerTab: HTMLDivElement;
   currentDropdownTab?: HTMLDivElement;
-  eventEmitter: EventEmitter;
 
-  constructor(params: IConstructor) {
-    this.eventEmitter = params.eventEmitter;
+  constructor(private sheetsGroup: SheetsGroup) {
+    this.sheetsGroup = sheetsGroup;
 
     this.globalSheetIndex = 1;
-    this.addSheetTab = params?.addSheetTab ?? this.setAddSheetTab();
-    this.menuSheetHeader = params?.menuSheetHeader ?? this.setMenuSheetHeader();
+    this.addSheetTab = this.setAddSheetTab();
+    this.menuSheetHeader = this.setMenuSheetHeader();
     this.sheetTabs = [this.setSheetTab()];
     this.allSheetsMenu = [this.setAllSheetsMenu()];
     this.contextSheetTabMenu = this.setContextSheetTabMenu();
@@ -49,6 +42,8 @@ class BottomBar {
     // this.tabContainer.style.width = `${this.tabContainerMaxWidth}px`;
 
     this.create();
+
+    this.sheetsGroup.sheetsGroupEl.appendChild(this.bottomBarEl);
   }
 
   private create() {
@@ -105,6 +100,7 @@ class BottomBar {
       this.allSheetsMenu.forEach((sheet) => {
         this.menuSheetDropdownContent.appendChild(sheet);
       });
+      this.sheetsGroup.createNewSheet();
     });
   }
 

@@ -1,21 +1,10 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import { Stage, StageConfig } from 'konva/lib/Stage';
-import { isNil, merge } from 'lodash';
-import { prefix } from '../../utils';
 import EventEmitter from 'eventemitter3';
-import styles from './Sheet.module.scss';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
-import {
-  defaultStyles,
-  IColHeaderConfig,
-  IRowHeaderConfig,
-  IStyles,
-  performanceProperties,
-} from './styles';
-import { IOptions } from '../../options';
+import { performanceProperties } from '../../styles';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
@@ -27,20 +16,11 @@ import {
   borderTypes,
 } from '../../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './RightClickMenu';
-
-interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
-  container?: HTMLDivElement;
-}
-
-interface IConstructor {
-  stageConfig?: ICreateStageConfig;
-  styles?: Partial<IStyles>;
-  rowHeaderConfig?: IRowHeaderConfig;
-  colHeaderConfig?: IColHeaderConfig;
-  options: IOptions;
-  data: IData;
-  eventEmitter: EventEmitter;
-}
+import { Stage } from 'konva/lib/Stage';
+import SheetsGroup from '../SheetsGroup';
+import Spreadsheet from '../../Spreadsheet';
+import { prefix } from '../../utils';
+import styles from './Sheet.module.scss';
 
 export interface IDimensions {
   width: number;
@@ -66,8 +46,8 @@ export interface ICustomSizePosition {
 export type CellId = string;
 
 export interface IFrozenCells {
-  row?: number;
-  col?: number;
+  row: number;
+  col: number;
 }
 
 export interface IMergedCells {
@@ -99,15 +79,11 @@ export interface IRowColData {
 }
 
 export interface IData {
-  frozenCells: IFrozenCells;
-  mergedCells: IMergedCells[];
-  cellStyles: ICellStyles;
-  row: IRowColData;
-  col: IRowColData;
-}
-
-export interface ILayers {
-  mainLayer: Layer;
+  frozenCells?: IFrozenCells;
+  mergedCells?: IMergedCells[];
+  cellStyles?: ICellStyles;
+  row?: IRowColData;
+  col?: IRowColData;
 }
 
 export interface IScrollGroups {
@@ -246,7 +222,7 @@ export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
 };
 
 export const getIsFrozenRow = (ri: number, data: IData) => {
-  return isNil(data.frozenCells.row) ? false : ri <= data.frozenCells.row;
+  return data.frozenCells ? ri <= data.frozenCells.row : false;
 };
 
 export function* iterateXToY(vector: Vector2d) {
@@ -331,64 +307,43 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 };
 
 class Sheet {
-  container: HTMLDivElement;
-  stage: Stage;
   scrollGroups: IScrollGroups;
-  layers: ILayers;
+  stage: Stage;
+  sheetEl: HTMLDivElement;
+  layer: Layer;
   col: RowCol;
   row: RowCol;
   selector: Selector;
   merger: Merger;
-  styles: IStyles;
   shapes: IShapes;
   sheetDimensions: IDimensions;
-  sheetViewportDimensions: IDimensions;
   cellsMap: Map<CellId, Cell>;
-  eventEmitter: EventEmitter;
-  options: IOptions;
-  data: IData;
   cellEditor: CellEditor;
   rightClickMenu?: RightClickMenu;
+  data: IData;
+  private spreadsheet: Spreadsheet;
 
-  constructor(params: IConstructor) {
-    this.eventEmitter = params.eventEmitter;
-    this.styles = merge({}, defaultStyles, params.styles);
-    this.options = params.options;
-    this.data = params.data;
+  constructor(public sheetsGroup: SheetsGroup, data?: IData) {
+    this.sheetsGroup = sheetsGroup;
+    this.spreadsheet = this.sheetsGroup.spreadsheet;
+    this.data = data ?? {};
     this.cellsMap = new Map();
-
-    const that = this;
 
     this.sheetDimensions = {
       width: 0,
       height: 0,
     };
 
-    this.sheetViewportDimensions = {
-      get width() {
-        return that.stage.width() - that.getViewportVector().x;
-      },
-      get height() {
-        return that.stage.height() - that.getViewportVector().y;
-      },
-    };
+    this.sheetEl = document.createElement('div');
+    this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.container = document.createElement('div');
-    this.container.classList.add(
-      `${prefix}-sheet-container`,
-      styles.sheetContainer
-    );
+    this.sheetsGroup.sheetsGroupEl.appendChild(this.sheetEl);
 
     this.stage = new Stage({
-      container: this.container,
-      ...params.stageConfig,
+      container: this.sheetEl,
     });
 
-    this.stage.container().style.backgroundColor = this.styles.backgroundColor;
-
-    this.layers = {
-      mainLayer: new Layer(),
-    };
+    this.layer = new Layer();
 
     this.scrollGroups = {
       main: new Group(),
@@ -431,10 +386,6 @@ class Sheet {
       scrollGroup.add(sheetGroup, headerGroup);
     });
 
-    Object.values(this.layers).forEach((layer) => {
-      this.stage.add(layer);
-    });
-
     this.shapes = {
       sheet: new Rect({
         ...performanceProperties,
@@ -443,21 +394,22 @@ class Sheet {
         opacity: 0,
       }),
       frozenGridLine: new Line({
-        ...this.styles.frozenGridLine,
+        ...this.spreadsheet.styles.frozenGridLine,
       }),
       topLeftRect: new Rect({
-        ...this.styles.topLeftRect,
+        ...this.spreadsheet.styles.topLeftRect,
         width: this.getViewportVector().x,
         height: this.getViewportVector().y,
       }),
     };
 
-    this.layers.mainLayer.add(this.shapes.sheet);
+    this.layer.add(this.shapes.sheet);
+    this.stage.add(this.layer);
 
     this.shapes.frozenGridLine.cache();
 
     Object.values(this.scrollGroups).forEach((group) => {
-      this.layers.mainLayer.add(group);
+      this.layer.add(group);
     });
 
     this.col = new RowCol('col', this);
@@ -474,23 +426,27 @@ class Sheet {
     event: T,
     ...args: any[]
   ) {
-    if (this.options.devMode) {
+    if (this.spreadsheet.options.devMode) {
       console.log(event);
     }
 
-    this.eventEmitter.emit(event, ...args);
+    this.spreadsheet.eventEmitter.emit(event, ...args);
   }
 
   setCellStyle(id: CellId, newStyle: ICellStyle) {
-    this.data.cellStyles[id] = {
-      ...this.data.cellStyles[id],
-      ...newStyle,
+    this.data.cellStyles = {
+      [id]: {
+        ...this.data.cellStyles?.[id],
+        ...newStyle,
+      },
     };
   }
 
   updateCells() {
-    Object.keys(this.data.cellStyles).forEach((id) => {
-      const cellStyle = this.data.cellStyles[id];
+    const cellStyles = this.data.cellStyles ?? {};
+
+    Object.keys(cellStyles).forEach((id) => {
+      const cellStyle = cellStyles[id];
 
       this.updateCellRect(id);
 
@@ -542,10 +498,10 @@ class Sheet {
       ...performanceProperties,
       type,
       stroke: 'black',
-      strokeWidth: this.styles.gridLine.strokeWidth,
+      strokeWidth: this.spreadsheet.styles.gridLine.strokeWidth,
     });
 
-    const borders = this.data.cellStyles[id]?.borders ?? [];
+    const borders = this.data.cellStyles?.[id]?.borders ?? [];
 
     if (borders.indexOf(type) === -1) {
       this.setCellStyle(id, {
@@ -734,8 +690,8 @@ class Sheet {
 
   getViewportVector() {
     return {
-      x: this.styles.rowHeader.rect.width,
-      y: this.styles.colHeader.rect.height,
+      x: this.spreadsheet.styles.rowHeader.rect.width,
+      y: this.spreadsheet.styles.colHeader.rect.height,
     };
   }
 
@@ -929,9 +885,7 @@ class Sheet {
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onLoad);
 
-    this.container.remove();
     this.stage.destroy();
-
     this.col.destroy();
     this.row.destroy();
     this.cellEditor.destroy();

@@ -1,13 +1,10 @@
 import { Story, Meta } from '@storybook/html';
-import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
-import EventEmitter from 'eventemitter3';
+import { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultOptions, IOptions } from './options';
-import Toolbar from './toolbar/Toolbar';
 import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
-import FormulaBar from './formulaBar/FormulaBar';
-import BottomBar from './bottomBar/BottomBar';
+import Spreadsheet from './Spreadsheet';
 
 export default {
   title: 'Spreadsheet',
@@ -15,83 +12,32 @@ export default {
 
 interface IArgs {
   options: IOptions;
-  data: IData;
+  data?: IData[];
 }
 
 const buildSpreadsheet = (args: IArgs) => {
-  const spreadsheet = document.createElement('div');
   const registeredFunctionNames =
     HyperFormula.getRegisteredFunctionNames('enGB');
-  const eventEmitter = new EventEmitter();
   const options = args.options;
-  const data: IData = args.data;
+  const data = args.data;
 
-  const toolbar = new Toolbar({
+  const spreadsheet = new Spreadsheet({
     registeredFunctionNames,
-    data,
     options,
-    eventEmitter,
-  });
-
-  const formulaBar = new FormulaBar({
-    eventEmitter,
-  });
-
-  const sheet = new Sheet({
     data,
-    options,
-    eventEmitter,
   });
 
-  sheet.row.getAvailableSize = () => {
-    return (
-      sheet.options.height -
-      toolbar.toolbarEl.getBoundingClientRect().height -
-      sheet.getViewportVector().y -
-      sheet.col.scrollBar.getBoundingClientRect().height
-    );
-  };
-
-  sheet.col.getAvailableSize = () => {
-    return (
-      sheet.options.width -
-      sheet.getViewportVector().x -
-      sheet.row.scrollBar.getBoundingClientRect().width
-    );
-  };
-
-  const bottomBar = new BottomBar();
-
-  spreadsheet.appendChild(toolbar.toolbarEl);
-  spreadsheet.appendChild(formulaBar.formulaBarEl);
-  spreadsheet.appendChild(sheet.container);
-  spreadsheet.appendChild(bottomBar.bottomBarEl);
-
-  return {
-    sheet,
-    spreadsheet,
-  };
+  return spreadsheet.spreadsheetEl;
 };
 
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheet(args).spreadsheet;
+  return buildSpreadsheet(args);
 };
 
 const defaultStoryArgs: IArgs = {
   options: {
     ...defaultOptions,
     devMode: true,
-  },
-  data: {
-    frozenCells: {},
-    mergedCells: [],
-    cellStyles: {},
-    row: {
-      sizes: {},
-    },
-    col: {
-      sizes: {},
-    },
   },
 };
 
@@ -103,87 +49,89 @@ export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
   ...defaultStoryArgs,
-  data: {
-    ...defaultStoryArgs.data,
-    frozenCells: {
-      row: 0,
-      col: 0,
+  data: [
+    {
+      frozenCells: {
+        row: 0,
+        col: 0,
+      },
     },
-  },
+  ],
 };
 
 export const MergedCells = Template.bind({});
 
 MergedCells.args = {
   ...defaultStoryArgs,
-  data: {
-    ...defaultStoryArgs.data,
-    mergedCells: [
-      {
-        row: {
-          x: 4,
-          y: 5,
+  data: [
+    {
+      mergedCells: [
+        {
+          row: {
+            x: 4,
+            y: 5,
+          },
+          col: {
+            x: 1,
+            y: 5,
+          },
         },
-        col: {
-          x: 1,
-          y: 5,
-        },
-      },
-    ],
-  },
+      ],
+    },
+  ],
 };
 
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
   ...defaultStoryArgs,
-  data: {
-    ...defaultStoryArgs.data,
-    col: {
-      ...defaultStoryArgs.data.col,
-      sizes: {
-        '3': 70,
+  data: [
+    {
+      col: {
+        sizes: {
+          '3': 70,
+        },
+      },
+      row: {
+        sizes: {
+          '1': 250,
+          '5': 100,
+        },
       },
     },
-    row: {
-      ...defaultStoryArgs.data.row,
-      sizes: {
-        '1': 250,
-        '5': 100,
-      },
-    },
-  },
+  ],
 };
 
 export const CellStyles = Template.bind({});
 
 CellStyles.args = {
   ...defaultStoryArgs,
-  data: {
-    ...defaultStoryArgs.data,
-    cellStyles: {
-      '1_0': {
-        backgroundColor: 'red',
+  data: [
+    {
+      cellStyles: {
+        '1_0': {
+          backgroundColor: 'red',
+        },
+        '3_3': {
+          borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+          backgroundColor: 'yellow',
+        },
+        '4_5': {
+          borders: ['borderBottom', 'borderTop'],
+        },
       },
-      '3_3': {
-        borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
-        backgroundColor: 'yellow',
-      },
-      '4_5': {
-        borders: ['borderBottom', 'borderTop'],
-      },
+      mergedCells: [
+        {
+          row: {
+            x: 3,
+            y: 3,
+          },
+          col: {
+            x: 3,
+            y: 4,
+          },
+        },
+      ],
     },
-    mergedCells: [
-      {
-        row: {
-          x: 3,
-          y: 3,
-        },
-        col: {
-          x: 3,
-          y: 4,
-        },
-      },
-    ],
-  },
+  ],
 };

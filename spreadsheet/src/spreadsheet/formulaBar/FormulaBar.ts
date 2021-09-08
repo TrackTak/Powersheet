@@ -1,13 +1,9 @@
-import EventEmitter from 'eventemitter3';
 import events from '../events';
 import Sheet from '../sheetsGroup/sheet/Sheet';
+import Spreadsheet from '../Spreadsheet';
 import { prefix } from './../utils';
 import styles from './FormulaBar.module.scss';
 import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
-
-interface IConstructor {
-  eventEmitter: EventEmitter;
-}
 
 export const formulaBarPrefix = `${prefix}-formula-bar`;
 
@@ -16,11 +12,10 @@ class FormulaBar {
   editorArea: HTMLDivElement;
   editableContentContainer: HTMLDivElement;
   editableContent: HTMLDivElement;
-  eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
 
-  constructor(params: IConstructor) {
-    this.eventEmitter = params.eventEmitter;
+  constructor(private spreadsheet: Spreadsheet) {
+    this.spreadsheet = spreadsheet;
 
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
@@ -40,13 +35,13 @@ class FormulaBar {
     this.editableContentContainer = editableContentContainer;
     this.editableContent = editableContent;
 
-    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
-    this.eventEmitter.on(events.cellEditor.change, this.onCellEditorChange);
-  }
+    this.spreadsheet.spreadsheetEl.appendChild(this.formulaBarEl);
 
-  onStartSelection = (sheet: Sheet) => {
-    this.focusedSheet = sheet;
-  };
+    this.spreadsheet.eventEmitter.on(
+      events.cellEditor.change,
+      this.onCellEditorChange
+    );
+  }
 
   onCellEditorChange = (textContent: string | null) => {
     this.editableContent.textContent = textContent;

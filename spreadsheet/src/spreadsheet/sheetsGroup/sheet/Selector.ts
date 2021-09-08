@@ -2,6 +2,7 @@ import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
+import Spreadsheet from '../../Spreadsheet';
 import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
 export interface ISelectedRowCols {
@@ -26,9 +27,11 @@ class Selector {
   selectionBorderCell: Cell | null;
   selectedFirstCell: Cell | null;
   private selectionArea: ISelectionArea;
+  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -49,7 +52,7 @@ class Selector {
     this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
     this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
     this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
-    this.sheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
+    this.spreadsheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
 
   onSheetLoad = () => {
@@ -98,7 +101,7 @@ class Selector {
 
     const firstCellRect = getCellRectFromCell(cell);
 
-    const rectConfig: RectConfig = this.sheet.styles.selectionFirstCell;
+    const rectConfig: RectConfig = this.spreadsheet.styles.selectionFirstCell;
 
     firstCellRect.setAttrs(rectConfig);
 
@@ -118,7 +121,7 @@ class Selector {
   setCells(cells: Cell[]) {
     if (cells.length !== 1) {
       cells.forEach((cell) => {
-        const rectConfig: RectConfig = this.sheet.styles.selection;
+        const rectConfig: RectConfig = this.spreadsheet.styles.selection;
         const rect = getCellRectFromCell(cell);
 
         rect.setAttrs(rectConfig);
@@ -253,7 +256,7 @@ class Selector {
 
     // const cellRect = getCellRectFromCell(cell);
 
-    // cellRect.setAttrs(this.sheet.styles.selectionBorder);
+    // cellRect.setAttrs(this.spreadsheet.styles.selectionBorder);
 
     // this.sheet.drawCell(cell);
 

@@ -23,28 +23,45 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5],
     });
-    this.sheet.container.appendChild(this.textArea);
+
+    this.sheet.sheetEl.appendChild(this.textArea);
 
     window.addEventListener('keydown', this.keyHandler);
     this.sheet.shapes.sheet.on('dblclick', this.showCellEditor);
     this.sheet.shapes.sheet.on('click', this.hideCellEditor);
     this.sheet.stage.on('click', this.hideCellEditor);
     this.sheet.stage.on('mousedown', this.hideCellEditor);
-    this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
-    this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
+    this.sheet.sheetsGroup.spreadsheet.eventEmitter.on(
+      events.scroll.horizontal,
+      this.handleScroll
+    );
+    this.sheet.sheetsGroup.spreadsheet.eventEmitter.on(
+      events.scroll.vertical,
+      this.handleScroll
+    );
 
     this.textArea.addEventListener('input', (e) => {
       // @ts-ignore
       const textContent = e.target.textContent;
 
-      this.sheet.eventEmitter.emit(events.cellEditor.change, textContent);
+      this.sheet.sheetsGroup.spreadsheet.eventEmitter.emit(
+        events.cellEditor.change,
+        textContent
+      );
     });
   }
 
   destroy() {
     window.removeEventListener('keydown', this.keyHandler);
-    this.sheet.eventEmitter.off(events.resize.col.start, this.hideCellEditor);
-    this.sheet.eventEmitter.off(events.resize.row.start, this.hideCellEditor);
+
+    this.sheet.sheetsGroup.spreadsheet.eventEmitter.off(
+      events.resize.col.start,
+      this.hideCellEditor
+    );
+    this.sheet.sheetsGroup.spreadsheet.eventEmitter.off(
+      events.resize.row.start,
+      this.hideCellEditor
+    );
     this.cellTooltip.destroy();
   }
 

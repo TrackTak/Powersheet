@@ -23,7 +23,7 @@ class Merger {
   }
 
   updateMergedCells() {
-    this.sheet.data.mergedCells.forEach((mergedCells) => {
+    this.sheet.data.mergedCells?.forEach((mergedCells) => {
       const startRow = this.sheet.row.rowColGroupMap.get(mergedCells.row.x);
       const startCol = this.sheet.col.rowColGroupMap.get(mergedCells.col.x);
       const shouldMerge = startCol && startRow ? true : false;
@@ -38,7 +38,7 @@ class Merger {
     this.destroyExistingMergedCells(mergedCells);
     this.mergeCells(mergedCells);
 
-    this.sheet.data.mergedCells.push(mergedCells);
+    this.sheet.data.mergedCells?.push(mergedCells);
 
     this.sheet.updateViewport();
 
@@ -107,7 +107,7 @@ class Merger {
     newCellId: CellId,
     existingCellId: CellId = newCellId
   ) {
-    const cellStyle = this.sheet.data.cellStyles[existingCellId];
+    const cellStyle = this.sheet.data.cellStyles?.[existingCellId];
 
     this.sheet.setCellStyle(newCellId, {
       backgroundColor: cellStyle?.backgroundColor ?? defaultCellFill,
@@ -120,7 +120,7 @@ class Merger {
       for (const ci of iterateSelection(mergedCell.attrs.col)) {
         const id = getCellId(ri, ci);
 
-        if (id !== mergedCell.id()) {
+        if (id !== mergedCell.id() && this.sheet.data.cellStyles?.[id]) {
           delete this.sheet.data.cellStyles[id];
         }
       }
@@ -170,7 +170,7 @@ class Merger {
   }
 
   private destroyExistingMergedCells(mergedCells: IMergedCells) {
-    this.sheet.data.mergedCells = this.sheet.data.mergedCells.filter(
+    this.sheet.data.mergedCells = this.sheet.data.mergedCells?.filter(
       ({ row, col }) => {
         const shouldDestroy = this.getAreMergedCellsOverlapping(
           { row, col },
@@ -192,7 +192,9 @@ class Merger {
 
   unMergeCells(mergedCells: IMergedCells) {
     const id = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const allMergedCells = [...this.sheet.data.mergedCells];
+    const allMergedCells = this.sheet.data.mergedCells
+      ? [...this.sheet.data.mergedCells]
+      : [];
     const mergedCell = this.sheet.cellsMap.get(id)?.clone();
 
     this.destroyExistingMergedCells(mergedCells);

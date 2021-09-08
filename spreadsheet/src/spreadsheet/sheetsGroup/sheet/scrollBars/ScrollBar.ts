@@ -5,6 +5,7 @@ import { prefix } from '../../../utils';
 import Sheet, { ICustomSizePosition } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
+import Spreadsheet from '../../../Spreadsheet';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -20,6 +21,7 @@ class ScrollBar {
   scrollOffset: IScrollOffset;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
+  private spreadsheet: Spreadsheet;
 
   constructor(
     private sheet: Sheet,
@@ -29,6 +31,7 @@ class ScrollBar {
   ) {
     this.sheet = sheet;
     this.type = type;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;
@@ -61,7 +64,7 @@ class ScrollBar {
 
     this.sheet.stage.on('wheel', this.onWheel);
 
-    this.sheet.container.appendChild(this.scrollBarEl);
+    this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
   getBoundingClientRect = () => {
@@ -78,15 +81,17 @@ class ScrollBar {
 
   updateCustomSizePositions() {
     let customSizeDifference = 0;
+    const sizes = this.sheet.data[this.type]?.sizes ?? {};
 
-    Object.keys(this.sheet.data[this.type].sizes).forEach((key) => {
+    Object.keys(sizes).forEach((key) => {
       const index = parseInt(key, 10);
-      const size = this.sheet.data[this.type].sizes[key];
+      const size = sizes[key];
       const axis =
-        index * this.sheet.options[this.type].defaultSize +
+        index * this.spreadsheet.options[this.type].defaultSize +
         customSizeDifference;
 
-      customSizeDifference += size - this.sheet.options[this.type].defaultSize;
+      customSizeDifference +=
+        size - this.spreadsheet.options[this.type].defaultSize;
 
       this.customSizePositions[index] = {
         axis,
@@ -126,7 +131,7 @@ class ScrollBar {
         let newSize = size;
 
         if (axis < scroll) {
-          newSize -= this.sheet.options[this.type].defaultSize;
+          newSize -= this.spreadsheet.options[this.type].defaultSize;
         }
 
         return totalSize + newSize;
@@ -139,7 +144,7 @@ class ScrollBar {
       (scroll - totalSizeDifference) /
       (this.sheet.sheetDimensions[this.functions.size] - totalSizeDifference);
     const index = Math.trunc(
-      this.sheet.options[this.type].amount * scrollPercent
+      this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
     this.sheet[this.type].sheetViewportPosition.x = index;

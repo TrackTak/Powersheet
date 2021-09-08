@@ -21,7 +21,6 @@ export interface IColHeaderConfig {
 }
 
 export interface IStyles {
-  backgroundColor: string;
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   gridLine: LineConfig;
@@ -74,7 +73,6 @@ export const sharedStyles = {
 };
 
 export const defaultStyles: IStyles = {
-  backgroundColor: 'white',
   frozenGridLine: {
     ...sharedStyles.gridLine,
     stroke: 'blue',

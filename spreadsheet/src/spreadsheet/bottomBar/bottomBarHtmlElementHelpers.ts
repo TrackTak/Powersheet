@@ -10,22 +10,43 @@ export const createSheetTab = () => {
   return sheetTab;
 };
 
-export const createContextSheetTabMenu = () => {
-  const contextSheetTabMenu = document.createElement('div');
-  contextSheetTabMenu.classList.add(
-    styles.contextSheetMenu,
-    `${bottomBarPrefix}-context-sheet-menu`
+export const createSheetTabDropdownContent = () => {
+  const sheetTabDropdownContent = document.createElement('div');
+
+  sheetTabDropdownContent.classList.add(
+    styles.sheetTabDropdownContent,
+    `${bottomBarPrefix}-sheet-tab-dropdown-content`
   );
 
-  return contextSheetTabMenu;
+  const deleteSheetButton = document.createElement('button');
+
+  deleteSheetButton.classList.add(
+    styles.deleteSheetButton,
+    `${bottomBarPrefix}-delete-sheet-button`
+  );
+
+  deleteSheetButton.textContent = 'Delete';
+
+  const renameSheetButton = document.createElement('button');
+
+  renameSheetButton.classList.add(
+    styles.renameSheetButton,
+    `${bottomBarPrefix}-rename-sheet-button`
+  );
+  renameSheetButton.textContent = 'Rename';
+
+  sheetTabDropdownContent.appendChild(deleteSheetButton);
+  sheetTabDropdownContent.appendChild(renameSheetButton);
+
+  return { sheetTabDropdownContent, deleteSheetButton, renameSheetButton };
 };
 
-export const createAddSheetTab = () => {
-  const buttonPlus = document.createElement('button');
+export const createNewSheetButton = () => {
+  const newSheetButton = document.createElement('button');
 
-  buttonPlus.classList.add(
-    styles.buttonIcon,
-    `${bottomBarPrefix}-plus-button-icon`
+  newSheetButton.classList.add(
+    styles.newSheetButton,
+    `${bottomBarPrefix}-new-sheet-button`
   );
 
   const plusImage = document.createElement('img');
@@ -36,56 +57,50 @@ export const createAddSheetTab = () => {
     styles.plusImgIcon,
     `${bottomBarPrefix}-plus-img-icon`
   );
-  buttonPlus.appendChild(plusImage);
+  newSheetButton.appendChild(plusImage);
 
-  return buttonPlus;
+  return newSheetButton;
 };
 
-export const createMenuSheetHeader = () => {
-  const menuSheetHeader = document.createElement('button');
-  menuSheetHeader.classList.add(
-    styles.buttonIcon,
-    `${bottomBarPrefix}-menu-button-icon`
+export const createSheetSelectionButton = () => {
+  const sheetSelectionButton = document.createElement('button');
+
+  sheetSelectionButton.classList.add(
+    styles.sheetSelectionButton,
+    `${bottomBarPrefix}-sheet-selection-button`
   );
 
-  menuSheetHeader.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-  });
+  const sheetSelectionImage = document.createElement('img');
 
-  const menuSheetImage = document.createElement('img');
+  sheetSelectionImage.src = sheetIcon;
+  sheetSelectionImage.alt = 'sheet';
+  sheetSelectionImage.classList.add(`${bottomBarPrefix}-sheet-selection-image`);
 
-  menuSheetImage.src = sheetIcon;
-  menuSheetImage.alt = 'sheet';
-  menuSheetImage.classList.add(
-    styles.sheetImgIcon,
-    `${bottomBarPrefix}-sheet-img-icon`
-  );
+  sheetSelectionButton.appendChild(sheetSelectionImage);
 
-  menuSheetHeader.appendChild(menuSheetImage);
-
-  return menuSheetHeader;
+  return sheetSelectionButton;
 };
 
-export const createMenuSheetDropdownContent = () => {
-  const menuSheetDropdownContent = document.createElement('div');
+export const createSheetSelectionDropdownContent = () => {
+  const sheetSelectionDropdownContent = document.createElement('div');
 
-  menuSheetDropdownContent.classList.add(
-    styles.menusheetDropdownContent,
-    `${bottomBarPrefix}-menusheet-dropdown-content`
+  sheetSelectionDropdownContent.classList.add(
+    styles.sheetSelectionDropdownContent,
+    `${bottomBarPrefix}-sheet-selection-dropdown-content`
   );
 
-  return menuSheetDropdownContent;
+  return sheetSelectionDropdownContent;
 };
 
-export const createAllSheetsMenu = () => {
-  const allSheetsMenu = document.createElement('button');
+export const createSheetSelectionDropdownButton = () => {
+  const sheetSelectionDropdownButton = document.createElement('button');
 
-  allSheetsMenu.classList.add(
-    styles.allSheetsMenu,
-    `${bottomBarPrefix}-all-sheet-menu`
+  sheetSelectionDropdownButton.classList.add(
+    styles.sheetSelectionDropdownButton,
+    `${bottomBarPrefix}-sheet-selection-dropdown-button`
   );
 
-  return allSheetsMenu;
+  return sheetSelectionDropdownButton;
 };
 
 //TO DO

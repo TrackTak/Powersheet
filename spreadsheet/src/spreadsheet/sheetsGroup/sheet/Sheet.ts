@@ -882,7 +882,7 @@ class Sheet {
 
   show() {
     this.stage.show();
-    this.sheetEl.style.display = 'initial';
+    this.sheetEl.style.display = 'block';
   }
 
   destroy() {

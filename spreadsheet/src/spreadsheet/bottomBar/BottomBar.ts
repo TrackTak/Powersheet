@@ -1,5 +1,5 @@
 import {
-  createAddSheetTab,
+  createNewSheetButton,
   createAllSheetsMenu,
   createContextSheetTabMenu,
   createMenuSheetDropdownContent,
@@ -239,7 +239,7 @@ class BottomBar {
   }
 
   setAddSheetTab() {
-    const buttonPlus = createAddSheetTab();
+    const buttonPlus = createNewSheetButton();
 
     //TO DO
     // buttonPlus.addEventListener('click', () => {

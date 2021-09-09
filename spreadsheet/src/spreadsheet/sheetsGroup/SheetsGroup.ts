@@ -1,4 +1,4 @@
-import BottomBar from '../bottomBar/BottomBar';
+import BottomBar from '../bottomBar/BottomBarNew';
 import Sheet, { IData } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
@@ -9,8 +9,8 @@ class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
-  bottomBar?: BottomBar;
-  activeSheet: Sheet;
+  bottomBar: BottomBar;
+  activeSheetId!: SheetId;
   sheetIndex: number;
 
   constructor(public spreadsheet: Spreadsheet) {
@@ -24,16 +24,16 @@ class SheetsGroup {
     this.sheetsEl = document.createElement('div');
     this.sheetsEl.classList.add(`${prefix}-sheets`);
 
+    this.bottomBar = new BottomBar(this);
+
     if (this.spreadsheet.data?.length) {
-      const firstSheetName = this.spreadsheet.data[0].sheetName;
+      const sheetName = this.spreadsheet.data[0].sheetName;
 
       this.spreadsheet.data.forEach((data) => {
         this.createNewSheet(data);
       });
 
-      this.switchSheet(firstSheetName);
-
-      this.activeSheet = this.sheets.get(firstSheetName)!;
+      this.switchSheet(sheetName);
     } else {
       const sheetName = this.getSheetName();
 
@@ -42,34 +42,40 @@ class SheetsGroup {
       });
 
       this.switchSheet(sheetName);
-
-      this.activeSheet = this.sheets.get(sheetName)!;
     }
 
-    this.sheetsGroupEl.appendChild(this.sheetsEl);
+    this.sheetsGroupEl.prepend(this.sheetsEl);
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
-
-    this.bottomBar = new BottomBar(this);
   }
 
   getSheetName() {
     return `Sheet${this.sheetIndex}`;
   }
 
+  deleteSheet(sheetId: SheetId) {
+    const sheet = this.sheets.get(sheetId)!;
+
+    sheet.destroy();
+
+    this.sheets.delete(sheetId);
+
+    this.bottomBar.updateSheetTabs();
+  }
+
   switchSheet(sheetId: SheetId) {
-    const sheet = this.sheets.get(sheetId);
+    const sheet = this.sheets.get(sheetId)!;
 
-    if (!sheet) {
-      throw new Error(`No sheet with the id ${sheetId} exists.`);
-    }
+    if (this.activeSheetId) {
+      const activeSheet = this.sheets.get(this.activeSheetId)!;
 
-    if (this.activeSheet) {
-      this.activeSheet.hide();
+      activeSheet.hide();
     }
 
     sheet.show();
 
-    this.activeSheet = sheet;
+    this.activeSheetId = sheetId;
+
+    this.bottomBar.updateSheetTabs();
   }
 
   createNewSheet(data: IData) {
@@ -80,6 +86,8 @@ class SheetsGroup {
     sheet.hide();
 
     this.sheetIndex++;
+
+    this.bottomBar.updateSheetTabs();
   }
 }
 

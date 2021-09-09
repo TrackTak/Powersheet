@@ -51,7 +51,7 @@ FrozenCells.args = {
   ...defaultStoryArgs,
   data: [
     {
-      sheetName: 'Default',
+      sheetName: 'FrozenCells',
       frozenCells: {
         row: 0,
         col: 0,
@@ -66,7 +66,7 @@ MergedCells.args = {
   ...defaultStoryArgs,
   data: [
     {
-      sheetName: 'Default',
+      sheetName: 'MergedCells',
       mergedCells: [
         {
           row: {
@@ -89,7 +89,7 @@ DifferentSizeCells.args = {
   ...defaultStoryArgs,
   data: [
     {
-      sheetName: 'Default',
+      sheetName: 'DifferentSizeCells',
       col: {
         sizes: {
           '3': 70,
@@ -111,7 +111,7 @@ CellStyles.args = {
   ...defaultStoryArgs,
   data: [
     {
-      sheetName: 'Default',
+      sheetName: 'CellStyles',
       cellStyles: {
         '1_0': {
           backgroundColor: 'red',

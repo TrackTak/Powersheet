@@ -107,7 +107,7 @@ class Merger {
     newCellId: CellId,
     existingCellId: CellId = newCellId
   ) {
-    const cellStyle = this.sheet.data.cellStyles[existingCellId];
+    const cellStyle = this.sheet.data.sheetData[existingCellId].style;
 
     this.sheet.setCellStyle(newCellId, {
       backgroundColor: cellStyle?.backgroundColor ?? defaultCellFill,
@@ -121,7 +121,10 @@ class Merger {
         const id = getCellId(ri, ci);
 
         if (id !== mergedCell.id()) {
-          delete this.sheet.data.cellStyles[id];
+          this.sheet.data.sheetData[id] = {
+            ...this.sheet.data.sheetData[id],
+            style: null,
+          };
         }
       }
     }

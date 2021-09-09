@@ -1,5 +1,6 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Text } from 'konva/lib/shapes/Text';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
 import { prefix } from '../../utils';
@@ -95,20 +96,25 @@ export interface ICellStyle {
   borders?: BorderStyleOption[];
 }
 
-export interface ICellStyles {
-  [index: CellId]: ICellStyle;
-}
-
 export interface IRowColData {
   sizes: ISizes;
+}
+
+export interface ICellData {
+  style?: ICellStyle | null;
+  value?: string | null;
+}
+
+export interface ISheetData {
+  [cellIndex: string]: ICellData;
 }
 
 export interface IData {
   frozenCells: IFrozenCells;
   mergedCells: IMergedCells[];
-  cellStyles: ICellStyles;
   row: IRowColData;
   col: IRowColData;
+  sheetData: ISheetData;
 }
 
 export interface ILayers {
@@ -553,6 +559,7 @@ class Sheet {
       this.cellEditor.destroy();
       this.stage.off('mousedown', this.destroyCellEditor);
       this.cellEditor = undefined;
+      this.updateViewport();
     }
   }
 
@@ -568,23 +575,27 @@ class Sheet {
   }
 
   setCellStyle(id: CellId, newStyle: ICellStyle) {
-    this.data.cellStyles[id] = {
-      ...this.data.cellStyles[id],
-      ...newStyle,
+    this.data.sheetData[id] = {
+      ...this.data.sheetData[id],
+      style: {
+        ...this.data.sheetData[id]?.style,
+        ...newStyle,
+      }
     };
   }
 
   updateCells() {
-    Object.keys(this.data.cellStyles).forEach((id) => {
-      const cellStyle = this.data.cellStyles[id];
+    Object.keys(this.data.sheetData).forEach((id) => {
+      const cellStyle = this.data.sheetData[id].style;
+      const cellValue = this.data.sheetData[id].value;
 
       this.updateCellRect(id);
 
-      if (cellStyle.backgroundColor) {
+      if (cellStyle?.backgroundColor) {
         this.setCellBackgroundColor(id, cellStyle.backgroundColor);
       }
 
-      if (cellStyle.borders) {
+      if (cellStyle?.borders) {
         cellStyle.borders.forEach((borderType) => {
           switch (borderType) {
             case 'borderLeft':
@@ -602,15 +613,19 @@ class Sheet {
           }
         });
       }
+
+      if (cellValue) {
+        this.setCellTextValue(id, cellValue);
+      }
     });
   }
 
   updateCellRect(id: CellId) {
     const cell = this.convertFromCellIdToCell(id);
-
     if (this.cellsMap.has(id)) {
       const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
         'cellRect',
+        'cellText'
       ]);
 
       setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
@@ -631,7 +646,7 @@ class Sheet {
       strokeWidth: this.styles.gridLine.strokeWidth,
     });
 
-    const borders = this.data.cellStyles[id]?.borders ?? [];
+    const borders = this.data.sheetData[id].style?.borders ?? [];
 
     if (borders.indexOf(type) === -1) {
       this.setCellStyle(id, {
@@ -787,6 +802,26 @@ class Sheet {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
+  }
+
+  setCellTextValue(id: CellId, value: string) {
+    const { cell, clientRect } = this.drawNewCell(id);
+
+    const text = new Text({
+      ...this.styles.cell.text,
+      text: value,
+      type: 'cellText',
+      width: clientRect.width,
+    });
+
+    const midPoints = centerRectTwoInRectOne(
+      clientRect,
+      text.getClientRect(),
+    );
+    text.x(midPoints.x - clientRect.x);
+    text.y(midPoints.y - clientRect.y);
+
+    cell.add(text);
   }
 
   getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {

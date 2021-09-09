@@ -41,16 +41,31 @@ class CellEditor {
     this.formulaHelper = new FormulaHelper(formulas);
     this.textAreaContainer.appendChild(this.formulaHelper.formulaHelperEl);
 
+    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+    this.setTextContent(this.sheet.data.sheetData?.[cellId]?.value)
+
     this.showCellEditor();
+  }
+
+  setTextContent(value: string | undefined | null) {
+    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+    this.sheet.data.sheetData[cellId] = {
+      ...this.sheet.data.sheetData[cellId],
+      value,
+    };
+
+
+    if (this.sheet.formulaBar) {
+      this.sheet.formulaBar.editableContent.textContent = value || '';
+    }
+
+    this.textArea.textContent = value || '';
   }
 
   handleInput(e: Event) {
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
-
-    if (this.sheet.formulaBar) {
-      this.sheet.formulaBar.editableContent.textContent = textContent || '';
-    }
+    this.setTextContent(textContent);
 
     const isFormulaInput = textContent?.startsWith('=');
     if (isFormulaInput) {

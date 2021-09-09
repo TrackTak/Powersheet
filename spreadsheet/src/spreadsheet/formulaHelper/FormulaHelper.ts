@@ -40,6 +40,11 @@ class FormulaHelper {
     this.helper.hide();
   }
 
+  destroy() {
+    this.helper.destroy();
+    this.formulaHelperEl.remove();
+  }
+
   private updateList(formulas: string[]) {
     const list = createList(formulas);
     if (this.list) {

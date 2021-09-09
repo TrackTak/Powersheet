@@ -78,6 +78,7 @@ export interface IRowColData {
 }
 
 export interface IData {
+  sheetName: string;
   frozenCells?: IFrozenCells;
   mergedCells?: IMergedCells[];
   cellStyles?: ICellStyles;
@@ -319,13 +320,12 @@ class Sheet {
   cellsMap: Map<CellId, Cell>;
   cellEditor: CellEditor;
   rightClickMenu?: RightClickMenu;
-  data: IData;
   private spreadsheet: Spreadsheet;
 
-  constructor(public sheetsGroup: SheetsGroup, data?: IData) {
+  constructor(public sheetsGroup: SheetsGroup, private data: IData) {
     this.sheetsGroup = sheetsGroup;
+    this.data = data;
     this.spreadsheet = this.sheetsGroup.spreadsheet;
-    this.data = data ?? {};
     this.cellsMap = new Map();
 
     this.sheetDimensions = {

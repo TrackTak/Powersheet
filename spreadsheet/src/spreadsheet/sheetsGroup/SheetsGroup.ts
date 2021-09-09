@@ -3,51 +3,76 @@ import Sheet, { IData } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 
+export type SheetId = string;
+
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
-  sheets: Sheet[];
+  sheets: Map<SheetId, Sheet>;
   bottomBar?: BottomBar;
-  activeSheet: Sheet | null;
+  activeSheet: Sheet;
+  sheetIndex: number;
 
   constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
-    this.sheets = [];
-    this.activeSheet = null;
+    this.sheets = new Map();
+    this.sheetIndex = 1;
 
     this.sheetsGroupEl = document.createElement('div');
     this.sheetsGroupEl.classList.add(`${prefix}-sheets-group`);
 
     this.bottomBar = new BottomBar(this);
 
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+    if (this.spreadsheet.data?.length) {
+      const firstSheetName = this.spreadsheet.data[0].sheetName;
 
-    window.addEventListener('DOMContentLoaded', this.onLoad);
-  }
-
-  onLoad = () => {
-    if (this.spreadsheet.data) {
       this.spreadsheet.data.forEach((data) => {
         this.createNewSheet(data);
       });
-    } else {
-      this.createNewSheet();
-    }
-  };
 
-  destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onLoad);
+      this.switchSheet(firstSheetName);
+
+      this.activeSheet = this.sheets.get(firstSheetName)!;
+    } else {
+      const sheetName = this.getSheetName();
+
+      this.createNewSheet({
+        sheetName,
+      });
+
+      this.switchSheet(sheetName);
+
+      this.activeSheet = this.sheets.get(sheetName)!;
+    }
+
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
   }
 
-  createNewSheet(data?: IData) {
+  getSheetName() {
+    return `Sheet${this.sheetIndex}`;
+  }
+
+  switchSheet(sheetId: SheetId) {
+    const sheet = this.sheets.get(sheetId);
+
+    if (!sheet) {
+      throw new Error(`No sheet with the id ${sheetId} exists.`);
+    }
+
     if (this.activeSheet) {
       this.activeSheet.destroy();
     }
 
-    const sheet = new Sheet(this, data);
-
-    this.sheets.push(sheet);
+    sheet.layer.show();
 
     this.activeSheet = sheet;
+  }
+
+  createNewSheet(data: IData) {
+    const sheet = new Sheet(this, data);
+
+    this.sheets.set(data.sheetName, sheet);
+
+    this.sheetIndex++;
   }
 }
 

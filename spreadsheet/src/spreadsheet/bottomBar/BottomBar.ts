@@ -100,7 +100,9 @@ class BottomBar {
       this.allSheetsMenu.forEach((sheet) => {
         this.menuSheetDropdownContent.appendChild(sheet);
       });
-      this.sheetsGroup.createNewSheet();
+      this.sheetsGroup.createNewSheet({
+        sheetName: this.sheetsGroup.getSheetName(),
+      });
     });
   }
 

@@ -1,9 +1,7 @@
 import BottomBar from '../bottomBar/BottomBarNew';
-import Sheet, { IData } from './sheet/Sheet';
+import Sheet, { IData, ISheetData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
-
-export type SheetId = string;
 
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
@@ -26,10 +24,12 @@ class SheetsGroup {
 
     this.bottomBar = new BottomBar(this);
 
-    if (this.spreadsheet.data?.length) {
-      const sheetName = this.spreadsheet.data[0].sheetName;
+    const dataArray = Object.values(this.spreadsheet.data);
 
-      this.spreadsheet.data.forEach((data) => {
+    if (dataArray.length) {
+      const sheetName = dataArray[0].sheetName;
+
+      dataArray.forEach((data) => {
         this.createNewSheet(data);
       });
 
@@ -52,6 +52,10 @@ class SheetsGroup {
     return `Sheet${this.sheetIndex}`;
   }
 
+  update() {
+    this.bottomBar.updateSheetTabs();
+  }
+
   deleteSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
 
@@ -59,15 +63,16 @@ class SheetsGroup {
 
     this.sheets.delete(sheetId);
 
-    this.bottomBar.updateSheetTabs();
+    delete this.spreadsheet.data[sheetId];
+
+    this.update();
   }
 
   switchSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
+    const activeSheet = this.sheets.get(this.activeSheetId);
 
-    if (this.activeSheetId) {
-      const activeSheet = this.sheets.get(this.activeSheetId)!;
-
+    if (activeSheet) {
       activeSheet.hide();
     }
 
@@ -75,19 +80,55 @@ class SheetsGroup {
 
     this.activeSheetId = sheetId;
 
-    this.bottomBar.updateSheetTabs();
+    this.update();
+  }
+
+  renameSheet(oldSheetId: SheetId, sheetId: SheetId) {
+    const sheet = this.sheets.get(oldSheetId)!;
+    const sheetData = this.spreadsheet.data?.[oldSheetId];
+
+    sheet.setSheetId(sheetId);
+
+    const newSheets = new Map<SheetId, Sheet>();
+
+    for (const [currentSheetId, sheet] of this.sheets) {
+      if (currentSheetId === oldSheetId) {
+        newSheets.set(sheetId, sheet);
+      } else {
+        newSheets.set(currentSheetId, sheet);
+      }
+    }
+
+    this.sheets = newSheets;
+
+    delete this.spreadsheet.data[oldSheetId];
+
+    this.spreadsheet.data[sheetId] = {
+      ...sheetData,
+      sheetName: sheetId,
+    };
+
+    this.activeSheetId = sheetId;
+
+    this.update();
   }
 
   createNewSheet(data: IData) {
-    const sheet = new Sheet(this, data);
+    const sheetName = data.sheetName;
 
-    this.sheets.set(data.sheetName, sheet);
+    this.spreadsheet.data[sheetName] = {
+      sheetName,
+    };
+
+    const sheet = new Sheet(this, sheetName);
+
+    this.sheets.set(sheetName, sheet);
 
     sheet.hide();
 
     this.sheetIndex++;
 
-    this.bottomBar.updateSheetTabs();
+    this.update();
   }
 }
 

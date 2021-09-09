@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { merge } from 'lodash';
 import events from './events';
 import { IOptions } from './options';
-import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
+import Sheet, { ISheetData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import SheetsGroup from './sheetsGroup/SheetsGroup';
 import Toolbar from './toolbar/Toolbar';
@@ -14,7 +14,7 @@ interface IConstructor {
   registeredFunctionNames: string[];
   styles?: Partial<IStyles>;
   options: IOptions;
-  data?: IData[];
+  data?: ISheetData;
 }
 
 class Spreadsheet {
@@ -25,13 +25,13 @@ class Spreadsheet {
   eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
   options: IOptions;
-  data?: IData[];
+  data: ISheetData;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
 
   constructor(params: IConstructor) {
     this.options = params.options;
-    this.data = params.data;
+    this.data = params.data ?? {};
     this.registeredFunctionNames = params.registeredFunctionNames;
     this.styles = merge({}, defaultStyles, params.styles);
     this.registeredFunctionNames = params.registeredFunctionNames;

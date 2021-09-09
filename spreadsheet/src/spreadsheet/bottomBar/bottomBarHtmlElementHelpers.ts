@@ -1,7 +1,9 @@
 import { bottomBarPrefix } from './BottomBar';
 import styles from './BottomBar.module.scss';
-import sheetIcon from '../../icons/sheet-icon.svg';
-import plusIcon from '../../icons/plus-icon.svg';
+
+export type SelectSheetsIcon = 'ellipsis';
+
+export type AddSheetIcon = 'add';
 
 export const createSheetTab = () => {
   const sheetTab = document.createElement('div');
@@ -39,46 +41,6 @@ export const createSheetTabDropdownContent = () => {
   sheetTabDropdownContent.appendChild(renameSheetButton);
 
   return { sheetTabDropdownContent, deleteSheetButton, renameSheetButton };
-};
-
-export const createNewSheetButton = () => {
-  const newSheetButton = document.createElement('button');
-
-  newSheetButton.classList.add(
-    styles.newSheetButton,
-    `${bottomBarPrefix}-new-sheet-button`
-  );
-
-  const plusImage = document.createElement('img');
-
-  plusImage.src = plusIcon;
-  plusImage.alt = 'plus';
-  plusImage.classList.add(
-    styles.plusImgIcon,
-    `${bottomBarPrefix}-plus-img-icon`
-  );
-  newSheetButton.appendChild(plusImage);
-
-  return newSheetButton;
-};
-
-export const createSheetSelectionButton = () => {
-  const sheetSelectionButton = document.createElement('button');
-
-  sheetSelectionButton.classList.add(
-    styles.sheetSelectionButton,
-    `${bottomBarPrefix}-sheet-selection-button`
-  );
-
-  const sheetSelectionImage = document.createElement('img');
-
-  sheetSelectionImage.src = sheetIcon;
-  sheetSelectionImage.alt = 'sheet';
-  sheetSelectionImage.classList.add(`${bottomBarPrefix}-sheet-selection-image`);
-
-  sheetSelectionButton.appendChild(sheetSelectionImage);
-
-  return sheetSelectionButton;
 };
 
 export const createSheetSelectionDropdownContent = () => {

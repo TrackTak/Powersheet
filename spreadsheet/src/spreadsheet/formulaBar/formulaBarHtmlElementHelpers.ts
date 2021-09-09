@@ -1,14 +1,16 @@
 import styles from './FormulaBar.module.scss';
 import { prefix } from '../utils';
+import { createIcon } from '../htmlElementHelpers';
 
 export const formulaBarPrefix = `${prefix}-formula-bar`;
 
 export const createFormulaEditorArea = () => {
   const editorArea = document.createElement('div');
   const editableContentContainer = document.createElement('div');
-  const iconContainer = document.createElement('div');
-  const icon = document.createElement('div');
+  const { iconContainer, icon } = createIcon('formula', formulaBarPrefix);
   const editableContent = document.createElement('div');
+
+  iconContainer.classList.add(styles.iconContainer);
 
   editorArea.classList.add(
     styles.editorArea,
@@ -18,18 +20,6 @@ export const createFormulaEditorArea = () => {
   editableContentContainer.classList.add(
     styles.editableContentContainer,
     `${formulaBarPrefix}-editable-content-container`
-  );
-
-  iconContainer.classList.add(
-    styles.iconContainer,
-    `${formulaBarPrefix}-icon-container`
-  );
-
-  icon.classList.add(
-    styles.icon,
-    styles.formula,
-    `${formulaBarPrefix}-icon`,
-    `${formulaBarPrefix}-formula`
   );
 
   editableContent.classList.add(

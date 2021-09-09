@@ -52,12 +52,7 @@ class Selector {
     this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
     this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
     this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
-    this.spreadsheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
-
-  onSheetLoad = () => {
-    this.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
-  };
 
   updateSelectedCells() {
     if (!this.selectedCells.length) return;

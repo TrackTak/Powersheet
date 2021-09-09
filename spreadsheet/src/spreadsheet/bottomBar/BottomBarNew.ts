@@ -1,8 +1,6 @@
 import SheetsGroup from '../sheetsGroup/SheetsGroup';
 import {
   createSheetSelectionDropdownContent,
-  createSheetSelectionButton,
-  createNewSheetButton,
   createSheetTab,
   createSheetSelectionDropdownButton,
   createSheetTabDropdownContent,
@@ -10,6 +8,7 @@ import {
 import styles from './BottomBar.module.scss';
 import { prefix } from '../utils';
 import tippy, { Instance, Props } from 'tippy.js';
+import { createIconButton, IIconElements } from '../htmlElementHelpers';
 
 export const bottomBarPrefix = `${prefix}-bottom-bar`;
 
@@ -17,24 +16,27 @@ class BottomBar {
   bottomBar: HTMLDivElement;
   content: HTMLDivElement;
   sheetSelectionContainer: HTMLDivElement;
-  sheetSelectionButton: HTMLButtonElement;
+  sheetSelectionButton: IIconElements;
   sheetSelectionDropdown: Instance<Props>;
   sheetSelectionDropdownContent: HTMLDivElement;
-  createNewSheetButton: HTMLButtonElement;
+  createNewSheetButtonElements: IIconElements;
   tabContainer: HTMLDivElement;
   scrollSliderContainer: HTMLDivElement;
 
   constructor(private sheetsGroup: SheetsGroup) {
     this.sheetsGroup = sheetsGroup;
 
-    this.createNewSheetButton = createNewSheetButton();
-    this.createNewSheetButton.addEventListener(
+    this.createNewSheetButtonElements = createIconButton(
+      'add',
+      bottomBarPrefix
+    );
+    this.createNewSheetButtonElements.button.addEventListener(
       'click',
       this.createNewSheetButtonOnClick
     );
 
-    this.sheetSelectionButton = createSheetSelectionButton();
-    this.sheetSelectionButton.addEventListener('click', () => {
+    this.sheetSelectionButton = createIconButton('ellipsis', bottomBarPrefix);
+    this.sheetSelectionButton.button.addEventListener('click', () => {
       this.sheetSelectionDropdown.show();
     });
 
@@ -55,7 +57,7 @@ class BottomBar {
 
     this.sheetSelectionDropdownContent = createSheetSelectionDropdownContent();
 
-    this.sheetSelectionDropdown = tippy(this.sheetSelectionButton, {
+    this.sheetSelectionDropdown = tippy(this.sheetSelectionButton.button, {
       placement: 'top',
       interactive: true,
       arrow: false,
@@ -73,9 +75,9 @@ class BottomBar {
     );
 
     // this.scrollSliderContainerEl.appendChild(this.sheetTabs[0]);
-    this.sheetSelectionContainer.appendChild(this.sheetSelectionButton);
+    this.sheetSelectionContainer.appendChild(this.sheetSelectionButton.button);
     this.tabContainer.appendChild(this.scrollSliderContainer);
-    this.content.appendChild(this.createNewSheetButton);
+    this.content.appendChild(this.createNewSheetButtonElements.buttonContainer);
     this.content.appendChild(this.sheetSelectionContainer);
     this.bottomBar.appendChild(this.content);
     this.bottomBar.appendChild(this.tabContainer);
@@ -86,22 +88,12 @@ class BottomBar {
     this.scrollSliderContainer.innerHTML = '';
     this.sheetSelectionDropdownContent.innerHTML = '';
 
-    for (const [sheetName] of this.sheetsGroup.sheets) {
+    for (const [sheetId] of this.sheetsGroup.sheets) {
       const sheetTabContainer = document.createElement('div');
       const sheetTab = createSheetTab();
       const nameContainer = document.createElement('span');
       const sheetSelectionDropdownButton = createSheetSelectionDropdownButton();
-      const isSheetActive = sheetName === this.sheetsGroup.activeSheetId;
-
-      window.addEventListener('click', (e: MouseEvent) => {
-        const target = e.target! as unknown as Node;
-        const isClickInside = nameContainer.contains(target);
-
-        if (!isClickInside) {
-          nameContainer.contentEditable = 'false';
-          nameContainer.blur();
-        }
-      });
+      const isSheetActive = sheetId === this.sheetsGroup.activeSheetId;
 
       if (isSheetActive) {
         sheetTab.classList.add('active');
@@ -109,27 +101,19 @@ class BottomBar {
         sheetTab.classList.remove('active');
       }
 
-      sheetSelectionDropdownButton.textContent = sheetName;
+      sheetSelectionDropdownButton.textContent = sheetId;
 
       sheetTabContainer.classList.add(
         styles.sheetTabContainer,
         `${bottomBarPrefix}-sheet-tab-container`
       );
-      sheetTabContainer.dataset.sheetId = sheetName;
-
-      sheetTab.addEventListener('mouseup', (e: MouseEvent) => {
-        const buttonPressed = e.button;
-        if (buttonPressed === 2) {
-          // this.currentDropdownTab = e.target!.parentElement as HTMLDivElement;
-          // e.target!.parentElement.appendChild(this.contextSheetTabMenu);
-          // this.contextSheetTabMenu.style.display = 'block';
-        }
-      });
+      sheetTabContainer.dataset.sheetId = sheetId;
 
       const switchSheet = () => {
-        this.sheetsGroup.switchSheet(sheetName);
+        this.sheetsGroup.switchSheet(sheetId);
       };
-      const renameSheetTab = () => {
+
+      const setTabToContentEditable = () => {
         nameContainer.contentEditable = 'true';
         nameContainer.focus();
       };
@@ -163,7 +147,7 @@ class BottomBar {
       });
 
       sheetTab.addEventListener('dblclick', () => {
-        renameSheetTab();
+        setTabToContentEditable();
       });
 
       sheetTab.addEventListener('contextmenu', (e) => {
@@ -175,22 +159,20 @@ class BottomBar {
       deleteSheetButton.addEventListener('click', () => {
         sheetTabDropdown.hide();
 
-        this.sheetsGroup.deleteSheet(sheetName);
+        this.sheetsGroup.deleteSheet(sheetId);
       });
 
       renameSheetButton.addEventListener('click', () => {
         sheetTabDropdown.hide();
 
-        renameSheetTab();
+        setTabToContentEditable();
       });
 
       nameContainer.addEventListener('blur', () => {
-        // const sheetMenu = this.allSheetsMenu.find(
-        //   (x) =>
-        //     x.dataset.globalSheetIndex ===
-        //     containerSheetTab.dataset.globalSheetIndex
-        // )!;
-        // sheetMenu.textContent = spanElement.textContent;
+        nameContainer.contentEditable = 'false';
+        nameContainer.blur();
+
+        this.sheetsGroup.renameSheet(sheetId, nameContainer.textContent!);
       });
 
       nameContainer.classList.add(
@@ -198,7 +180,7 @@ class BottomBar {
         `${bottomBarPrefix}-name-container`
       );
 
-      nameContainer.textContent = sheetName;
+      nameContainer.textContent = sheetId;
 
       sheetTab.appendChild(nameContainer);
       sheetTabContainer.appendChild(sheetTab);
@@ -217,7 +199,7 @@ class BottomBar {
   };
 
   destroy() {
-    this.createNewSheetButton.removeEventListener(
+    this.createNewSheetButtonElements.button.removeEventListener(
       'click',
       this.createNewSheetButtonOnClick
     );

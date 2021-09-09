@@ -193,7 +193,7 @@ class RowCol {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-    const sizes = this.sheet.data?.[this.type]?.sizes;
+    const sizes = this.sheet.getData()[this.type]?.sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -311,7 +311,7 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.sheet.data?.[this.type]?.sizes ?? {});
+    const sizes = Object.values(this.sheet.getData()[this.type]?.sizes ?? {});
 
     const totalSizeDifference = sizes.reduce((currentSize, size) => {
       return (
@@ -328,7 +328,7 @@ class RowCol {
 
   getSize(index: number) {
     const size =
-      this.sheet.data?.[this.type]?.sizes[index] ??
+      this.sheet.getData()[this.type]?.sizes[index] ??
       this.spreadsheet.options[this.type].defaultSize;
 
     return size;
@@ -378,13 +378,13 @@ class RowCol {
   }
 
   getIsFrozen(index: number) {
-    return this.sheet.data?.frozenCells
-      ? index <= this.sheet.data.frozenCells[this.type]
-      : false;
+    const data = this.sheet.getData();
+
+    return data.frozenCells ? index <= data.frozenCells[this.type] : false;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.sheet.data?.frozenCells?.[this.type];
+    return index === this.sheet.getData().frozenCells?.[this.type];
   }
 
   draw(index: number, drawingAtX = false) {

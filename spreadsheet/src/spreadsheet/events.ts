@@ -1,7 +1,4 @@
 const events = {
-  sheet: {
-    load: 's-load',
-  },
   scroll: {
     vertical: 'sv-scroll',
     horizontal: 'sh-scroll',

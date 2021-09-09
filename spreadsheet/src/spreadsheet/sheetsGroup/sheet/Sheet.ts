@@ -43,6 +43,7 @@ export interface ICustomSizePosition {
 }
 
 export type CellId = string;
+export type SheetId = string;
 
 export interface IFrozenCells {
   row: number;
@@ -84,6 +85,10 @@ export interface IData {
   cellStyles?: ICellStyles;
   row?: IRowColData;
   col?: IRowColData;
+}
+
+export interface ISheetData {
+  [sheetName: SheetId]: IData;
 }
 
 export interface IScrollGroups {
@@ -322,9 +327,9 @@ class Sheet {
   rightClickMenu?: RightClickMenu;
   private spreadsheet: Spreadsheet;
 
-  constructor(public sheetsGroup: SheetsGroup, private data: IData) {
+  constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
     this.sheetsGroup = sheetsGroup;
-    this.data = data;
+    this.sheetId = sheetId;
     this.spreadsheet = this.sheetsGroup.spreadsheet;
     this.cellsMap = new Map();
 
@@ -413,8 +418,8 @@ class Sheet {
 
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
-    this.selector = new Selector(this);
     this.merger = new Merger(this);
+    this.selector = new Selector(this);
     this.cellEditor = new CellEditor(this);
     this.rightClickMenu = new RightClickMenu(this);
 
@@ -445,6 +450,8 @@ class Sheet {
     this.row.scrollBar.scrollBarEl.style.bottom = `${
       this.col.scrollBar.getBoundingClientRect().height
     }px`;
+
+    this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
   }
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
@@ -458,17 +465,25 @@ class Sheet {
     this.spreadsheet.eventEmitter.emit(event, ...args);
   }
 
+  setSheetId(sheetId: SheetId) {
+    this.sheetId = sheetId;
+  }
+
+  getData() {
+    return this.spreadsheet.data[this.sheetId];
+  }
+
   setCellStyle(id: CellId, newStyle: ICellStyle) {
-    this.data.cellStyles = {
+    this.getData().cellStyles = {
       [id]: {
-        ...this.data.cellStyles?.[id],
+        ...this.getData().cellStyles?.[id],
         ...newStyle,
       },
     };
   }
 
   updateCells() {
-    const cellStyles = this.data.cellStyles ?? {};
+    const cellStyles = this.getData().cellStyles ?? {};
 
     Object.keys(cellStyles).forEach((id) => {
       const cellStyle = cellStyles[id];
@@ -526,7 +541,7 @@ class Sheet {
       strokeWidth: this.spreadsheet.styles.gridLine.strokeWidth,
     });
 
-    const borders = this.data.cellStyles?.[id]?.borders ?? [];
+    const borders = this.getData().cellStyles?.[id]?.borders ?? [];
 
     if (borders.indexOf(type) === -1) {
       this.setCellStyle(id, {

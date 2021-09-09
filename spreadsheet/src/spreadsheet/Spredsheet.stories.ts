@@ -1,5 +1,5 @@
 import { Story, Meta } from '@storybook/html';
-import { IData } from './sheetsGroup/sheet/Sheet';
+import { ISheetData } from './sheetsGroup/sheet/Sheet';
 import { defaultOptions, IOptions } from './options';
 import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
@@ -12,7 +12,7 @@ export default {
 
 interface IArgs {
   options: IOptions;
-  data?: IData[];
+  data?: ISheetData;
 }
 
 const buildSpreadsheet = (args: IArgs) => {
@@ -49,23 +49,23 @@ export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
   ...defaultStoryArgs,
-  data: [
-    {
+  data: {
+    FrozenCells: {
       sheetName: 'FrozenCells',
       frozenCells: {
         row: 0,
         col: 0,
       },
     },
-  ],
+  },
 };
 
 export const MergedCells = Template.bind({});
 
 MergedCells.args = {
   ...defaultStoryArgs,
-  data: [
-    {
+  data: {
+    MergedCells: {
       sheetName: 'MergedCells',
       mergedCells: [
         {
@@ -80,15 +80,15 @@ MergedCells.args = {
         },
       ],
     },
-  ],
+  },
 };
 
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
   ...defaultStoryArgs,
-  data: [
-    {
+  data: {
+    DifferentSizeCells: {
       sheetName: 'DifferentSizeCells',
       col: {
         sizes: {
@@ -102,15 +102,15 @@ DifferentSizeCells.args = {
         },
       },
     },
-  ],
+  },
 };
 
 export const CellStyles = Template.bind({});
 
 CellStyles.args = {
   ...defaultStoryArgs,
-  data: [
-    {
+  data: {
+    CellStyles: {
       sheetName: 'CellStyles',
       cellStyles: {
         '1_0': {
@@ -137,5 +137,5 @@ CellStyles.args = {
         },
       ],
     },
-  ],
+  },
 };

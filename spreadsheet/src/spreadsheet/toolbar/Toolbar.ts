@@ -11,7 +11,6 @@ import {
   createDropdownIconButton,
   createFunctionDropdownContent,
   createHorizontalAlignContent,
-  createIconButton,
   createTooltip,
   createVerticalAlignContent,
   DropdownIconName,
@@ -21,21 +20,16 @@ import {
   toolbarPrefix,
   VerticalAlignName,
 } from './toolbarHtmlElementHelpers';
-import { createGroup } from '../htmlElementHelpers';
+import {
+  createGroup,
+  createIconButton,
+  IIconElements,
+} from '../htmlElementHelpers';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
-}
-
-interface IIconElements {
-  buttonContainer: HTMLDivElement;
-  button: HTMLButtonElement;
-  active?: boolean;
-  iconContainer: HTMLSpanElement;
-  icon: HTMLElement;
-  tooltip?: HTMLSpanElement;
 }
 
 interface IDropdownElements {
@@ -176,7 +170,7 @@ class Toolbar {
           break;
         }
         default: {
-          const iconElements = createIconButton(name);
+          const iconElements = createIconButton(name, toolbarPrefix);
           const tooltip = createTooltip(name);
 
           iconElements.button.appendChild(tooltip);

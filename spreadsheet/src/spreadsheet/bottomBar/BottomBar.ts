@@ -138,6 +138,10 @@ class BottomBar {
       }
     });
 
+    sheetTab.addEventListener('click', () => {
+      this.sheetsGroup.switchSheet('Sheet2');
+    });
+
     sheetTab.addEventListener('dblclick', () => {
       spanElement.contentEditable = 'true';
       spanElement.focus();

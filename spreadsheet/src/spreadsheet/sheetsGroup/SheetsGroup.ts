@@ -7,6 +7,7 @@ export type SheetId = string;
 
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
+  sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   bottomBar?: BottomBar;
   activeSheet: Sheet;
@@ -20,7 +21,8 @@ class SheetsGroup {
     this.sheetsGroupEl = document.createElement('div');
     this.sheetsGroupEl.classList.add(`${prefix}-sheets-group`);
 
-    this.bottomBar = new BottomBar(this);
+    this.sheetsEl = document.createElement('div');
+    this.sheetsEl.classList.add(`${prefix}-sheets`);
 
     if (this.spreadsheet.data?.length) {
       const firstSheetName = this.spreadsheet.data[0].sheetName;
@@ -44,7 +46,10 @@ class SheetsGroup {
       this.activeSheet = this.sheets.get(sheetName)!;
     }
 
+    this.sheetsGroupEl.appendChild(this.sheetsEl);
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+
+    this.bottomBar = new BottomBar(this);
   }
 
   getSheetName() {
@@ -59,10 +64,10 @@ class SheetsGroup {
     }
 
     if (this.activeSheet) {
-      this.activeSheet.destroy();
+      this.activeSheet.hide();
     }
 
-    sheet.layer.show();
+    sheet.show();
 
     this.activeSheet = sheet;
   }
@@ -71,6 +76,8 @@ class SheetsGroup {
     const sheet = new Sheet(this, data);
 
     this.sheets.set(data.sheetName, sheet);
+
+    sheet.hide();
 
     this.sheetIndex++;
   }

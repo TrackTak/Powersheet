@@ -336,7 +336,7 @@ class Sheet {
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.sheetsGroup.sheetsGroupEl.prepend(this.sheetEl);
+    this.sheetsGroup.sheetsEl.appendChild(this.sheetEl);
 
     this.scrollGroups = {
       main: new Group(),
@@ -873,6 +873,16 @@ class Sheet {
       rows,
       cols,
     };
+  }
+
+  hide() {
+    this.stage.hide();
+    this.sheetEl.style.display = 'none';
+  }
+
+  show() {
+    this.stage.show();
+    this.sheetEl.style.display = 'initial';
   }
 
   destroy() {

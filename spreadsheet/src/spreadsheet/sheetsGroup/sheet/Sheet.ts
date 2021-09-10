@@ -466,11 +466,8 @@ class Sheet {
     this.stage.width(this.col.totalSize + this.getViewportVector().x);
     this.stage.height(this.row.totalSize + this.getViewportVector().y);
 
-    // setTimeout(() => {
-    //   const colScrollBarHeight =
-    //     this.col.scrollBar.scrollBarEl.getBoundingClientRect().height;
-    //   this.row.scrollBar.scrollBarEl.style.bottom = `${colScrollBarHeight}px`;
-    // }, 1000);
+    // TODO: use scrollBar size instead of hardcoded value
+    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }
 
   setSheetId(sheetId: SheetId) {

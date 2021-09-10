@@ -89,9 +89,7 @@ class ScrollBar {
 
     const scrollSize =
       this.sheet.sheetDimensions[this.functions.size] +
-      this.sheet.getViewportVector()[this.functions.axis] +
-      // TODO: use scrollBar size instead of hardcoded value
-      18;
+      this.sheet.getViewportVector()[this.functions.axis];
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }

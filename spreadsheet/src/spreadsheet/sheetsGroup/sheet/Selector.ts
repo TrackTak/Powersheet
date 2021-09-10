@@ -1,6 +1,6 @@
 import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
-import { Vector2d } from 'konva/lib/types';
+import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
@@ -25,6 +25,7 @@ class Selector {
   selectedCells: Cell[];
   selectionBorderCell: Cell | null;
   selectedFirstCell: Cell | null;
+  previousSelectedCellPosition?: IRect;
   private selectionArea: ISelectionArea;
 
   constructor(private sheet: Sheet) {
@@ -79,6 +80,7 @@ class Selector {
   }
 
   startSelection(start: Vector2d, end: Vector2d) {
+    this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
     const cells = this.sheet.convertFromRowColsToCells(rows, cols);

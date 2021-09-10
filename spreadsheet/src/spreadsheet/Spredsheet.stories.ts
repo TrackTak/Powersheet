@@ -64,13 +64,13 @@ const defaultStoryArgs: IArgs = {
   data: {
     frozenCells: {},
     mergedCells: [],
-    cellStyles: {},
     row: {
       sizes: {},
     },
     col: {
       sizes: {},
     },
+    sheetData: {},
   },
 };
 
@@ -140,16 +140,23 @@ CellStyles.args = {
   ...defaultStoryArgs,
   data: {
     ...defaultStoryArgs.data,
-    cellStyles: {
+    sheetData: {
       '1_0': {
-        backgroundColor: 'red',
+        style: {
+          backgroundColor: 'red',
+        },
+        value: "HI!"
       },
       '3_3': {
-        borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
-        backgroundColor: 'yellow',
+        style: {
+          borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+          backgroundColor: 'yellow',
+        },
       },
-      '4_5': {
-        borders: ['borderBottom', 'borderTop'],
+      '4_1': {
+        style: {
+          borders: ['borderBottom', 'borderTop'],
+        },
       },
     },
     mergedCells: [

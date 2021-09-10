@@ -1,6 +1,7 @@
 @import '../styles.scss';
 
 .bottomBar {
+  padding: 0 25px;
   user-select: none;
   background: #f5f6f7;
   box-shadow: 0 -1px 3px -1px rgb(169 164 164);
@@ -40,12 +41,8 @@ img {
   display: flex;
 }
 
-.sheetSelectionButton,
-.newSheetButton {
-  @include button;
+.createNewSheetButton {
   height: 100%;
-  padding-left: 15px;
-  padding-right: 15px;
 }
 
 .sheetTab {
@@ -59,7 +56,8 @@ img {
   color: #80868b;
   letter-spacing: 0.025rem;
   border: 0;
-  border-left: 1px solid #e8eaed;
+  border-radius: 0;
+  border-right: 1px solid #e8eaed;
   background: none;
   font-family: 'Nunito Sans', -apple-system, '.SFNSText-Regular',
     'San Francisco', BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica,
@@ -67,8 +65,6 @@ img {
 
   &:global(.active) {
     background-color: #fff;
-    border-top-color: #f1f3f4;
-    box-shadow: 0 1px 3px 1px rgba(60, 64, 67, 0.15);
   }
 
   &:not(:global(.active)):hover {
@@ -135,7 +131,12 @@ img {
 .scrollSliderContainer {
   display: flex;
   flex-direction: row;
+  margin-left: 10px;
   transition: transform 0.2s ease-in;
+
+  > .sheetTabContainer:first-of-type {
+    border-left: 1px solid #e8eaed;
+  }
 }
 
 .scrollsliderArrow {

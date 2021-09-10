@@ -59,6 +59,17 @@ class SheetsGroup {
   deleteSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
 
+    if (this.activeSheetId === sheetId) {
+      const sheetIds = Array.from(this.sheets.keys());
+      const currentIndex = sheetIds.indexOf(sheetId);
+
+      if (currentIndex === 0) {
+        this.switchSheet(sheetIds[1]);
+      } else {
+        this.switchSheet(sheetIds[currentIndex - 1]);
+      }
+    }
+
     sheet.destroy();
 
     this.sheets.delete(sheetId);

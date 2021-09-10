@@ -70,16 +70,6 @@
   left: 0;
 }
 
-.iconButton {
-  @include button();
-  position: relative;
-  user-select: none;
-  padding: 6px;
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-}
-
 .colorBar {
   width: 75%;
   transform: translate(-50%, 0);

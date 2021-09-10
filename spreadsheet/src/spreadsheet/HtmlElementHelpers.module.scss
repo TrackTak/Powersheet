@@ -218,4 +218,8 @@ $iconSize: 18px;
     left: -7 * $iconSize;
     top: -3 * $iconSize;
   }
+  &.hamburger {
+    left: -8 * $iconSize;
+    top: -3 * $iconSize;
+  }
 }

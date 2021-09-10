@@ -1,7 +1,7 @@
 import { bottomBarPrefix } from './BottomBar';
 import styles from './BottomBar.module.scss';
 
-export type SelectSheetsIcon = 'ellipsis';
+export type SelectSheetsIcon = 'hamburger';
 
 export type AddSheetIcon = 'add';
 

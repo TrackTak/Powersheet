@@ -38,7 +38,7 @@ class BottomBar {
       this.createNewSheetButtonOnClick
     );
 
-    this.sheetSelectionButton = createIconButton('ellipsis', bottomBarPrefix);
+    this.sheetSelectionButton = createIconButton('hamburger', bottomBarPrefix);
     this.sheetSelectionButton.button.addEventListener('click', () => {
       this.sheetSelectionDropdown.show();
     });

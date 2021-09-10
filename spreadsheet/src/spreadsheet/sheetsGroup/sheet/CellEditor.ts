@@ -78,7 +78,6 @@ class CellEditor {
   destroy() {
     this.cellTooltip.destroy();
     this.cellEditorContainerEl.remove();
-    this.sheet.formulaBar!.editableContent.textContent = null;
     this.cellEditorEl.removeEventListener('input', this.handleInput);
     this.formulaHelper.destroy();
   }

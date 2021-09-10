@@ -425,9 +425,6 @@ class Sheet {
 
     this.updateSheetDimensions();
 
-    this.stage.width(this.col.totalSize + this.getViewportVector().x);
-    this.stage.height(this.row.totalSize + this.getViewportVector().y);
-
     const sheetConfig: RectConfig = {
       width: this.col.totalSize,
       height: this.row.totalSize,
@@ -444,14 +441,9 @@ class Sheet {
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
 
-    this.col.scrollBar.setup();
-    this.row.scrollBar.setup();
-
-    this.row.scrollBar.scrollBarEl.style.bottom = `${
-      this.col.scrollBar.getBoundingClientRect().height
-    }px`;
-
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
@@ -464,6 +456,30 @@ class Sheet {
 
     this.spreadsheet.eventEmitter.emit(event, ...args);
   }
+
+  onDOMContentLoaded = () => {
+    const bottomBarHeight =
+      this.sheetsGroup.bottomBar?.bottomBar.getBoundingClientRect().height ?? 0;
+
+    const toolbarHeight =
+      this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ?? 0;
+
+    const formulaBarHeight =
+      this.spreadsheet.formulaBar?.formulaBarEl.getBoundingClientRect()
+        .height ?? 0;
+
+    this.row.scrollBar.scrollBarEl.style.bottom = `${
+      this.col.scrollBar.scrollBarEl.getBoundingClientRect().height
+    }px`;
+
+    this.stage.width(window.innerWidth);
+    this.stage.height(
+      window.innerHeight - toolbarHeight - formulaBarHeight - bottomBarHeight
+    );
+
+    this.col.scrollBar.updateCustomSizePositions();
+    this.row.scrollBar.updateCustomSizePositions();
+  };
 
   setSheetId(sheetId: SheetId) {
     this.sheetId = sheetId;
@@ -901,6 +917,8 @@ class Sheet {
   }
 
   destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+
     this.sheetEl.remove();
     this.stage.destroy();
     this.col.destroy();

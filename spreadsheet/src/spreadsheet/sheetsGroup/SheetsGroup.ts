@@ -24,6 +24,9 @@ class SheetsGroup {
 
     this.bottomBar = new BottomBar(this);
 
+    this.sheetsGroupEl.prepend(this.sheetsEl);
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+
     const dataArray = Object.values(this.spreadsheet.data);
 
     if (dataArray.length) {
@@ -43,9 +46,6 @@ class SheetsGroup {
 
       this.switchSheet(sheetName);
     }
-
-    this.sheetsGroupEl.prepend(this.sheetsEl);
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
   }
 
   getSheetName() {

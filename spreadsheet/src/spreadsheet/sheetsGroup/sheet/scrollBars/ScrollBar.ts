@@ -26,13 +26,16 @@ class ScrollBar {
   constructor(
     private sheet: Sheet,
     private type: RowColType,
+    private oppositeType: RowColType,
     private isCol: boolean,
     private functions: IRowColFunctions
   ) {
     this.sheet = sheet;
     this.type = type;
+    this.oppositeType = oppositeType;
     this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.isCol = isCol;
+    this.oppositeType = this.isCol ? 'row' : 'col';
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;
     this.customSizePositions = [];
@@ -67,18 +70,6 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
-  getBoundingClientRect = () => {
-    return this.scrollBarEl.getBoundingClientRect();
-  };
-
-  setup() {
-    this.updateCustomSizePositions();
-
-    this.scrollBarEl.style[this.functions.size] = `${this.sheet.stage[
-      this.functions.size
-    ]()}px`;
-  }
-
   updateCustomSizePositions() {
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
@@ -101,7 +92,10 @@ class ScrollBar {
 
     this.scrollEl.style[this.functions.size] = `${
       this.sheet.sheetDimensions[this.functions.size] +
-      this.sheet.getViewportVector()[this.functions.axis]
+      this.sheet.getViewportVector()[this.functions.axis] +
+      this.sheet[
+        this.oppositeType
+      ].scrollBar.scrollBarEl.getBoundingClientRect()[this.functions.size]
     }px`;
   }
 

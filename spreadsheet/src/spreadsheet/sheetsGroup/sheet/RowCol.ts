@@ -62,6 +62,7 @@ class RowCol {
   private previousSheetViewportPosition: ISheetViewportPosition;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
+  private oppositeType: RowColType;
   private oppositeFunctions: IRowColFunctions;
   private isCol: boolean;
   private spreadsheet: Spreadsheet;
@@ -93,6 +94,7 @@ class RowCol {
       }),
     };
     if (this.isCol) {
+      this.oppositeType = 'row';
       this.functions = {
         axis: 'x',
         size: 'width',
@@ -124,6 +126,7 @@ class RowCol {
       //   );
       // };
     } else {
+      this.oppositeType = 'col';
       this.functions = {
         axis: 'y',
         size: 'height',
@@ -160,6 +163,7 @@ class RowCol {
     this.scrollBar = new ScrollBar(
       this.sheet,
       this.type,
+      this.oppositeType,
       this.isCol,
       this.functions
     );

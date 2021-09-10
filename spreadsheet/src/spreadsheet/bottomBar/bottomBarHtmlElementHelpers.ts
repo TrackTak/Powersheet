@@ -6,10 +6,24 @@ export type SelectSheetsIcon = 'hamburger';
 export type AddSheetIcon = 'add';
 
 export const createSheetTab = () => {
+  const sheetTabContainer = document.createElement('div');
   const sheetTab = document.createElement('div');
-  sheetTab.classList.add(styles.sheetTab, `${bottomBarPrefix}-sheet-tab`);
+  const nameContainer = document.createElement('span');
 
-  return sheetTab;
+  sheetTabContainer.classList.add(
+    styles.sheetTabContainer,
+    `${bottomBarPrefix}-sheet-tab-container`
+  );
+  sheetTab.classList.add(styles.sheetTab, `${bottomBarPrefix}-sheet-tab`);
+  nameContainer.classList.add(
+    styles.nameContainer,
+    `${bottomBarPrefix}-name-container`
+  );
+
+  sheetTab.appendChild(nameContainer);
+  sheetTabContainer.appendChild(sheetTab);
+
+  return { sheetTabContainer, sheetTab, nameContainer };
 };
 
 export const createSheetTabDropdownContent = () => {
@@ -64,82 +78,3 @@ export const createSheetSelectionDropdownButton = () => {
 
   return sheetSelectionDropdownButton;
 };
-
-//TO DO
-// export const createScrollSlider = () => {
-//   const scrollSlider = document.createElement('div');
-//   scrollSlider.classList.add(
-//     styles.scrollsliderArrow,
-//     `${bottomBarPrefix}-scrollslider-arrow`
-//   );
-
-//   const scrollSliderContent = document.createElement('div');
-//   scrollSliderContent.classList.add(
-//     styles.scrollsliderContent,
-//     `${bottomBarPrefix}-scrollslider-content`
-//   );
-
-//   const leftScrollSliderButton = document.createElement('button');
-//   leftScrollSliderButton.classList.add(
-//     styles.leftScrollslider,
-//     `${bottomBarPrefix}-left-scrollslider`
-//   );
-
-//   const rightScrollSliderButton = document.createElement('button');
-//   rightScrollSliderButton.classList.add(
-//     styles.rightScrollslider,
-//     `${bottomBarPrefix}-right-scrollslider`
-//   );
-
-//   const leftScrollImage = document.createElement('img');
-
-//   leftScrollImage.src = leftIcon;
-//   leftScrollImage.alt = 'left';
-//   leftScrollImage.classList.add(
-//     styles.scrollIcon,
-//     `${bottomBarPrefix}-scroll-icon`
-//   );
-//   leftScrollSliderButton.appendChild(leftScrollImage);
-
-//   const rightScrollImage = document.createElement('img');
-
-//   rightScrollImage.src = rightIcon;
-//   rightScrollImage.alt = 'right';
-//   rightScrollImage.classList.add(
-//     styles.scrollIcon,
-//     `${bottomBarPrefix}-scroll-icon`
-//   );
-//   rightScrollSliderButton.appendChild(rightScrollImage);
-
-//   let translate = 0;
-
-//   leftScrollSliderButton.addEventListener('click', () => {
-//     if (translate >= 0) {
-//       translate += 100;
-//       this.scrollsliderContainerTab.style.transform =
-//         'translateX(' + translate + 'px' + ')';
-//     }
-//   });
-
-//   rightScrollSliderButton.addEventListener('click', () => {
-//     const scrollSliderSheetTabs = this.sheetTabs[this.sheetTabs.length - 1];
-
-//     const totalScrollWidth = this.sheetTabs.reduce((prev, curr) => {
-//       return (prev += curr.getBoundingClientRect().width);
-//     }, 0);
-
-//     const remainingScrollWidth = totalScrollWidth - this.tabContainerMaxWidth;
-
-//     if (translate >= 0) {
-//       translate -= 100;
-//       this.scrollsliderContainerTab.style.transform =
-//         'translateX(' + translate + 'px' + ')';
-//     }
-//   });
-
-//   scrollSlider.appendChild(scrollSliderContent);
-//   scrollSliderContent.appendChild(leftScrollSliderButton);
-//   scrollSliderContent.appendChild(rightScrollSliderButton);
-
-//   return scrollSlider;
-// };

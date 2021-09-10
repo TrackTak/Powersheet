@@ -1,5 +1,5 @@
-import BottomBar from '../bottomBar/BottomBarNew';
-import Sheet, { IData, ISheetData, SheetId } from './sheet/Sheet';
+import BottomBar from '../bottomBar/BottomBar';
+import Sheet, { IData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 

@@ -50,6 +50,16 @@ $iconSize: 18px;
   text-align: left;
 }
 
+@mixin buttonCommentActions {
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  line-height: 16px;
+  padding: 3px 12px 5px;
+}
+
 @mixin tippyContentNoPadding {
   :global(.tippy-box[data-theme~='dropdown'] .tippy-content) {
     padding: 0;

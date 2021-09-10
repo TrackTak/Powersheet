@@ -2,10 +2,10 @@ import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
-import { prefix } from '../../utils';
+import { prefix, rotatePoint } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Sheet.module.scss';
-import { Line } from 'konva/lib/shapes/Line';
+import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import {
@@ -30,6 +30,7 @@ import {
 import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
 import Comment from './Comment';
+import Konva from 'konva';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -94,6 +95,7 @@ export type BorderStyleOption =
 export interface ICellStyle {
   backgroundColor?: string;
   borders?: BorderStyleOption[];
+  comment?: string;
 }
 
 export interface ICellStyles {
@@ -375,7 +377,8 @@ class Sheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   rightClickMenu?: RightClickMenu;
-  comment?: Comment;
+  comment: Comment;
+  commentMarkerConfig: LineConfig;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -385,6 +388,7 @@ class Sheet {
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.cellsMap = new Map();
+    this.commentMarkerConfig = this.styles.commentMarker;
 
     const that = this;
 
@@ -526,6 +530,10 @@ class Sheet {
 
       if (cellStyle.backgroundColor) {
         this.setCellBackgroundColor(id, cellStyle.backgroundColor);
+      }
+
+      if (cellStyle.comment) {
+        this.setCellCommentMarker(id);
       }
 
       if (cellStyle.borders) {
@@ -749,6 +757,40 @@ class Sheet {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
+  }
+
+  setCellCommentMarker(id: CellId) {
+    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+
+    const commentMarker = new Line({
+      ...this.commentMarkerConfig,
+      x: clientRect.width,
+    });
+
+    cell.add(commentMarker);
+
+    const rotateAroundCenter = (
+      commentMarker: Line<LineConfig>,
+      rotation: number
+    ) => {
+      const topLeft = {
+        x: -commentMarker.width() / 2,
+        y: -commentMarker.height() / 2,
+      };
+      const current = rotatePoint(
+        topLeft,
+        Konva.getAngle(commentMarker.rotation())
+      );
+      const rotated = rotatePoint(topLeft, Konva.getAngle(rotation));
+      const dx = rotated.x - current.x,
+        dy = rotated.y - current.y;
+
+      commentMarker.rotation(rotation);
+      commentMarker.x(commentMarker.x() + dx);
+      commentMarker.y(commentMarker.y() + dy);
+    };
+
+    rotateAroundCenter(commentMarker, 180);
   }
 
   getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {

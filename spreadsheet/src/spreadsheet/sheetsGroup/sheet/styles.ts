@@ -142,6 +142,7 @@ export const defaultStyles: IStyles = {
   },
   commentMarker: {
     ...performanceProperties,
+    type: 'commentMarker',
     stroke: 'orange',
     fill: 'orange',
     strokeWidth: 2,

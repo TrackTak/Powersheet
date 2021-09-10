@@ -25,7 +25,7 @@
 .horizontalScrollBar {
   @include scrollBar();
 
-  bottom: 0;
+  bottom: 1px;
   left: 0;
   overflow-x: scroll;
   overflow-y: hidden;

@@ -24,7 +24,7 @@ interface ISheetTabElements {
 class BottomBar {
   bottomBar: HTMLDivElement;
   content: HTMLDivElement;
-  sheetSelectionContainer: HTMLDivElement;
+  sheetSelectionButtonContainer: HTMLDivElement;
   sheetSelectionButton: IIconElements;
   sheetSelectionDropdown: Instance<Props>;
   sheetSelectionDropdownContent: HTMLDivElement;
@@ -65,10 +65,10 @@ class BottomBar {
     this.tabContainer = document.createElement('div');
     this.tabContainer.classList.add(`${bottomBarPrefix}-tab-container`);
 
-    this.sheetSelectionContainer = document.createElement('div');
-    this.sheetSelectionContainer.classList.add(
-      styles.sheetSelectionContainer,
-      `${bottomBarPrefix}-sheet-selection-container`
+    this.sheetSelectionButtonContainer = document.createElement('div');
+    this.sheetSelectionButtonContainer.classList.add(
+      styles.sheetSelectionButtonContainer,
+      `${bottomBarPrefix}-sheet-selection-button-container`
     );
 
     this.sheetSelectionDropdownContent = createSheetSelectionDropdownContent();
@@ -90,10 +90,12 @@ class BottomBar {
       `${bottomBarPrefix}-scroll-slider-container`
     );
 
-    this.sheetSelectionContainer.appendChild(this.sheetSelectionButton.button);
+    this.sheetSelectionButtonContainer.appendChild(
+      this.sheetSelectionButton.button
+    );
     this.tabContainer.appendChild(this.scrollSliderContainer);
     this.content.appendChild(this.createNewSheetButtonElements.buttonContainer);
-    this.content.appendChild(this.sheetSelectionContainer);
+    this.content.appendChild(this.sheetSelectionButtonContainer);
     this.bottomBar.appendChild(this.content);
     this.bottomBar.appendChild(this.tabContainer);
     this.sheetsGroup.sheetsGroupEl.appendChild(this.bottomBar);

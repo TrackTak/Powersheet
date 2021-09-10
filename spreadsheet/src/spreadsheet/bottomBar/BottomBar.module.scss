@@ -29,8 +29,12 @@ img {
 }
 
 .createNewSheetButtonContainer,
-.sheetSelectionContainer {
+.sheetSelectionButtonContainer {
   display: flex;
+
+  > button {
+    border-radius: 0;
+  }
 }
 
 .sheetTab {

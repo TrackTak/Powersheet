@@ -3,7 +3,7 @@ import { prefix } from './../utils';
 
 export const formulaHelperPrefix = `${prefix}-formula-helper`;
 
-export const createList = (formulas: string[]) => {
+export const createFormulaList = (formulas: string[]) => {
   const list = document.createElement("ul");
     list.classList.add(styles.list, `${formulaHelperPrefix}-list`);
     formulas.forEach((formula) => {

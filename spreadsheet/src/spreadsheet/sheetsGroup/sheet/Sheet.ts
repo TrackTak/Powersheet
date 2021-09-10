@@ -501,19 +501,26 @@ class Sheet {
     this.merger = new Merger(this);
     this.rightClickMenu = new RightClickMenu(this);
 
-    this.shapes.sheet.on('click', () => this.handleClick());
+    this.shapes.sheet.on('click', this.sheetOnClick);
     this.container.tabIndex = 1;
-    this.container.addEventListener('keydown', (e) => this.keyHandler(e));
+    this.container.addEventListener('keydown', this.keyHandler);
 
 
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
-  handleClick = () => {
+  sheetOnClick = () => {
     if (this.cellEditor) {
       this.destroyCellEditor();
       return;
     }
+
+    if (this.hasDoubleClickedOnCell()) {
+        this.createCellEditor();
+    }
+  }
+
+  hasDoubleClickedOnCell = () => {
     const timeNow = (new Date()).getTime();
     const delayTime = 500;
     const viewportVector = this.getViewportVector();
@@ -522,17 +529,15 @@ class Sheet {
       return;
     }
     const { x, y } = {
-      // TODO - Better way than using viewport vector here?
       x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
       y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
     };
     const isInCellX = x >= previousSelectedCellPosition.x && x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
     const isInCellY = y >= previousSelectedCellPosition.y && y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
     const isClickedInCell = isInCellX && isInCellY;
-    if (isClickedInCell && timeNow <= (this.lastClickTime + delayTime)) {
-        this.createCellEditor();
-    }
+
     this.lastClickTime = timeNow;
+    return isClickedInCell && timeNow <= (this.lastClickTime + delayTime);
   }
 
   keyHandler = (e: KeyboardEvent) => {
@@ -623,10 +628,7 @@ class Sheet {
   updateCellRect(id: CellId) {
     const cell = this.convertFromCellIdToCell(id);
     if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
-        'cellRect',
-        'cellText'
-      ]);
+      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, ['cellRect']);
 
       setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
 
@@ -805,7 +807,7 @@ class Sheet {
   }
 
   setCellTextValue(id: CellId, value: string) {
-    const { cell, clientRect } = this.drawNewCell(id);
+    const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
 
     const text = new Text({
       ...this.styles.cell.text,

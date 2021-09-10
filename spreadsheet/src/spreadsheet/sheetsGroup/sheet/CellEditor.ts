@@ -8,8 +8,8 @@ import { HyperFormula } from 'hyperformula';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 
 class CellEditor {
-  private textAreaContainer: HTMLDivElement;
-  private textArea: HTMLDivElement;
+  private cellEditorContainerEl: HTMLDivElement;
+  private cellEditorEl: HTMLDivElement;
   private cellTooltip: DelegateInstance;
   private isEditing = false;
   private formulaHelper: FormulaHelper;
@@ -17,29 +17,29 @@ class CellEditor {
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
 
-    this.textArea = document.createElement('div');
-    this.textArea.setAttribute('contentEditable', 'true');
-    this.textArea.classList.add(styles.cellEditor);
-    this.textAreaContainer = document.createElement('div');
-    this.textAreaContainer.classList.add(styles.cellEditorContainer);
-    this.textAreaContainer.appendChild(this.textArea);
-    this.cellTooltip = delegate(this.textArea, {
+    this.cellEditorEl = document.createElement('div');
+    this.cellEditorEl.setAttribute('contentEditable', 'true');
+    this.cellEditorEl.classList.add(styles.cellEditor);
+    this.cellEditorContainerEl = document.createElement('div');
+    this.cellEditorContainerEl.classList.add(styles.cellEditorContainer);
+    this.cellEditorContainerEl.appendChild(this.cellEditorEl);
+    this.cellTooltip = delegate(this.cellEditorEl, {
       target: styles.cellEditor,
       arrow: false,
       placement: 'top-start',
       theme: 'cell',
       offset: [0, 5],
     });
-    this.sheet.container.appendChild(this.textAreaContainer);
+    this.sheet.container.appendChild(this.cellEditorContainerEl);
 
     this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
     this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
 
-    this.textArea.addEventListener('input', (e) => this.handleInput(e));
+    this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
     this.formulaHelper = new FormulaHelper(formulas);
-    this.textAreaContainer.appendChild(this.formulaHelper.formulaHelperEl);
+    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
 
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
     this.setTextContent(this.sheet.data.sheetData?.[cellId]?.value)
@@ -59,7 +59,7 @@ class CellEditor {
       this.sheet.formulaBar.editableContent.textContent = value || '';
     }
 
-    this.textArea.textContent = value || '';
+    this.cellEditorEl.textContent = value || '';
   }
 
   handleInput(e: Event) {
@@ -77,23 +77,23 @@ class CellEditor {
 
   destroy() {
     this.cellTooltip.destroy();
-    this.textAreaContainer.remove();
+    this.cellEditorContainerEl.remove();
     this.sheet.formulaBar!.editableContent.textContent = null;
-    this.textArea.removeEventListener('input', this.handleInput);
+    this.cellEditorEl.removeEventListener('input', this.handleInput);
     this.formulaHelper.destroy();
   }
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.selectedFirstCell!;
-    this.setTextAreaPosition(selectedCell.getClientRect());
-    this.textArea.focus();
+    this.setCellEditorElPosition(selectedCell.getClientRect());
+    this.cellEditorEl.focus();
   };
 
-  private setTextAreaPosition = (position: IRect) => {
-    this.textAreaContainer.style.top = `${position.y}px`;
-    this.textAreaContainer.style.left = `${position.x}px`;
-    this.textAreaContainer.style.minWidth = `${position.width}px`;
-    this.textAreaContainer.style.height = `${position.height}px`;
+  private setCellEditorElPosition = (position: IRect) => {
+    this.cellEditorContainerEl.style.top = `${position.y}px`;
+    this.cellEditorContainerEl.style.left = `${position.x}px`;
+    this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
+    this.cellEditorContainerEl.style.height = `${position.height}px`;
   };
 
   private hideCellTooltip = () => {

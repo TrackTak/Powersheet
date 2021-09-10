@@ -121,10 +121,7 @@ class Merger {
         const id = getCellId(ri, ci);
 
         if (id !== mergedCell.id()) {
-          this.sheet.data.sheetData[id] = {
-            ...this.sheet.data.sheetData[id],
-            style: null,
-          };
+          delete this.sheet.data.sheetData[id]?.style;
         }
       }
     }

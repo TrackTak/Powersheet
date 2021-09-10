@@ -1,7 +1,7 @@
 import { DelegateInstance, delegate } from 'tippy.js';
 import styles from './FormulaHelper.module.scss';
 import isEmpty from 'lodash/isEmpty';
-import { createList, createWrapperContent } from './htmlElementHelpers';
+import { createFormulaList, createWrapperContent } from './htmlElementHelpers';
 
 class FormulaHelper {
   formulaHelperEl: HTMLDivElement;
@@ -46,7 +46,7 @@ class FormulaHelper {
   }
 
   private updateList(formulas: string[]) {
-    const list = createList(formulas);
+    const list = createFormulaList(formulas);
     if (this.list) {
       this.formulaHelperListContainerEl?.replaceChild(list, this.list);
     } else {

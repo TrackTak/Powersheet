@@ -27,6 +27,14 @@ class SheetsGroup {
     this.sheetsGroupEl.prepend(this.sheetsEl);
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
 
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+  }
+
+  destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+  }
+
+  onDOMContentLoaded = () => {
     const dataArray = Object.values(this.spreadsheet.data);
 
     if (dataArray.length) {
@@ -46,7 +54,7 @@ class SheetsGroup {
 
       this.switchSheet(sheetName);
     }
-  }
+  };
 
   getSheetName() {
     return `Sheet${this.sheetIndex}`;
@@ -140,6 +148,8 @@ class SheetsGroup {
     this.sheetIndex++;
 
     this.update();
+
+    sheet.setSize();
   }
 }
 

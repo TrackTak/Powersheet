@@ -119,12 +119,13 @@ class RowCol {
         };
         return lineConfig;
       };
-      // this.getAvailableSize = () => {
-      //   return (
-      //     this.spreadsheet.options.width - this.sheet.getViewportVector().x // -
-      //     // this.sheet.row.scrollBar.getBoundingClientRect().width
-      //   );
-      // };
+      this.getAvailableSize = () => {
+        return (
+          this.spreadsheet.options.width -
+          this.sheet.getViewportVector().x -
+          this.sheet.row.scrollBar.scrollEl.getBoundingClientRect().width
+        );
+      };
     } else {
       this.oppositeType = 'col';
       this.functions = {
@@ -149,21 +150,33 @@ class RowCol {
         };
         return lineConfig;
       };
-      // this.getAvailableSize = () => {
-      //   return (
-      //     this.spreadsheet.options.height -
-      //     (this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
-      //       0) -
-      //     this.sheet.getViewportVector().y -
-      //     this.scrollBar.getBoundingClientRect().height
-      //   );
-      // };
+      this.getAvailableSize = () => {
+        const bottomBarHeight =
+          this.sheet.sheetsGroup.bottomBar?.bottomBar.getBoundingClientRect()
+            .height ?? 0;
+
+        const toolbarHeight =
+          this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
+          0;
+
+        const formulaBarHeight =
+          this.spreadsheet.formulaBar?.formulaBarEl.getBoundingClientRect()
+            .height ?? 0;
+
+        return (
+          this.spreadsheet.options.height -
+          bottomBarHeight -
+          toolbarHeight -
+          formulaBarHeight -
+          this.sheet.getViewportVector().y -
+          this.sheet.col.scrollBar.scrollEl.getBoundingClientRect().height
+        );
+      };
     }
 
     this.scrollBar = new ScrollBar(
       this.sheet,
       this.type,
-      this.oppositeType,
       this.isCol,
       this.functions
     );
@@ -172,9 +185,11 @@ class RowCol {
 
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
+  }
 
+  setup() {
     const yIndex = this.calculateSheetViewportEndPosition(
-      this.spreadsheet.options[this.functions.size],
+      this.getAvailableSize(),
       0
     );
 

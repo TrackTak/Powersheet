@@ -16,6 +16,7 @@ import Sheet, {
   iterateXToY,
   makeShapeCrisp,
   offsetShapeValue,
+  CellId,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';

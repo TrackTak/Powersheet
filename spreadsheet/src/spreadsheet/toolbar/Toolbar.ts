@@ -27,6 +27,7 @@ import {
 } from '../htmlElementHelpers';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
+import { Group } from 'konva/lib/Group';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -301,80 +302,85 @@ class Toolbar {
     this.setToolbarState();
   };
 
+  private setBorderStyles(
+    cells: Cell[],
+    cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
+    borderType: BorderStyleOption
+  ) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const borderCells = cells.filter(cellsFilter);
+
+    borderCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, borderType);
+    });
+  }
+
   setBottomBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const row = sheet.row.convertFromCellsToRange(cells);
-    const bottomCells = cells.filter((cell) => cell.attrs.row.y === row.y);
 
-    bottomCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderBottom');
-    });
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.y === row.y,
+      'borderBottom'
+    );
   }
 
   setRightBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const col = sheet.col.convertFromCellsToRange(cells);
-    const rightCells = cells.filter((cell) => cell.attrs.col.y === col.y);
 
-    rightCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderRight');
-    });
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.y === col.y,
+      'borderRight'
+    );
   }
 
   setTopBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const row = sheet.row.convertFromCellsToRange(cells);
-    const topCells = cells.filter((cell) => cell.attrs.row.x === row.x);
 
-    topCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderTop');
-    });
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.x === row.x,
+      'borderTop'
+    );
   }
 
   setLeftBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const col = sheet.col.convertFromCellsToRange(cells);
-    const leftCells = cells.filter((cell) => cell.attrs.col.x === col.x);
 
-    leftCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderLeft');
-    });
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.x === col.x,
+      'borderLeft'
+    );
   }
 
   setVerticalBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const col = sheet.col.convertFromCellsToRange(cells);
-    const verticalCells = cells.filter(
-      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y,
+      'borderRight'
     );
-
-    verticalCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderRight');
-    });
   }
 
   setHorizontalBorders(cells: Cell[]) {
     const sheet = this.spreadsheet.focusedSheet!;
     const row = sheet.row.convertFromCellsToRange(cells);
-    const horizontalCells = cells.filter(
-      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y,
+      'borderBottom'
     );
-
-    horizontalCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.setBorderStyle(id, 'borderBottom');
-    });
   }
 
   setInsideBorders(cells: Cell[]) {

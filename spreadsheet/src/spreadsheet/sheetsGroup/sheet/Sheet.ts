@@ -33,6 +33,7 @@ import RightClickMenu from './RightClickMenu';
 import Comment from './Comment';
 import Konva from 'konva';
 import { HyperFormula } from 'hyperformula';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -498,13 +499,13 @@ class Sheet {
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
-  sheetOnClick = () => {
+  sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (this.cellEditor) {
       this.destroyCellEditor();
       return;
     }
 
-    if (this.hasDoubleClickedOnCell()) {
+    if (e.evt.button === 0 && this.hasDoubleClickedOnCell()) {
       this.createCellEditor();
     }
   };

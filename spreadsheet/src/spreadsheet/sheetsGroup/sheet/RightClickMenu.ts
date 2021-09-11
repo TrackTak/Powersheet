@@ -4,6 +4,8 @@ import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
 import { createGroup } from '../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
+import { KonvaEventListener } from 'konva/lib/Node';
+import { Stage } from 'konva/lib/Stage';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -17,6 +19,7 @@ class RightClickMenu {
   dropdown: Instance<Props>;
   buttonMap: Record<ButtonName, HTMLElement>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
+  buttonRightOnClickMenu: KonvaEventListener<Stage, MouseEvent>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -103,8 +106,7 @@ class RightClickMenu {
 
     hideDropdown();
 
-    //anon
-    this.sheet.stage.on('click', (e) => {
+    this.buttonRightOnClickMenu = (e) => {
       if (e.evt.button === 0) {
         hideDropdown();
       }
@@ -116,13 +118,18 @@ class RightClickMenu {
           showDropdown();
         }
       }
-    });
+    };
+
+    this.sheet.stage.on('click', this.buttonRightOnClickMenu);
 
     this.sheet.stage.on('contextmenu', (e) => {
       e.evt.preventDefault();
     });
 
     this.rightClickMenuEl.appendChild(this.menuItem);
+  }
+  destory() {
+    this.sheet.stage.off('click', this.buttonRightOnClickMenu);
   }
 }
 

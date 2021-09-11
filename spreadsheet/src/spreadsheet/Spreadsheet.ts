@@ -2,7 +2,7 @@ import EventEmitter from 'eventemitter3';
 import { merge } from 'lodash';
 import events from './events';
 import { IOptions } from './options';
-import Sheet, { ISheetData } from './sheetsGroup/sheet/Sheet';
+import Sheet, { ISheetsData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import SheetsGroup from './sheetsGroup/SheetsGroup';
 import Toolbar from './toolbar/Toolbar';
@@ -14,7 +14,7 @@ interface IConstructor {
   registeredFunctionNames: string[];
   styles?: Partial<IStyles>;
   options: IOptions;
-  data?: ISheetData;
+  data?: ISheetsData;
 }
 
 class Spreadsheet {
@@ -25,7 +25,7 @@ class Spreadsheet {
   eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
   options: IOptions;
-  data: ISheetData;
+  data: ISheetsData;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
 

@@ -1,10 +1,10 @@
 import { Story, Meta } from '@storybook/html';
-import { ISheetData } from './sheetsGroup/sheet/Sheet';
 import { defaultOptions, IOptions } from './options';
 import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet from './Spreadsheet';
+import { ISheetsData } from './sheetsGroup/sheet/Sheet';
 
 export default {
   title: 'Spreadsheet',
@@ -12,7 +12,7 @@ export default {
 
 interface IArgs {
   options: IOptions;
-  data?: ISheetData;
+  data?: ISheetsData;
 }
 
 const buildSpreadsheet = (args: IArgs) => {
@@ -105,23 +105,30 @@ DifferentSizeCells.args = {
   },
 };
 
-export const CellStyles = Template.bind({});
+export const CellDatas = Template.bind({});
 
-CellStyles.args = {
+CellDatas.args = {
   ...defaultStoryArgs,
   data: {
-    CellStyles: {
-      sheetName: 'CellStyles',
-      cellStyles: {
+    CellDatas: {
+      sheetName: 'CellDatas',
+      cellData: {
         '1_0': {
-          backgroundColor: 'red',
+          style: {
+            backgroundColor: 'red',
+          },
+          value: 'HI!',
         },
         '3_3': {
-          borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
-          backgroundColor: 'yellow',
+          style: {
+            borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+            backgroundColor: 'yellow',
+          },
         },
-        '4_5': {
-          borders: ['borderBottom', 'borderTop'],
+        '4_1': {
+          style: {
+            borders: ['borderBottom', 'borderTop'],
+          },
         },
       },
       mergedCells: [

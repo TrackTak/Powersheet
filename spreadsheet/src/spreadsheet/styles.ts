@@ -20,6 +20,10 @@ export interface IColHeaderConfig {
   text: TextConfig;
 }
 
+export interface ICellConfig {
+  text: TextConfig;
+}
+
 export interface IStyles {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
@@ -33,6 +37,7 @@ export interface IStyles {
   selectionFirstCell: RectConfig;
   selection: RectConfig;
   selectionBorder: RectConfig;
+  cell: ICellConfig;
 }
 
 export const resizeMarkerSize = 7;
@@ -137,4 +142,14 @@ export const defaultStyles: IStyles = {
     strokeWidth: 0,
     fill: 'rgb(14, 101, 235, 0.1)',
   },
+  cell: {
+    text: {
+      ...sharedStyles.headerText,
+      fontSize: 16,
+      fill: 'black',
+      align: 'left',
+      wrap: 'none',
+      padding: 2,
+    },
+  }
 };

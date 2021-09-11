@@ -1,5 +1,6 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Text } from 'konva/lib/shapes/Text';
 import EventEmitter from 'eventemitter3';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
@@ -17,6 +18,7 @@ import SheetsGroup from '../SheetsGroup';
 import Spreadsheet from '../../Spreadsheet';
 import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
+import { HyperFormula } from 'hyperformula';
 
 export interface IDimensions {
   width: number;
@@ -67,10 +69,6 @@ export interface ICellStyle {
   borders?: BorderStyleOption[];
 }
 
-export interface ICellStyles {
-  [index: CellId]: ICellStyle;
-}
-
 export interface IRowColData {
   sizes: ISizes;
 }
@@ -79,13 +77,22 @@ export interface IData {
   sheetName: string;
   frozenCells?: IFrozenCells;
   mergedCells?: IMergedCells[];
-  cellStyles?: ICellStyles;
+  cellData?: ICellsData;
   row?: IRowColData;
   col?: IRowColData;
 }
 
-export interface ISheetData {
-  [sheetName: SheetId]: IData;
+export interface ICellsData {
+  [cellId: CellId]: ICellData;
+}
+
+export interface ISheetsData {
+  [sheetId: SheetId]: IData;
+}
+
+export interface ICellData {
+  style?: ICellStyle;
+  value?: string;
 }
 
 export interface IScrollGroups {
@@ -320,7 +327,8 @@ class Sheet {
   shapes: IShapes;
   sheetDimensions: IDimensions;
   cellsMap: Map<CellId, Cell>;
-  cellEditor: CellEditor;
+  lastClickTime: number = new Date().getTime();
+  cellEditor?: CellEditor;
   rightClickMenu?: RightClickMenu;
   private spreadsheet: Spreadsheet;
 
@@ -423,6 +431,12 @@ class Sheet {
     this.selector = new Selector(this);
     this.cellEditor = new CellEditor(this);
     this.rightClickMenu = new RightClickMenu(this);
+    this.rightClickMenu = new RightClickMenu(this);
+
+    this.shapes.sheet.on('click', this.sheetOnClick);
+
+    this.sheetEl.tabIndex = 1;
+    this.sheetEl.addEventListener('keydown', this.keyHandler);
 
     this.updateSheetDimensions();
 
@@ -444,6 +458,70 @@ class Sheet {
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
   }
+
+  sheetOnClick = () => {
+    if (this.cellEditor) {
+      this.destroyCellEditor();
+      return;
+    }
+
+    if (this.hasDoubleClickedOnCell()) {
+      this.createCellEditor();
+    }
+  };
+
+  hasDoubleClickedOnCell = () => {
+    const timeNow = new Date().getTime();
+    const delayTime = 500;
+    const viewportVector = this.getViewportVector();
+    const previousSelectedCellPosition =
+      this.selector.previousSelectedCellPosition;
+    if (!previousSelectedCellPosition) {
+      return;
+    }
+    const { x, y } = {
+      x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
+      y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
+    };
+    const isInCellX =
+      x >= previousSelectedCellPosition.x &&
+      x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
+    const isInCellY =
+      y >= previousSelectedCellPosition.y &&
+      y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
+    const isClickedInCell = isInCellX && isInCellY;
+
+    this.lastClickTime = timeNow;
+    return isClickedInCell && timeNow <= this.lastClickTime + delayTime;
+  };
+
+  keyHandler = (e: KeyboardEvent) => {
+    e.stopPropagation();
+    switch (e.key) {
+      case 'Enter':
+      case 'Escape':
+        this.destroyCellEditor();
+        break;
+      default:
+        if (!this.cellEditor) {
+          this.createCellEditor();
+        }
+    }
+  };
+
+  createCellEditor = () => {
+    this.cellEditor = new CellEditor(this);
+    this.stage.on('mousedown', this.destroyCellEditor);
+  };
+
+  destroyCellEditor = () => {
+    if (this.cellEditor) {
+      this.cellEditor.destroy();
+      this.stage.off('mousedown', this.destroyCellEditor);
+      this.cellEditor = undefined;
+      this.updateViewport();
+    }
+  };
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
     event: T,
@@ -475,50 +553,59 @@ class Sheet {
     return this.spreadsheet.data[this.sheetId];
   }
 
+  getCellData(id: CellId) {
+    return this.getData().cellData?.[id];
+  }
+
   setBorderStyle(id: CellId, borderType: BorderStyleOption) {
-    const borders = this.getData().cellStyles?.[id]?.borders ?? [];
+    const borders = this.getCellData(id)?.style?.borders ?? [];
 
     if (borders.indexOf(borderType) === -1) {
-      this.setCellStyle(id, {
+      this.setCellDataStyle(id, {
         borders: [...borders, borderType],
       });
     }
   }
 
-  removeCellStyle(id: CellId, name: keyof ICellStyle) {
-    const data = this.getData();
+  removeCellData(id: CellId, name: keyof ICellData) {
+    const cellData = this.getData().cellData;
 
-    if (!data.cellStyles) {
-      return;
+    if (cellData?.[id]) {
+      delete cellData[id][name];
     }
 
-    if (data.cellStyles[id]) {
-      delete data.cellStyles[id][name];
-    }
+    const cellDataArray = Object.keys(cellData?.[id] ?? {});
 
-    const cellStylesArray = Object.keys(data.cellStyles[id] ?? {});
-
-    if (data.cellStyles[id] && cellStylesArray.length === 0) {
-      delete data.cellStyles[id];
+    if (cellData?.[id] && cellDataArray.length === 0) {
+      delete cellData[id];
     }
   }
 
-  setCellStyle(id: CellId, newStyle: ICellStyle) {
+  setCellData(id: CellId, newValue: ICellData) {
     const data = this.getData();
 
-    data.cellStyles = {
-      ...data.cellStyles,
+    data.cellData = {
+      ...data.cellData,
       [id]: {
-        ...data.cellStyles?.[id],
-        ...newStyle,
+        ...data.cellData?.[id],
+        ...newValue,
       },
     };
+  }
+
+  setCellDataStyle(id: CellId, newStyle: ICellStyle) {
+    this.setCellData(id, {
+      style: {
+        ...this.getCellData(id)?.style,
+        ...newStyle,
+      },
+    });
   }
 
   addMergedCells(mergedCells: IMergedCells) {
     const data = this.getData();
     const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const topLeftCellStyle = data.cellStyles?.[topLeftCellId];
+    const cellData = data.cellData;
 
     data.mergedCells = data.mergedCells
       ? [...data.mergedCells, mergedCells]
@@ -528,15 +615,15 @@ class Sheet {
       for (const ci of iterateSelection(mergedCells.col)) {
         const id = getCellId(ri, ci);
 
-        if (data.cellStyles?.[id]) {
-          delete data.cellStyles[id];
+        if (cellData?.[id].style) {
+          delete cellData[id].style;
         }
       }
     }
 
-    this.setCellStyle(topLeftCellId, {
+    this.setCellDataStyle(topLeftCellId, {
       backgroundColor: defaultCellFill,
-      ...topLeftCellStyle,
+      ...this.getCellData(topLeftCellId)?.style,
     });
   }
 
@@ -553,13 +640,13 @@ class Sheet {
 
     if (!this.merger.getIsCellMerged(mergedCellId)) return;
 
-    const mergedCellStyle = data.cellStyles![mergedCellId];
+    const mergedCellStyle = this.getCellData(mergedCellId)!.style!;
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
         const id = getCellId(ri, ci);
 
-        this.setCellStyle(id, mergedCellStyle);
+        this.setCellDataStyle(id, mergedCellStyle);
       }
     }
   }
@@ -573,19 +660,20 @@ class Sheet {
 
     this.merger.updateMergedCells();
 
-    const cellStyles = this.getData().cellStyles ?? {};
+    const cellData = this.getData().cellData ?? {};
 
-    Object.keys(cellStyles).forEach((id) => {
-      const cellStyle = cellStyles[id];
+    Object.keys(cellData).forEach((id) => {
+      const data = cellData[id];
+      const style = data.style;
 
       this.updateCellRect(id);
 
-      if (cellStyle.backgroundColor) {
-        this.setCellBackgroundColor(id, cellStyle.backgroundColor);
+      if (style?.backgroundColor) {
+        this.setCellBackgroundColor(id, style.backgroundColor);
       }
 
-      if (cellStyle.borders) {
-        cellStyle.borders.forEach((borderType) => {
+      if (style?.borders) {
+        style.borders.forEach((borderType) => {
           switch (borderType) {
             case 'borderLeft':
               this.setLeftBorder(id);
@@ -602,12 +690,15 @@ class Sheet {
           }
         });
       }
+
+      if (data.value) {
+        this.setCellTextValue(id, data.value);
+      }
     });
   }
 
   updateCellRect(id: CellId) {
     const cell = this.convertFromCellIdToCell(id);
-
     if (this.cellsMap.has(id)) {
       const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
         'cellRect',
@@ -683,6 +774,23 @@ class Sheet {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
+  }
+
+  setCellTextValue(id: CellId, value: string) {
+    const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
+
+    const text = new Text({
+      ...this.spreadsheet.styles.cell.text,
+      text: value,
+      type: 'cellText',
+      width: clientRect.width,
+    });
+
+    const midPoints = centerRectTwoInRectOne(clientRect, text.getClientRect());
+    text.x(midPoints.x - clientRect.x);
+    text.y(midPoints.y - clientRect.y);
+
+    cell.add(text);
   }
 
   getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {
@@ -891,7 +999,8 @@ class Sheet {
     this.stage.destroy();
     this.col.destroy();
     this.row.destroy();
-    this.cellEditor.destroy();
+
+    this.cellEditor?.destroy();
   }
 
   destroyCell(cellId: string) {

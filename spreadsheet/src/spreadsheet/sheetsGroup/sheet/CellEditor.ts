@@ -4,100 +4,104 @@ import Sheet from './Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
+import { HyperFormula } from 'hyperformula';
+import FormulaHelper from '../../formulaHelper/FormulaHelper';
+import Spreadsheet from '../../Spreadsheet';
 
 class CellEditor {
-  private textArea!: HTMLDivElement;
+  private cellEditorContainerEl: HTMLDivElement;
+  private cellEditorEl: HTMLDivElement;
   private cellTooltip: DelegateInstance;
   private isEditing = false;
+  private formulaHelper: FormulaHelper;
+  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
 
-    this.textArea = document.createElement('div');
-    this.textArea.setAttribute('contentEditable', 'true');
-    this.textArea.classList.add(styles.cellEditor);
-    this.cellTooltip = delegate(this.textArea, {
+    this.cellEditorEl = document.createElement('div');
+    this.cellEditorEl.setAttribute('contentEditable', 'true');
+    this.cellEditorEl.classList.add(styles.cellEditor);
+    this.cellEditorContainerEl = document.createElement('div');
+    this.cellEditorContainerEl.classList.add(styles.cellEditorContainer);
+    this.cellEditorContainerEl.appendChild(this.cellEditorEl);
+    this.cellTooltip = delegate(this.cellEditorEl, {
       target: styles.cellEditor,
       arrow: false,
       placement: 'top-start',
       theme: 'cell',
       offset: [0, 5],
     });
+    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
 
-    this.sheet.sheetEl.appendChild(this.textArea);
-
-    window.addEventListener('keydown', this.keyHandler);
-    this.sheet.shapes.sheet.on('dblclick', this.showCellEditor);
-    this.sheet.shapes.sheet.on('click', this.hideCellEditor);
-    this.sheet.stage.on('click', this.hideCellEditor);
-    this.sheet.stage.on('mousedown', this.hideCellEditor);
-    this.sheet.sheetsGroup.spreadsheet.eventEmitter.on(
+    this.spreadsheet.eventEmitter.on(
       events.scroll.horizontal,
       this.handleScroll
     );
-    this.sheet.sheetsGroup.spreadsheet.eventEmitter.on(
-      events.scroll.vertical,
-      this.handleScroll
-    );
+    this.spreadsheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
 
-    this.textArea.addEventListener('input', (e) => {
-      // @ts-ignore
-      const textContent = e.target.textContent;
+    this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
-      this.sheet.sheetsGroup.spreadsheet.eventEmitter.emit(
-        events.cellEditor.change,
-        textContent
-      );
-    });
+    const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
+    this.formulaHelper = new FormulaHelper(formulas);
+    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
+
+    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+
+    this.setTextContent(this.sheet.getCellData(cellId)?.value);
+
+    this.showCellEditor();
+  }
+
+  setTextContent(value?: string | null) {
+    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+
+    if (value) {
+      this.sheet.setCellData(cellId, {
+        value,
+      });
+    }
+
+    if (this.spreadsheet.formulaBar) {
+      this.spreadsheet.formulaBar.editableContent.textContent = value || '';
+    }
+
+    this.cellEditorEl.textContent = value || '';
+  }
+
+  handleInput(e: Event) {
+    const target = e.target as HTMLDivElement;
+    const textContent = target.firstChild?.textContent;
+
+    this.setTextContent(textContent);
+
+    const isFormulaInput = textContent?.startsWith('=');
+    if (isFormulaInput) {
+      this.formulaHelper.show(textContent?.slice(1));
+    } else {
+      this.formulaHelper.hide();
+    }
   }
 
   destroy() {
-    window.removeEventListener('keydown', this.keyHandler);
-
-    this.sheet.sheetsGroup.spreadsheet.eventEmitter.off(
-      events.resize.col.start,
-      this.hideCellEditor
-    );
-    this.sheet.sheetsGroup.spreadsheet.eventEmitter.off(
-      events.resize.row.start,
-      this.hideCellEditor
-    );
     this.cellTooltip.destroy();
+    this.cellEditorContainerEl.remove();
+    this.cellEditorEl.removeEventListener('input', this.handleInput);
+    this.formulaHelper.destroy();
   }
-
-  private keyHandler = (e: KeyboardEvent) => {
-    e.stopPropagation();
-    switch (e.key) {
-      case 'Enter':
-      case 'Escape':
-        this.hideCellEditor();
-        break;
-      default:
-        if (!this.isEditing) {
-          this.showCellEditor();
-        }
-    }
-  };
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.selectedFirstCell!;
-
-    this.setTextAreaPosition(selectedCell.getClientRect());
-    this.textArea.style.display = 'initial';
-    this.textArea.focus();
-    this.isEditing = true;
+    this.setCellEditorElPosition(selectedCell.getClientRect());
+    this.cellEditorEl.focus();
   };
 
-  private hideCellEditor = () => {
-    this.textArea.style.display = 'none';
-    this.isEditing = false;
-  };
-
-  private setTextAreaPosition = (position: IRect) => {
-    this.textArea.style.top = `${position.y}px`;
-    this.textArea.style.left = `${position.x}px`;
-    this.textArea.style.minWidth = `${position.width}px`;
-    this.textArea.style.height = `${position.height}px`;
+  private setCellEditorElPosition = (position: IRect) => {
+    this.cellEditorContainerEl.style.top = `${position.y}px`;
+    this.cellEditorContainerEl.style.left = `${position.x}px`;
+    this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
+    this.cellEditorContainerEl.style.height = `${position.height}px`;
   };
 
   private hideCellTooltip = () => {

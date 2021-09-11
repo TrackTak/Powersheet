@@ -475,7 +475,6 @@ class RowCol {
     const text = new Text({
       text: this.getHeaderText(index),
     });
-
     const midPoints = centerRectTwoInRectOne(
       rect.getClientRect(),
       text.getClientRect()

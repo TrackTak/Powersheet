@@ -3,13 +3,15 @@ import styles from './FormulaHelper.module.scss';
 import isEmpty from 'lodash/isEmpty';
 import { createFormulaList, createWrapperContent } from './htmlElementHelpers';
 
+type FormulaHelperClickHandler = (item: string) => void;
+
 class FormulaHelper {
   formulaHelperEl: HTMLDivElement;
   private formulaHelperListContainerEl: HTMLDivElement;
   private helper: DelegateInstance;
   private list?: HTMLUListElement;
 
-  constructor(private formulas: string[]) {
+  constructor(private formulas: string[], private onItemClick: FormulaHelperClickHandler) {
     const {
       formulaHelperListContainerEl,
       formulaHelperEl,
@@ -24,6 +26,7 @@ class FormulaHelper {
       theme: 'formula-helper',
       interactive: true,
     });
+    this.onItemClick = onItemClick
   }
 
   show(filterText?: string) {
@@ -48,12 +51,22 @@ class FormulaHelper {
   private updateList(formulas: string[]) {
     const list = createFormulaList(formulas);
     if (this.list) {
+      this.list.removeEventListener('click' , this.handleListItemClick);
       this.formulaHelperListContainerEl?.replaceChild(list, this.list);
     } else {
       this.formulaHelperListContainerEl.appendChild(list);
     }
     this.list = list;
     this.helper.setContent(this.formulaHelperListContainerEl);
+
+    list.addEventListener('click' , this.handleListItemClick);
+  }
+
+  handleListItemClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target?.matches("li")) {
+      this.onItemClick(target.textContent!);
+    }
   }
 }
 

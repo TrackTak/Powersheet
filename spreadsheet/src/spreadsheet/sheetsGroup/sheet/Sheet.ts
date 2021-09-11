@@ -478,10 +478,45 @@ class Sheet {
     return this.spreadsheet.data[this.sheetId];
   }
 
+  setBorderStyle(id: CellId, borderType: BorderStyleOption) {
+    const borders = this.getData().cellStyles?.[id]?.borders ?? [];
+
+    if (borders.indexOf(borderType) === -1) {
+      this.setCellStyle(id, {
+        borders: [...borders, borderType],
+      });
+    }
+  }
+
+  private cleanCellStyle(id: CellId) {
+    const data = this.getData();
+
+    if (!data.cellStyles) {
+      return;
+    }
+
+    const cellStylesArray = Object.keys(data.cellStyles[id] ?? {});
+
+    if (data.cellStyles[id] && cellStylesArray.length === 0) {
+      delete data.cellStyles[id];
+    }
+  }
+
+  removeCellStyle(id: CellId, name: keyof ICellStyle) {
+    const data = this.getData();
+
+    if (data.cellStyles && data.cellStyles[id]) {
+      delete data.cellStyles[id][name];
+    }
+  }
+
   setCellStyle(id: CellId, newStyle: ICellStyle) {
-    this.getData().cellStyles = {
+    const data = this.getData();
+
+    data.cellStyles = {
+      ...data.cellStyles,
       [id]: {
-        ...this.getData().cellStyles?.[id],
+        ...data.cellStyles?.[id],
         ...newStyle,
       },
     };
@@ -516,7 +551,10 @@ class Sheet {
               break;
           }
         });
+      } else {
+        this.noBorder(id);
       }
+      this.cleanCellStyle(id);
     });
   }
 
@@ -546,14 +584,6 @@ class Sheet {
       strokeWidth: this.spreadsheet.styles.gridLine.strokeWidth,
     });
 
-    const borders = this.getData().cellStyles?.[id]?.borders ?? [];
-
-    if (borders.indexOf(type) === -1) {
-      this.setCellStyle(id, {
-        borders: [...borders, type],
-      });
-    }
-
     cell.add(line);
 
     line.moveToTop();
@@ -563,59 +593,14 @@ class Sheet {
     makeShapeCrisp(line);
   }
 
-  clearBorders(ids: CellId[]) {
-    ids.forEach((id) => {
-      const cell = this.cellsMap.get(id);
+  noBorder(id: CellId) {
+    const cell = this.spreadsheet.focusedSheet!.cellsMap.get(id);
 
-      if (cell) {
-        const otherChildren = getOtherCellChildren(cell, borderTypes);
+    if (cell) {
+      const otherChildren = getOtherCellChildren(cell, borderTypes);
 
-        setCellChildren(cell, otherChildren);
-      }
-
-      this.setCellStyle(id, {
-        borders: [],
-      });
-    });
-  }
-
-  setAllBorders(cells: Cell[]) {
-    this.setOutsideBorders(cells);
-    this.setInsideBorders(cells);
-  }
-
-  setInsideBorders(cells: Cell[]) {
-    this.setHorizontalBorders(cells);
-    this.setVerticalBorders(cells);
-  }
-
-  setOutsideBorders(cells: Cell[]) {
-    this.setBottomBorders(cells);
-    this.setLeftBorders(cells);
-    this.setRightBorders(cells);
-    this.setTopBorders(cells);
-  }
-
-  setHorizontalBorders(cells: Cell[]) {
-    const row = this.row.convertFromCellsToRange(cells);
-    const horizontalCells = cells.filter(
-      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
-    );
-
-    horizontalCells.forEach((cell) => {
-      this.setBottomBorder(cell.attrs.id);
-    });
-  }
-
-  setVerticalBorders(cells: Cell[]) {
-    const col = this.col.convertFromCellsToRange(cells);
-    const verticalCells = cells.filter(
-      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
-    );
-
-    verticalCells.forEach((cell) => {
-      this.setRightBorder(cell.attrs.id);
-    });
+      setCellChildren(cell, otherChildren);
+    }
   }
 
   setBottomBorder(id: CellId) {
@@ -628,15 +613,6 @@ class Sheet {
     generator.next();
   }
 
-  setBottomBorders(cells: Cell[]) {
-    const row = this.row.convertFromCellsToRange(cells);
-    const bottomCells = cells.filter((cell) => cell.attrs.row.y === row.y);
-
-    bottomCells.forEach((cell) => {
-      this.setBottomBorder(cell.attrs.id);
-    });
-  }
-
   setRightBorder(id: CellId) {
     const generator = this.setBorder(id, 'borderRight');
     const { line, clientRect } = generator.next().value!;
@@ -645,15 +621,6 @@ class Sheet {
     line.points([0, 0, 0, clientRect.height]);
 
     generator.next();
-  }
-
-  setRightBorders(cells: Cell[]) {
-    const col = this.col.convertFromCellsToRange(cells);
-    const rightCells = cells.filter((cell) => cell.attrs.col.y === col.y);
-
-    rightCells.forEach((cell) => {
-      this.setRightBorder(cell.attrs.id);
-    });
   }
 
   setTopBorder(id: CellId) {
@@ -665,15 +632,6 @@ class Sheet {
     generator.next();
   }
 
-  setTopBorders(cells: Cell[]) {
-    const row = this.row.convertFromCellsToRange(cells);
-    const topCells = cells.filter((cell) => cell.attrs.row.x === row.x);
-
-    topCells.forEach((cell) => {
-      this.setTopBorder(cell.attrs.id);
-    });
-  }
-
   setLeftBorder(id: CellId) {
     const generator = this.setBorder(id, 'borderLeft');
     const { line, clientRect } = generator.next().value!;
@@ -683,22 +641,8 @@ class Sheet {
     generator.next();
   }
 
-  setLeftBorders(cells: Cell[]) {
-    const col = this.col.convertFromCellsToRange(cells);
-    const leftCells = cells.filter((cell) => cell.attrs.col.x === col.x);
-
-    leftCells.forEach((cell) => {
-      this.setLeftBorder(cell.attrs.id);
-    });
-  }
-
   setCellBackgroundColor(id: CellId, backgroundColor: string) {
     const { cell } = this.drawNewCell(id);
-
-    this.setCellStyle(id, {
-      backgroundColor,
-    });
-
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);

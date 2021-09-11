@@ -1,7 +1,7 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import { Cell } from '../sheetsGroup/sheet/Sheet';
+import { BorderStyleOption, Cell, CellId } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -301,16 +301,127 @@ class Toolbar {
     this.setToolbarState();
   };
 
+  setBottomBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+    const bottomCells = cells.filter((cell) => cell.attrs.row.y === row.y);
+
+    bottomCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderBottom');
+    });
+  }
+
+  setRightBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+    const rightCells = cells.filter((cell) => cell.attrs.col.y === col.y);
+
+    rightCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderRight');
+    });
+  }
+
+  setTopBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+    const topCells = cells.filter((cell) => cell.attrs.row.x === row.x);
+
+    topCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderTop');
+    });
+  }
+
+  setLeftBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+    const leftCells = cells.filter((cell) => cell.attrs.col.x === col.x);
+
+    leftCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderLeft');
+    });
+  }
+
+  setVerticalBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+    const verticalCells = cells.filter(
+      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y
+    );
+
+    verticalCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderRight');
+    });
+  }
+
+  setHorizontalBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+    const horizontalCells = cells.filter(
+      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y
+    );
+
+    horizontalCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.setBorderStyle(id, 'borderBottom');
+    });
+  }
+
+  setInsideBorders(cells: Cell[]) {
+    this.setHorizontalBorders(cells);
+    this.setVerticalBorders(cells);
+  }
+
+  setOutsideBorders(cells: Cell[]) {
+    this.setBottomBorders(cells);
+    this.setLeftBorders(cells);
+    this.setRightBorders(cells);
+    this.setTopBorders(cells);
+  }
+
+  setAllBorders(cells: Cell[]) {
+    this.setOutsideBorders(cells);
+    this.setInsideBorders(cells);
+  }
+
+  clearBorders(ids: CellId[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    ids.forEach((id) => {
+      sheet.removeCellStyle(id, 'borders');
+    });
+  }
+
   setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
       case 'backgroundColor': {
         if (!value) break;
+        const backgroundColor = value;
 
         sheet.selector.selectedCells.forEach((cell) => {
-          sheet.setCellBackgroundColor(cell.id(), value);
+          const id = cell.id();
+
+          sheet.setCellStyle(id, {
+            backgroundColor,
+          });
+
+          // Manually set cellBackgroundColor and not calling updateViewport
+          // due to it in triggering very quick succession
+          sheet.setCellBackgroundColor(id, backgroundColor);
         });
+
         break;
       }
       case 'merge': {
@@ -325,54 +436,54 @@ class Toolbar {
       }
       case 'freeze': {
         if (this.iconElementsMap.freeze.active) {
-          delete sheet.data.frozenCells;
+          delete sheet.getData().frozenCells;
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.data.frozenCells = { row: row.x, col: col.x };
+          sheet.getData().frozenCells = { row: row.x, col: col.x };
         }
 
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
         break;
       }
       case 'borderBottom': {
-        sheet.setBottomBorders(sheet.selector.selectedCells);
+        this.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
-        sheet.setRightBorders(sheet.selector.selectedCells);
+        this.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
-        sheet.setTopBorders(sheet.selector.selectedCells);
+        this.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
-        sheet.setLeftBorders(sheet.selector.selectedCells);
+        this.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
-        sheet.setVerticalBorders(sheet.selector.selectedCells);
+        this.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
-        sheet.setHorizontalBorders(sheet.selector.selectedCells);
+        this.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
-        sheet.setInsideBorders(sheet.selector.selectedCells);
-        break;
-      }
-      case 'borderAll': {
-        sheet.setAllBorders(sheet.selector.selectedCells);
-        break;
-      }
-      case 'borderNone': {
-        sheet.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        this.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderOutside': {
-        sheet.setOutsideBorders(sheet.selector.selectedCells);
+        this.setOutsideBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderAll': {
+        this.setAllBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderNone': {
+        this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
         break;
       }
     }
@@ -460,7 +571,7 @@ class Toolbar {
   }
 
   isFreezeActive() {
-    return !!this.spreadsheet.focusedSheet?.data.frozenCells;
+    return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

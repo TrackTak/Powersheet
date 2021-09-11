@@ -53,6 +53,8 @@ class Spreadsheet {
 
   onStartSelection = (sheet: Sheet) => {
     this.focusedSheet = sheet;
+
+    this.eventEmitter.emit(events.spreadsheet.focusedSheetChange, sheet);
   };
 
   private getNewSheetsGroup() {

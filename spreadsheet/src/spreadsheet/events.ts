@@ -1,4 +1,7 @@
 const events = {
+  spreadsheet: {
+    focusedSheetChange: 's-focusedSheetChange',
+  },
   scroll: {
     vertical: 'sv-scroll',
     horizontal: 'sh-scroll',

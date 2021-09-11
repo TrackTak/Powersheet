@@ -6,14 +6,11 @@ import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
 import Selector, { iterateSelection } from './Selector';
-import Merger from './Merger';
+import Merger, { defaultCellFill } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './CellEditor';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
-import {
-  BorderIconName,
-  borderTypes,
-} from '../../toolbar/toolbarHtmlElementHelpers';
+import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import SheetsGroup from '../SheetsGroup';
@@ -488,25 +485,21 @@ class Sheet {
     }
   }
 
-  private cleanCellStyle(id: CellId) {
+  removeCellStyle(id: CellId, name: keyof ICellStyle) {
     const data = this.getData();
 
     if (!data.cellStyles) {
       return;
     }
 
+    if (data.cellStyles[id]) {
+      delete data.cellStyles[id][name];
+    }
+
     const cellStylesArray = Object.keys(data.cellStyles[id] ?? {});
 
     if (data.cellStyles[id] && cellStylesArray.length === 0) {
       delete data.cellStyles[id];
-    }
-  }
-
-  removeCellStyle(id: CellId, name: keyof ICellStyle) {
-    const data = this.getData();
-
-    if (data.cellStyles && data.cellStyles[id]) {
-      delete data.cellStyles[id][name];
     }
   }
 
@@ -522,7 +515,64 @@ class Sheet {
     };
   }
 
+  addMergedCells(mergedCells: IMergedCells) {
+    const data = this.getData();
+    const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+    const topLeftCellStyle = data.cellStyles?.[topLeftCellId];
+
+    data.mergedCells = data.mergedCells
+      ? [...data.mergedCells, mergedCells]
+      : [mergedCells];
+
+    for (const ri of iterateSelection(mergedCells.row)) {
+      for (const ci of iterateSelection(mergedCells.col)) {
+        const id = getCellId(ri, ci);
+
+        if (data.cellStyles?.[id]) {
+          delete data.cellStyles[id];
+        }
+      }
+    }
+
+    this.setCellStyle(topLeftCellId, {
+      backgroundColor: defaultCellFill,
+      ...topLeftCellStyle,
+    });
+  }
+
+  removeMergedCells(mergedCells: IMergedCells) {
+    const data = this.getData();
+    const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+
+    data.mergedCells = data.mergedCells?.filter(({ row, col }) => {
+      return !this.merger.getAreMergedCellsOverlapping(mergedCells, {
+        row,
+        col,
+      });
+    });
+
+    if (!this.merger.getIsCellMerged(mergedCellId)) return;
+
+    const mergedCellStyle = data.cellStyles![mergedCellId];
+
+    for (const ri of iterateSelection(mergedCells.row)) {
+      for (const ci of iterateSelection(mergedCells.col)) {
+        const id = getCellId(ri, ci);
+
+        this.setCellStyle(id, mergedCellStyle);
+      }
+    }
+  }
+
   updateCells() {
+    for (const cell of this.cellsMap.values()) {
+      cell.destroy();
+    }
+
+    this.cellsMap.clear();
+
+    this.merger.updateMergedCells();
+
     const cellStyles = this.getData().cellStyles ?? {};
 
     Object.keys(cellStyles).forEach((id) => {
@@ -551,10 +601,7 @@ class Sheet {
               break;
           }
         });
-      } else {
-        this.noBorder(id);
       }
-      this.cleanCellStyle(id);
     });
   }
 
@@ -591,16 +638,6 @@ class Sheet {
     yield { cell, clientRect, line };
 
     makeShapeCrisp(line);
-  }
-
-  noBorder(id: CellId) {
-    const cell = this.spreadsheet.focusedSheet!.cellsMap.get(id);
-
-    if (cell) {
-      const otherChildren = getOtherCellChildren(cell, borderTypes);
-
-      setCellChildren(cell, otherChildren);
-    }
   }
 
   setBottomBorder(id: CellId) {
@@ -933,7 +970,6 @@ class Sheet {
     this.updateSheetDimensions();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.merger.updateMergedCells();
     this.updateCells();
     this.selector.updateSelectedCells();
   }

@@ -1,8 +1,8 @@
 import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
-import { Vector2d } from 'konva/lib/types';
+import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { Cell, getCellRectFromCell } from './Sheet';
+import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -25,6 +25,7 @@ class Selector {
   selectedCells: Cell[];
   selectionBorderCell: Cell | null;
   selectedFirstCell: Cell | null;
+  previousSelectedCellPosition?: IRect;
   private selectionArea: ISelectionArea;
 
   constructor(private sheet: Sheet) {
@@ -79,6 +80,7 @@ class Selector {
   }
 
   startSelection(start: Vector2d, end: Vector2d) {
+    this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
     const cells = this.sheet.convertFromRowColsToCells(rows, cols);
@@ -105,15 +107,15 @@ class Selector {
 
     firstCellRect.setAttrs(rectConfig);
 
-    const cellRect = getCellRectFromCell(cell);
-
-    const offsetAmount = cellRect.strokeWidth() / 2;
+    const offsetAmount = firstCellRect.strokeWidth() / 2;
 
     cell.x(cell.x() + offsetAmount);
     cell.y(cell.y() + offsetAmount);
 
-    cellRect.width(cellRect.width() - cellRect.strokeWidth());
-    cellRect.height(cellRect.height() - cellRect.strokeWidth());
+    firstCellRect.width(firstCellRect.width() - firstCellRect.strokeWidth());
+    firstCellRect.height(firstCellRect.height() - firstCellRect.strokeWidth());
+
+    makeShapeCrisp(firstCellRect);
 
     this.selectedFirstCell = cell;
   }
@@ -263,10 +265,6 @@ class Selector {
     // this.sheet.drawCell(cell);
 
     // this.selectionBorderCell = cell;
-  }
-
-  getSelectedCell() {
-    return this.selectedCells[0];
   }
 }
 

@@ -228,6 +228,8 @@ class Toolbar {
       arrow: false,
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
+
+        this.focusedSheet?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -294,9 +296,9 @@ class Toolbar {
     Object.keys(this.iconElementsMap).forEach((key) => {
       const name = key as IconElementsName;
 
-      this.iconElementsMap[name].button.addEventListener('click', () =>
-        this.setValue(name)
-      );
+      this.iconElementsMap[name].button.addEventListener('click', () => {
+        this.setValue(name);
+      });
     });
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
@@ -334,11 +336,11 @@ class Toolbar {
       }
       case 'freeze': {
         if (this.iconElementsMap.freeze.active) {
-          sheet.setFrozenCells({});
+          sheet.data.frozenCells = {};
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.setFrozenCells({ row: row.x, col: col.x });
+          sheet.data.frozenCells = { row: row.x, col: col.x };
         }
 
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
@@ -384,6 +386,10 @@ class Toolbar {
         sheet.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
+    }
+
+    if (name !== 'backgroundColor') {
+      sheet.updateViewport();
     }
   };
 

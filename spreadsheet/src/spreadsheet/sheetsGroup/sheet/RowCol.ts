@@ -1,5 +1,4 @@
 import { Group } from 'konva/lib/Group';
-import { Node } from 'konva/lib/Node';
 import { ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
@@ -9,11 +8,10 @@ import { isNil } from 'lodash';
 import Sheet, {
   Cell,
   centerRectTwoInRectOne,
-  getGridLineGroupFromScrollGroup,
   getHeaderGroupFromScrollGroup,
-  hasOverlap,
   ICustomSizes,
   ISheetViewportPosition,
+  getRowColGroupFromScrollGroup,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
   iterateXToY,
@@ -42,6 +40,14 @@ export interface IRowColFunctions {
 export type HeaderGroupId = number;
 
 export type RowColGroupId = number;
+
+export const getGridLineFromRowColGroup = (group: Group) => {
+  const gridLine = group.children?.find(
+    (x) => x.attrs.type === 'gridLine'
+  ) as Line;
+
+  return gridLine;
+};
 
 class RowCol {
   resizer: Resizer;
@@ -81,6 +87,7 @@ class RowCol {
       group: new Group(),
       gridLine: new Line({
         ...this.sheet.styles.gridLine,
+        type: 'gridLine',
       }),
     };
     if (this.isCol) {
@@ -276,31 +283,29 @@ class RowCol {
     return groups;
   }
 
-  isNodeOutsideSheet = (node: Node) => {
-    const isOverlapping = hasOverlap(node.getClientRect(), {
-      ...this.sheet.getViewportVector(),
-      ...this.sheet.sheetViewportDimensions,
-    });
-
-    return !isOverlapping;
-  };
-
   destroyOutOfViewportItems() {
-    this.headerGroupMap.forEach((headerGroup, index) => {
-      if (this.isNodeOutsideSheet(headerGroup)) {
-        headerGroup.destroy();
-
-        this.headerGroupMap.delete(index);
-      }
-    });
-
-    this.rowColGroupMap.forEach((group, index) => {
-      if (this.isNodeOutsideSheet(group)) {
-        group.destroy();
-
-        this.rowColGroupMap.delete(index);
-      }
-    });
+    // this.headerGroupMap.forEach((headerGroup) => {
+    //   if (
+    //     !headerGroup.isClientRectOnScreen({
+    //       x: -this.sheet.getViewportVector().x,
+    //       y: -this.sheet.getViewportVector().y,
+    //     })
+    //   ) {
+    //     headerGroup.destroy();
+    //     this.headerGroupMap.delete(headerGroup.attrs.index);
+    //   }
+    // });
+    // this.rowColGroupMap.forEach((group) => {
+    //   if (
+    //     !group.isClientRectOnScreen({
+    //       x: -this.sheet.getViewportVector().x,
+    //       y: -this.sheet.getViewportVector().y,
+    //     })
+    //   ) {
+    //     group.destroy();
+    //     this.rowColGroupMap.delete(group.attrs.index);
+    //   }
+    // });
   }
 
   getTotalSize() {
@@ -446,7 +451,6 @@ class RowCol {
     const text = new Text({
       text: this.getHeaderText(index),
     });
-
     const midPoints = centerRectTwoInRectOne(
       rect.getClientRect(),
       text.getClientRect()
@@ -488,11 +492,11 @@ class RowCol {
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const lineConfig = this.getLineConfig(sheetSize);
-    const gridLine = line.clone({
-      ...lineConfig,
+    const lineConfig: LineConfig = {
+      ...this.getLineConfig(sheetSize),
       [this.functions.axis]: size,
-    }) as Line;
+    };
+    const gridLine = line.clone(lineConfig) as Line;
 
     makeShapeCrisp(gridLine);
 
@@ -501,7 +505,7 @@ class RowCol {
     this.rowColGroupMap.set(index, group);
 
     if (isFrozen) {
-      const xyStickyGridLineGroup = getGridLineGroupFromScrollGroup(
+      const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );
 
@@ -509,7 +513,7 @@ class RowCol {
 
       group.moveToBottom();
     } else {
-      const mainGridLineGroup = getGridLineGroupFromScrollGroup(
+      const mainGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.main
       );
 

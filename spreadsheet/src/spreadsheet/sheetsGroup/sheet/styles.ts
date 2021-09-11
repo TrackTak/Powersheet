@@ -20,6 +20,10 @@ export interface IColHeaderConfig {
   text: TextConfig;
 }
 
+export interface ICellConfig {
+  text: TextConfig;
+}
+
 export interface IStyles {
   backgroundColor: string;
   resizeLine: LineConfig;
@@ -35,6 +39,7 @@ export interface IStyles {
   selection: RectConfig;
   selectionBorder: RectConfig;
   commentMarker: LineConfig;
+  cell: ICellConfig;
 }
 
 export const resizeMarkerSize = 7;
@@ -150,5 +155,15 @@ export const defaultStyles: IStyles = {
     offsetY: 1,
     points: [0, 5, 5, 5, 0, 0],
     closed: true,
+  },
+  cell: {
+    text: {
+      ...sharedStyles.headerText,
+      fontSize: 16,
+      fill: 'black',
+      align: 'left',
+      wrap: 'none',
+      padding: 2,
+    },
   },
 };

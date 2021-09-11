@@ -62,7 +62,7 @@ class Comment {
   successButtonOnClick = () => {
     const id = this.sheet.selector.selectedFirstCell!.id();
 
-    this.sheet.setCellStyle(id, {
+    this.sheet.setCellData(id, {
       comment: this.textarea.value,
     });
 
@@ -80,7 +80,7 @@ class Comment {
     this.container.show();
 
     const id = this.sheet.selector.selectedFirstCell!.id();
-    const comment = this.sheet.data.cellStyles[id]?.comment;
+    const comment = this.sheet.data.sheetData[id]?.comment;
 
     if (comment) {
       this.textarea.value = comment;

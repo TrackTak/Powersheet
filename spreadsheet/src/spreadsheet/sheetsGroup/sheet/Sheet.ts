@@ -761,6 +761,8 @@ class Sheet {
 
   setCellCommentMarker(id: CellId) {
     const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+    //@ts-ignore
+    const getAngle = Konva.getAngle;
 
     const commentMarker = new Line({
       ...this.commentMarkerConfig,
@@ -777,11 +779,8 @@ class Sheet {
         x: -commentMarker.width() / 2,
         y: -commentMarker.height() / 2,
       };
-      const current = rotatePoint(
-        topLeft,
-        Konva.getAngle(commentMarker.rotation())
-      );
-      const rotated = rotatePoint(topLeft, Konva.getAngle(rotation));
+      const current = rotatePoint(topLeft, getAngle(commentMarker.rotation()));
+      const rotated = rotatePoint(topLeft, getAngle(rotation));
       const dx = rotated.x - current.x,
         dy = rotated.y - current.y;
 

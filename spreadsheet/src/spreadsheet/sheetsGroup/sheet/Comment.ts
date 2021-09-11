@@ -1,11 +1,8 @@
 import Sheet from './Sheet';
-import styles from './Comment.module.scss';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import {
-  commentPrefix,
   createButtonContainer,
   createCancelButton,
-  createContainer,
   createContent,
   createSuccessButton,
   createTextarea,
@@ -46,13 +43,48 @@ class Comment {
       hideOnClick: true,
     });
 
+    this.hideContainer();
+
+    this.cancelButton.addEventListener('click', this.cancelButtonOnClick);
+    this.successButton.addEventListener('click', this.successButtonOnClick);
+  }
+
+  hideContainer() {
     this.container.disable();
     this.container.hide();
+    this.textarea.value = '';
+  }
+
+  cancelButtonOnClick = () => {
+    this.hideContainer();
+  };
+
+  successButtonOnClick = () => {
+    const id = this.sheet.selector.selectedFirstCell!.id();
+
+    this.sheet.setCellStyle(id, {
+      comment: this.textarea.value,
+    });
+
+    this.sheet.updateCells();
+    this.hideContainer();
+  };
+
+  destroy() {
+    this.successButton.removeEventListener('click', this.successButtonOnClick);
+    this.cancelButton.removeEventListener('click', this.cancelButtonOnClick);
   }
 
   show() {
     this.container.enable();
     this.container.show();
+
+    const id = this.sheet.selector.selectedFirstCell!.id();
+    const comment = this.sheet.data.cellStyles[id]?.comment;
+
+    if (comment) {
+      this.textarea.value = comment;
+    }
   }
 }
 

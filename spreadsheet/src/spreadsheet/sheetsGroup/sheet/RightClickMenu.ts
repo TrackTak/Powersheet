@@ -103,6 +103,7 @@ class RightClickMenu {
 
     hideDropdown();
 
+    //anon
     this.sheet.stage.on('click', (e) => {
       if (e.evt.button === 0) {
         hideDropdown();

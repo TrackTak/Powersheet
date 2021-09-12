@@ -505,8 +505,16 @@ class Sheet {
       return;
     }
 
-    if (e.evt.button === 0 && this.hasDoubleClickedOnCell()) {
-      this.createCellEditor();
+    if (e.evt.button === 0) {
+      if (this.hasDoubleClickedOnCell()) {
+        this.createCellEditor();
+      }
+
+      const id = this.selector.selectedFirstCell!.id();
+
+      if (this.data.sheetData[id]?.comment) {
+        this.comment.show();
+      }
     }
   };
 

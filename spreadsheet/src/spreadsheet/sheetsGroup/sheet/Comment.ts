@@ -34,29 +34,26 @@ class Comment {
       interactive: true,
       arrow: false,
       trigger: 'manual',
-      delay: 0,
+      delay: 100,
       plugins: [followCursor],
       followCursor: 'initial',
       theme: 'comment',
       showOnCreate: false,
       content: this.content,
       hideOnClick: true,
+      onHide: () => {
+        this.textarea.value = '';
+      },
     });
 
-    this.hideContainer();
+    this.hide();
 
     this.cancelButton.addEventListener('click', this.cancelButtonOnClick);
     this.successButton.addEventListener('click', this.successButtonOnClick);
   }
 
-  hideContainer() {
-    this.container.disable();
-    this.container.hide();
-    this.textarea.value = '';
-  }
-
   cancelButtonOnClick = () => {
-    this.hideContainer();
+    this.hide();
   };
 
   successButtonOnClick = () => {
@@ -67,7 +64,7 @@ class Comment {
     });
 
     this.sheet.updateCells();
-    this.hideContainer();
+    this.hide();
   };
 
   destroy() {
@@ -75,8 +72,14 @@ class Comment {
     this.cancelButton.removeEventListener('click', this.cancelButtonOnClick);
   }
 
+  hide() {
+    this.container.hide();
+    this.textarea.value = '';
+  }
+
   show() {
-    this.container.enable();
+    // unmount forces position to update
+    this.container.unmount();
     this.container.show();
 
     const id = this.sheet.selector.selectedFirstCell!.id();

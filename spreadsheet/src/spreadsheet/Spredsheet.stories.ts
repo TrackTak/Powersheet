@@ -153,6 +153,7 @@ CellStyles.args = {
           borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
           backgroundColor: 'yellow',
         },
+        comment: 'Another comment',
       },
       '4_1': {
         style: {

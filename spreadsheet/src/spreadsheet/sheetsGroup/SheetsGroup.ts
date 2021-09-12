@@ -35,20 +35,20 @@ class SheetsGroup {
   }
 
   onDOMContentLoaded = () => {
-    const dataArray = Object.values(this.spreadsheet.data);
+    const dataKeysArray = Object.keys(this.spreadsheet.data);
 
-    if (dataArray.length) {
-      const sheetName = dataArray[0].sheetName;
+    if (dataKeysArray.length) {
+      dataKeysArray.forEach((key) => {
+        const data = this.spreadsheet.data[key];
 
-      dataArray.forEach((data) => {
-        this.createNewSheet(data);
+        this.createNewSheet(key, data);
       });
 
-      this.switchSheet(sheetName);
+      this.switchSheet(dataKeysArray[0]);
     } else {
       const sheetName = this.getSheetName();
 
-      this.createNewSheet({
+      this.createNewSheet(sheetName, {
         sheetName,
       });
 
@@ -102,17 +102,17 @@ class SheetsGroup {
     this.update();
   }
 
-  renameSheet(oldSheetId: SheetId, sheetId: SheetId) {
+  renameSheet(oldSheetId: SheetId, sheetName: SheetId) {
     const sheet = this.sheets.get(oldSheetId)!;
     const sheetData = this.spreadsheet.data?.[oldSheetId];
 
-    sheet.setSheetId(sheetId);
+    sheet.setSheetId(sheetName);
 
     const newSheets = new Map<SheetId, Sheet>();
 
     for (const [currentSheetId, sheet] of this.sheets) {
       if (currentSheetId === oldSheetId) {
-        newSheets.set(sheetId, sheet);
+        newSheets.set(sheetName, sheet);
       } else {
         newSheets.set(currentSheetId, sheet);
       }
@@ -122,26 +122,24 @@ class SheetsGroup {
 
     delete this.spreadsheet.data[oldSheetId];
 
-    this.spreadsheet.data[sheetId] = {
+    this.spreadsheet.data[sheetName] = {
       ...sheetData,
-      sheetName: sheetId,
+      sheetName,
     };
 
-    this.activeSheetId = sheetId;
+    this.activeSheetId = sheetName;
 
     this.update();
   }
 
-  createNewSheet(data: IData) {
-    const sheetName = data.sheetName;
+  createNewSheet(sheetId: SheetId, data: IData) {
+    this.setSheetData(sheetId, {
+      sheetName: data.sheetName,
+    });
 
-    this.spreadsheet.data[sheetName] = {
-      sheetName,
-    };
+    const sheet = new Sheet(this, sheetId);
 
-    const sheet = new Sheet(this, sheetName);
-
-    this.sheets.set(sheetName, sheet);
+    this.sheets.set(sheetId, sheet);
 
     sheet.hide();
 
@@ -150,6 +148,13 @@ class SheetsGroup {
     this.update();
 
     sheet.setSize();
+  }
+
+  setSheetData(sheetId: SheetId, newValue: IData) {
+    this.spreadsheet.data[sheetId] = {
+      ...this.spreadsheet.data[sheetId],
+      ...newValue,
+    };
   }
 }
 

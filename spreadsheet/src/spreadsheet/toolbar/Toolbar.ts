@@ -404,7 +404,11 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     ids.forEach((id) => {
-      sheet.removeCellStyle(id, 'borders');
+      const cellData = sheet.getCellData(id);
+
+      if (cellData?.style?.borders) {
+        delete cellData.style.borders;
+      }
     });
   }
 
@@ -419,12 +423,13 @@ class Toolbar {
         sheet.selector.selectedCells.forEach((cell) => {
           const id = cell.id();
 
-          sheet.setCellStyle(id, {
+          sheet.setCellDataStyle(id, {
             backgroundColor,
           });
 
           // Manually set cellBackgroundColor and not calling updateViewport
-          // due to it in triggering very quick succession
+          // due to it in triggering very quick succession. debounce does
+          // not work well either.
           sheet.setCellBackgroundColor(id, backgroundColor);
         });
 

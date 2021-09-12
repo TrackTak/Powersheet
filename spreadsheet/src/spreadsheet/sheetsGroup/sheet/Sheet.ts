@@ -18,7 +18,6 @@ import SheetsGroup from '../SheetsGroup';
 import Spreadsheet from '../../Spreadsheet';
 import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
-import { HyperFormula } from 'hyperformula';
 
 export interface IDimensions {
   width: number;
@@ -77,7 +76,7 @@ export interface IData {
   sheetName: string;
   frozenCells?: IFrozenCells;
   mergedCells?: IMergedCells[];
-  cellData?: ICellsData;
+  cellsData?: ICellsData;
   row?: IRowColData;
   col?: IRowColData;
 }
@@ -429,8 +428,6 @@ class Sheet {
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
-    this.cellEditor = new CellEditor(this);
-    this.rightClickMenu = new RightClickMenu(this);
     this.rightClickMenu = new RightClickMenu(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
@@ -457,6 +454,8 @@ class Sheet {
     this.row.resizer.setResizeGuideLinePoints();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+
+    this.cellEditor = new CellEditor(this);
   }
 
   sheetOnClick = () => {
@@ -554,7 +553,7 @@ class Sheet {
   }
 
   getCellData(id: CellId) {
-    return this.getData().cellData?.[id];
+    return this.getData().cellsData?.[id];
   }
 
   setBorderStyle(id: CellId, borderType: BorderStyleOption) {
@@ -567,27 +566,34 @@ class Sheet {
     }
   }
 
-  removeCellData(id: CellId, name: keyof ICellData) {
-    const cellData = this.getData().cellData;
+  // TODO: Call this function later on every data change
+  cleanCellData(id: CellId) {
+    const cellData = this.getCellData(id);
 
-    if (cellData?.[id]) {
-      delete cellData[id][name];
-    }
+    if (cellData) {
+      if (cellData.style) {
+        const cellDataStyleArray = Object.keys(cellData.style);
 
-    const cellDataArray = Object.keys(cellData?.[id] ?? {});
+        if (cellDataStyleArray.length === 0) {
+          delete cellData.style;
+        }
+      }
 
-    if (cellData?.[id] && cellDataArray.length === 0) {
-      delete cellData[id];
+      const cellDataArray = Object.keys(cellData);
+
+      if (cellDataArray.length === 0) {
+        delete this.getData().cellsData?.[id];
+      }
     }
   }
 
   setCellData(id: CellId, newValue: ICellData) {
     const data = this.getData();
 
-    data.cellData = {
-      ...data.cellData,
+    data.cellsData = {
+      ...data.cellsData,
       [id]: {
-        ...data.cellData?.[id],
+        ...data.cellsData?.[id],
         ...newValue,
       },
     };
@@ -605,7 +611,7 @@ class Sheet {
   addMergedCells(mergedCells: IMergedCells) {
     const data = this.getData();
     const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const cellData = data.cellData;
+    const cellsData = data.cellsData;
 
     data.mergedCells = data.mergedCells
       ? [...data.mergedCells, mergedCells]
@@ -615,8 +621,8 @@ class Sheet {
       for (const ci of iterateSelection(mergedCells.col)) {
         const id = getCellId(ri, ci);
 
-        if (cellData?.[id].style) {
-          delete cellData[id].style;
+        if (cellsData?.[id]?.style) {
+          delete cellsData[id].style;
         }
       }
     }
@@ -660,11 +666,11 @@ class Sheet {
 
     this.merger.updateMergedCells();
 
-    const cellData = this.getData().cellData ?? {};
+    const cellsData = this.getData().cellsData ?? {};
 
-    Object.keys(cellData).forEach((id) => {
-      const data = cellData[id];
-      const style = data.style;
+    Object.keys(cellsData).forEach((id) => {
+      const cellData = cellsData[id];
+      const style = cellData.style;
 
       this.updateCellRect(id);
 
@@ -691,8 +697,8 @@ class Sheet {
         });
       }
 
-      if (data.value) {
-        this.setCellTextValue(id, data.value);
+      if (cellData.value) {
+        this.setCellTextValue(id, cellData.value);
       }
     });
   }

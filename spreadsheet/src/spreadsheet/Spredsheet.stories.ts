@@ -51,7 +51,7 @@ FrozenCells.args = {
   ...defaultStoryArgs,
   data: {
     FrozenCells: {
-      sheetName: 'FrozenCells',
+      sheetName: 'Frozen Cells',
       frozenCells: {
         row: 0,
         col: 0,
@@ -66,7 +66,7 @@ MergedCells.args = {
   ...defaultStoryArgs,
   data: {
     MergedCells: {
-      sheetName: 'MergedCells',
+      sheetName: 'Merged Cells',
       mergedCells: [
         {
           row: {
@@ -89,7 +89,7 @@ DifferentSizeCells.args = {
   ...defaultStoryArgs,
   data: {
     DifferentSizeCells: {
-      sheetName: 'DifferentSizeCells',
+      sheetName: 'Different Size Cells',
       col: {
         sizes: {
           '3': 70,
@@ -105,14 +105,14 @@ DifferentSizeCells.args = {
   },
 };
 
-export const CellDatas = Template.bind({});
+export const CellsData = Template.bind({});
 
-CellDatas.args = {
+CellsData.args = {
   ...defaultStoryArgs,
   data: {
-    CellDatas: {
-      sheetName: 'CellDatas',
-      cellData: {
+    CellsData: {
+      sheetName: 'Cells Data',
+      cellsData: {
         '1_0': {
           style: {
             backgroundColor: 'red',

@@ -8,17 +8,17 @@ import { performanceProperties } from '../../styles';
 import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
-import CellEditor from './CellEditor';
+import CellEditor from './cellEditor/CellEditor';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
-import RightClickMenu from './RightClickMenu';
+import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import SheetsGroup from '../SheetsGroup';
 import Spreadsheet from '../../Spreadsheet';
 import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
-import Comment from './Comment';
+import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId } from './CellRenderer';
 
 export interface IDimensions {

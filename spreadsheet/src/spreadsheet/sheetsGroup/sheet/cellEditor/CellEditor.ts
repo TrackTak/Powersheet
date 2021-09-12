@@ -1,12 +1,12 @@
 import { IRect } from 'konva/lib/types';
-import events from '../../events';
-import Sheet from './Sheet';
+import events from '../../../events';
+import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
 import { HyperFormula } from 'hyperformula';
-import FormulaHelper from '../../formulaHelper/FormulaHelper';
-import Spreadsheet from '../../Spreadsheet';
+import FormulaHelper from '../../../formulaHelper/FormulaHelper';
+import Spreadsheet from '../../../Spreadsheet';
 
 class CellEditor {
   private cellEditorContainerEl: HTMLDivElement;

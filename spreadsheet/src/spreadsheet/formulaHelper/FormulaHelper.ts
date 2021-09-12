@@ -1,7 +1,10 @@
 import { DelegateInstance, delegate } from 'tippy.js';
 import styles from './FormulaHelper.module.scss';
 import isEmpty from 'lodash/isEmpty';
-import { createFormulaList, createWrapperContent } from './htmlElementHelpers';
+import {
+  createFormulaList,
+  createWrapperContent,
+} from './formulaHtmlElementHelpers';
 
 class FormulaHelper {
   formulaHelperEl: HTMLDivElement;
@@ -10,10 +13,8 @@ class FormulaHelper {
   private list?: HTMLUListElement;
 
   constructor(private formulas: string[]) {
-    const {
-      formulaHelperListContainerEl,
-      formulaHelperEl,
-    } = createWrapperContent();
+    const { formulaHelperListContainerEl, formulaHelperEl } =
+      createWrapperContent();
     this.formulaHelperListContainerEl = formulaHelperListContainerEl;
     this.formulaHelperEl = formulaHelperEl;
     this.formulas = formulas;
@@ -27,7 +28,9 @@ class FormulaHelper {
   }
 
   show(filterText?: string) {
-    const formulas = this.formulas.filter(formula => !filterText || formula.startsWith(filterText));
+    const formulas = this.formulas.filter(
+      (formula) => !filterText || formula.startsWith(filterText)
+    );
     if (isEmpty(formulas)) {
       this.helper.hide();
       return;

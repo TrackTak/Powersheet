@@ -1,8 +1,8 @@
-import { prefix } from './../../utils';
+import { prefix } from '../../../utils';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
-import Sheet from './Sheet';
-import { createGroup } from '../../htmlElementHelpers';
+import Sheet from '../Sheet';
+import { createGroup } from '../../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
 import { KonvaEventListener } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';

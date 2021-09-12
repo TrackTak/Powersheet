@@ -1,4 +1,4 @@
-import Sheet from './Sheet';
+import Sheet from '../Sheet';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import {
   createButtonContainer,

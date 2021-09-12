@@ -450,9 +450,6 @@ class Sheet {
     this.drawNextItems();
     this.updateViewport();
 
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
-
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
@@ -539,6 +536,9 @@ class Sheet {
 
     this.stage.width(this.col.totalSize + this.getViewportVector().x);
     this.stage.height(this.row.totalSize + this.getViewportVector().y);
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;

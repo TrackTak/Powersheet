@@ -167,17 +167,14 @@ class Resizer {
     const target = e.target as Line;
     const position = target.getPosition();
     const minSize = this.spreadsheet.options[this.type].minSize;
-    let newAxis = this.isCol ? position.x : position.y;
+    let newAxis = position[this.functions.axis];
 
     const getNewPosition = () => {
       const newPosition = {
         ...position,
       };
-      if (this.isCol) {
-        newPosition.x = newAxis;
-      } else {
-        newPosition.y = newAxis;
-      }
+      newPosition[this.functions.axis] = newAxis;
+
       return newPosition;
     };
 
@@ -207,7 +204,7 @@ class Resizer {
     const position = this.resizePosition;
     const minSize = this.spreadsheet.options[this.type].minSize;
 
-    const axis = this.isCol ? position.x : position.y;
+    const axis = position[this.functions.axis];
 
     this.hideGuideLine();
     this.hideResizeMarker();

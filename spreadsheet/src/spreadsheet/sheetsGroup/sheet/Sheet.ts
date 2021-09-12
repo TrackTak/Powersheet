@@ -1,8 +1,7 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import { Text } from 'konva/lib/shapes/Text';
 import EventEmitter from 'eventemitter3';
-import { Line, LineConfig } from 'konva/lib/shapes/Line';
+import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
@@ -16,10 +15,11 @@ import RightClickMenu from './RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import SheetsGroup from '../SheetsGroup';
 import Spreadsheet from '../../Spreadsheet';
-import { prefix, rotateAroundCenter } from '../../utils';
+import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './Comment';
+import CellRenderer, { Cell, CellId } from './CellRenderer';
 
 export interface IDimensions {
   width: number;
@@ -42,7 +42,6 @@ export interface ICustomSizePosition {
   size: number;
 }
 
-export type CellId = string;
 export type SheetId = string;
 
 export interface IFrozenCells {
@@ -107,8 +106,6 @@ export interface IScrollGroups {
 export interface ICustomSizes {
   size: number;
 }
-
-export type Cell = Group;
 
 type operator = 'add' | 'subtract';
 
@@ -326,22 +323,19 @@ class Sheet {
   row: RowCol;
   selector: Selector;
   merger: Merger;
+  cellRenderer: CellRenderer;
   shapes: IShapes;
   sheetDimensions: IDimensions;
-  cellsMap: Map<CellId, Cell>;
   lastClickTime: number = new Date().getTime();
   cellEditor?: CellEditor;
   rightClickMenu?: RightClickMenu;
   comment: Comment;
-  commentMarkerConfig: LineConfig;
   private spreadsheet: Spreadsheet;
 
   constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
     this.sheetsGroup = sheetsGroup;
     this.sheetId = sheetId;
     this.spreadsheet = this.sheetsGroup.spreadsheet;
-    this.cellsMap = new Map();
-    this.commentMarkerConfig = this.spreadsheet.styles.commentMarker;
 
     this.sheetDimensions = {
       width: 0,
@@ -432,6 +426,7 @@ class Sheet {
     this.col.setup();
     this.row.setup();
 
+    this.cellRenderer = new CellRenderer(this);
     this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
@@ -475,7 +470,7 @@ class Sheet {
 
       const id = this.selector.selectedFirstCell!.id();
 
-      if (this.getCellData(id)?.comment) {
+      if (this.cellRenderer.getCellData(id)?.comment) {
         this.comment.show();
       }
     }
@@ -567,294 +562,6 @@ class Sheet {
     return this.spreadsheet.data[this.sheetId];
   }
 
-  getCellData(id: CellId) {
-    return this.getData().cellsData?.[id];
-  }
-
-  setBorderStyle(id: CellId, borderType: BorderStyleOption) {
-    const borders = this.getCellData(id)?.style?.borders ?? [];
-
-    if (borders.indexOf(borderType) === -1) {
-      this.setCellDataStyle(id, {
-        borders: [...borders, borderType],
-      });
-    }
-  }
-
-  // TODO: Call this function later on every data change
-  cleanCellData(id: CellId) {
-    const cellData = this.getCellData(id);
-
-    if (cellData) {
-      if (cellData.style) {
-        const cellDataStyleArray = Object.keys(cellData.style);
-
-        if (cellDataStyleArray.length === 0) {
-          delete cellData.style;
-        }
-      }
-
-      const cellDataArray = Object.keys(cellData);
-
-      if (cellDataArray.length === 0) {
-        delete this.getData().cellsData?.[id];
-      }
-    }
-  }
-
-  setCellData(id: CellId, newValue: ICellData) {
-    const data = this.getData();
-
-    data.cellsData = {
-      ...data.cellsData,
-      [id]: {
-        ...data.cellsData?.[id],
-        ...newValue,
-      },
-    };
-  }
-
-  setCellDataStyle(id: CellId, newStyle: ICellStyle) {
-    this.setCellData(id, {
-      style: {
-        ...this.getCellData(id)?.style,
-        ...newStyle,
-      },
-    });
-  }
-
-  addMergedCells(mergedCells: IMergedCells) {
-    const data = this.getData();
-    const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
-    const existingTopLeftCellStyle = this.getCellData(topLeftCellId)?.style;
-    const cellsData = data.cellsData;
-
-    data.mergedCells = data.mergedCells
-      ? [...data.mergedCells, mergedCells]
-      : [mergedCells];
-
-    for (const ri of iterateSelection(mergedCells.row)) {
-      for (const ci of iterateSelection(mergedCells.col)) {
-        const id = getCellId(ri, ci);
-
-        if (cellsData?.[id]?.style) {
-          delete cellsData[id].style;
-        }
-      }
-    }
-
-    if (existingTopLeftCellStyle) {
-      this.setCellDataStyle(topLeftCellId, existingTopLeftCellStyle);
-    }
-  }
-
-  removeMergedCells(mergedCells: IMergedCells) {
-    const data = this.getData();
-    const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
-
-    data.mergedCells = data.mergedCells?.filter(({ row, col }) => {
-      return !this.merger.getAreMergedCellsOverlapping(mergedCells, {
-        row,
-        col,
-      });
-    });
-
-    if (!this.merger.getIsCellMerged(mergedCellId)) return;
-
-    const mergedCellStyle = this.getCellData(mergedCellId)!.style!;
-
-    for (const ri of iterateSelection(mergedCells.row)) {
-      for (const ci of iterateSelection(mergedCells.col)) {
-        const id = getCellId(ri, ci);
-
-        this.setCellDataStyle(id, mergedCellStyle);
-      }
-    }
-  }
-
-  updateCells() {
-    for (const cell of this.cellsMap.values()) {
-      cell.destroy();
-    }
-
-    this.cellsMap.clear();
-
-    this.merger.updateMergedCells();
-
-    const cellsData = this.getData().cellsData ?? {};
-
-    Object.keys(cellsData).forEach((id) => {
-      const cellData = cellsData[id];
-      const style = cellData.style;
-
-      this.updateCellRect(id);
-
-      if (style?.backgroundColor) {
-        this.setCellBackgroundColor(id, style.backgroundColor);
-      }
-
-      if (cellData?.comment) {
-        this.setCellCommentMarker(id);
-      }
-
-      if (style?.borders) {
-        style.borders.forEach((borderType) => {
-          switch (borderType) {
-            case 'borderLeft':
-              this.setLeftBorder(id);
-              break;
-            case 'borderTop':
-              this.setTopBorder(id);
-              break;
-            case 'borderRight':
-              this.setRightBorder(id);
-              break;
-            case 'borderBottom':
-              this.setBottomBorder(id);
-              break;
-          }
-        });
-      }
-
-      if (cellData?.value) {
-        this.setCellTextValue(id, cellData.value);
-      }
-    });
-  }
-
-  updateCellRect(id: CellId) {
-    const cell = this.convertFromCellIdToCell(id);
-    if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
-        'cellRect',
-      ]);
-
-      setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
-
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-  }
-
-  private *setBorder(id: CellId, type: BorderStyleOption) {
-    const { cell, clientRect } = this.drawNewCell(id, [type]);
-
-    const line = new Line({
-      ...performanceProperties,
-      type,
-      stroke: 'black',
-      strokeWidth: this.spreadsheet.styles.gridLine.strokeWidth,
-    });
-
-    cell.add(line);
-
-    line.moveToTop();
-
-    yield { cell, clientRect, line };
-
-    makeShapeCrisp(line);
-  }
-
-  setBottomBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderBottom');
-    const { line, clientRect } = generator.next().value!;
-
-    line.y(clientRect.height);
-    line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
-  }
-
-  setRightBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderRight');
-    const { line, clientRect } = generator.next().value!;
-
-    line.x(clientRect.width);
-    line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
-  }
-
-  setTopBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderTop');
-    const { line, clientRect } = generator.next().value!;
-
-    line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
-  }
-
-  setLeftBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderLeft');
-    const { line, clientRect } = generator.next().value!;
-
-    line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
-  }
-
-  setCellBackgroundColor(id: CellId, backgroundColor: string) {
-    const { cell } = this.drawNewCell(id);
-    const cellRect = getCellRectFromCell(cell);
-
-    cellRect.fill(backgroundColor);
-  }
-
-  setCellCommentMarker(id: CellId) {
-    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
-
-    const commentMarker = new Line({
-      ...this.commentMarkerConfig,
-      x: clientRect.width,
-    });
-
-    cell.add(commentMarker);
-
-    rotateAroundCenter(commentMarker, 180);
-  }
-
-  setCellTextValue(id: CellId, value: string) {
-    const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
-
-    const text = new Text({
-      ...this.spreadsheet.styles.cell.text,
-      text: value,
-      type: 'cellText',
-      width: clientRect.width,
-    });
-
-    const midPoints = centerRectTwoInRectOne(clientRect, text.getClientRect());
-    text.x(midPoints.x - clientRect.x);
-    text.y(midPoints.y - clientRect.y);
-
-    cell.add(text);
-  }
-
-  getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {
-    const cell = new Group({
-      ...performanceProperties,
-      x: rect.x,
-      y: rect.y,
-      row,
-      col,
-    });
-
-    if (id) {
-      cell.id(id);
-    }
-
-    const cellRect = new Rect({
-      type: 'cellRect',
-      width: rect.width,
-      height: rect.height,
-    });
-
-    cell.add(cellRect);
-
-    return cell;
-  }
-
   updateSheetDimensions() {
     this.sheetDimensions.width = this.col.getTotalSize();
     this.sheetDimensions.height = this.row.getTotalSize();
@@ -865,105 +572,6 @@ class Sheet {
       x: this.spreadsheet.styles.rowHeader.rect.width,
       y: this.spreadsheet.styles.colHeader.rect.height,
     };
-  }
-
-  convertFromCellIdToCell(id: CellId) {
-    const { row, col } = convertFromCellIdToRowCol(id);
-    const rowGroup = this.row.rowColGroupMap.get(row);
-    const colGroup = this.col.rowColGroupMap.get(col);
-
-    if (!rowGroup) {
-      throw new Error(`id ${id} is out of range`);
-    }
-
-    if (!colGroup) {
-      throw new Error(`id ${id} is out of range`);
-    }
-
-    const cell = this.convertFromRowColToCell(rowGroup, colGroup);
-
-    return cell;
-  }
-
-  private getConvertedMergedCell(mergedCell: Cell) {
-    const rect = getCellRectFromCell(mergedCell);
-    // We don't use getClientRect as we don't want the
-    // mergedCells gridLines taken into account
-    const cell = this.getNewCell(
-      mergedCell.id(),
-      {
-        x: mergedCell.x(),
-        y: mergedCell.y(),
-        width: rect.width(),
-        height: rect.height(),
-      },
-      mergedCell.attrs.row,
-      mergedCell.attrs.col
-    );
-
-    return cell;
-  }
-
-  convertFromRowColToCell(rowGroup: Group, colGroup: Group) {
-    const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-    const mergedCellId = this.merger.associatedMergedCellIdMap.get(id);
-
-    if (mergedCellId) {
-      const mergedCell = this.cellsMap.get(mergedCellId)!;
-
-      return this.getConvertedMergedCell(mergedCell);
-    }
-
-    const rect: IRect = {
-      x: colGroup.x(),
-      y: rowGroup.y(),
-      width: colGroup.width(),
-      height: rowGroup.height(),
-    };
-    const row = {
-      x: rowGroup.attrs.index,
-      y: rowGroup.attrs.index,
-    };
-
-    const col = {
-      x: colGroup.attrs.index,
-      y: colGroup.attrs.index,
-    };
-
-    const cell = this.getNewCell(id, rect, row, col);
-
-    return cell;
-  }
-
-  convertFromRowColsToCells(rows: Group[], cols: Group[]) {
-    const mergedCellsAddedMap = new Map();
-    const cells: Cell[] = [];
-
-    rows.forEach((rowGroup) => {
-      cols.forEach((colGroup) => {
-        const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCellId = this.merger.associatedMergedCellIdMap.get(id);
-        let cell;
-
-        if (mergedCellId) {
-          const mergedCell = this.cellsMap.get(mergedCellId)!;
-
-          if (!mergedCellsAddedMap?.get(mergedCellId)) {
-            cell = this.getConvertedMergedCell(mergedCell);
-
-            mergedCellsAddedMap?.set(mergedCellId, cell);
-          }
-        } else {
-          cell = this.convertFromRowColToCell(rowGroup, colGroup);
-        }
-
-        if (cell) {
-          cells.push(cell);
-        }
-      });
-    });
-
-    return cells;
   }
 
   getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
@@ -989,7 +597,7 @@ class Sheet {
           this.merger.associatedMergedCellIdMap.get(existingCellId);
 
         if (mergedCellId) {
-          const mergedCell = this.cellsMap.get(mergedCellId)!;
+          const mergedCell = this.cellRenderer.cellsMap.get(mergedCellId)!;
 
           const row = mergedCell.attrs.row;
           const col = mergedCell.attrs.col;
@@ -1041,72 +649,6 @@ class Sheet {
     this.cellEditor?.destroy();
   }
 
-  destroyCell(cellId: string) {
-    if (this.cellsMap.has(cellId)) {
-      const cell = this.cellsMap.get(cellId)!;
-
-      cell.destroy();
-
-      this.cellsMap.delete(cellId);
-    }
-  }
-
-  drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
-    const cell = this.convertFromCellIdToCell(id);
-
-    const clientRect = cell.getClientRect({
-      skipStroke: true,
-    });
-
-    if (this.cellsMap.has(id)) {
-      const children = getOtherCellChildren(
-        this.cellsMap.get(id)!,
-        childrenToFilterOut
-      );
-
-      setCellChildren(cell, children);
-
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-
-    this.drawCell(cell);
-
-    return { cell, clientRect };
-  }
-
-  drawCell(cell: Cell) {
-    const id = cell.id();
-
-    const isFrozenRow = this.row.getIsFrozen(cell.attrs.row.x);
-    const isFrozenCol = this.col.getIsFrozen(cell.attrs.col.x);
-    const getCellGroupMethod = (scrollGroup: Group) =>
-      this.merger.getIsCellMerged(id)
-        ? getMergedCellGroupFromScrollGroup(scrollGroup)
-        : getCellGroupFromScrollGroup(scrollGroup);
-
-    if (isFrozenRow && isFrozenCol) {
-      const xyStickyCellGroup = getCellGroupMethod(this.scrollGroups.xySticky);
-
-      xyStickyCellGroup.add(cell);
-    } else if (isFrozenRow) {
-      const yStickyCellGroup = getCellGroupMethod(this.scrollGroups.ySticky);
-
-      yStickyCellGroup.add(cell);
-    } else if (isFrozenCol) {
-      const xStickyCellGroup = getCellGroupMethod(this.scrollGroups.xSticky);
-
-      xStickyCellGroup.add(cell);
-    } else {
-      const mainCellGroup = getCellGroupMethod(this.scrollGroups.main);
-
-      mainCellGroup.add(cell);
-    }
-
-    cell.moveToTop();
-  }
-
   drawTopLeftOffsetRect() {
     this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
 
@@ -1117,7 +659,7 @@ class Sheet {
     this.updateSheetDimensions();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.updateCells();
+    this.cellRenderer.updateCells();
     this.selector.updateSelectedCells();
   }
 

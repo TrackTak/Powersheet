@@ -59,11 +59,11 @@ class Comment {
   successButtonOnClick = () => {
     const id = this.sheet.selector.selectedFirstCell!.id();
 
-    this.sheet.setCellData(id, {
+    this.sheet.cellRenderer.setCellData(id, {
       comment: this.textarea.value,
     });
 
-    this.sheet.updateCells();
+    this.sheet.updateViewport();
     this.hide();
   };
 
@@ -83,7 +83,7 @@ class Comment {
     this.container.show();
 
     const id = this.sheet.selector.selectedFirstCell!.id();
-    const comment = this.sheet.getCellData(id)?.comment;
+    const comment = this.sheet.cellRenderer.getCellData(id)?.comment;
 
     if (comment) {
       this.textarea.value = comment;

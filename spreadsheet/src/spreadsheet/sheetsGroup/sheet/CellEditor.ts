@@ -49,7 +49,7 @@ class CellEditor {
 
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
 
-    this.setTextContent(this.sheet.getCellData(cellId)?.value);
+    this.setTextContent(this.sheet.cellRenderer.getCellData(cellId)?.value);
 
     this.showCellEditor();
   }
@@ -58,7 +58,7 @@ class CellEditor {
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
 
     if (value) {
-      this.sheet.setCellData(cellId, {
+      this.sheet.cellRenderer.setCellData(cellId, {
         value,
       });
     }

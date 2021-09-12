@@ -3,7 +3,8 @@ import { RectConfig } from 'konva/lib/shapes/Rect';
 import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Spreadsheet from '../../Spreadsheet';
-import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
+import { Cell } from './CellRenderer';
+import Sheet, { getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -64,7 +65,7 @@ class Selector {
     const rows = this.sheet.row.convertFromRangeToGroups(row);
     const cols = this.sheet.col.convertFromRangeToGroups(col);
 
-    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
     this.setCells(cells);
 
@@ -81,7 +82,7 @@ class Selector {
     this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
-    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
     this.setFirstCell(cells[0]);
     this.selectCells(cells);
@@ -167,7 +168,10 @@ class Selector {
         this.selectionArea.end
       );
 
-      const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+      const cells = this.sheet.cellRenderer.convertFromRowColsToCells(
+        rows,
+        cols
+      );
 
       if (this.selectedCells.length !== cells.length) {
         this.setCells(cells);
@@ -212,7 +216,7 @@ class Selector {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
 
-      this.sheet.drawCell(cell);
+      this.sheet.cellRenderer.drawCell(cell);
 
       cell.moveToTop();
     });

@@ -5,7 +5,6 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import Sheet, {
-  Cell,
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   ICustomSizes,
@@ -21,6 +20,7 @@ import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
+import { Cell } from './CellRenderer';
 
 interface IShapes {
   group: Group;

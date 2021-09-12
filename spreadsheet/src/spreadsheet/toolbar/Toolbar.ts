@@ -1,7 +1,7 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import { BorderStyleOption, Cell, CellId } from '../sheetsGroup/sheet/Sheet';
+import { BorderStyleOption } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -28,6 +28,7 @@ import {
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
+import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -313,7 +314,7 @@ class Toolbar {
     borderCells.forEach((cell) => {
       const id = cell.id();
 
-      sheet.setBorderStyle(id, borderType);
+      sheet.cellRenderer.setBorderStyle(id, borderType);
     });
   }
 
@@ -404,7 +405,7 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     ids.forEach((id) => {
-      const cellData = sheet.getCellData(id);
+      const cellData = sheet.cellRenderer.getCellData(id);
 
       if (cellData?.style?.borders) {
         delete cellData.style.borders;
@@ -423,14 +424,14 @@ class Toolbar {
         sheet.selector.selectedCells.forEach((cell) => {
           const id = cell.id();
 
-          sheet.setCellDataStyle(id, {
+          sheet.cellRenderer.setCellDataStyle(id, {
             backgroundColor,
           });
 
           // Manually set cellBackgroundColor and not calling updateViewport
           // due to it in triggering very quick succession. debounce does
           // not work well either.
-          sheet.setCellBackgroundColor(id, backgroundColor);
+          sheet.cellRenderer.setCellBackgroundColor(id, backgroundColor);
         });
 
         break;
@@ -511,8 +512,8 @@ class Toolbar {
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellsMap.has(firstSelectedCell!.id())) {
-      const cell = sheet.cellsMap.get(firstSelectedCell!.id())!;
+    if (sheet.cellRenderer.cellsMap.has(firstSelectedCell!.id())) {
+      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCell!.id())!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;

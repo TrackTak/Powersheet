@@ -1,0 +1,122 @@
+@import '../styles.scss';
+
+.bottomBar {
+  padding: 0 25px;
+  user-select: none;
+  background: #f5f6f7;
+  box-shadow: 0 -1px 3px -1px rgb(169 164 164);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  font-family: 'Nunito Sans', Arial;
+  display: flex;
+}
+
+.content {
+  display: flex;
+}
+
+.tab {
+  background-color: #fff;
+  box-shadow: 0 0px 3px -1px rgb(169 164 164);
+  display: inline-block;
+}
+
+img {
+  height: 13px;
+  width: 13px;
+}
+
+.createNewSheetButtonContainer,
+.sheetSelectionButtonContainer {
+  display: flex;
+
+  > button {
+    border-radius: 0;
+  }
+}
+
+.sheetTab {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 11.5px 16px;
+  font-size: 15px;
+  font-weight: 550;
+  color: #80868b;
+  letter-spacing: 0.025rem;
+  border-right: 1px solid #e8eaed;
+
+  &:global(.active) {
+    background-color: #fff;
+  }
+
+  &:not(:global(.active)):hover {
+    background-color: #ddd;
+  }
+}
+
+.nameContainer[contenteditable='true'] {
+  color: #222;
+  border: 2px solid #43cea2;
+  outline: none;
+  border-radius: 4px;
+  padding: 4px 22px 4px 4px;
+}
+
+.sheetTabContainer {
+  position: relative;
+}
+
+.sheetSelectionDropdownButton {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  line-height: 20px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.sheetSelectionDropdownButton:hover {
+  background-color: #ddd;
+}
+
+.renameSheetButton:hover,
+.deleteSheetButton:hover {
+  background-color: #ddd;
+}
+
+.renameSheetButton,
+.deleteSheetButton {
+  @include button;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.sheetTabDropdownContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetSelectionDropdownContent {
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.scrollSliderContainer {
+  display: flex;
+  flex-direction: row;
+  margin-left: 10px;
+
+  > .sheetTabContainer:first-of-type {
+    border-left: 1px solid #e8eaed;
+  }
+}

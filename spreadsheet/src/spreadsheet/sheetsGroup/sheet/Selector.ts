@@ -2,7 +2,9 @@ import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { Cell, getCellRectFromCell, makeShapeCrisp } from './Sheet';
+import Spreadsheet from '../../Spreadsheet';
+import { Cell } from './CellRenderer';
+import Sheet, { getCellRectFromCell, makeShapeCrisp } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -27,9 +29,11 @@ class Selector {
   selectedFirstCell: Cell | null;
   previousSelectedCellPosition?: IRect;
   private selectionArea: ISelectionArea;
+  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -50,12 +54,7 @@ class Selector {
     this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
     this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
     this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
-    this.sheet.eventEmitter.on(events.sheet.load, this.onSheetLoad);
   }
-
-  onSheetLoad = () => {
-    this.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
-  };
 
   updateSelectedCells() {
     if (!this.selectedCells.length) return;
@@ -66,7 +65,7 @@ class Selector {
     const rows = this.sheet.row.convertFromRangeToGroups(row);
     const cols = this.sheet.col.convertFromRangeToGroups(col);
 
-    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
     this.setCells(cells);
 
@@ -83,13 +82,10 @@ class Selector {
     this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
-    const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
     this.setFirstCell(cells[0]);
     this.selectCells(cells);
-
-    this.sheet.toolbar?.setFocusedSheet(this.sheet);
-    this.sheet.toolbar?.setToolbarState();
 
     this.sheet.emit(
       events.selector.startSelection,
@@ -103,7 +99,7 @@ class Selector {
 
     const firstCellRect = getCellRectFromCell(cell);
 
-    const rectConfig: RectConfig = this.sheet.styles.selectionFirstCell;
+    const rectConfig: RectConfig = this.spreadsheet.styles.selectionFirstCell;
 
     firstCellRect.setAttrs(rectConfig);
 
@@ -123,7 +119,7 @@ class Selector {
   setCells(cells: Cell[]) {
     if (cells.length !== 1) {
       cells.forEach((cell) => {
-        const rectConfig: RectConfig = this.sheet.styles.selection;
+        const rectConfig: RectConfig = this.spreadsheet.styles.selection;
         const rect = getCellRectFromCell(cell);
 
         rect.setAttrs(rectConfig);
@@ -172,7 +168,10 @@ class Selector {
         this.selectionArea.end
       );
 
-      const cells = this.sheet.convertFromRowColsToCells(rows, cols);
+      const cells = this.sheet.cellRenderer.convertFromRowColsToCells(
+        rows,
+        cols
+      );
 
       if (this.selectedCells.length !== cells.length) {
         this.setCells(cells);
@@ -180,8 +179,6 @@ class Selector {
         this.removeSelectedCells(false);
 
         this.selectCells(cells);
-
-        this.sheet.toolbar?.setToolbarState();
 
         this.sheet.emit(events.selector.moveSelection, cells);
       }
@@ -219,7 +216,7 @@ class Selector {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
 
-      this.sheet.drawCell(cell);
+      this.sheet.cellRenderer.drawCell(cell);
 
       cell.moveToTop();
     });
@@ -260,7 +257,7 @@ class Selector {
 
     // const cellRect = getCellRectFromCell(cell);
 
-    // cellRect.setAttrs(this.sheet.styles.selectionBorder);
+    // cellRect.setAttrs(this.spreadsheet.styles.selectionBorder);
 
     // this.sheet.drawCell(cell);
 

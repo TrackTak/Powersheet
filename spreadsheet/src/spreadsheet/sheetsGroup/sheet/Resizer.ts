@@ -5,6 +5,7 @@ import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Sheet, { makeShapeCrisp } from './Sheet';
 import { IRowColFunctions, RowColType } from './RowCol';
+import Spreadsheet from '../../Spreadsheet';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -16,6 +17,7 @@ class Resizer {
   shapes!: IShapes;
   private resizeStartPos: Vector2d;
   private resizePosition: Vector2d;
+  private spreadsheet: Spreadsheet;
 
   constructor(
     private sheet: Sheet,
@@ -24,6 +26,7 @@ class Resizer {
     private functions: IRowColFunctions
   ) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;
@@ -41,15 +44,17 @@ class Resizer {
     this.shapes = {
       resizeMarker: new Rect(),
       resizeGuideLine: new Line({
-        ...this.sheet.styles.resizeGuideLine,
+        ...this.spreadsheet.styles.resizeGuideLine,
       }),
       resizeLine: new Line({
-        ...this.sheet.styles.resizeLine,
+        ...this.spreadsheet.styles.resizeLine,
       }),
     };
 
     if (this.isCol) {
-      this.shapes.resizeMarker.setAttrs(this.sheet.styles.colResizeMarker);
+      this.shapes.resizeMarker.setAttrs(
+        this.spreadsheet.styles.colResizeMarker
+      );
       this.shapes.resizeLine.points([
         0,
         0,
@@ -57,7 +62,9 @@ class Resizer {
         this.sheet.getViewportVector().y,
       ]);
     } else {
-      this.shapes.resizeMarker.setAttrs(this.sheet.styles.rowResizeMarker);
+      this.shapes.resizeMarker.setAttrs(
+        this.spreadsheet.styles.rowResizeMarker
+      );
       this.shapes.resizeLine.points([
         0,
         0,
@@ -76,8 +83,8 @@ class Resizer {
 
     this.shapes.resizeLine.cache();
 
-    this.sheet.layers.mainLayer.add(this.shapes.resizeMarker);
-    this.sheet.layers.mainLayer.add(this.shapes.resizeGuideLine);
+    this.sheet.layer.add(this.shapes.resizeMarker);
+    this.sheet.layer.add(this.shapes.resizeGuideLine);
   }
 
   setResizeGuideLinePoints() {
@@ -112,9 +119,9 @@ class Resizer {
 
     if (this.isCol) {
       x = clientRect.x;
-      y = this.sheet.layers.mainLayer.y() * -1;
+      y = this.sheet.layer.y() * -1;
     } else {
-      x = this.sheet.layers.mainLayer.x() * -1;
+      x = this.sheet.layer.x() * -1;
       y = clientRect.y;
     }
 
@@ -131,13 +138,20 @@ class Resizer {
   }
 
   resize(index: number, newSize: number) {
+    const data = this.sheet.getData();
     const size =
-      this.sheet.data[this.type].sizes[index] ??
-      this.sheet.options[this.type].defaultSize;
+      data[this.type]?.sizes[index] ??
+      this.spreadsheet.options[this.type].defaultSize;
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      this.sheet.data[this.type].sizes[index] = newSize;
+      data[this.type] = {
+        ...data[this.type],
+        sizes: {
+          ...data[this.type]?.sizes,
+          [index]: newSize,
+        },
+      };
     }
   }
 
@@ -152,18 +166,15 @@ class Resizer {
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.sheet.options[this.type].minSize;
-    let newAxis = this.isCol ? position.x : position.y;
+    const minSize = this.spreadsheet.options[this.type].minSize;
+    let newAxis = position[this.functions.axis];
 
     const getNewPosition = () => {
       const newPosition = {
         ...position,
       };
-      if (this.isCol) {
-        newPosition.x = newAxis;
-      } else {
-        newPosition.y = newAxis;
-      }
+      newPosition[this.functions.axis] = newAxis;
+
       return newPosition;
     };
 
@@ -191,9 +202,9 @@ class Resizer {
     const index = target.parent!.attrs.index;
 
     const position = this.resizePosition;
-    const minSize = this.sheet.options[this.type].minSize;
+    const minSize = this.spreadsheet.options[this.type].minSize;
 
-    const axis = this.isCol ? position.x : position.y;
+    const axis = position[this.functions.axis];
 
     this.hideGuideLine();
     this.hideResizeMarker();

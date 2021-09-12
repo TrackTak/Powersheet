@@ -25,7 +25,6 @@ export interface ICellConfig {
 }
 
 export interface IStyles {
-  backgroundColor: string;
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   gridLine: LineConfig;
@@ -80,7 +79,6 @@ const sharedStyles = {
 };
 
 export const defaultStyles: IStyles = {
-  backgroundColor: 'white',
   frozenGridLine: {
     ...sharedStyles.gridLine,
     stroke: 'blue',

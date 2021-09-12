@@ -1,12 +1,10 @@
 import { Story, Meta } from '@storybook/html';
-import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
-import EventEmitter from 'eventemitter3';
 import { defaultOptions, IOptions } from './options';
-import Toolbar from './toolbar/Toolbar';
 import { HyperFormula } from 'hyperformula';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
-import FormulaBar from './formulaBar/FormulaBar';
+import Spreadsheet from './Spreadsheet';
+import { ISheetsData } from './sheetsGroup/sheet/Sheet';
 
 export default {
   title: 'Spreadsheet',
@@ -14,63 +12,32 @@ export default {
 
 interface IArgs {
   options: IOptions;
-  data: IData;
+  data?: ISheetsData;
 }
 
 const buildSpreadsheet = (args: IArgs) => {
-  const spreadsheet = document.createElement('div');
   const registeredFunctionNames =
     HyperFormula.getRegisteredFunctionNames('enGB');
-  const eventEmitter = new EventEmitter();
   const options = args.options;
-  const data: IData = args.data;
+  const data = args.data;
 
-  const toolbar = new Toolbar({
+  const spreadsheet = new Spreadsheet({
     registeredFunctionNames,
-    data,
     options,
-    eventEmitter,
+    data,
   });
 
-  const formulaBar = new FormulaBar();
-
-  const sheet = new Sheet({
-    toolbar,
-    formulaBar,
-    data,
-    options,
-    eventEmitter,
-  });
-
-  spreadsheet.appendChild(toolbar.toolbarEl);
-  spreadsheet.appendChild(formulaBar.formulaBarEl);
-  spreadsheet.appendChild(sheet.container);
-
-  return {
-    sheet,
-    spreadsheet,
-  };
+  return spreadsheet.spreadsheetEl;
 };
 
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheet(args).spreadsheet;
+  return buildSpreadsheet(args);
 };
 
 const defaultStoryArgs: IArgs = {
   options: {
     ...defaultOptions,
     devMode: true,
-  },
-  data: {
-    frozenCells: {},
-    mergedCells: [],
-    row: {
-      sizes: {},
-    },
-    col: {
-      sizes: {},
-    },
-    sheetData: {},
   },
 };
 
@@ -83,10 +50,12 @@ export const FrozenCells = Template.bind({});
 FrozenCells.args = {
   ...defaultStoryArgs,
   data: {
-    ...defaultStoryArgs.data,
-    frozenCells: {
-      row: 0,
-      col: 0,
+    FrozenCells: {
+      sheetName: 'Frozen Cells',
+      frozenCells: {
+        row: 0,
+        col: 0,
+      },
     },
   },
 };
@@ -96,19 +65,21 @@ export const MergedCells = Template.bind({});
 MergedCells.args = {
   ...defaultStoryArgs,
   data: {
-    ...defaultStoryArgs.data,
-    mergedCells: [
-      {
-        row: {
-          x: 4,
-          y: 5,
+    MergedCells: {
+      sheetName: 'Merged Cells',
+      mergedCells: [
+        {
+          row: {
+            x: 4,
+            y: 5,
+          },
+          col: {
+            x: 1,
+            y: 5,
+          },
         },
-        col: {
-          x: 1,
-          y: 5,
-        },
-      },
-    ],
+      ],
+    },
   },
 };
 
@@ -117,61 +88,61 @@ export const DifferentSizeCells = Template.bind({});
 DifferentSizeCells.args = {
   ...defaultStoryArgs,
   data: {
-    ...defaultStoryArgs.data,
-    col: {
-      ...defaultStoryArgs.data.col,
-      sizes: {
-        '3': 70,
+    DifferentSizeCells: {
+      sheetName: 'Different Size Cells',
+      col: {
+        sizes: {
+          '3': 70,
+        },
       },
-    },
-    row: {
-      ...defaultStoryArgs.data.row,
-      sizes: {
-        '1': 250,
-        '5': 100,
+      row: {
+        sizes: {
+          '1': 250,
+          '5': 100,
+        },
       },
     },
   },
 };
 
-export const CellStyles = Template.bind({});
+export const CellsData = Template.bind({});
 
-CellStyles.args = {
+CellsData.args = {
   ...defaultStoryArgs,
   data: {
-    ...defaultStoryArgs.data,
-    sheetData: {
-      '1_0': {
-        style: {
-          backgroundColor: 'red',
+    CellsData: {
+      sheetName: 'Cells Data',
+      cellsData: {
+        '1_0': {
+          style: {
+            backgroundColor: 'red',
+          },
+          value: 'HI!',
         },
-        comment: 'A comment',
-        value: 'HI!',
-      },
-      '3_3': {
-        style: {
-          borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
-          backgroundColor: 'yellow',
+        '3_3': {
+          style: {
+            borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+            backgroundColor: 'yellow',
+          },
         },
-        comment: 'Another comment',
-      },
-      '4_1': {
-        style: {
-          borders: ['borderBottom', 'borderTop'],
+        '4_1': {
+          style: {
+            borders: ['borderBottom', 'borderTop'],
+          },
         },
       },
+      mergedCells: [
+        {
+          row: {
+            x: 3,
+            y: 3,
+          },
+          col: {
+            x: 3,
+            y: 4,
+          },
+        },
+      ],
     },
-    mergedCells: [
-      {
-        row: {
-          x: 3,
-          y: 3,
-        },
-        col: {
-          x: 3,
-          y: 4,
-        },
-      },
-    ],
   },
 };

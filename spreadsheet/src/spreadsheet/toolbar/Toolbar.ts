@@ -1,9 +1,7 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import EventEmitter from 'eventemitter3';
-import { IOptions } from '../options';
-import Sheet, { Cell, IData } from '../sheetsGroup/sheet/Sheet';
+import { BorderStyleOption } from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -13,7 +11,6 @@ import {
   createDropdownIconButton,
   createFunctionDropdownContent,
   createHorizontalAlignContent,
-  createIconButton,
   createTooltip,
   createVerticalAlignContent,
   DropdownIconName,
@@ -23,27 +20,18 @@ import {
   toolbarPrefix,
   VerticalAlignName,
 } from './toolbarHtmlElementHelpers';
-import { createGroup } from '../htmlElementHelpers';
-import { isNil } from 'lodash';
+import {
+  createGroup,
+  createIconButton,
+  IIconElements,
+} from '../htmlElementHelpers';
+import events from '../events';
+import Spreadsheet from '../Spreadsheet';
+import { Group } from 'konva/lib/Group';
+import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
-}
-
-interface IConstructor {
-  registeredFunctionNames: string[];
-  options: IOptions;
-  data: IData;
-  eventEmitter: EventEmitter;
-}
-
-interface IIconElements {
-  buttonContainer: HTMLDivElement;
-  button: HTMLButtonElement;
-  active?: boolean;
-  iconContainer: HTMLSpanElement;
-  icon: HTMLElement;
-  tooltip?: HTMLSpanElement;
 }
 
 interface IDropdownElements {
@@ -77,19 +65,9 @@ class Toolbar {
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
-  registeredFunctionNames: string[];
-  options: IOptions;
-  data: IData;
-  eventEmitter: EventEmitter;
-  focusedSheet: Sheet | null;
 
-  constructor(params: IConstructor) {
-    this.registeredFunctionNames = params.registeredFunctionNames;
-    this.options = params.options;
-    this.data = params.data;
-    this.eventEmitter = params.eventEmitter;
-    this.focusedSheet = null;
-
+  constructor(private spreadsheet: Spreadsheet) {
+    this.spreadsheet = spreadsheet;
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
@@ -181,7 +159,9 @@ class Toolbar {
         }
         case 'functions': {
           const { dropdownContent, registeredFunctionButtons } =
-            createFunctionDropdownContent(this.registeredFunctionNames);
+            createFunctionDropdownContent(
+              this.spreadsheet.registeredFunctionNames
+            );
 
           this.setDropdownContent(name, dropdownContent, true);
 
@@ -192,7 +172,7 @@ class Toolbar {
           break;
         }
         default: {
-          const iconElements = createIconButton(name);
+          const iconElements = createIconButton(name, toolbarPrefix);
           const tooltip = createTooltip(name);
 
           iconElements.button.appendChild(tooltip);
@@ -229,7 +209,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
 
-        this.focusedSheet?.updateViewport();
+        this.spreadsheet.focusedSheet?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -302,26 +282,158 @@ class Toolbar {
     });
 
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+
+    this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
+
+    this.spreadsheet.eventEmitter.on(
+      events.selector.startSelection,
+      this.onStartSelection
+    );
+    this.spreadsheet.eventEmitter.on(
+      events.selector.moveSelection,
+      this.onMoveSelection
+    );
   }
 
-  getFocusedSheet() {
-    if (!this.focusedSheet) {
-      throw new Error('focusedSheet cannot be accessed if it is null');
-    }
+  onStartSelection = () => {
+    this.setToolbarState();
+  };
 
-    return this.focusedSheet;
+  onMoveSelection = () => {
+    this.setToolbarState();
+  };
+
+  private setBorderStyles(
+    cells: Cell[],
+    cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
+    borderType: BorderStyleOption
+  ) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const borderCells = cells.filter(cellsFilter);
+
+    borderCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.cellRenderer.setBorderStyle(id, borderType);
+    });
+  }
+
+  setBottomBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.y === row.y,
+      'borderBottom'
+    );
+  }
+
+  setRightBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.y === col.y,
+      'borderRight'
+    );
+  }
+
+  setTopBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.x === row.x,
+      'borderTop'
+    );
+  }
+
+  setLeftBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.x === col.x,
+      'borderLeft'
+    );
+  }
+
+  setVerticalBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const col = sheet.col.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y,
+      'borderRight'
+    );
+  }
+
+  setHorizontalBorders(cells: Cell[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+    const row = sheet.row.convertFromCellsToRange(cells);
+
+    this.setBorderStyles(
+      cells,
+      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y,
+      'borderBottom'
+    );
+  }
+
+  setInsideBorders(cells: Cell[]) {
+    this.setHorizontalBorders(cells);
+    this.setVerticalBorders(cells);
+  }
+
+  setOutsideBorders(cells: Cell[]) {
+    this.setBottomBorders(cells);
+    this.setLeftBorders(cells);
+    this.setRightBorders(cells);
+    this.setTopBorders(cells);
+  }
+
+  setAllBorders(cells: Cell[]) {
+    this.setOutsideBorders(cells);
+    this.setInsideBorders(cells);
+  }
+
+  clearBorders(ids: CellId[]) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    ids.forEach((id) => {
+      const cellData = sheet.cellRenderer.getCellData(id);
+
+      if (cellData?.style?.borders) {
+        delete cellData.style.borders;
+      }
+    });
   }
 
   setValue = (name: IconElementsName, value?: any) => {
-    const sheet = this.getFocusedSheet();
+    const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
       case 'backgroundColor': {
         if (!value) break;
+        const backgroundColor = value;
 
         sheet.selector.selectedCells.forEach((cell) => {
-          sheet.setCellBackgroundColor(cell.id(), value);
+          const id = cell.id();
+
+          sheet.cellRenderer.setCellDataStyle(id, {
+            backgroundColor,
+          });
+
+          // Manually set cellBackgroundColor and not calling updateViewport
+          // due to it in triggering very quick succession. debounce does
+          // not work well either.
+          sheet.cellRenderer.setCellBackgroundColor(id, backgroundColor);
         });
+
         break;
       }
       case 'merge': {
@@ -336,54 +448,54 @@ class Toolbar {
       }
       case 'freeze': {
         if (this.iconElementsMap.freeze.active) {
-          sheet.data.frozenCells = {};
+          delete sheet.getData().frozenCells;
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.data.frozenCells = { row: row.x, col: col.x };
+          sheet.getData().frozenCells = { row: row.x, col: col.x };
         }
 
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
         break;
       }
       case 'borderBottom': {
-        sheet.setBottomBorders(sheet.selector.selectedCells);
+        this.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
-        sheet.setRightBorders(sheet.selector.selectedCells);
+        this.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
-        sheet.setTopBorders(sheet.selector.selectedCells);
+        this.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
-        sheet.setLeftBorders(sheet.selector.selectedCells);
+        this.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
-        sheet.setVerticalBorders(sheet.selector.selectedCells);
+        this.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
-        sheet.setHorizontalBorders(sheet.selector.selectedCells);
+        this.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
-        sheet.setInsideBorders(sheet.selector.selectedCells);
-        break;
-      }
-      case 'borderAll': {
-        sheet.setAllBorders(sheet.selector.selectedCells);
-        break;
-      }
-      case 'borderNone': {
-        sheet.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        this.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderOutside': {
-        sheet.setOutsideBorders(sheet.selector.selectedCells);
+        this.setOutsideBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderAll': {
+        this.setAllBorders(sheet.selector.selectedCells);
+        break;
+      }
+      case 'borderNone': {
+        this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
         break;
       }
     }
@@ -393,19 +505,15 @@ class Toolbar {
     }
   };
 
-  setFocusedSheet(sheet: Sheet) {
-    this.focusedSheet = sheet;
-  }
-
   setToolbarState = () => {
-    const sheet = this.getFocusedSheet();
+    const sheet = this.spreadsheet.focusedSheet!;
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellsMap.has(firstSelectedCell!.id())) {
-      const cell = sheet.cellsMap.get(firstSelectedCell!.id())!;
+    if (sheet.cellRenderer.cellsMap.has(firstSelectedCell!.id())) {
+      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCell!.id())!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;
@@ -422,7 +530,9 @@ class Toolbar {
 
   setMergedState(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged = this.getFocusedSheet().merger.getIsCellMerged(cell.id());
+    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellMerged(
+      cell.id()
+    );
     const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {
@@ -473,9 +583,7 @@ class Toolbar {
   }
 
   isFreezeActive() {
-    return (
-      !isNil(this.data.frozenCells.col) && !isNil(this.data.frozenCells.row)
-    );
+    return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

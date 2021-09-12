@@ -1,6 +1,6 @@
 const events = {
-  sheet: {
-    load: 's-load',
+  spreadsheet: {
+    focusedSheetChange: 's-focusedSheetChange',
   },
   scroll: {
     vertical: 'sv-scroll',
@@ -12,6 +12,9 @@ const events = {
   },
   toolbar: {
     change: 't-change',
+  },
+  cellEditor: {
+    change: 'ce-change',
   },
   resize: {
     row: {

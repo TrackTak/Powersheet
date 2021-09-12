@@ -1,4 +1,4 @@
-import Sheet from './Sheet';
+import Sheet from '../Sheet';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import {
   createButtonContainer,
@@ -29,7 +29,7 @@ class Comment {
     this.buttonContainer.appendChild(this.successButton);
     this.buttonContainer.appendChild(this.cancelButton);
 
-    this.container = tippy(this.sheet.container, {
+    this.container = tippy(this.sheet.sheetEl, {
       placement: 'auto',
       interactive: true,
       arrow: false,
@@ -59,11 +59,11 @@ class Comment {
   successButtonOnClick = () => {
     const id = this.sheet.selector.selectedFirstCell!.id();
 
-    this.sheet.setCellData(id, {
+    this.sheet.cellRenderer.setCellData(id, {
       comment: this.textarea.value,
     });
 
-    this.sheet.updateCells();
+    this.sheet.updateViewport();
     this.hide();
   };
 
@@ -83,7 +83,7 @@ class Comment {
     this.container.show();
 
     const id = this.sheet.selector.selectedFirstCell!.id();
-    const comment = this.sheet.data.sheetData[id]?.comment;
+    const comment = this.sheet.cellRenderer.getCellData(id)?.comment;
 
     if (comment) {
       this.textarea.value = comment;

@@ -145,13 +145,15 @@ CellStyles.args = {
         style: {
           backgroundColor: 'red',
         },
-        value: "HI!"
+        comment: 'A comment',
+        value: 'HI!',
       },
       '3_3': {
         style: {
           borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
           backgroundColor: 'yellow',
         },
+        comment: 'Another comment',
       },
       '4_1': {
         style: {

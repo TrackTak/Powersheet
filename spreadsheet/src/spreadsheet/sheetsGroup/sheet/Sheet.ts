@@ -3,10 +3,10 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
-import { prefix } from '../../utils';
+import { prefix, rotateAroundCenter, rotatePoint } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Sheet.module.scss';
-import { Line } from 'konva/lib/shapes/Line';
+import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import {
@@ -30,7 +30,10 @@ import {
 } from '../../toolbar/toolbarHtmlElementHelpers';
 import FormulaBar from '../../formulaBar/FormulaBar';
 import RightClickMenu from './RightClickMenu';
+import Comment from './Comment';
+import Konva from 'konva';
 import { HyperFormula } from 'hyperformula';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 interface ICreateStageConfig extends Omit<StageConfig, 'container'> {
   container?: HTMLDivElement;
@@ -43,6 +46,7 @@ interface IConstructor {
   colHeaderConfig?: IColHeaderConfig;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  comment?: Comment;
   options: IOptions;
   data: IData;
   eventEmitter: EventEmitter;
@@ -103,6 +107,7 @@ export interface IRowColData {
 export interface ICellData {
   style?: ICellStyle | null;
   value?: string | null;
+  comment?: string;
 }
 
 export interface ISheetData {
@@ -361,9 +366,11 @@ class Sheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   hyperFormula?: HyperFormula;
-  lastClickTime: number = (new Date()).getTime();
+  lastClickTime: number = new Date().getTime();
   data: IData;
   rightClickMenu?: RightClickMenu;
+  comment: Comment;
+  commentMarkerConfig: LineConfig;
 
   constructor(params: IConstructor) {
     this.eventEmitter = params.eventEmitter;
@@ -373,6 +380,7 @@ class Sheet {
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.cellsMap = new Map();
+    this.commentMarkerConfig = this.styles.commentMarker;
 
     const that = this;
 
@@ -482,31 +490,40 @@ class Sheet {
     this.selector = new Selector(this);
     this.merger = new Merger(this);
     this.rightClickMenu = new RightClickMenu(this);
+    this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
     this.container.tabIndex = 1;
     this.container.addEventListener('keydown', this.keyHandler);
 
-
     window.addEventListener('DOMContentLoaded', this.onLoad);
   }
 
-  sheetOnClick = () => {
+  sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (this.cellEditor) {
       this.destroyCellEditor();
       return;
     }
 
-    if (this.hasDoubleClickedOnCell()) {
+    if (e.evt.button === 0) {
+      if (this.hasDoubleClickedOnCell()) {
         this.createCellEditor();
+      }
+
+      const id = this.selector.selectedFirstCell!.id();
+
+      if (this.data.sheetData[id]?.comment) {
+        this.comment.show();
+      }
     }
-  }
+  };
 
   hasDoubleClickedOnCell = () => {
-    const timeNow = (new Date()).getTime();
+    const timeNow = new Date().getTime();
     const delayTime = 500;
     const viewportVector = this.getViewportVector();
-    const previousSelectedCellPosition = this.selector.previousSelectedCellPosition;
+    const previousSelectedCellPosition =
+      this.selector.previousSelectedCellPosition;
     if (!previousSelectedCellPosition) {
       return;
     }
@@ -514,13 +531,17 @@ class Sheet {
       x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
       y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
     };
-    const isInCellX = x >= previousSelectedCellPosition.x && x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
-    const isInCellY = y >= previousSelectedCellPosition.y && y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
+    const isInCellX =
+      x >= previousSelectedCellPosition.x &&
+      x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
+    const isInCellY =
+      y >= previousSelectedCellPosition.y &&
+      y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
     const isClickedInCell = isInCellX && isInCellY;
 
     this.lastClickTime = timeNow;
-    return isClickedInCell && timeNow <= (this.lastClickTime + delayTime);
-  }
+    return isClickedInCell && timeNow <= this.lastClickTime + delayTime;
+  };
 
   keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();
@@ -534,12 +555,12 @@ class Sheet {
           this.createCellEditor();
         }
     }
-  }
+  };
 
   createCellEditor = () => {
     this.cellEditor = new CellEditor(this);
     this.stage.on('mousedown', this.destroyCellEditor);
-  }
+  };
 
   destroyCellEditor = () => {
     if (this.cellEditor) {
@@ -548,7 +569,7 @@ class Sheet {
       this.cellEditor = undefined;
       this.updateViewport();
     }
-  }
+  };
 
   emit<T extends EventEmitter.EventNames<string | symbol>>(
     event: T,
@@ -561,29 +582,39 @@ class Sheet {
     this.eventEmitter.emit(event, ...args);
   }
 
-  setCellStyle(id: CellId, newStyle: ICellStyle) {
+  setCellData(id: CellId, newValue: ICellData) {
     this.data.sheetData[id] = {
       ...this.data.sheetData[id],
+      ...newValue,
+    };
+  }
+
+  setCellStyle(id: CellId, newStyle: ICellStyle) {
+    this.setCellData(id, {
       style: {
         ...this.data.sheetData[id]?.style,
         ...newStyle,
-      }
-    };
+      },
+    });
   }
 
   updateCells() {
     Object.keys(this.data.sheetData).forEach((id) => {
-      const cellStyle = this.data.sheetData[id].style;
-      const cellValue = this.data.sheetData[id].value;
+      const cellData = this.data.sheetData[id];
+      const style = cellData?.style;
 
       this.updateCellRect(id);
 
-      if (cellStyle?.backgroundColor) {
-        this.setCellBackgroundColor(id, cellStyle.backgroundColor);
+      if (style?.backgroundColor) {
+        this.setCellBackgroundColor(id, style.backgroundColor);
       }
 
-      if (cellStyle?.borders) {
-        cellStyle.borders.forEach((borderType) => {
+      if (cellData?.comment) {
+        this.setCellCommentMarker(id);
+      }
+
+      if (style?.borders) {
+        style.borders.forEach((borderType) => {
           switch (borderType) {
             case 'borderLeft':
               this.setLeftBorder(id);
@@ -601,8 +632,8 @@ class Sheet {
         });
       }
 
-      if (cellValue) {
-        this.setCellTextValue(id, cellValue);
+      if (cellData?.value) {
+        this.setCellTextValue(id, cellData.value);
       }
     });
   }
@@ -610,7 +641,9 @@ class Sheet {
   updateCellRect(id: CellId) {
     const cell = this.convertFromCellIdToCell(id);
     if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, ['cellRect']);
+      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
+        'cellRect',
+      ]);
 
       setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
 
@@ -788,6 +821,19 @@ class Sheet {
     cellRect.fill(backgroundColor);
   }
 
+  setCellCommentMarker(id: CellId) {
+    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+
+    const commentMarker = new Line({
+      ...this.commentMarkerConfig,
+      x: clientRect.width,
+    });
+
+    cell.add(commentMarker);
+
+    rotateAroundCenter(commentMarker, 180);
+  }
+
   setCellTextValue(id: CellId, value: string) {
     const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
 
@@ -798,10 +844,7 @@ class Sheet {
       width: clientRect.width,
     });
 
-    const midPoints = centerRectTwoInRectOne(
-      clientRect,
-      text.getClientRect(),
-    );
+    const midPoints = centerRectTwoInRectOne(clientRect, text.getClientRect());
     text.x(midPoints.x - clientRect.x);
     text.y(midPoints.y - clientRect.y);
 

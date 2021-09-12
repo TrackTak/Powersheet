@@ -16,16 +16,18 @@
 }
 
 .successButton {
+  @include buttonCommentAction;
+
   background-color: #43cea2;
   color: #fff;
   border: none;
   margin-right: 10px;
-  @include buttonCommentAction;
 }
 
 .cancelButton {
+  @include buttonCommentAction;
+
   background-color: #fff;
   color: #43cea2;
   border: 1px solid #dadce0;
-  @include buttonCommentAction;
 }

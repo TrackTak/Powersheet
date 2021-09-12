@@ -37,6 +37,7 @@ export interface IStyles {
   selectionFirstCell: RectConfig;
   selection: RectConfig;
   selectionBorder: RectConfig;
+  commentMarker: LineConfig;
   cell: ICellConfig;
 }
 
@@ -48,7 +49,7 @@ export const performanceProperties = {
   listening: false,
 };
 
-export const sharedStyles = {
+const sharedStyles = {
   gridLine: {
     ...performanceProperties,
     stroke: '#c6c6c6',
@@ -142,6 +143,17 @@ export const defaultStyles: IStyles = {
     strokeWidth: 0,
     fill: 'rgb(14, 101, 235, 0.1)',
   },
+  commentMarker: {
+    ...performanceProperties,
+    type: 'commentMarker',
+    stroke: 'orange',
+    fill: 'orange',
+    strokeWidth: 2,
+    offsetX: -6,
+    offsetY: 1,
+    points: [0, 5, 5, 5, 0, 0],
+    closed: true,
+  },
   cell: {
     text: {
       ...sharedStyles.headerText,
@@ -151,5 +163,5 @@ export const defaultStyles: IStyles = {
       wrap: 'none',
       padding: 2,
     },
-  }
+  },
 };

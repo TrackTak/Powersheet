@@ -3,7 +3,9 @@ import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from './Sheet';
 import { createGroup } from '../../htmlElementHelpers';
-import { createButtonContent } from './rightClickMenuHtmlHelpers';
+import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
+import { KonvaEventListener } from 'konva/lib/Node';
+import { Stage } from 'konva/lib/Stage';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -15,10 +17,22 @@ class RightClickMenu {
   rightClickMenuEl: HTMLDivElement;
   menuItem: HTMLDivElement;
   dropdown: Instance<Props>;
+  buttonMap: Record<ButtonName, HTMLElement>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
+  buttonRightOnClickMenu: KonvaEventListener<Stage, MouseEvent>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.buttonMap = {
+      comment: createButtonContent('Comment', 'comment'),
+      copy: createButtonContent('Copy', 'copy'),
+      cut: createButtonContent('Cut', 'cut'),
+      paste: createButtonContent('Paste', 'paste'),
+      insertRow: createButtonContent('Insert row', 'insert-row'),
+      insertColumn: createButtonContent('Insert column', 'insert-column'),
+      deleteRow: createButtonContent('Delete row', 'delete-row'),
+      deleteColumn: createButtonContent('Delete column', 'delete-column'),
+    };
     this.rightClickMenuEl = document.createElement('div');
     this.menuItem = document.createElement('div');
 
@@ -36,26 +50,17 @@ class RightClickMenu {
 
     content.classList.add(styles.content, `${rightClickMenuPrefix}-content`);
 
+    const buttons = this.buttonMap;
+
     this.rightClickMenuActionGroups = [
       {
-        elements: [
-          createButtonContent('Comment', 'comment'),
-          createButtonContent('Copy', 'copy'),
-          createButtonContent('Cut', 'cut'),
-          createButtonContent('Paste', 'paste'),
-        ],
+        elements: [buttons.comment, buttons.copy, buttons.cut, buttons.paste],
       },
       {
-        elements: [
-          createButtonContent('Insert row', 'insert-row'),
-          createButtonContent('Insert column', 'insert-column'),
-        ],
+        elements: [buttons.insertRow, buttons.insertColumn],
       },
       {
-        elements: [
-          createButtonContent('Delete row', 'delete-row'),
-          createButtonContent('Delete column', 'delete-column'),
-        ],
+        elements: [buttons.deleteRow, buttons.deleteColumn],
       },
     ];
 
@@ -63,6 +68,16 @@ class RightClickMenu {
       const group = createGroup(elements, styles.group, rightClickMenuPrefix);
 
       content.appendChild(group);
+    });
+
+    Object.values(buttons).forEach((button) => {
+      button.addEventListener('click', () => {
+        this.dropdown.hide();
+      });
+    });
+
+    buttons.comment.addEventListener('click', () => {
+      this.sheet.comment?.show();
     });
 
     this.dropdown = tippy(this.sheet.sheetEl, {
@@ -91,7 +106,7 @@ class RightClickMenu {
 
     hideDropdown();
 
-    this.sheet.stage.on('click', (e) => {
+    this.buttonRightOnClickMenu = (e) => {
       if (e.evt.button === 0) {
         hideDropdown();
       }
@@ -103,13 +118,18 @@ class RightClickMenu {
           showDropdown();
         }
       }
-    });
+    };
+
+    this.sheet.stage.on('click', this.buttonRightOnClickMenu);
 
     this.sheet.stage.on('contextmenu', (e) => {
       e.evt.preventDefault();
     });
 
     this.rightClickMenuEl.appendChild(this.menuItem);
+  }
+  destory() {
+    this.sheet.stage.off('click', this.buttonRightOnClickMenu);
   }
 }
 

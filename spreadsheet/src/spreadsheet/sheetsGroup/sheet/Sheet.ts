@@ -2,7 +2,7 @@ import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import EventEmitter from 'eventemitter3';
-import { Line } from 'konva/lib/shapes/Line';
+import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
@@ -16,8 +16,9 @@ import RightClickMenu from './RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import SheetsGroup from '../SheetsGroup';
 import Spreadsheet from '../../Spreadsheet';
-import { prefix } from '../../utils';
+import { prefix, rotateAroundCenter } from '../../utils';
 import styles from './Sheet.module.scss';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 export interface IDimensions {
   width: number;
@@ -63,13 +64,19 @@ export type BorderStyleOption =
   | 'borderRight'
   | 'borderBottom';
 
+export interface IRowColData {
+  sizes: ISizes;
+}
+
 export interface ICellStyle {
   backgroundColor?: string;
   borders?: BorderStyleOption[];
 }
 
-export interface IRowColData {
-  sizes: ISizes;
+export interface ICellData {
+  style?: ICellStyle;
+  value?: string;
+  comment?: string;
 }
 
 export interface IData {
@@ -87,11 +94,6 @@ export interface ICellsData {
 
 export interface ISheetsData {
   [sheetId: SheetId]: IData;
-}
-
-export interface ICellData {
-  style?: ICellStyle;
-  value?: string;
 }
 
 export interface IScrollGroups {
@@ -329,6 +331,8 @@ class Sheet {
   lastClickTime: number = new Date().getTime();
   cellEditor?: CellEditor;
   rightClickMenu?: RightClickMenu;
+  comment: Comment;
+  commentMarkerConfig: LineConfig;
   private spreadsheet: Spreadsheet;
 
   constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
@@ -336,6 +340,7 @@ class Sheet {
     this.sheetId = sheetId;
     this.spreadsheet = this.sheetsGroup.spreadsheet;
     this.cellsMap = new Map();
+    this.commentMarkerConfig = this.spreadsheet.styles.commentMarker;
 
     this.sheetDimensions = {
       width: 0,
@@ -429,6 +434,7 @@ class Sheet {
     this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
+    this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
 
@@ -455,14 +461,22 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
   }
 
-  sheetOnClick = () => {
+  sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (this.cellEditor) {
       this.destroyCellEditor();
       return;
     }
 
-    if (this.hasDoubleClickedOnCell()) {
-      this.createCellEditor();
+    if (e.evt.button === 0) {
+      if (this.hasDoubleClickedOnCell()) {
+        this.createCellEditor();
+      }
+
+      const id = this.selector.selectedFirstCell!.id();
+
+      if (this.getCellData(id)?.comment) {
+        this.comment.show();
+      }
     }
   };
 
@@ -678,6 +692,10 @@ class Sheet {
         this.setCellBackgroundColor(id, style.backgroundColor);
       }
 
+      if (cellData?.comment) {
+        this.setCellCommentMarker(id);
+      }
+
       if (style?.borders) {
         style.borders.forEach((borderType) => {
           switch (borderType) {
@@ -697,7 +715,7 @@ class Sheet {
         });
       }
 
-      if (cellData.value) {
+      if (cellData?.value) {
         this.setCellTextValue(id, cellData.value);
       }
     });
@@ -780,6 +798,19 @@ class Sheet {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
+  }
+
+  setCellCommentMarker(id: CellId) {
+    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+
+    const commentMarker = new Line({
+      ...this.commentMarkerConfig,
+      x: clientRect.width,
+    });
+
+    cell.add(commentMarker);
+
+    rotateAroundCenter(commentMarker, 180);
   }
 
   setCellTextValue(id: CellId, value: string) {

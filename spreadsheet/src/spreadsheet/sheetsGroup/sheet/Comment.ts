@@ -29,7 +29,7 @@ class Comment {
     this.buttonContainer.appendChild(this.successButton);
     this.buttonContainer.appendChild(this.cancelButton);
 
-    this.container = tippy(this.sheet.container, {
+    this.container = tippy(this.sheet.sheetEl, {
       placement: 'auto',
       interactive: true,
       arrow: false,
@@ -83,7 +83,7 @@ class Comment {
     this.container.show();
 
     const id = this.sheet.selector.selectedFirstCell!.id();
-    const comment = this.sheet.data.sheetData[id]?.comment;
+    const comment = this.sheet.getCellData(id)?.comment;
 
     if (comment) {
       this.textarea.value = comment;

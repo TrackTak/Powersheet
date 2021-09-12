@@ -19,6 +19,7 @@ import Spreadsheet from '../../Spreadsheet';
 import { prefix, rotateAroundCenter } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
+import Comment from './Comment';
 
 export interface IDimensions {
   width: number;

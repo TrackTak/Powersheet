@@ -7,7 +7,7 @@ import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
 import Selector, { iterateSelection } from './Selector';
-import Merger, { defaultCellFill } from './Merger';
+import Merger from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './CellEditor';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
@@ -611,6 +611,7 @@ class Sheet {
   addMergedCells(mergedCells: IMergedCells) {
     const data = this.getData();
     const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+    const existingTopLeftCellStyle = this.getCellData(topLeftCellId)?.style;
     const cellsData = data.cellsData;
 
     data.mergedCells = data.mergedCells
@@ -627,10 +628,9 @@ class Sheet {
       }
     }
 
-    this.setCellDataStyle(topLeftCellId, {
-      backgroundColor: defaultCellFill,
-      ...this.getCellData(topLeftCellId)?.style,
-    });
+    if (existingTopLeftCellStyle) {
+      this.setCellDataStyle(topLeftCellId, existingTopLeftCellStyle);
+    }
   }
 
   removeMergedCells(mergedCells: IMergedCells) {

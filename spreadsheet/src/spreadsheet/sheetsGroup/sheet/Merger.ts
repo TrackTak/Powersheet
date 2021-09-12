@@ -1,6 +1,7 @@
 import Sheet, {
   CellId,
   getCellId,
+  getCellRectFromCell,
   IMergedCells,
   makeShapeCrisp,
 } from './Sheet';
@@ -10,7 +11,7 @@ import { IRect } from 'konva/lib/types';
 
 export type AssociatedMergedCellId = CellId;
 
-export const defaultCellFill = 'white';
+const defaultCellFill = 'white';
 
 class Merger {
   associatedMergedCellIdMap: Map<AssociatedMergedCellId, CellId>;
@@ -58,6 +59,9 @@ class Merger {
     };
 
     const mergedCell = this.sheet.getNewCell(mergedCellId, rect, row, col);
+    const cellRect = getCellRectFromCell(mergedCell);
+
+    cellRect.fill(defaultCellFill);
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
@@ -86,6 +90,8 @@ class Merger {
     mergedCell.add(colLine, rowLine);
 
     this.sheet.cellsMap.set(mergedCellId, mergedCell);
+
+    this.sheet.drawCell(mergedCell);
   }
 
   getAreMergedCellsOverlapping(

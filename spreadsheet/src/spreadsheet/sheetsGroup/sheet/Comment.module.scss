@@ -20,12 +20,12 @@
   color: #fff;
   border: none;
   margin-right: 10px;
-  @include buttonCommentActions;
+  @include buttonCommentAction;
 }
 
 .cancelButton {
   background-color: #fff;
   color: #43cea2;
   border: 1px solid #dadce0;
-  @include buttonCommentActions;
+  @include buttonCommentAction;
 }

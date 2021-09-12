@@ -3,7 +3,7 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Stage, StageConfig } from 'konva/lib/Stage';
 import { isNil, merge } from 'lodash';
-import { prefix, rotatePoint } from '../../utils';
+import { prefix, rotateAroundCenter, rotatePoint } from '../../utils';
 import EventEmitter from 'eventemitter3';
 import styles from './Sheet.module.scss';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
@@ -823,8 +823,6 @@ class Sheet {
 
   setCellCommentMarker(id: CellId) {
     const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
-    //@ts-ignore
-    const getAngle = Konva.getAngle;
 
     const commentMarker = new Line({
       ...this.commentMarkerConfig,
@@ -832,24 +830,6 @@ class Sheet {
     });
 
     cell.add(commentMarker);
-
-    const rotateAroundCenter = (
-      commentMarker: Line<LineConfig>,
-      rotation: number
-    ) => {
-      const topLeft = {
-        x: -commentMarker.width() / 2,
-        y: -commentMarker.height() / 2,
-      };
-      const current = rotatePoint(topLeft, getAngle(commentMarker.rotation()));
-      const rotated = rotatePoint(topLeft, getAngle(rotation));
-      const dx = rotated.x - current.x,
-        dy = rotated.y - current.y;
-
-      commentMarker.rotation(rotation);
-      commentMarker.x(commentMarker.x() + dx);
-      commentMarker.y(commentMarker.y() + dy);
-    };
 
     rotateAroundCenter(commentMarker, 180);
   }

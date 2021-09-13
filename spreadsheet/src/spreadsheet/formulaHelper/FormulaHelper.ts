@@ -1,7 +1,10 @@
 import { DelegateInstance, delegate } from 'tippy.js';
 import styles from './FormulaHelper.module.scss';
 import isEmpty from 'lodash/isEmpty';
-import { createFormulaList, createWrapperContent } from './htmlElementHelpers';
+import {
+  createFormulaList,
+  createWrapperContent,
+} from './formulaHtmlElementHelpers';
 
 type FormulaHelperClickHandler = (item: string) => void;
 
@@ -30,7 +33,9 @@ class FormulaHelper {
   }
 
   show(filterText?: string) {
-    const formulas = this.formulas.filter(formula => !filterText || formula.startsWith(filterText));
+    const formulas = this.formulas.filter(
+      (formula) => !filterText || formula.startsWith(filterText)
+    );
     if (isEmpty(formulas)) {
       this.helper.hide();
       return;

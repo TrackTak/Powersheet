@@ -1,0 +1,33 @@
+@import '../../../styles.scss';
+
+.textarea {
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  width: 100%;
+  height: 100px;
+}
+
+.buttonContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.successButton {
+  @include buttonCommentAction;
+
+  background-color: #43cea2;
+  color: #fff;
+  border: none;
+  margin-right: 10px;
+}
+
+.cancelButton {
+  @include buttonCommentAction;
+
+  background-color: #fff;
+  color: #43cea2;
+  border: 1px solid #dadce0;
+}

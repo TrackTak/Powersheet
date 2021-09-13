@@ -4,9 +4,7 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
-import { isNil } from 'lodash';
 import Sheet, {
-  Cell,
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   ICustomSizes,
@@ -21,6 +19,8 @@ import Sheet, {
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
+import Spreadsheet from '../../Spreadsheet';
+import { Cell } from './CellRenderer';
 
 interface IShapes {
   group: Group;
@@ -58,17 +58,19 @@ class RowCol {
   shapes: IShapes;
   sheetViewportPosition: ISheetViewportPosition;
   getHeaderText: (index: number) => string;
+  getAvailableSize!: () => number;
   private previousSheetViewportPosition: ISheetViewportPosition;
-  private getAvailableSize: () => number;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
   private isCol: boolean;
+  private spreadsheet: Spreadsheet;
 
   constructor(private type: RowColType, private sheet: Sheet) {
     this.type = type;
     this.isCol = this.type === 'col';
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.headerGroupMap = new Map();
     this.rowColGroupMap = new Map();
     this.sheetViewportPosition = {
@@ -86,7 +88,7 @@ class RowCol {
       headerText: new Text(),
       group: new Group(),
       gridLine: new Line({
-        ...this.sheet.styles.gridLine,
+        ...this.spreadsheet.styles.gridLine,
         type: 'gridLine',
       }),
     };
@@ -99,10 +101,10 @@ class RowCol {
         axis: 'y',
         size: 'height',
       };
-      this.shapes.headerText.setAttrs(this.sheet.styles.colHeader.text);
+      this.shapes.headerText.setAttrs(this.spreadsheet.styles.colHeader.text);
       this.shapes.headerRect.setAttrs({
-        ...this.sheet.styles.colHeader.rect,
-        width: this.sheet.options[this.type].defaultSize,
+        ...this.spreadsheet.styles.colHeader.rect,
+        width: this.spreadsheet.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         const startCharCode = 'A'.charCodeAt(0);
@@ -115,10 +117,13 @@ class RowCol {
         };
         return lineConfig;
       };
-      this.getAvailableSize = () =>
-        this.sheet.options.width -
-        this.sheet.getViewportVector().x -
-        this.sheet.row.scrollBar.getBoundingClientRect().width;
+      this.getAvailableSize = () => {
+        return (
+          this.spreadsheet.options.width -
+          this.sheet.getViewportVector().x -
+          this.sheet.row.scrollBar.scrollEl.getBoundingClientRect().width
+        );
+      };
     } else {
       this.functions = {
         axis: 'y',
@@ -128,10 +133,10 @@ class RowCol {
         axis: 'x',
         size: 'width',
       };
-      this.shapes.headerText.setAttrs(this.sheet.styles.rowHeader.text);
+      this.shapes.headerText.setAttrs(this.spreadsheet.styles.rowHeader.text);
       this.shapes.headerRect.setAttrs({
-        ...this.sheet.styles.rowHeader.rect,
-        height: this.sheet.options[this.type].defaultSize,
+        ...this.spreadsheet.styles.rowHeader.rect,
+        height: this.spreadsheet.options[this.type].defaultSize,
       });
       this.getHeaderText = (index) => {
         return (index + 1).toString();
@@ -142,11 +147,28 @@ class RowCol {
         };
         return lineConfig;
       };
-      this.getAvailableSize = () =>
-        this.sheet.options.height -
-        (this.sheet.toolbar?.toolbarEl?.getBoundingClientRect().height ?? 0) -
-        this.sheet.getViewportVector().y -
-        this.sheet.col.scrollBar.getBoundingClientRect().height;
+      this.getAvailableSize = () => {
+        const bottomBarHeight =
+          this.sheet.sheetsGroup.bottomBar?.bottomBar.getBoundingClientRect()
+            .height ?? 0;
+
+        const toolbarHeight =
+          this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
+          0;
+
+        const formulaBarHeight =
+          this.spreadsheet.formulaBar?.formulaBarEl.getBoundingClientRect()
+            .height ?? 0;
+
+        return (
+          this.spreadsheet.options.height -
+          bottomBarHeight -
+          toolbarHeight -
+          formulaBarHeight -
+          this.sheet.getViewportVector().y -
+          this.sheet.col.scrollBar.scrollEl.getBoundingClientRect().height
+        );
+      };
     }
 
     this.scrollBar = new ScrollBar(
@@ -160,8 +182,23 @@ class RowCol {
 
     this.shapes.headerRect.cache();
     this.shapes.gridLine.cache();
+  }
 
-    window.addEventListener('DOMContentLoaded', this.onLoad);
+  setup() {
+    const yIndex = this.calculateSheetViewportEndPosition(
+      this.getAvailableSize(),
+      0
+    );
+
+    let sumOfSizes = 0;
+
+    for (let index = 0; index < yIndex; index++) {
+      sumOfSizes += this.getSize(index);
+    }
+
+    this.totalSize = sumOfSizes;
+
+    this.sheetViewportPosition.y = yIndex;
   }
 
   calculateSheetViewportEndPosition = (
@@ -171,8 +208,8 @@ class RowCol {
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
-    const defaultSize = this.sheet.options[this.type].defaultSize;
-    const sizes = this.sheet.data[this.type].sizes;
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+    const sizes = this.sheet.getData()[this.type]?.sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -193,26 +230,7 @@ class RowCol {
     return i;
   };
 
-  onLoad = () => {
-    const yIndex = this.calculateSheetViewportEndPosition(
-      this.getAvailableSize(),
-      0
-    );
-
-    let sumOfSizes = 0;
-
-    for (let index = 0; index < yIndex; index++) {
-      sumOfSizes += this.getSize(index);
-    }
-
-    this.totalSize = sumOfSizes;
-
-    this.sheetViewportPosition.y = yIndex;
-  };
-
   destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onLoad);
-
     this.scrollBar.destroy();
   }
 
@@ -309,23 +327,25 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.sheet.data[this.type].sizes);
+    const sizes = Object.values(this.sheet.getData()[this.type]?.sizes ?? {});
 
     const totalSizeDifference = sizes.reduce((currentSize, size) => {
-      return size - this.sheet.options[this.type].defaultSize + currentSize;
+      return (
+        size - this.spreadsheet.options[this.type].defaultSize + currentSize
+      );
     }, 0);
 
     return (
-      this.sheet.options[this.type].amount *
-        this.sheet.options[this.type].defaultSize +
+      this.spreadsheet.options[this.type].amount *
+        this.spreadsheet.options[this.type].defaultSize +
       totalSizeDifference
     );
   }
 
   getSize(index: number) {
     const size =
-      this.sheet.data[this.type].sizes[index] ??
-      this.sheet.options[this.type].defaultSize;
+      this.sheet.getData()[this.type]?.sizes[index] ??
+      this.spreadsheet.options[this.type].defaultSize;
 
     return size;
   }
@@ -374,13 +394,13 @@ class RowCol {
   }
 
   getIsFrozen(index: number) {
-    return isNil(this.sheet.data.frozenCells[this.type])
-      ? false
-      : index <= this.sheet.data.frozenCells[this.type]!;
+    const data = this.sheet.getData();
+
+    return data.frozenCells ? index <= data.frozenCells[this.type] : false;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.sheet.data.frozenCells[this.type];
+    return index === this.sheet.getData().frozenCells?.[this.type];
   }
 
   draw(index: number, drawingAtX = false) {

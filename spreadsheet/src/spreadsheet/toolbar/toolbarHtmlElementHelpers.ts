@@ -1,5 +1,6 @@
 import { ACPController, createPicker } from 'a-color-picker';
 import { sentenceCase } from 'sentence-case';
+import { createIcon, createIconButton } from '../htmlElementHelpers';
 import { prefix } from '../utils';
 import styles from './Toolbar.module.scss';
 
@@ -140,23 +141,26 @@ export const createColorBar = (picker: ACPController) => {
   return colorBar;
 };
 
+export const createToolbarIconButton = (name: IconElementsName) =>
+  createIconButton(name, toolbarPrefix);
+
 export const createBordersContent = () => {
   const dropdownContent = createDropdownContent(styles.borders);
 
   const firstBordersRow = {
-    borderAll: createIconButton('borderAll'),
-    borderInside: createIconButton('borderInside'),
-    borderHorizontal: createIconButton('borderHorizontal'),
-    borderVertical: createIconButton('borderVertical'),
-    borderOutside: createIconButton('borderOutside'),
+    borderAll: createToolbarIconButton('borderAll'),
+    borderInside: createToolbarIconButton('borderInside'),
+    borderHorizontal: createToolbarIconButton('borderHorizontal'),
+    borderVertical: createToolbarIconButton('borderVertical'),
+    borderOutside: createToolbarIconButton('borderOutside'),
   };
 
   const secondBordersRow = {
-    borderLeft: createIconButton('borderLeft'),
-    borderTop: createIconButton('borderTop'),
-    borderRight: createIconButton('borderRight'),
-    borderBottom: createIconButton('borderBottom'),
-    borderNone: createIconButton('borderNone'),
+    borderLeft: createToolbarIconButton('borderLeft'),
+    borderTop: createToolbarIconButton('borderTop'),
+    borderRight: createToolbarIconButton('borderRight'),
+    borderBottom: createToolbarIconButton('borderBottom'),
+    borderNone: createToolbarIconButton('borderNone'),
   };
 
   const borderGroups: [HTMLDivElement, HTMLDivElement] = [
@@ -188,9 +192,9 @@ export const createVerticalAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
   const aligns = {
-    alignTop: createIconButton('alignTop'),
-    alignMiddle: createIconButton('alignMiddle'),
-    alignBottom: createIconButton('alignBottom'),
+    alignTop: createToolbarIconButton('alignTop'),
+    alignMiddle: createToolbarIconButton('alignMiddle'),
+    alignBottom: createToolbarIconButton('alignBottom'),
   };
 
   Object.values(aligns).forEach((align) => {
@@ -204,9 +208,9 @@ export const createHorizontalAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
   const aligns = {
-    alignLeft: createIconButton('alignLeft'),
-    alignCenter: createIconButton('alignCenter'),
-    alignRight: createIconButton('alignRight'),
+    alignLeft: createToolbarIconButton('alignLeft'),
+    alignCenter: createToolbarIconButton('alignCenter'),
+    alignRight: createToolbarIconButton('alignRight'),
   };
 
   Object.values(aligns).forEach((align) => {
@@ -245,7 +249,7 @@ export const createDropdownIconButton = (
   name: DropdownIconName,
   createArrow: boolean = false
 ) => {
-  const iconButtonValues = createIconButton(name);
+  const iconButtonValues = createToolbarIconButton(name);
   const tooltip = createTooltip(name);
 
   iconButtonValues.button.classList.add(
@@ -256,7 +260,7 @@ export const createDropdownIconButton = (
   let arrowIconValues;
 
   if (createArrow) {
-    const iconValues = createIcon('arrowDown');
+    const iconValues = createIcon('arrowDown', toolbarPrefix);
     arrowIconValues = {
       arrowIcon: iconValues.icon,
       arrowIconContainer: iconValues.iconContainer,
@@ -276,49 +280,4 @@ export const createDropdown = () => {
   dropdown.classList.add(styles.dropdown, `${toolbarPrefix}-dropdown`);
 
   return dropdown;
-};
-
-export const createIconButton = (name: IconElementsName) => {
-  const buttonContainer = document.createElement('div');
-  const button = document.createElement('button');
-
-  buttonContainer.classList.add(`${toolbarPrefix}-${name}-button-container`);
-
-  button.dataset.name = name;
-
-  button.classList.add(
-    styles.iconButton,
-    `${toolbarPrefix}-icon-button`,
-    `${toolbarPrefix}-${name}-button`
-  );
-
-  const iconValues = createIcon(name);
-
-  button.appendChild(iconValues.iconContainer);
-  buttonContainer.appendChild(button);
-
-  return { buttonContainer, button, ...iconValues };
-};
-
-export const createIcon = (name: string) => {
-  const iconContainer = document.createElement('span');
-  const icon = document.createElement('div');
-
-  iconContainer.classList.add(
-    styles.iconContainer,
-    styles[`${name}IconContainer`],
-    `${toolbarPrefix}-icon-container`,
-    `${toolbarPrefix}-${name}-icon-container`
-  );
-
-  icon.classList.add(
-    styles.icon,
-    styles[name],
-    `${toolbarPrefix}-icon`,
-    `${toolbarPrefix}-${name}`
-  );
-
-  iconContainer.appendChild(icon);
-
-  return { icon, iconContainer };
 };

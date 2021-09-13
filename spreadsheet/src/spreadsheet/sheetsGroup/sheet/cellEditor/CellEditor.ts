@@ -1,11 +1,12 @@
 import { IRect } from 'konva/lib/types';
-import events from '../../events';
-import Sheet from './Sheet';
+import events from '../../../events';
+import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
 import { HyperFormula } from 'hyperformula';
-import FormulaHelper from '../../formulaHelper/FormulaHelper';
+import FormulaHelper from '../../../formulaHelper/FormulaHelper';
+import Spreadsheet from '../../../Spreadsheet';
 
 class CellEditor {
   private cellEditorContainerEl: HTMLDivElement;
@@ -13,9 +14,11 @@ class CellEditor {
   private cellTooltip: DelegateInstance;
   private isEditing = false;
   private formulaHelper: FormulaHelper;
+  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
 
     this.cellEditorEl = document.createElement('div');
     this.cellEditorEl.setAttribute('contentEditable', 'true');
@@ -30,10 +33,13 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5],
     });
-    this.sheet.container.appendChild(this.cellEditorContainerEl);
+    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
 
-    this.sheet.eventEmitter.on(events.scroll.horizontal, this.handleScroll);
-    this.sheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
+    this.spreadsheet.eventEmitter.on(
+      events.scroll.horizontal,
+      this.handleScroll
+    );
+    this.spreadsheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
 
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
@@ -42,7 +48,8 @@ class CellEditor {
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
 
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
-    this.setTextContent(this.sheet.data.sheetData?.[cellId]?.value)
+
+    this.setTextContent(this.sheet.cellRenderer.getCellData(cellId)?.value);
 
     this.showCellEditor();
   }
@@ -62,14 +69,15 @@ class CellEditor {
 
   private setTextContent(value: string | undefined | null) {
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
-    this.sheet.data.sheetData[cellId] = {
-      ...this.sheet.data.sheetData[cellId],
-      value,
-    };
 
+    if (value) {
+      this.sheet.cellRenderer.setCellData(cellId, {
+        value,
+      });
+    }
 
-    if (this.sheet.formulaBar) {
-      this.sheet.formulaBar.editableContent.textContent = value || '';
+    if (this.spreadsheet.formulaBar) {
+      this.spreadsheet.formulaBar.editableContent.textContent = value || '';
     }
 
     this.cellEditorEl.textContent = value || '';
@@ -78,6 +86,7 @@ class CellEditor {
   private handleInput(e: Event) {
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
+
     this.setTextContent(textContent);
 
     const isFormulaInput = textContent?.startsWith('=');

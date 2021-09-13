@@ -1,5 +1,3 @@
-@import '../styles.scss';
-
 .formulaBar {
   position: relative;
   background: #fff;
@@ -22,13 +20,5 @@
 }
 
 .iconContainer {
-  @include iconContainer;
   margin: 0 5px 0 0;
-}
-
-.icon {
-  @include icons;
-  &.formula {
-    @include formula;
-  }
 }

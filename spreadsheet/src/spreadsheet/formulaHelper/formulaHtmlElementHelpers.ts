@@ -1,5 +1,5 @@
 import styles from './FormulaHelper.module.scss';
-import { prefix } from './../utils';
+import { prefix } from '../utils';
 
 export const formulaHelperPrefix = `${prefix}-formula-helper`;
 
@@ -16,15 +16,15 @@ export const createFormulaList = (formulas: string[]) => {
 };
 
 export const createWrapperContent = () => {
-  const formulaHelperListContainerEl = document.createElement("div");
+  const formulaHelperListContainerEl = document.createElement('div');
   formulaHelperListContainerEl.classList.add(styles.formulaHelperListContainer);
 
   const formulaHelperEl = document.createElement('div');
   formulaHelperEl.classList.add(styles.formulaHelper, formulaHelperPrefix);
-  formulaHelperEl.appendChild(formulaHelperListContainerEl)
+  formulaHelperEl.appendChild(formulaHelperListContainerEl);
 
   return {
     formulaHelperListContainerEl,
     formulaHelperEl,
-  }
-}
+  };
+};

@@ -1,5 +1,3 @@
-$iconSize: 18px;
-
 @mixin button {
   cursor: pointer;
   border: none;
@@ -19,27 +17,6 @@ $iconSize: 18px;
   }
 }
 
-@mixin iconContainer {
-  position: relative;
-  overflow: hidden;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-}
-
-@mixin icons {
-  position: absolute;
-  width: 262px;
-  height: 444px;
-  opacity: 0.65;
-  background-image: url('../../icons/icons.svg');
-}
-
-@mixin formula {
-  left: -7 * $iconSize;
-  top: -3 * $iconSize;
-}
-
 @mixin group {
   display: flex;
 }
@@ -48,6 +25,16 @@ $iconSize: 18px;
   padding: 10px 5px;
   padding-left: 10px;
   text-align: left;
+}
+
+@mixin buttonCommentAction {
+  @include button;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.25px;
+  line-height: 16px;
+  padding: 3px 12px 5px;
 }
 
 @mixin tippyContentNoPadding {

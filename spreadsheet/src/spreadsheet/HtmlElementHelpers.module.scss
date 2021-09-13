@@ -1,0 +1,225 @@
+@import './styles.scss';
+
+$iconSize: 18px;
+
+.iconContainer {
+  position: relative;
+  overflow: hidden;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+}
+
+.iconButton {
+  @include button();
+  position: relative;
+  user-select: none;
+  padding: 6px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  width: 262px;
+  height: 444px;
+  opacity: 0.65;
+  background-image: url('../icons/icons.svg');
+
+  &.undo {
+    left: 0;
+    top: 0;
+  }
+  &.redo {
+    left: -1 * $iconSize;
+    top: 0;
+  }
+  &.print {
+    left: -2 * $iconSize;
+    top: 0;
+  }
+  &.paintFormat {
+    left: -3 * $iconSize;
+    top: 0;
+  }
+  &.clearFormat {
+    left: -4 * $iconSize;
+    top: 0;
+  }
+  &.fontBold {
+    left: -5 * $iconSize;
+    top: 0;
+  }
+  &.fontItalic {
+    left: -6 * $iconSize;
+    top: 0;
+  }
+  &.underline {
+    left: -7 * $iconSize;
+    top: 0;
+  }
+  &.strike {
+    left: -8 * $iconSize;
+    top: 0;
+  }
+  &.color {
+    left: -9 * $iconSize;
+    top: 0;
+  }
+  &.backgroundColor {
+    left: -10 * $iconSize;
+    top: 0;
+  }
+  &.merge {
+    left: -11 * $iconSize;
+    top: 0;
+  }
+  &.alignLeft,
+  &.horizontalAlign {
+    left: -12 * $iconSize;
+    top: 0;
+  }
+  &.alignCenter {
+    left: -13 * $iconSize;
+    top: 0;
+  }
+  &.alignRight {
+    left: 0;
+    top: -1 * $iconSize;
+  }
+  &.alignTop {
+    left: -1 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.alignMiddle,
+  &.verticalAlign {
+    left: -2 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.alignBottom {
+    left: -3 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.textWrap {
+    left: -4 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.autoFilter {
+    left: -5 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.functions {
+    left: -6 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.arrowDown {
+    left: -7 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.arrowRight {
+    left: -8 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.link {
+    left: -9 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.chart {
+    left: -10 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.freeze {
+    left: -11 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.ellipsis {
+    left: -12 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.add {
+    left: -13 * $iconSize;
+    top: -1 * $iconSize;
+  }
+  &.borderAll,
+  &.borders {
+    left: 0;
+    top: -2 * $iconSize;
+  }
+  &.borderInside {
+    left: -1 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderHorizontal {
+    left: -2 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderVertical {
+    left: -3 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderOutside {
+    left: -4 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderLeft {
+    left: -5 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderTop {
+    left: -6 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderRight {
+    left: -7 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderBottom {
+    left: -8 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.borderNone {
+    left: -9 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.lineColor {
+    left: -10 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.lineType {
+    left: -11 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.close {
+    left: -13 * $iconSize;
+    top: -2 * $iconSize;
+  }
+  &.chevronDown {
+    left: 0;
+    top: -3 * $iconSize;
+  }
+  &.chevronUp {
+    left: -1 * $iconSize;
+    top: -3 * $iconSize;
+  }
+  &.chevronLeft {
+    left: -2 * $iconSize;
+    top: -3 * $iconSize;
+  }
+  &.chevronRight {
+    left: -3 * $iconSize;
+    top: -3 * $iconSize;
+  }
+  &.export {
+    left: -6 * $iconSize;
+    top: -3 * $iconSize;
+  }
+  &.formula {
+    left: -7 * $iconSize;
+    top: -3 * $iconSize;
+  }
+  &.hamburger {
+    left: -8 * $iconSize;
+    top: -3 * $iconSize;
+  }
+}

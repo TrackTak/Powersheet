@@ -44,7 +44,10 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
-    this.formulaHelper = new FormulaHelper(formulas, this.handleFormulaSuggestionClick);
+    this.formulaHelper = new FormulaHelper(
+      formulas,
+      this.handleFormulaSuggestionClick
+    );
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
 
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
@@ -62,10 +65,10 @@ class CellEditor {
   }
 
   private handleFormulaSuggestionClick = (suggestion: string) => {
-    const value = `=${suggestion}()`
+    const value = `=${suggestion}()`;
     this.setTextContent(value);
     this.formulaHelper.hide();
-  }
+  };
 
   private setTextContent(value: string | undefined | null) {
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
@@ -76,10 +79,7 @@ class CellEditor {
       });
     }
 
-    if (this.spreadsheet.formulaBar) {
-      this.spreadsheet.formulaBar.editableContent.textContent = value || '';
-    }
-
+    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
     this.cellEditorEl.textContent = value || '';
   }
 

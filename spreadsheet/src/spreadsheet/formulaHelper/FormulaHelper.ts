@@ -14,11 +14,12 @@ class FormulaHelper {
   private helper: DelegateInstance;
   private list?: HTMLUListElement;
 
-  constructor(private formulas: string[], private onItemClick: FormulaHelperClickHandler) {
-    const {
-      formulaHelperListContainerEl,
-      formulaHelperEl,
-    } = createWrapperContent();
+  constructor(
+    private formulas: string[],
+    private onItemClick: FormulaHelperClickHandler
+  ) {
+    const { formulaHelperListContainerEl, formulaHelperEl } =
+      createWrapperContent();
     this.formulaHelperListContainerEl = formulaHelperListContainerEl;
     this.formulaHelperEl = formulaHelperEl;
     this.formulas = formulas;
@@ -29,7 +30,7 @@ class FormulaHelper {
       theme: 'formula-helper',
       interactive: true,
     });
-    this.onItemClick = onItemClick
+    this.onItemClick = onItemClick;
   }
 
   show(filterText?: string) {
@@ -56,7 +57,6 @@ class FormulaHelper {
   private updateList(formulas: string[]) {
     const list = createFormulaList(formulas);
     if (this.list) {
-      this.list.removeEventListener('click' , this.handleListItemClick);
       this.formulaHelperListContainerEl?.replaceChild(list, this.list);
     } else {
       this.formulaHelperListContainerEl.appendChild(list);
@@ -64,15 +64,15 @@ class FormulaHelper {
     this.list = list;
     this.helper.setContent(this.formulaHelperListContainerEl);
 
-    list.addEventListener('click' , this.handleListItemClick);
+    list.addEventListener('click', this.handleListItemClick, { once: true });
   }
 
   handleListItemClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target?.matches("li")) {
+    if (target?.matches('li')) {
       this.onItemClick(target.textContent!);
     }
-  }
+  };
 }
 
 export default FormulaHelper;

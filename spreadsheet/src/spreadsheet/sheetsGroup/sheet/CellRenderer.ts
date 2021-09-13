@@ -141,14 +141,10 @@ class CellRenderer {
       }
 
       if (cellData?.value) {
-        const isFormulaInput = cellData.value?.startsWith('=');
-
-        if (isFormulaInput) {
-          const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(this.getCellHyperformulaAddress(id));
-          this.setCellTextValue(id, hyperformulaValue?.toString()!);
-        } else {
-          this.setCellTextValue(id, cellData.value);
-        }
+        const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(
+          this.getCellHyperformulaAddress(id)
+        );
+        this.setCellTextValue(id, hyperformulaValue?.toString()!);
       }
     });
   }
@@ -460,11 +456,9 @@ class CellRenderer {
   }
 
   getCellHyperformulaAddress(id: CellId) {
-    const rowColIds = id.split("_");
     return {
+      ...convertFromCellIdToRowCol(id),
       sheet: this.sheet.getHyperformulaSheetId(),
-      row: parseInt(rowColIds[0], 10),
-      col: parseInt(rowColIds[1], 10),
     };
   }
 }

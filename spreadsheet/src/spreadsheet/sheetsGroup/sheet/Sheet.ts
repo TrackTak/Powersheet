@@ -20,7 +20,6 @@ import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId } from './CellRenderer';
-import { HyperFormula } from 'hyperformula';
 
 export interface IDimensions {
   width: number;
@@ -428,6 +427,8 @@ class Sheet {
     this.row.setup();
 
     this.cellRenderer = new CellRenderer(this);
+    this.spreadsheet.hyperformula.addSheet(sheetId);
+
     this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
@@ -456,9 +457,16 @@ class Sheet {
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
-
-    this.spreadsheet.hyperformula.addSheet(sheetId);
   }
+
+  restoreHyperformulaData = () => {
+    const data = this.getData().cellsData || {};
+    Object.keys(data).forEach((id) => {
+      this.cellRenderer.setCellData(id, data[id]);
+    });
+
+    this.updateViewport();
+  };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (this.cellEditor) {
@@ -558,7 +566,10 @@ class Sheet {
   }
 
   setSheetId(sheetId: SheetId) {
-    this.spreadsheet.hyperformula.renameSheet(this.getHyperformulaSheetId(), sheetId);
+    this.spreadsheet.hyperformula.renameSheet(
+      this.getHyperformulaSheetId(),
+      sheetId
+    );
     this.sheetId = sheetId;
   }
 

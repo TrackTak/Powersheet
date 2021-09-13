@@ -84,7 +84,14 @@ class CellRenderer {
     };
 
     const cellAddress = this.getCellHyperformulaAddress(id);
-    this.spreadsheet.hyperformula.setCellContents(cellAddress, newValue.value);
+    try {
+      this.spreadsheet.hyperformula.setCellContents(
+        cellAddress,
+        newValue.value
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {

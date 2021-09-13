@@ -138,18 +138,45 @@ CellsData.args = {
           },
         },
       },
-      mergedCells: [
-        {
-          row: {
-            x: 3,
-            y: 3,
-          },
-          col: {
-            x: 3,
-            y: 4,
-          },
+    },
+  },
+};
+
+export const Formulas = Template.bind({});
+
+Formulas.args = {
+  ...defaultStoryArgs,
+  data: {
+    Formulas: {
+      sheetName: 'Formulas',
+      cellsData: {
+        '0_1': {
+          value: '5',
         },
-      ],
+        '1_1': {
+          value: '2',
+        },
+        '2_1': {
+          value: '=SUM(B1, B2)',
+        },
+        '2_0': {
+          value: 'SUM',
+        },
+        '4_0': {
+          value: 'Cross Sheet Reference',
+        },
+        '4_1': {
+          value: "='Other'!A1 * 30",
+        },
+      },
+    },
+    Other: {
+      sheetName: 'Other',
+      cellsData: {
+        '0_0': {
+          value: '100',
+        },
+      },
     },
   },
 };

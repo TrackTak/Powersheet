@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "a-color-picker": "^1.2.1",
+    "currency-symbol-map": "^5.0.1",
     "eventemitter3": "^4.0.7",
     "hyperformula": "^1.1.0",
     "konva": "^8.1.1",

@@ -44,7 +44,10 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
-    this.formulaHelper = new FormulaHelper(formulas);
+    this.formulaHelper = new FormulaHelper(
+      formulas,
+      this.handleFormulaSuggestionClick
+    );
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
 
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
@@ -54,7 +57,20 @@ class CellEditor {
     this.showCellEditor();
   }
 
-  setTextContent(value?: string | null) {
+  destroy() {
+    this.cellTooltip.destroy();
+    this.cellEditorContainerEl.remove();
+    this.cellEditorEl.removeEventListener('input', this.handleInput);
+    this.formulaHelper.destroy();
+  }
+
+  private handleFormulaSuggestionClick = (suggestion: string) => {
+    const value = `=${suggestion}()`;
+    this.setTextContent(value);
+    this.formulaHelper.hide();
+  };
+
+  private setTextContent(value: string | undefined | null) {
     const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
 
     if (value) {
@@ -63,14 +79,11 @@ class CellEditor {
       });
     }
 
-    if (this.spreadsheet.formulaBar) {
-      this.spreadsheet.formulaBar.editableContent.textContent = value || '';
-    }
-
+    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
     this.cellEditorEl.textContent = value || '';
   }
 
-  handleInput(e: Event) {
+  private handleInput(e: Event) {
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
@@ -82,13 +95,6 @@ class CellEditor {
     } else {
       this.formulaHelper.hide();
     }
-  }
-
-  destroy() {
-    this.cellTooltip.destroy();
-    this.cellEditorContainerEl.remove();
-    this.cellEditorEl.removeEventListener('input', this.handleInput);
-    this.formulaHelper.destroy();
   }
 
   private showCellEditor = () => {

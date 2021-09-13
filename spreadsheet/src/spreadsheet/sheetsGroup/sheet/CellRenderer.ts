@@ -98,6 +98,16 @@ class CellRenderer {
         ...newValue,
       },
     };
+
+    const cellAddress = this.getCellHyperformulaAddress(id);
+    try {
+      this.spreadsheet.hyperformula.setCellContents(
+        cellAddress,
+        newValue.value
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {
@@ -141,7 +151,10 @@ class CellRenderer {
     }
 
     if (cellData?.value) {
-      this.setCellTextValue(cell, cellData.value);
+      const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(
+        this.getCellHyperformulaAddress(id)
+      );
+      this.setCellTextValue(cell, hyperformulaValue?.toString()!);
     }
 
     if (style) {
@@ -483,6 +496,13 @@ class CellRenderer {
     }
 
     cell.moveToTop();
+  }
+
+  getCellHyperformulaAddress(id: CellId) {
+    return {
+      ...convertFromCellIdToRowCol(id),
+      sheet: this.sheet.getHyperformulaSheetId(),
+    };
   }
 }
 

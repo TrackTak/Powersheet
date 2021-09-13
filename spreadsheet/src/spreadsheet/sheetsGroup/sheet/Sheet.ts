@@ -389,6 +389,8 @@ class Sheet {
       this.layer.add(group);
     });
 
+    this.spreadsheet.hyperformula.addSheet(sheetId);
+
     this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
@@ -425,6 +427,15 @@ class Sheet {
 
     this.cellEditor = new CellEditor(this);
   }
+
+  restoreHyperformulaData = () => {
+    const data = this.getData().cellsData || {};
+    Object.keys(data).forEach((id) => {
+      this.cellRenderer.setCellData(id, data[id]);
+    });
+
+    this.updateViewport();
+  };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (this.cellEditor) {
@@ -536,6 +547,10 @@ class Sheet {
   }
 
   setSheetId(sheetId: SheetId) {
+    this.spreadsheet.hyperformula.renameSheet(
+      this.getHyperformulaSheetId(),
+      sheetId
+    );
     this.sheetId = sheetId;
   }
 
@@ -544,6 +559,10 @@ class Sheet {
       this.spreadsheet.data[this.sheetId],
       value
     );
+  }
+
+  getHyperformulaSheetId() {
+    return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
   }
 
   getData() {
@@ -635,6 +654,8 @@ class Sheet {
     this.row.destroy();
 
     this.cellEditor?.destroy();
+
+    this.spreadsheet.hyperformula.removeSheet(this.getHyperformulaSheetId());
   }
 
   drawTopLeftOffsetRect() {

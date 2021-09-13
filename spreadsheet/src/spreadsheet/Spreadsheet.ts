@@ -9,6 +9,8 @@ import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
+import { HyperFormula } from 'hyperformula';
+import hyperformulaConfig from './hyperformulaConfig';
 
 interface IConstructor {
   registeredFunctionNames: string[];
@@ -28,6 +30,7 @@ class Spreadsheet {
   data: ISheetsData;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  hyperformula: HyperFormula;
 
   constructor(params: IConstructor) {
     this.options = params.options;
@@ -45,6 +48,8 @@ class Spreadsheet {
 
     this.toolbar = new Toolbar(this);
     this.formulaBar = new FormulaBar(this);
+
+    this.hyperformula = HyperFormula.buildEmpty(hyperformulaConfig);
 
     this.sheetsGroups = [this.getNewSheetsGroup()];
   }

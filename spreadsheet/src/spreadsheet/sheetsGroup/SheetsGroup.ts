@@ -54,6 +54,10 @@ class SheetsGroup {
 
       this.switchSheet(sheetName);
     }
+
+    this.sheets.forEach((sheet) => {
+      sheet.restoreHyperformulaData();
+    });
   };
 
   getSheetName() {

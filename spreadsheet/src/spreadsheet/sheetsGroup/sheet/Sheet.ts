@@ -20,6 +20,7 @@ import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId } from './CellRenderer';
+import { HyperFormula } from 'hyperformula';
 
 export interface IDimensions {
   width: number;
@@ -455,6 +456,8 @@ class Sheet {
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
+
+    this.spreadsheet.hyperformula.addSheet(sheetId);
   }
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
@@ -555,7 +558,12 @@ class Sheet {
   }
 
   setSheetId(sheetId: SheetId) {
+    this.spreadsheet.hyperformula.renameSheet(this.getHyperformulaSheetId(), sheetId);
     this.sheetId = sheetId;
+  }
+
+  getHyperformulaSheetId() {
+    return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
   }
 
   getData() {
@@ -647,6 +655,8 @@ class Sheet {
     this.row.destroy();
 
     this.cellEditor?.destroy();
+
+    this.spreadsheet.hyperformula.removeSheet(this.getHyperformulaSheetId());
   }
 
   drawTopLeftOffsetRect() {

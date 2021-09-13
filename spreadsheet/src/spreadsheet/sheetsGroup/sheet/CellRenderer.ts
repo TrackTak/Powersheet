@@ -82,6 +82,9 @@ class CellRenderer {
         ...newValue,
       },
     };
+
+    const cellAddress = this.getCellHyperformulaAddress(id);
+    this.spreadsheet.hyperformula.setCellContents(cellAddress, newValue.value);
   }
 
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {
@@ -138,7 +141,14 @@ class CellRenderer {
       }
 
       if (cellData?.value) {
-        this.setCellTextValue(id, cellData.value);
+        const isFormulaInput = cellData.value?.startsWith('=');
+
+        if (isFormulaInput) {
+          const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(this.getCellHyperformulaAddress(id));
+          this.setCellTextValue(id, hyperformulaValue?.toString()!);
+        } else {
+          this.setCellTextValue(id, cellData.value);
+        }
       }
     });
   }
@@ -447,6 +457,15 @@ class CellRenderer {
     }
 
     cell.moveToTop();
+  }
+
+  getCellHyperformulaAddress(id: CellId) {
+    const rowColIds = id.split("_");
+    return {
+      sheet: this.sheet.getHyperformulaSheetId(),
+      row: parseInt(rowColIds[0], 10),
+      col: parseInt(rowColIds[1], 10),
+    };
   }
 }
 

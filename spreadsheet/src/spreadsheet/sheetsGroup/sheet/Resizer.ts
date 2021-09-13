@@ -3,7 +3,7 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { makeShapeCrisp } from './Sheet';
+import Sheet from './Sheet';
 import { IRowColFunctions, RowColType } from './RowCol';
 import Spreadsheet from '../../Spreadsheet';
 
@@ -127,8 +127,6 @@ class Resizer {
 
     this.shapes.resizeGuideLine.x(x);
     this.shapes.resizeGuideLine.y(y);
-
-    makeShapeCrisp(this.shapes.resizeGuideLine);
 
     this.shapes.resizeGuideLine.show();
   }

@@ -12,11 +12,9 @@ import Sheet, {
   getCellRectFromCell,
   getCellTextFromCell,
   getMergedCellGroupFromScrollGroup,
-  getOtherCellChildren,
   ICellData,
   ICellStyle,
-  makeShapeCrisp,
-  setCellChildren,
+  removeChild,
   TextWrap,
 } from './Sheet';
 
@@ -111,6 +109,87 @@ class CellRenderer {
     });
   }
 
+  updateCellsClientRect() {
+    for (const [cellId, cell] of this.cellsMap) {
+      const { row, col } = convertFromCellIdToRowCol(cellId);
+      const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
+      const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
+      const cellRect = getCellRectFromCell(cell);
+
+      cellRect.width(colGroup.width());
+      cellRect.height(rowGroup.height());
+      cell.x(colGroup.x());
+      cell.y(rowGroup.y());
+    }
+  }
+
+  getUpdatedCell(id: CellId) {
+    const cellData = this.sheet.getData().cellsData?.[id];
+    const style = cellData?.style;
+    let cell = this.convertFromCellIdToCell(id);
+
+    if (this.cellsMap.has(id)) {
+      const existingCell = this.cellsMap.get(id)!;
+
+      cell = existingCell.clone();
+    }
+
+    this.setCellRect(cell);
+
+    if (cellData?.comment) {
+      this.setCellCommentMarker(cell);
+    }
+
+    if (cellData?.value) {
+      this.setCellTextValue(cell, cellData.value);
+    }
+
+    if (style) {
+      const { backgroundColor, borders, textWrap } = style;
+
+      if (backgroundColor) {
+        this.setCellBackgroundColor(cell, backgroundColor);
+      }
+
+      if (textWrap) {
+        this.setTextWrap(cell, textWrap);
+      }
+
+      if (borders) {
+        borders.forEach((borderType) => {
+          switch (borderType) {
+            case 'borderLeft':
+              this.setLeftBorder(cell);
+              break;
+            case 'borderTop':
+              this.setTopBorder(cell);
+              break;
+            case 'borderRight':
+              this.setRightBorder(cell);
+              break;
+            case 'borderBottom':
+              this.setBottomBorder(cell);
+              break;
+          }
+        });
+      }
+    }
+
+    return cell;
+  }
+
+  updateCell(id: CellId) {
+    const cell = this.getUpdatedCell(id);
+
+    if (this.cellsMap.has(id)) {
+      this.cellsMap.get(id)!.destroy();
+    }
+
+    this.cellsMap.set(id, cell);
+
+    this.drawCell(cell);
+  }
+
   updateCells() {
     for (const cell of this.cellsMap.values()) {
       cell.destroy();
@@ -118,74 +197,31 @@ class CellRenderer {
 
     this.cellsMap.clear();
 
-    this.sheet.merger.updateMergedCells();
+    //  this.sheet.merger.updateMergedCells();
 
     const cellsData = this.sheet.getData().cellsData ?? {};
 
     Object.keys(cellsData).forEach((id) => {
-      const cellData = cellsData[id];
-      const style = cellData.style;
-
-      this.updateCellRect(id);
-
-      if (cellData?.comment) {
-        this.setCellCommentMarker(id);
-      }
-
-      if (cellData?.value) {
-        this.setCellTextValue(id, cellData.value);
-      }
-
-      if (style) {
-        const { backgroundColor, borders, textWrap } = style;
-
-        if (backgroundColor) {
-          this.setCellBackgroundColor(id, backgroundColor);
-        }
-
-        if (textWrap) {
-          this.setTextWrap(id, textWrap);
-        }
-
-        if (borders) {
-          borders.forEach((borderType) => {
-            switch (borderType) {
-              case 'borderLeft':
-                this.setLeftBorder(id);
-                break;
-              case 'borderTop':
-                this.setTopBorder(id);
-                break;
-              case 'borderRight':
-                this.setRightBorder(id);
-                break;
-              case 'borderBottom':
-                this.setBottomBorder(id);
-                break;
-            }
-          });
-        }
-      }
+      this.updateCell(id);
     });
   }
 
-  updateCellRect(id: CellId) {
-    const cell = this.convertFromCellIdToCell(id);
-    if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
-        'cellRect',
-      ]);
+  setCellRect(cell: Cell) {
+    const rect = getCellRectFromCell(cell);
 
-      setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
+    const newCellRect = this.getNewCellRect(rect.width(), rect.height());
 
-      this.cellsMap.get(id)!.destroy();
-    }
+    removeChild(cell, 'cellRect');
 
-    this.cellsMap.set(id, cell);
+    cell.add(newCellRect);
   }
 
-  private *setBorder(id: CellId, type: BorderStyleOption) {
-    const { cell, clientRect } = this.drawNewCell(id, [type]);
+  private setBorder(cell: Cell, type: BorderStyleOption) {
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
+
+    removeChild(cell, type);
 
     const line = new Line({
       ...performanceProperties,
@@ -198,51 +234,36 @@ class CellRenderer {
 
     line.moveToTop();
 
-    yield { cell, clientRect, line };
-
-    makeShapeCrisp(line);
+    return { cell, clientRect, line };
   }
 
-  setBottomBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderBottom');
-    const { line, clientRect } = generator.next().value!;
+  setBottomBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderBottom');
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
   }
 
-  setRightBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderRight');
-    const { line, clientRect } = generator.next().value!;
+  setRightBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderRight');
 
     line.x(clientRect.width);
     line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
   }
 
-  setTopBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderTop');
-    const { line, clientRect } = generator.next().value!;
+  setTopBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderTop');
 
     line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
   }
 
-  setLeftBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderLeft');
-    const { line, clientRect } = generator.next().value!;
+  setLeftBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderLeft');
 
     line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
   }
 
-  setTextWrap(id: CellId, textWrap: TextWrap) {
-    const { cell } = this.drawNewCell(id);
+  setTextWrap(cell: Cell, textWrap: TextWrap) {
     const cellText = getCellTextFromCell(cell);
 
     if (cellText) {
@@ -250,15 +271,18 @@ class CellRenderer {
     }
   }
 
-  setCellBackgroundColor(id: CellId, backgroundColor: string) {
-    const { cell } = this.drawNewCell(id);
+  setCellBackgroundColor(cell: Cell, backgroundColor: string) {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
   }
 
-  setCellCommentMarker(id: CellId) {
-    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+  setCellCommentMarker(cell: Cell) {
+    removeChild(cell, 'commentMarker');
+
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
 
     const commentMarker = new Line({
       ...this.commentMarkerConfig,
@@ -270,13 +294,16 @@ class CellRenderer {
     rotateAroundCenter(commentMarker, 180);
   }
 
-  setCellTextValue(id: CellId, value: string) {
-    const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
+  setCellTextValue(cell: Cell, value: string) {
+    removeChild(cell, 'cellText');
+
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
 
     const text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
-      type: 'cellText',
       width: clientRect.width,
     });
 
@@ -296,15 +323,19 @@ class CellRenderer {
       cell.id(id);
     }
 
-    const cellRect = new Rect({
-      type: 'cellRect',
-      width: rect.width,
-      height: rect.height,
-    });
+    const cellRect = this.getNewCellRect(rect.width, rect.height);
 
     cell.add(cellRect);
 
     return cell;
+  }
+
+  getNewCellRect(width: number, height: number) {
+    return new Rect({
+      type: 'cellRect',
+      width,
+      height,
+    });
   }
 
   convertFromCellIdToCell(id: CellId) {
@@ -415,31 +446,6 @@ class CellRenderer {
 
       this.cellsMap.delete(cellId);
     }
-  }
-
-  drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
-    const cell = this.convertFromCellIdToCell(id);
-
-    const clientRect = cell.getClientRect({
-      skipStroke: true,
-    });
-
-    if (this.cellsMap.has(id)) {
-      const children = getOtherCellChildren(
-        this.cellsMap.get(id)!,
-        childrenToFilterOut
-      );
-
-      setCellChildren(cell, children);
-
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-
-    this.drawCell(cell);
-
-    return { cell, clientRect };
   }
 
   drawCell(cell: Cell) {

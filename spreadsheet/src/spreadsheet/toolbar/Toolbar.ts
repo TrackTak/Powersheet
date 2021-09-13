@@ -28,7 +28,11 @@ import {
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
-import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
+import {
+  Cell,
+  CellId,
+  convertFromCellIdToRowCol,
+} from '../sheetsGroup/sheet/CellRenderer';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -443,10 +447,10 @@ class Toolbar {
             backgroundColor,
           });
 
-          // Manually set cellBackgroundColor and not calling updateViewport
+          // Manually call updateCell and not calling updateViewport
           // due to it in triggering very quick succession. debounce does
           // not work well either.
-          sheet.cellRenderer.setCellBackgroundColor(id, backgroundColor);
+          sheet.cellRenderer.updateCell(id);
         });
 
         break;

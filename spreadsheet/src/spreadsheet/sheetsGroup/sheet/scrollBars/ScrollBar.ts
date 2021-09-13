@@ -68,8 +68,6 @@ class ScrollBar {
   }
 
   updateCustomSizePositions() {
-    // TODO: Fix
-
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
 

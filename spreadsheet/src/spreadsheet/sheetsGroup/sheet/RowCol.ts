@@ -13,8 +13,6 @@ import Sheet, {
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
   iterateXToY,
-  makeShapeCrisp,
-  offsetShapeValue,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
@@ -325,7 +323,6 @@ class RowCol {
   }
 
   getTotalSize() {
-    // TODO: Fix
     const sizes = Object.keys(this.sheet.getData()[this.type]?.sizes ?? {});
 
     const totalSizeDifference = sizes.reduce((currentSize, key) => {
@@ -363,13 +360,11 @@ class RowCol {
       const itemIndex = convertFromCellIdToRowCol(cellId)[this.type];
 
       if (index === itemIndex) {
-        const cellSize = cell.getClientRect()[this.functions.size];
+        const cellSize = cell.getClientRect({
+          skipStroke: true,
+        })[this.functions.size];
 
-        if (cellSize > size) {
-          size = cellSize;
-
-          this.updateViewport();
-        }
+        size = Math.max(size, cellSize);
       }
     }
 
@@ -544,8 +539,6 @@ class RowCol {
     };
     const gridLine = line.clone(lineConfig) as Line;
 
-    makeShapeCrisp(gridLine);
-
     group.add(gridLine);
 
     this.rowColGroupMap.set(index, group);
@@ -573,8 +566,6 @@ class RowCol {
       [this.functions.axis]: size,
     };
     const clone = this.resizer.shapes.resizeLine.clone(lineConfig) as Line;
-
-    clone[this.functions.axis](offsetShapeValue(clone[this.functions.axis]()));
 
     return clone;
   }

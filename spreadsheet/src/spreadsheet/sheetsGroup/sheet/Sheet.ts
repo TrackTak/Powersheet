@@ -9,7 +9,6 @@ import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
@@ -112,44 +111,8 @@ export interface ICustomSizes {
   size: number;
 }
 
-type operator = 'add' | 'subtract';
-
-// This is for canvas not making odd lines crisp looking
-// https://stackoverflow.com/questions/7530593/html5-canvas-and-line-width/7531540#7531540
-export const offsetShapeValue = (
-  val: number,
-  operator: operator = 'subtract'
-) => {
-  if (val % 1 === 0) return operator === 'add' ? val + 0.5 : val - 0.5;
-
-  return val;
-};
-
-export const makeShapeCrisp = (shape: Shape, operator?: operator) => {
-  shape.x(offsetShapeValue(shape.x(), operator));
-  shape.y(offsetShapeValue(shape.y(), operator));
-};
-
-export const getOtherCellChildren = (
-  cell: Cell,
-  typesToFilterOut: string[] = []
-) => {
-  const otherChildren = cell.children
-    ?.filter((x) => typesToFilterOut.every((z) => z !== x.attrs.type))
-    .map((x) => x.clone());
-
-  return otherChildren ?? [];
-};
-
-export const setCellChildren = (
-  cell: Cell,
-  children: (Group | Shape<ShapeConfig>)[]
-) => {
-  cell.destroyChildren();
-
-  if (children?.length) {
-    cell.add(...children);
-  }
+export const removeChild = (cell: Cell, type: string) => {
+  cell.children?.find((x) => x.attrs.type === type)?.remove();
 };
 
 export const getCellRectFromCell = (cell: Cell) => {
@@ -407,6 +370,12 @@ class Sheet {
 
     this.stage = new Stage({
       container: this.sheetEl,
+      // We must scale it so that lines are crisp
+      // https://stackoverflow.com/questions/8696631/canvas-drawings-like-lines-are-blurry
+      // scale: {
+      //   x: 2,
+      //   y: 2,
+      // },
     });
 
     this.layer = new Layer();
@@ -544,8 +513,20 @@ class Sheet {
     this.col.scrollBar.updateCustomSizePositions();
     this.row.scrollBar.updateCustomSizePositions();
 
-    this.stage.width(this.col.totalSize + this.getViewportVector().x);
-    this.stage.height(this.row.totalSize + this.getViewportVector().y);
+    const width = this.col.totalSize + this.getViewportVector().x;
+    const height = this.row.totalSize + this.getViewportVector().y;
+
+    this.stage.width(width);
+    this.stage.height(height);
+
+    const context = this.layer.canvas.getContext();
+
+    context.translate(0.5, 0.5);
+
+    // const element = this.sheetEl.querySelector('canvas')!;
+
+    // element.style.width = `${width}px`;
+    // element.style.height = `${height}px`;
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -667,6 +648,7 @@ class Sheet {
     this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
+    this.cellRenderer.updateCellsClientRect();
     this.selector.updateSelectedCells();
   }
 

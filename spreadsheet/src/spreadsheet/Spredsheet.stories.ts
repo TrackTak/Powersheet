@@ -128,13 +128,13 @@ CellsData.args = {
         },
         '3_3': {
           style: {
-            borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+            // borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
             backgroundColor: 'yellow',
           },
         },
         '4_1': {
           style: {
-            borders: ['borderBottom', 'borderTop'],
+            borders: ['borderBottom'],
           },
         },
       },

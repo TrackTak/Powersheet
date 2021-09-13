@@ -1,8 +1,4 @@
-import Sheet, {
-  getCellRectFromCell,
-  IMergedCells,
-  makeShapeCrisp,
-} from './Sheet';
+import Sheet, { getCellRectFromCell, IMergedCells } from './Sheet';
 import { iterateSelection } from './Selector';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { IRect } from 'konva/lib/types';
@@ -141,9 +137,6 @@ class Merger {
 
     const colLine = this.sheet.col.shapes.gridLine.clone(colLineConfig) as Line;
     const rowLine = this.sheet.row.shapes.gridLine.clone(rowLineConfig) as Line;
-
-    makeShapeCrisp(colLine);
-    makeShapeCrisp(rowLine);
 
     mergedCell.add(colLine, rowLine);
 

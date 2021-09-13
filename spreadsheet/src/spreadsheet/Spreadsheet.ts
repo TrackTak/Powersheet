@@ -43,19 +43,17 @@ class Spreadsheet {
     );
     this.focusedSheet = null;
 
-    this.eventEmitter.on(events.selector.startSelection, this.onStartSelection);
-
     this.toolbar = new Toolbar(this);
     this.formulaBar = new FormulaBar(this);
 
     this.sheetsGroups = [this.getNewSheetsGroup()];
   }
 
-  onStartSelection = (sheet: Sheet) => {
+  setFocusedSheet(sheet: Sheet) {
     this.focusedSheet = sheet;
 
     this.eventEmitter.emit(events.spreadsheet.focusedSheetChange, sheet);
-  };
+  }
 
   private getNewSheetsGroup() {
     const sheetsGroup = new SheetsGroup(this);

@@ -650,6 +650,7 @@ class Sheet {
     this.col.updateViewport();
     this.cellRenderer.updateCellsClientRect();
     this.selector.updateSelectedCells();
+    this.spreadsheet.toolbar?.updateActiveStates();
   }
 
   drawNextItems() {

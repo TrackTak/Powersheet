@@ -87,6 +87,9 @@ class Selector {
     this.setFirstCell(cells[0]);
     this.selectCells(cells);
 
+    this.spreadsheet.setFocusedSheet(this.sheet);
+    this.spreadsheet.toolbar?.updateActiveStates();
+
     this.sheet.emit(
       events.selector.startSelection,
       this.sheet,
@@ -177,6 +180,7 @@ class Selector {
         this.removeSelectedCells(false);
 
         this.selectCells(cells);
+        this.spreadsheet.toolbar?.updateActiveStates();
 
         this.sheet.emit(events.selector.moveSelection, cells);
       }

@@ -25,14 +25,9 @@ import {
   createIconButton,
   IIconElements,
 } from '../htmlElementHelpers';
-import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
-import {
-  Cell,
-  CellId,
-  convertFromCellIdToRowCol,
-} from '../sheetsGroup/sheet/CellRenderer';
+import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -285,27 +280,8 @@ class Toolbar {
       });
     });
 
-    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
-
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
-
-    this.spreadsheet.eventEmitter.on(
-      events.selector.startSelection,
-      this.onStartSelection
-    );
-    this.spreadsheet.eventEmitter.on(
-      events.selector.moveSelection,
-      this.onMoveSelection
-    );
   }
-
-  onStartSelection = () => {
-    this.setToolbarState();
-  };
-
-  onMoveSelection = () => {
-    this.setToolbarState();
-  };
 
   private setBorderStyles(
     cells: Cell[],
@@ -461,7 +437,6 @@ class Toolbar {
         } else if (!this.iconElementsMap.merge.button.disabled) {
           sheet.merger.mergeSelectedCells();
         }
-        this.setMergedState(sheet.selector.selectedCells);
 
         break;
       }
@@ -524,8 +499,11 @@ class Toolbar {
     }
   };
 
-  setToolbarState = () => {
+  updateActiveStates = () => {
     const sheet = this.spreadsheet.focusedSheet!;
+
+    if (!sheet) return;
+
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
 
@@ -544,10 +522,12 @@ class Toolbar {
         'white';
     }
 
-    // this.setActive(
-    //   this.iconElementsMap.textWrap,
-    //   this.isTextWrapActive(firstSelectedCell!.id())
-    // );
+    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+
+    this.setActive(
+      this.iconElementsMap.textWrap,
+      this.isTextWrapActive(firstSelectedCell!.id())
+    );
 
     this.setMergedState(selectedCells);
   };

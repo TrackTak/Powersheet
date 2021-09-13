@@ -370,12 +370,6 @@ class Sheet {
 
     this.stage = new Stage({
       container: this.sheetEl,
-      // We must scale it so that lines are crisp
-      // https://stackoverflow.com/questions/8696631/canvas-drawings-like-lines-are-blurry
-      // scale: {
-      //   x: 2,
-      //   y: 2,
-      // },
     });
 
     this.layer = new Layer();
@@ -533,11 +527,6 @@ class Sheet {
     const context = this.layer.canvas.getContext();
 
     context.translate(0.5, 0.5);
-
-    // const element = this.sheetEl.querySelector('canvas')!;
-
-    // element.style.width = `${width}px`;
-    // element.style.height = `${height}px`;
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();

@@ -20,7 +20,7 @@ import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell } from './CellRenderer';
+import { Cell, convertFromCellIdToRowCol } from './CellRenderer';
 
 interface IShapes {
   group: Group;
@@ -208,8 +208,6 @@ class RowCol {
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
-    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-    const sizes = this.sheet.getData()[this.type]?.sizes;
 
     const getSize = () => {
       // TODO: Remove when we have snapping to row/col for scroll
@@ -219,7 +217,7 @@ class RowCol {
         offset = customSizeChanges[i].size;
       }
 
-      return (sizes?.[i] ?? defaultSize) - offset;
+      return this.getSize(i) - offset;
     };
 
     while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
@@ -327,9 +325,13 @@ class RowCol {
   }
 
   getTotalSize() {
-    const sizes = Object.values(this.sheet.getData()[this.type]?.sizes ?? {});
+    // TODO: Fix
+    const sizes = Object.keys(this.sheet.getData()[this.type]?.sizes ?? {});
 
-    const totalSizeDifference = sizes.reduce((currentSize, size) => {
+    const totalSizeDifference = sizes.reduce((currentSize, key) => {
+      const index = parseInt(key, 10);
+      const size = this.getSize(index);
+
       return (
         size - this.spreadsheet.options[this.type].defaultSize + currentSize
       );
@@ -342,10 +344,34 @@ class RowCol {
     );
   }
 
+  setSizeData(index: number, size: number) {
+    this.sheet.setData({
+      [this.type]: {
+        sizes: {
+          [index]: size,
+        },
+      },
+    });
+  }
+
   getSize(index: number) {
-    const size =
+    let size =
       this.sheet.getData()[this.type]?.sizes[index] ??
       this.spreadsheet.options[this.type].defaultSize;
+
+    for (const [cellId, cell] of this.sheet.cellRenderer.cellsMap) {
+      const itemIndex = convertFromCellIdToRowCol(cellId)[this.type];
+
+      if (index === itemIndex) {
+        const cellSize = cell.getClientRect()[this.functions.size];
+
+        if (cellSize > size) {
+          size = cellSize;
+
+          this.updateViewport();
+        }
+      }
+    }
 
     return size;
   }

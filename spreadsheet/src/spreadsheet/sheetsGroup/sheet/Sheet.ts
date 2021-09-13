@@ -19,7 +19,9 @@ import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer, { Cell, CellId } from './CellRenderer';
+import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
+import { Text } from 'konva/lib/shapes/Text';
+import { merge } from 'lodash';
 
 export interface IDimensions {
   width: number;
@@ -55,7 +57,7 @@ export interface IMergedCells {
 }
 
 export interface ISizes {
-  [index: string]: number;
+  [index: number]: number;
 }
 
 export type BorderStyleOption =
@@ -68,9 +70,12 @@ export interface IRowColData {
   sizes: ISizes;
 }
 
+export type TextWrap = 'wrap';
+
 export interface ICellStyle {
   backgroundColor?: string;
   borders?: BorderStyleOption[];
+  textWrap?: TextWrap;
 }
 
 export interface ICellData {
@@ -125,17 +130,6 @@ export const makeShapeCrisp = (shape: Shape, operator?: operator) => {
   shape.y(offsetShapeValue(shape.y(), operator));
 };
 
-export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
-
-export const convertFromCellIdToRowCol = (id: CellId) => {
-  const sections = id.split('_');
-
-  return {
-    row: parseInt(sections[0], 10),
-    col: parseInt(sections[1], 10),
-  };
-};
-
 export const getOtherCellChildren = (
   cell: Cell,
   typesToFilterOut: string[] = []
@@ -164,6 +158,12 @@ export const getCellRectFromCell = (cell: Cell) => {
   ) as Rect;
 
   return cellRect;
+};
+
+export const getCellTextFromCell = (cell: Cell) => {
+  const text = cell.children?.find((x) => x.attrs.type === 'cellText') as Text;
+
+  return text;
 };
 
 export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
@@ -420,13 +420,13 @@ class Sheet {
       this.layer.add(group);
     });
 
+    this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
 
     this.col.setup();
     this.row.setup();
 
-    this.cellRenderer = new CellRenderer(this);
     this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
@@ -558,6 +558,13 @@ class Sheet {
     this.sheetId = sheetId;
   }
 
+  setData(value: Partial<IData>) {
+    this.spreadsheet.data[this.sheetId] = merge(
+      this.spreadsheet.data[this.sheetId],
+      value
+    );
+  }
+
   getData() {
     return this.spreadsheet.data[this.sheetId];
   }
@@ -657,9 +664,9 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
+    this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateCells();
     this.selector.updateSelectedCells();
   }
 

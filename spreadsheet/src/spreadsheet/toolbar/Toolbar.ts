@@ -405,11 +405,7 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     ids.forEach((id) => {
-      const cellData = sheet.cellRenderer.getCellData(id);
-
-      if (cellData?.style?.borders) {
-        delete cellData.style.borders;
-      }
+      sheet.cellRenderer.deleteCellStyle(id, 'borders');
     });
   }
 
@@ -417,6 +413,25 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'textWrap': {
+        if (this.iconElementsMap.textWrap.active) {
+          sheet.selector.selectedCells.forEach((cell) => {
+            const id = cell.id();
+
+            sheet.cellRenderer.deleteCellStyle(id, 'textWrap');
+          });
+        } else {
+          sheet.selector.selectedCells.forEach((cell) => {
+            const id = cell.id();
+
+            sheet.cellRenderer.setCellDataStyle(id, {
+              textWrap: 'wrap',
+            });
+          });
+        }
+
+        break;
+      }
       case 'backgroundColor': {
         if (!value) break;
         const backgroundColor = value;
@@ -525,6 +540,11 @@ class Toolbar {
         'white';
     }
 
+    // this.setActive(
+    //   this.iconElementsMap.textWrap,
+    //   this.isTextWrapActive(firstSelectedCell!.id())
+    // );
+
     this.setMergedState(selectedCells);
   };
 
@@ -584,6 +604,11 @@ class Toolbar {
 
   isFreezeActive() {
     return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
+  }
+
+  isTextWrapActive(cellId: CellId) {
+    return !!this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)
+      ?.style?.textWrap;
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

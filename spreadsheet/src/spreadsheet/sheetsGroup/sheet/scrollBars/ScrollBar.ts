@@ -68,12 +68,14 @@ class ScrollBar {
   }
 
   updateCustomSizePositions() {
+    // TODO: Fix
+
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
 
     Object.keys(sizes).forEach((key) => {
       const index = parseInt(key, 10);
-      const size = sizes[key];
+      const size = sizes[index];
       const axis =
         index * this.spreadsheet.options[this.type].defaultSize +
         customSizeDifference;

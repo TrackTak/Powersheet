@@ -92,13 +92,13 @@ DifferentSizeCells.args = {
       sheetName: 'Different Size Cells',
       col: {
         sizes: {
-          '3': 70,
+          3: 70,
         },
       },
       row: {
         sizes: {
-          '1': 250,
-          '5': 100,
+          1: 250,
+          5: 100,
         },
       },
     },
@@ -118,6 +118,13 @@ CellsData.args = {
             backgroundColor: 'red',
           },
           value: 'HI!',
+        },
+        '1_1': {
+          style: {
+            textWrap: 'wrap',
+          },
+          value:
+            'A very long piece of text that should wrap to the next line on the word.',
         },
         '3_3': {
           style: {

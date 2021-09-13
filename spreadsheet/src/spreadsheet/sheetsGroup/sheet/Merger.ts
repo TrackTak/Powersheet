@@ -1,5 +1,4 @@
 import Sheet, {
-  getCellId,
   getCellRectFromCell,
   IMergedCells,
   makeShapeCrisp,
@@ -7,7 +6,7 @@ import Sheet, {
 import { iterateSelection } from './Selector';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { IRect } from 'konva/lib/types';
-import { Cell, CellId } from './CellRenderer';
+import { Cell, CellId, getCellId } from './CellRenderer';
 
 export type AssociatedMergedCellId = CellId;
 

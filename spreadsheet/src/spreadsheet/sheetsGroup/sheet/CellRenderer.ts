@@ -8,22 +8,32 @@ import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
 import Sheet, {
   BorderStyleOption,
-  centerRectTwoInRectOne,
-  convertFromCellIdToRowCol,
   getCellGroupFromScrollGroup,
-  getCellId,
   getCellRectFromCell,
+  getCellTextFromCell,
   getMergedCellGroupFromScrollGroup,
   getOtherCellChildren,
   ICellData,
   ICellStyle,
   makeShapeCrisp,
   setCellChildren,
+  TextWrap,
 } from './Sheet';
 
 export type CellId = string;
 
 export type Cell = Group;
+
+export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const convertFromCellIdToRowCol = (id: CellId) => {
+  const sections = id.split('_');
+
+  return {
+    row: parseInt(sections[0], 10),
+    col: parseInt(sections[1], 10),
+  };
+};
 
 class CellRenderer {
   cellsMap: Map<CellId, Cell>;
@@ -39,6 +49,14 @@ class CellRenderer {
 
   getCellData(id: CellId) {
     return this.sheet.getData().cellsData?.[id];
+  }
+
+  deleteCellStyle(id: CellId, name: keyof ICellStyle) {
+    const cellData = this.getCellData(id);
+
+    if (cellData?.style?.[name]) {
+      delete cellData.style[name];
+    }
   }
 
   setBorderStyle(id: CellId, borderType: BorderStyleOption) {
@@ -110,35 +128,43 @@ class CellRenderer {
 
       this.updateCellRect(id);
 
-      if (style?.backgroundColor) {
-        this.setCellBackgroundColor(id, style.backgroundColor);
-      }
-
       if (cellData?.comment) {
         this.setCellCommentMarker(id);
       }
 
-      if (style?.borders) {
-        style.borders.forEach((borderType) => {
-          switch (borderType) {
-            case 'borderLeft':
-              this.setLeftBorder(id);
-              break;
-            case 'borderTop':
-              this.setTopBorder(id);
-              break;
-            case 'borderRight':
-              this.setRightBorder(id);
-              break;
-            case 'borderBottom':
-              this.setBottomBorder(id);
-              break;
-          }
-        });
-      }
-
       if (cellData?.value) {
         this.setCellTextValue(id, cellData.value);
+      }
+
+      if (style) {
+        const { backgroundColor, borders, textWrap } = style;
+
+        if (backgroundColor) {
+          this.setCellBackgroundColor(id, backgroundColor);
+        }
+
+        if (textWrap) {
+          this.setTextWrap(id, textWrap);
+        }
+
+        if (borders) {
+          borders.forEach((borderType) => {
+            switch (borderType) {
+              case 'borderLeft':
+                this.setLeftBorder(id);
+                break;
+              case 'borderTop':
+                this.setTopBorder(id);
+                break;
+              case 'borderRight':
+                this.setRightBorder(id);
+                break;
+              case 'borderBottom':
+                this.setBottomBorder(id);
+                break;
+            }
+          });
+        }
       }
     });
   }
@@ -215,6 +241,15 @@ class CellRenderer {
     generator.next();
   }
 
+  setTextWrap(id: CellId, textWrap: TextWrap) {
+    const { cell } = this.drawNewCell(id);
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.wrap(textWrap);
+    }
+  }
+
   setCellBackgroundColor(id: CellId, backgroundColor: string) {
     const { cell } = this.drawNewCell(id);
     const cellRect = getCellRectFromCell(cell);
@@ -244,11 +279,6 @@ class CellRenderer {
       type: 'cellText',
       width: clientRect.width,
     });
-
-    const midPoints = centerRectTwoInRectOne(clientRect, text.getClientRect());
-
-    text.x(midPoints.x - clientRect.x);
-    text.y(midPoints.y - clientRect.y);
 
     cell.add(text);
   }

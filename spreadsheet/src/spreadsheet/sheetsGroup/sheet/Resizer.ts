@@ -138,20 +138,17 @@ class Resizer {
   }
 
   resize(index: number, newSize: number) {
-    const data = this.sheet.getData();
-    const size =
-      data[this.type]?.sizes[index] ??
-      this.spreadsheet.options[this.type].defaultSize;
+    const size = this.sheet[this.type].getSize(index);
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      data[this.type] = {
-        ...data[this.type],
-        sizes: {
-          ...data[this.type]?.sizes,
-          [index]: newSize,
+      this.sheet.setData({
+        [this.type]: {
+          sizes: {
+            [index]: newSize,
+          },
         },
-      };
+      });
     }
   }
 

@@ -3,7 +3,7 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../../events';
-import Sheet, { makeShapeCrisp } from './Sheet';
+import Sheet from './Sheet';
 import { IRowColFunctions, RowColType } from './RowCol';
 import Spreadsheet from '../../Spreadsheet';
 
@@ -128,8 +128,6 @@ class Resizer {
     this.shapes.resizeGuideLine.x(x);
     this.shapes.resizeGuideLine.y(y);
 
-    makeShapeCrisp(this.shapes.resizeGuideLine);
-
     this.shapes.resizeGuideLine.show();
   }
 
@@ -138,20 +136,17 @@ class Resizer {
   }
 
   resize(index: number, newSize: number) {
-    const data = this.sheet.getData();
-    const size =
-      data[this.type]?.sizes[index] ??
-      this.spreadsheet.options[this.type].defaultSize;
+    const size = this.sheet[this.type].getSize(index);
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      data[this.type] = {
-        ...data[this.type],
-        sizes: {
-          ...data[this.type]?.sizes,
-          [index]: newSize,
+      this.sheet.setData({
+        [this.type]: {
+          sizes: {
+            [index]: newSize,
+          },
         },
-      };
+      });
     }
   }
 

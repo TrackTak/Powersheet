@@ -25,7 +25,6 @@ import {
   createIconButton,
   IIconElements,
 } from '../htmlElementHelpers';
-import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
@@ -281,27 +280,8 @@ class Toolbar {
       });
     });
 
-    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
-
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
-
-    this.spreadsheet.eventEmitter.on(
-      events.selector.startSelection,
-      this.onStartSelection
-    );
-    this.spreadsheet.eventEmitter.on(
-      events.selector.moveSelection,
-      this.onMoveSelection
-    );
   }
-
-  onStartSelection = () => {
-    this.setToolbarState();
-  };
-
-  onMoveSelection = () => {
-    this.setToolbarState();
-  };
 
   private setBorderStyles(
     cells: Cell[],
@@ -405,11 +385,7 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     ids.forEach((id) => {
-      const cellData = sheet.cellRenderer.getCellData(id);
-
-      if (cellData?.style?.borders) {
-        delete cellData.style.borders;
-      }
+      sheet.cellRenderer.deleteCellStyle(id, 'borders');
     });
   }
 
@@ -417,6 +393,25 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'textWrap': {
+        if (this.iconElementsMap.textWrap.active) {
+          sheet.selector.selectedCells.forEach((cell) => {
+            const id = cell.id();
+
+            sheet.cellRenderer.deleteCellStyle(id, 'textWrap');
+          });
+        } else {
+          sheet.selector.selectedCells.forEach((cell) => {
+            const id = cell.id();
+
+            sheet.cellRenderer.setCellDataStyle(id, {
+              textWrap: 'wrap',
+            });
+          });
+        }
+
+        break;
+      }
       case 'backgroundColor': {
         if (!value) break;
         const backgroundColor = value;
@@ -427,11 +422,6 @@ class Toolbar {
           sheet.cellRenderer.setCellDataStyle(id, {
             backgroundColor,
           });
-
-          // Manually set cellBackgroundColor and not calling updateViewport
-          // due to it in triggering very quick succession. debounce does
-          // not work well either.
-          sheet.cellRenderer.setCellBackgroundColor(id, backgroundColor);
         });
 
         break;
@@ -442,7 +432,6 @@ class Toolbar {
         } else if (!this.iconElementsMap.merge.button.disabled) {
           sheet.merger.mergeSelectedCells();
         }
-        this.setMergedState(sheet.selector.selectedCells);
 
         break;
       }
@@ -500,13 +489,14 @@ class Toolbar {
       }
     }
 
-    if (name !== 'backgroundColor') {
-      sheet.updateViewport();
-    }
+    sheet.updateViewport();
   };
 
-  setToolbarState = () => {
+  updateActiveStates = () => {
     const sheet = this.spreadsheet.focusedSheet!;
+
+    if (!sheet) return;
+
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
 
@@ -524,6 +514,13 @@ class Toolbar {
       this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
         'white';
     }
+
+    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+
+    this.setActive(
+      this.iconElementsMap.textWrap,
+      this.isTextWrapActive(firstSelectedCell!.id())
+    );
 
     this.setMergedState(selectedCells);
   };
@@ -584,6 +581,11 @@ class Toolbar {
 
   isFreezeActive() {
     return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
+  }
+
+  isTextWrapActive(cellId: CellId) {
+    return !!this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)
+      ?.style?.textWrap;
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

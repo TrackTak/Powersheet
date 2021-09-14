@@ -422,13 +422,6 @@ class Toolbar {
           sheet.cellRenderer.setCellDataStyle(id, {
             backgroundColor,
           });
-
-          // Manually call updateCell and not calling updateViewport
-          // due to it in triggering very quick succession. debounce does
-          // not work well either.
-          const cellWithStyles = sheet.cellRenderer.getCellWithStyles(id);
-
-          sheet.cellRenderer.updateCell(cellWithStyles);
         });
 
         break;
@@ -496,9 +489,7 @@ class Toolbar {
       }
     }
 
-    if (name !== 'backgroundColor') {
-      sheet.updateViewport();
-    }
+    sheet.updateViewport();
   };
 
   updateActiveStates = () => {

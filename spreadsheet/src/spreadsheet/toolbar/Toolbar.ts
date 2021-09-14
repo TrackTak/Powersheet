@@ -1,7 +1,13 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import { BorderStyleOption } from '../sheetsGroup/sheet/Sheet';
+import {
+  BorderStyle,
+  HorizontalTextAlign,
+  ICellStyle,
+  TextWrap,
+  VerticalTextAlign,
+} from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -286,7 +292,7 @@ class Toolbar {
   private setBorderStyles(
     cells: Cell[],
     cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
-    borderType: BorderStyleOption
+    borderType: BorderStyle
   ) {
     const sheet = this.spreadsheet.focusedSheet!;
     const borderCells = cells.filter(cellsFilter);
@@ -389,41 +395,90 @@ class Toolbar {
     });
   }
 
+  private deleteStyleForSelectedCells(key: keyof ICellStyle) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    sheet.selector.selectedCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.cellRenderer.deleteCellStyle(id, key);
+    });
+  }
+
+  private setStyleForSelectedCells<T>(key: keyof ICellStyle, value: T) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    sheet.selector.selectedCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.cellRenderer.setCellDataStyle(id, {
+        [key]: value,
+      });
+    });
+  }
+
   setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'alignLeft': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'left'
+        );
+        break;
+      }
+      case 'alignCenter': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'center'
+        );
+        break;
+      }
+      case 'alignRight': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'right'
+        );
+        break;
+      }
+      case 'alignTop': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'top'
+        );
+        break;
+      }
+      case 'alignMiddle': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'middle'
+        );
+        break;
+      }
+      case 'alignBottom': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'bottom'
+        );
+        break;
+      }
       case 'textWrap': {
         if (this.iconElementsMap.textWrap.active) {
-          sheet.selector.selectedCells.forEach((cell) => {
-            const id = cell.id();
-
-            sheet.cellRenderer.deleteCellStyle(id, 'textWrap');
-          });
+          this.deleteStyleForSelectedCells('textWrap');
         } else {
-          sheet.selector.selectedCells.forEach((cell) => {
-            const id = cell.id();
-
-            sheet.cellRenderer.setCellDataStyle(id, {
-              textWrap: 'wrap',
-            });
-          });
+          this.setStyleForSelectedCells<TextWrap>('textWrap', 'wrap');
         }
-
         break;
       }
       case 'backgroundColor': {
         if (!value) break;
         const backgroundColor = value;
 
-        sheet.selector.selectedCells.forEach((cell) => {
-          const id = cell.id();
-
-          sheet.cellRenderer.setCellDataStyle(id, {
-            backgroundColor,
-          });
-        });
-
+        this.setStyleForSelectedCells<string>(
+          'backgroundColor',
+          backgroundColor
+        );
         break;
       }
       case 'merge': {

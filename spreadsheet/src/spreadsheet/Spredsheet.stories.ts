@@ -122,6 +122,8 @@ CellsData.args = {
         '1_1': {
           style: {
             textWrap: 'wrap',
+            horizontalTextAlign: 'center',
+            verticalTextAlign: 'middle',
           },
           value:
             'A very long piece of text that should wrap to the next line on the word.',

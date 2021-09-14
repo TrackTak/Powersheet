@@ -357,6 +357,10 @@ class RowCol {
       this.spreadsheet.options[this.type].defaultSize;
 
     for (const [cellId, cell] of this.sheet.cellRenderer.cellsMap) {
+      if (this.sheet.merger.getIsCellMerged(cellId)) {
+        continue;
+      }
+
       const itemIndex = convertFromCellIdToRowCol(cellId)[this.type];
 
       if (index === itemIndex) {

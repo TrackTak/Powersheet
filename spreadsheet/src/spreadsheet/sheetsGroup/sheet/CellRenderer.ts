@@ -125,11 +125,15 @@ class CellRenderer {
       const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
       const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
       const cellRect = getCellRectFromCell(cell);
+      const isMerged = this.sheet.merger.getIsCellMerged(cellId);
 
-      cellRect.width(colGroup.width());
-      cellRect.height(rowGroup.height());
       cell.x(colGroup.x());
       cell.y(rowGroup.y());
+
+      if (!isMerged) {
+        cellRect.width(colGroup.width());
+        cellRect.height(rowGroup.height());
+      }
     }
   }
 
@@ -210,7 +214,7 @@ class CellRenderer {
 
     this.cellsMap.clear();
 
-    //  this.sheet.merger.updateMergedCells();
+    this.sheet.merger.updateMergedCells();
 
     const cellsData = this.sheet.getData().cellsData ?? {};
 

@@ -1,8 +1,9 @@
 import Sheet, { getCellRectFromCell, IMergedCells } from './Sheet';
 import { iterateSelection } from './Selector';
-import { Line, LineConfig } from 'konva/lib/shapes/Line';
-import { IRect } from 'konva/lib/types';
 import { Cell, CellId, getCellId } from './CellRenderer';
+import { Group } from 'konva/lib/Group';
+import { performanceProperties } from '../../styles';
+import Spreadsheet from '../../Spreadsheet';
 
 export type AssociatedMergedCellId = CellId;
 
@@ -10,9 +11,11 @@ const defaultCellFill = 'white';
 
 class Merger {
   associatedMergedCellIdMap: Map<AssociatedMergedCellId, CellId>;
+  private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.associatedMergedCellIdMap = new Map();
   }
 
@@ -87,8 +90,6 @@ class Merger {
   mergeCells(mergedCells: IMergedCells) {
     const { row, col } = mergedCells;
     const mergedCellId = getCellId(row.x, col.x);
-    const startRow = this.sheet.row.rowColGroupMap.get(row.x);
-    const startCol = this.sheet.col.rowColGroupMap.get(col.x);
     const rows = this.sheet.row.convertFromRangeToGroups(mergedCells.row);
     const cols = this.sheet.col.convertFromRangeToGroups(mergedCells.col);
 
@@ -100,22 +101,20 @@ class Merger {
       return (prev += curr.height());
     }, 0);
 
-    const rect: IRect = {
-      x: startCol!.x(),
-      y: startRow!.y(),
-      width: width,
-      height: height,
-    };
-
-    const mergedCell = this.sheet.cellRenderer.getNewCell(
-      mergedCellId,
-      rect,
+    const mergedCell = new Group({
+      ...performanceProperties,
+      id: mergedCellId,
       row,
-      col
-    );
-    const cellRect = getCellRectFromCell(mergedCell);
+      col,
+    });
+
+    const cellRect = this.sheet.cellRenderer.getNewCellRect(width, height);
+
+    mergedCell.add(cellRect);
 
     cellRect.fill(defaultCellFill);
+    cellRect.stroke(this.spreadsheet.styles.gridLine.stroke as string);
+    cellRect.strokeWidth(this.spreadsheet.styles.gridLine.strokeWidth! / 2);
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
@@ -125,20 +124,6 @@ class Merger {
         this.sheet.cellRenderer.destroyCell(id);
       }
     }
-
-    const colLineConfig: LineConfig = {
-      x: width,
-      points: [0, 0, 0, height],
-    };
-    const rowLineConfig: LineConfig = {
-      y: height,
-      points: [0, 0, width, 0],
-    };
-
-    const colLine = this.sheet.col.shapes.gridLine.clone(colLineConfig) as Line;
-    const rowLine = this.sheet.row.shapes.gridLine.clone(rowLineConfig) as Line;
-
-    mergedCell.add(colLine, rowLine);
 
     this.sheet.cellRenderer.cellsMap.set(mergedCellId, mergedCell);
 

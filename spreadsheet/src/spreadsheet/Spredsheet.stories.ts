@@ -70,12 +70,12 @@ MergedCells.args = {
       mergedCells: [
         {
           row: {
-            x: 4,
+            x: 5,
             y: 5,
           },
           col: {
             x: 1,
-            y: 5,
+            y: 3,
           },
         },
       ],
@@ -128,7 +128,7 @@ CellsData.args = {
         },
         '3_3': {
           style: {
-            // borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+            borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
             backgroundColor: 'yellow',
           },
         },

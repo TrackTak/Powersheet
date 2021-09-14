@@ -108,7 +108,6 @@ class CellEditor {
   };
 
   private setCellEditorElPosition = (position: IRect) => {
-    console.log(position);
     this.cellEditorContainerEl.style.top = `${position.y}px`;
     this.cellEditorContainerEl.style.left = `${position.x}px`;
     this.cellEditorContainerEl.style.minWidth = `${position.width}px`;

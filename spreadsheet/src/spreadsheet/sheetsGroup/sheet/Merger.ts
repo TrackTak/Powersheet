@@ -29,8 +29,8 @@ class Merger {
       for (const ci of iterateSelection(mergedCells.col)) {
         const id = getCellId(ri, ci);
 
-        if (cellsData?.[id]?.style) {
-          delete cellsData[id].style;
+        if (id !== topLeftCellId && cellsData?.[id]) {
+          delete cellsData[id];
         }
       }
     }
@@ -56,14 +56,15 @@ class Merger {
 
     if (!this.getIsCellMerged(mergedCellId)) return;
 
-    const mergedCellStyle =
-      this.sheet.cellRenderer.getCellData(mergedCellId)!.style!;
+    const style = this.sheet.cellRenderer.getCellData(mergedCellId)?.style;
 
-    for (const ri of iterateSelection(mergedCells.row)) {
-      for (const ci of iterateSelection(mergedCells.col)) {
-        const id = getCellId(ri, ci);
+    if (style) {
+      for (const ri of iterateSelection(mergedCells.row)) {
+        for (const ci of iterateSelection(mergedCells.col)) {
+          const id = getCellId(ri, ci);
 
-        this.sheet.cellRenderer.setCellDataStyle(id, mergedCellStyle);
+          this.sheet.cellRenderer.setCellDataStyle(id, style);
+        }
       }
     }
   }

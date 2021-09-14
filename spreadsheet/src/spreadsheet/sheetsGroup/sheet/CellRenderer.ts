@@ -239,6 +239,8 @@ class CellRenderer {
     const cellsData = this.sheet.getData().cellsData ?? {};
 
     Object.keys(cellsData).forEach((id) => {
+      this.cleanCellData(id);
+
       const cell = this.convertFromCellIdToCell(id);
 
       this.updateCell(cell);

@@ -1,21 +1,16 @@
-import Sheet, { getCellRectFromCell, IMergedCells } from './Sheet';
+import Sheet, { IMergedCells } from './Sheet';
 import { iterateSelection } from './Selector';
-import { Cell, CellId, getCellId } from './CellRenderer';
-import { Group } from 'konva/lib/Group';
-import { performanceProperties } from '../../styles';
-import Spreadsheet from '../../Spreadsheet';
+import { CellId, getCellId } from './CellRenderer';
 
 export type AssociatedMergedCellId = CellId;
 
-const defaultCellFill = 'white';
+export const defaultCellFill = 'white';
 
 class Merger {
-  associatedMergedCellIdMap: Map<AssociatedMergedCellId, CellId>;
-  private spreadsheet: Spreadsheet;
+  associatedMergedCellIdMap: Map<AssociatedMergedCellId, IMergedCells>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.associatedMergedCellIdMap = new Map();
   }
 
@@ -77,76 +72,25 @@ class Merger {
     this.associatedMergedCellIdMap.clear();
 
     this.sheet.getData().mergedCells?.forEach(({ row, col }) => {
+      const id = getCellId(row.x, col.x);
       const startRow = this.sheet.row.rowColGroupMap.get(row.x);
       const startCol = this.sheet.col.rowColGroupMap.get(col.x);
-      const shouldMerge = startCol && startRow ? true : false;
+      const isInViewport = startCol && startRow ? true : false;
 
-      if (shouldMerge) {
-        this.mergeCells({ row, col });
+      if (isInViewport) {
+        for (const ri of iterateSelection(row)) {
+          for (const ci of iterateSelection(col)) {
+            const id = getCellId(ri, ci);
+
+            this.associatedMergedCellIdMap.set(id, { row, col });
+          }
+        }
+
+        const cell = this.sheet.cellRenderer.convertFromCellIdToCell(id);
+
+        this.sheet.cellRenderer.updateCell(cell);
       }
     });
-  }
-
-  mergeCells(mergedCells: IMergedCells) {
-    const { row, col } = mergedCells;
-    const mergedCellId = getCellId(row.x, col.x);
-    const rows = this.sheet.row.convertFromRangeToGroups(mergedCells.row);
-    const cols = this.sheet.col.convertFromRangeToGroups(mergedCells.col);
-
-    const width = cols.reduce((prev, curr) => {
-      return (prev += curr.width());
-    }, 0);
-
-    const height = rows.reduce((prev, curr) => {
-      return (prev += curr.height());
-    }, 0);
-
-    const mergedCell = new Group({
-      ...performanceProperties,
-      id: mergedCellId,
-      row,
-      col,
-    });
-
-    const cellRect = this.sheet.cellRenderer.getNewCellRect(width, height);
-
-    mergedCell.add(cellRect);
-
-    cellRect.fill(defaultCellFill);
-    cellRect.stroke(this.spreadsheet.styles.gridLine.stroke as string);
-    cellRect.strokeWidth(this.spreadsheet.styles.gridLine.strokeWidth! / 2);
-
-    for (const ri of iterateSelection(mergedCells.row)) {
-      for (const ci of iterateSelection(mergedCells.col)) {
-        const id = getCellId(ri, ci);
-
-        this.associatedMergedCellIdMap.set(id, mergedCellId);
-        this.sheet.cellRenderer.destroyCell(id);
-      }
-    }
-
-    this.sheet.cellRenderer.cellsMap.set(mergedCellId, mergedCell);
-
-    this.sheet.cellRenderer.drawCell(mergedCell);
-  }
-
-  getConvertedMergedCell(mergedCell: Cell) {
-    const rect = getCellRectFromCell(mergedCell);
-    // We don't use getClientRect as we don't want the
-    // mergedCells gridLines taken into account
-    const cell = this.sheet.cellRenderer.getNewCell(
-      mergedCell.id(),
-      {
-        x: mergedCell.x(),
-        y: mergedCell.y(),
-        width: rect.width(),
-        height: rect.height(),
-      },
-      mergedCell.attrs.row,
-      mergedCell.attrs.col
-    );
-
-    return cell;
   }
 
   getAreMergedCellsOverlapping(

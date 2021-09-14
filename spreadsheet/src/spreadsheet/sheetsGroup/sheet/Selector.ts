@@ -217,10 +217,9 @@ class Selector {
   selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
+      this.sheet.cellRenderer.updateCellClientRect(cell);
 
       this.sheet.cellRenderer.drawCell(cell);
-
-      cell.moveToTop();
     });
   }
 

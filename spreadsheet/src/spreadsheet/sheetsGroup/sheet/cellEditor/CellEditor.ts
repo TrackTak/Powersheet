@@ -99,11 +99,16 @@ class CellEditor {
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.selectedFirstCell!;
-    this.setCellEditorElPosition(selectedCell.getClientRect());
+    this.setCellEditorElPosition(
+      selectedCell.getClientRect({
+        skipStroke: true,
+      })
+    );
     this.cellEditorEl.focus();
   };
 
   private setCellEditorElPosition = (position: IRect) => {
+    console.log(position);
     this.cellEditorContainerEl.style.top = `${position.y}px`;
     this.cellEditorContainerEl.style.left = `${position.x}px`;
     this.cellEditorContainerEl.style.minWidth = `${position.width}px`;

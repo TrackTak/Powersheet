@@ -111,10 +111,6 @@ export interface ICustomSizes {
   size: number;
 }
 
-export const removeChild = (cell: Cell, type: string) => {
-  cell.children?.find((x) => x.attrs.type === type)?.remove();
-};
-
 export const getCellRectFromCell = (cell: Cell) => {
   const cellRect = cell.children?.find(
     (x) => x.attrs.type === 'cellRect'
@@ -162,14 +158,6 @@ export const getRowColGroupFromScrollGroup = (scrollGroup: Group) => {
 export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
     (x) => x.attrs.type === 'cell'
-  ) as Group;
-
-  return cellGroup;
-};
-
-export const getMergedCellGroupFromScrollGroup = (scrollGroup: Group) => {
-  const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
-    (x) => x.attrs.type === 'mergedCell'
   ) as Group;
 
   return cellGroup;
@@ -330,11 +318,6 @@ class Sheet {
         type: 'cell',
       });
 
-      const mergedCellGroup = new Group({
-        ...performanceProperties,
-        type: 'mergedCell',
-      });
-
       const rowColGroup = new Group({
         ...performanceProperties,
         type: 'rowCol',
@@ -347,7 +330,7 @@ class Sheet {
       });
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(cellGroup, rowColGroup, mergedCellGroup);
+      sheetGroup.add(rowColGroup, cellGroup);
       scrollGroup.add(sheetGroup, headerGroup);
     });
 
@@ -418,8 +401,6 @@ class Sheet {
     this.updateViewport();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
-
-    this.cellEditor = new CellEditor(this);
   }
 
   restoreHyperformulaData = () => {
@@ -589,14 +570,11 @@ class Sheet {
     for (const ri of iterateSelection(rowIndexes)) {
       for (const ci of iterateSelection(colIndexes)) {
         const existingCellId = getCellId(ri, ci);
-        const mergedCellId =
+        const mergedCells =
           this.merger.associatedMergedCellIdMap.get(existingCellId);
 
-        if (mergedCellId) {
-          const mergedCell = this.cellRenderer.cellsMap.get(mergedCellId)!;
-
-          const row = mergedCell.attrs.row;
-          const col = mergedCell.attrs.col;
+        if (mergedCells) {
+          const { row, col } = mergedCells;
 
           if (col.x < colIndexes.x) {
             colIndexes.x = col.x;
@@ -658,7 +636,7 @@ class Sheet {
     this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateCellsClientRect();
+    this.cellRenderer.updateCellsStyles();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
   }

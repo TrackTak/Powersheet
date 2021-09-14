@@ -426,7 +426,9 @@ class Toolbar {
           // Manually call updateCell and not calling updateViewport
           // due to it in triggering very quick succession. debounce does
           // not work well either.
-          sheet.cellRenderer.updateCell(id);
+          const cellWithStyles = sheet.cellRenderer.getCellWithStyles(id);
+
+          sheet.cellRenderer.updateCell(cellWithStyles);
         });
 
         break;

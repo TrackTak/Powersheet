@@ -117,9 +117,10 @@ export const createDropdownButton = (
 
   button.classList.add(
     styles.dropdownButton,
-    `${classNamePrefix}-dropdown-button`,
-    `${classNamePrefix}-${name}-dropdown-button`
+    `${classNamePrefix}-dropdown-button`
   );
+
+  text.classList.add(`${classNamePrefix}-text`);
 
   button.appendChild(text);
 
@@ -145,8 +146,7 @@ export const createDropdownIconButton = (
   iconButtonValues.button.classList.add(
     styles.dropdownIconButton,
     `${classNamePrefix}-dropdown-button`,
-    `${classNamePrefix}-dropdown-icon-button`,
-    `${classNamePrefix}-${name}-icon-button`
+    `${classNamePrefix}-dropdown-icon-button`
   );
 
   const { arrowIconValues, tooltip } = createDropdownActionElement(
@@ -184,11 +184,7 @@ export const createIconButton = (
 
   button.dataset.name = name;
 
-  button.classList.add(
-    styles.iconButton,
-    `${classNamePrefix}-icon-button`,
-    `${classNamePrefix}-${name}-icon-button`
-  );
+  button.classList.add(styles.iconButton, `${classNamePrefix}-icon-button`);
 
   const iconValues = createIcon(name, classNamePrefix);
 

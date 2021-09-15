@@ -3,8 +3,6 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import {
   BorderStyle,
-  getCellRectFromCell,
-  getCellTextFromCell,
   HorizontalTextAlign,
   ICellStyle,
   TextWrap,
@@ -101,8 +99,6 @@ class Toolbar {
     const { dropdownContent, fontSizes } = createFontSizeContent();
 
     this.setDropdownButtonContent('fontSize', dropdownContent, true);
-
-    this.buttonElementsMap.fontSize.text.textContent = '10';
 
     this.fontSizeElements = {
       fontSizes,
@@ -321,6 +317,17 @@ class Toolbar {
       });
     });
 
+    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
+      const fontSize = parseInt(key, 10);
+
+      this.fontSizeElements.fontSizes[fontSize].addEventListener(
+        'click',
+        () => {
+          this.setValue('fontSize', fontSize);
+        }
+      );
+    });
+
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
   }
 
@@ -452,7 +459,7 @@ class Toolbar {
     });
   }
 
-  setValue = (name: IconElementsName, value?: any) => {
+  setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
@@ -496,6 +503,10 @@ class Toolbar {
           'verticalTextAlign',
           'bottom'
         );
+        break;
+      }
+      case 'fontSize': {
+        this.setStyleForSelectedCells<number>('fontSize', value);
         break;
       }
       case 'textWrap': {
@@ -655,6 +666,7 @@ class Toolbar {
     );
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
+    this.setActiveFontSize(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
   };
 
@@ -723,24 +735,21 @@ class Toolbar {
     cellId: CellId,
     colorPickerIconName: ColorPickerIconName
   ) {
-    const isBackgroundColor = colorPickerIconName === 'backgroundColor';
-    const sheet = this.spreadsheet.focusedSheet!;
-    const defaultFill = isBackgroundColor ? '' : 'black';
+    let fill;
 
-    if (sheet.cellRenderer.cellsMap.has(cellId)) {
-      const cell = sheet.cellRenderer.cellsMap.get(cellId)!;
-      const shape = isBackgroundColor
-        ? getCellRectFromCell(cell)
-        : getCellTextFromCell(cell);
-
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = shape?.fill() ?? defaultFill;
+    if (colorPickerIconName === 'backgroundColor') {
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.backgroundColor ?? '';
     } else {
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = defaultFill;
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
     }
+
+    this.colorPickerElementsMap[
+      colorPickerIconName
+    ].colorBar.style.backgroundColor = fill;
   }
 
   setActiveMergedCells(selectedCells: Cell[]) {
@@ -795,6 +804,16 @@ class Toolbar {
         icon.dataset.activeIcon = 'middle';
         break;
     }
+  }
+
+  setActiveFontSize(cellId: CellId) {
+    const fontSize =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.fontSize;
+
+    this.buttonElementsMap.fontSize.text.textContent = (
+      fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
+    ).toString();
   }
 
   isFreezeActive() {

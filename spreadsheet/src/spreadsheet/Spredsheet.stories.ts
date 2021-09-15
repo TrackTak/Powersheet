@@ -144,6 +144,7 @@ CellsData.args = {
           style: {
             underline: true,
             strikeThrough: true,
+            fontSize: 36,
             borders: ['borderBottom'],
           },
           value: 'Some value',

@@ -70,12 +70,12 @@ MergedCells.args = {
       mergedCells: [
         {
           row: {
-            x: 4,
+            x: 5,
             y: 5,
           },
           col: {
             x: 1,
-            y: 5,
+            y: 3,
           },
         },
       ],
@@ -92,13 +92,13 @@ DifferentSizeCells.args = {
       sheetName: 'Different Size Cells',
       col: {
         sizes: {
-          '3': 70,
+          3: 70,
         },
       },
       row: {
         sizes: {
-          '1': 250,
-          '5': 100,
+          1: 250,
+          5: 100,
         },
       },
     },
@@ -115,9 +115,24 @@ CellsData.args = {
       cellsData: {
         '1_0': {
           style: {
+            horizontalTextAlign: 'right',
+            verticalTextAlign: 'bottom',
             backgroundColor: 'red',
+            fontColor: '#ffeb3b',
           },
           value: 'HI!',
+        },
+        '1_1': {
+          style: {
+            textWrap: 'wrap',
+            horizontalTextAlign: 'center',
+            verticalTextAlign: 'middle',
+            bold: true,
+            italic: true,
+          },
+          comment: 'Powersheet is the best',
+          value:
+            'A very long piece of text that should wrap to the next line on the word.',
         },
         '3_3': {
           style: {
@@ -127,8 +142,11 @@ CellsData.args = {
         },
         '4_1': {
           style: {
-            borders: ['borderBottom', 'borderTop'],
+            underline: true,
+            strikeThrough: true,
+            borders: ['borderBottom'],
           },
+          value: 'Some value',
         },
       },
     },

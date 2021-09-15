@@ -73,7 +73,7 @@ class ScrollBar {
 
     Object.keys(sizes).forEach((key) => {
       const index = parseInt(key, 10);
-      const size = sizes[key];
+      const size = sizes[index];
       const axis =
         index * this.spreadsheet.options[this.type].defaultSize +
         customSizeDifference;

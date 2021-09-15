@@ -52,8 +52,8 @@ export const performanceProperties = {
 const sharedStyles = {
   gridLine: {
     ...performanceProperties,
-    stroke: '#c6c6c6',
-    strokeWidth: 0.6,
+    stroke: '#e3e3e3',
+    strokeWidth: 1,
   },
   resizeMarker: {
     ...performanceProperties,
@@ -157,6 +157,7 @@ export const defaultStyles: IStyles = {
   cell: {
     text: {
       ...sharedStyles.headerText,
+      type: 'cellText',
       fontSize: 16,
       fill: 'black',
       align: 'left',

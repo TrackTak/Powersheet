@@ -4,7 +4,7 @@ import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell } from './CellRenderer';
-import Sheet, { getCellRectFromCell, makeShapeCrisp } from './Sheet';
+import Sheet, { getCellRectFromCell } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -87,6 +87,9 @@ class Selector {
     this.setFirstCell(cells[0]);
     this.selectCells(cells);
 
+    this.spreadsheet.setFocusedSheet(this.sheet);
+    this.spreadsheet.toolbar?.updateActiveStates();
+
     this.sheet.emit(
       events.selector.startSelection,
       this.sheet,
@@ -110,8 +113,6 @@ class Selector {
 
     firstCellRect.width(firstCellRect.width() - firstCellRect.strokeWidth());
     firstCellRect.height(firstCellRect.height() - firstCellRect.strokeWidth());
-
-    makeShapeCrisp(firstCellRect);
 
     this.selectedFirstCell = cell;
   }
@@ -179,6 +180,7 @@ class Selector {
         this.removeSelectedCells(false);
 
         this.selectCells(cells);
+        this.spreadsheet.toolbar?.updateActiveStates();
 
         this.sheet.emit(events.selector.moveSelection, cells);
       }
@@ -215,10 +217,9 @@ class Selector {
   selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
+      this.sheet.cellRenderer.updateCellClientRect(cell);
 
       this.sheet.cellRenderer.drawCell(cell);
-
-      cell.moveToTop();
     });
   }
 

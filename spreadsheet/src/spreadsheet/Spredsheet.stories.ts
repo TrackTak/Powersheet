@@ -118,6 +118,7 @@ CellsData.args = {
             horizontalTextAlign: 'right',
             verticalTextAlign: 'bottom',
             backgroundColor: 'red',
+            fontColor: '#ffeb3b',
           },
           value: 'HI!',
         },
@@ -126,6 +127,8 @@ CellsData.args = {
             textWrap: 'wrap',
             horizontalTextAlign: 'center',
             verticalTextAlign: 'middle',
+            bold: true,
+            italic: true,
           },
           comment: 'Powersheet is the best',
           value:
@@ -139,8 +142,11 @@ CellsData.args = {
         },
         '4_1': {
           style: {
+            underline: true,
+            strikeThrough: true,
             borders: ['borderBottom'],
           },
+          value: 'Some value',
         },
       },
     },

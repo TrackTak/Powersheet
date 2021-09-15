@@ -1,12 +1,15 @@
 import { ACPController, createPicker } from 'a-color-picker';
-import { sentenceCase } from 'sentence-case';
-import { createIcon, createIconButton } from '../htmlElementHelpers';
+import {
+  createDropdownContent,
+  createIconButton,
+  DropdownIconName,
+} from '../htmlElementHelpers';
 import { prefix } from '../utils';
 import styles from './Toolbar.module.scss';
 
 export const toolbarPrefix = `${prefix}-toolbar`;
 
-export type ColorPickerIconName = 'backgroundColor' | 'color';
+export type ColorPickerIconName = 'backgroundColor' | 'fontColor';
 
 export type BorderIconFirstRowsName =
   | 'borderAll'
@@ -36,13 +39,6 @@ export type InnerDropdownIconName =
   | HorizontalTextAlignName
   | VerticalTextAlignName;
 
-export type DropdownIconName =
-  | ColorPickerIconName
-  | 'functions'
-  | 'verticalTextAlign'
-  | 'horizontalTextAlign'
-  | 'borders';
-
 export const borderTypes: [
   BorderIconName,
   BorderIconName,
@@ -62,11 +58,11 @@ export const borderTypes: [
 export const toggleIconNames = <const>[
   'undo',
   'redo',
-  'fontBold',
-  'fontItalic',
+  'bold',
+  'italic',
+  'fontColor',
   'underline',
-  'strike',
-  'color',
+  'strikeThrough',
   'backgroundColor',
   'merge',
   'horizontalTextAlign',
@@ -80,37 +76,22 @@ export const toggleIconNames = <const>[
   'formula',
 ];
 
+const fontSizeArray = <const>[6, 7, 8, 9, 10, 11, 12, 14, 18, 24, 36];
+
 export type IconElementsName =
   | DropdownIconName
   | InnerDropdownIconName
   | typeof toggleIconNames[number];
 
-export const createTooltip = (name: string) => {
-  const tooltip = document.createElement('span');
-
-  tooltip.dataset.tippyContent = sentenceCase(name);
-  tooltip.classList.add(styles.tooltip, `${toolbarPrefix}-tooltip`);
-
-  return tooltip;
+export type FontSizes = {
+  [index in typeof fontSizeArray[number]]: HTMLButtonElement;
 };
 
-export const createDropdownContent = (className?: string) => {
-  const dropdownContent = document.createElement('div');
-
-  dropdownContent.classList.add(
-    styles.dropdownContent,
-    `${toolbarPrefix}-dropdown-content`
-  );
-
-  if (className) {
-    dropdownContent.classList.add(className);
-  }
-
-  return dropdownContent;
-};
+export const createToolbarIconButton = (name: IconElementsName) =>
+  createIconButton(name, toolbarPrefix);
 
 export const createColorPickerContent = () => {
-  const dropdownContent = createDropdownContent();
+  const dropdownContent = createDropdownContent(toolbarPrefix);
 
   const colorPicker = document.createElement('div');
 
@@ -144,11 +125,8 @@ export const createColorBar = (picker: ACPController) => {
   return colorBar;
 };
 
-export const createToolbarIconButton = (name: IconElementsName) =>
-  createIconButton(name, toolbarPrefix);
-
 export const createBordersContent = () => {
-  const dropdownContent = createDropdownContent(styles.borders);
+  const dropdownContent = createDropdownContent(toolbarPrefix, styles.borders);
 
   const firstBordersRow = {
     borderAll: createToolbarIconButton('borderAll'),
@@ -192,7 +170,7 @@ export const createBordersContent = () => {
 };
 
 export const createVerticalTextAlignContent = () => {
-  const dropdownContent = createDropdownContent();
+  const dropdownContent = createDropdownContent(toolbarPrefix);
 
   const aligns = {
     alignTop: createToolbarIconButton('alignTop'),
@@ -208,7 +186,7 @@ export const createVerticalTextAlignContent = () => {
 };
 
 export const createHorizontalTextAlignContent = () => {
-  const dropdownContent = createDropdownContent();
+  const dropdownContent = createDropdownContent(toolbarPrefix);
 
   const aligns = {
     alignLeft: createToolbarIconButton('alignLeft'),
@@ -223,10 +201,46 @@ export const createHorizontalTextAlignContent = () => {
   return { dropdownContent, aligns };
 };
 
+export const createFontSizeContent = () => {
+  const dropdownContent = createDropdownContent(
+    toolbarPrefix,
+    styles.fontSizes
+  );
+
+  const createFontSizeButton = (fontSize: number) => {
+    const fontSizeButton = document.createElement('button');
+
+    fontSizeButton.textContent = fontSize.toString();
+
+    fontSizeButton.classList.add(
+      `${toolbarPrefix}-font-size`,
+      styles.fontSizeButton,
+      fontSize.toString()
+    );
+
+    return fontSizeButton;
+  };
+
+  const fontSizes: FontSizes = {} as FontSizes;
+
+  fontSizeArray.forEach((fontSize) => {
+    const fontSizeButton = createFontSizeButton(fontSize);
+
+    fontSizes[fontSize] = fontSizeButton;
+
+    dropdownContent.appendChild(fontSizeButton);
+  });
+
+  return { dropdownContent, fontSizes };
+};
+
 export const createFunctionDropdownContent = (
   registeredFunctionNames: string[]
 ) => {
-  const dropdownContent = createDropdownContent(styles.functions);
+  const dropdownContent = createDropdownContent(
+    toolbarPrefix,
+    styles.functions
+  );
 
   const registeredFunctionButtons = registeredFunctionNames.map(
     (functionName) => {
@@ -246,41 +260,4 @@ export const createFunctionDropdownContent = (
   );
 
   return { dropdownContent, registeredFunctionButtons };
-};
-
-export const createDropdownIconButton = (
-  name: DropdownIconName,
-  createArrow: boolean = false
-) => {
-  const iconButtonValues = createToolbarIconButton(name);
-  const tooltip = createTooltip(name);
-
-  iconButtonValues.button.classList.add(
-    styles.dropdownIconButton,
-    `${toolbarPrefix}-dropdown-icon-button`
-  );
-
-  let arrowIconValues;
-
-  if (createArrow) {
-    const iconValues = createIcon('arrowDown', toolbarPrefix);
-    arrowIconValues = {
-      arrowIcon: iconValues.icon,
-      arrowIconContainer: iconValues.iconContainer,
-    };
-
-    iconButtonValues.button.appendChild(arrowIconValues.arrowIconContainer);
-  }
-
-  iconButtonValues.button.appendChild(tooltip);
-
-  return { iconButtonValues, arrowIconValues, tooltip };
-};
-
-export const createDropdown = () => {
-  const dropdown = document.createElement('div');
-
-  dropdown.classList.add(styles.dropdown, `${toolbarPrefix}-dropdown`);
-
-  return dropdown;
 };

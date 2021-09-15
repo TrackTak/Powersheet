@@ -7,7 +7,6 @@ import { merge } from 'lodash';
 import Spreadsheet from '../../Spreadsheet';
 import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
-import { defaultCellFill } from './Merger';
 import Sheet, {
   BorderStyle,
   getCellGroupFromScrollGroup,
@@ -177,14 +176,39 @@ class CellRenderer {
 
     if (style) {
       const {
-        backgroundColor,
         borders,
+        backgroundColor,
+        fontColor,
+        bold,
+        italic,
+        strikeThrough,
+        underline,
         horizontalTextAlign,
         verticalTextAlign,
       } = style;
 
       if (backgroundColor) {
-        this.setCellBackgroundColor(cell, backgroundColor);
+        this.setBackgroundColor(cell, backgroundColor);
+      }
+
+      if (fontColor) {
+        this.setFontColor(cell, fontColor);
+      }
+
+      if (bold) {
+        this.setBold(cell, bold);
+      }
+
+      if (italic) {
+        this.setItalic(cell, italic);
+      }
+
+      if (strikeThrough) {
+        this.setStrikeThrough(cell, strikeThrough);
+      }
+
+      if (underline) {
+        this.setUnderline(cell, underline);
       }
 
       if (horizontalTextAlign) {
@@ -323,10 +347,85 @@ class CellRenderer {
     }
   }
 
-  setCellBackgroundColor(cell: Cell, backgroundColor: string) {
+  setBackgroundColor(cell: Cell, backgroundColor: string) {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
+  }
+
+  setFontColor(cell: Cell, fontColor: string) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.fill(fontColor);
+    }
+  }
+
+  private getFontStyle(bold: boolean | undefined, italic: boolean | undefined) {
+    if (bold && italic) return 'italic bold';
+
+    if (bold && !italic) return 'bold';
+
+    if (!bold && italic) return 'italic';
+
+    return 'normal';
+  }
+
+  setBold(cell: Cell, bold: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const italic = this.getCellData(cell.id())?.style?.italic;
+      const fontStyle = this.getFontStyle(bold, italic);
+
+      cellText.fontStyle(fontStyle);
+    }
+  }
+
+  setItalic(cell: Cell, italic: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const bold = this.getCellData(cell.id())?.style?.bold;
+      const fontStyle = this.getFontStyle(bold, italic);
+
+      cellText.fontStyle(fontStyle);
+    }
+  }
+
+  private getTextDecoration(
+    strikeThrough: boolean | undefined,
+    underline: boolean | undefined
+  ) {
+    if (strikeThrough && underline) return 'line-through underline';
+
+    if (strikeThrough && !underline) return 'line-through';
+
+    if (!strikeThrough && underline) return 'underline';
+
+    return '';
+  }
+
+  setStrikeThrough(cell: Cell, strikeThrough: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const underline = this.getCellData(cell.id())?.style?.underline;
+      const textDecoration = this.getTextDecoration(strikeThrough, underline);
+
+      cellText.textDecoration(textDecoration);
+    }
+  }
+
+  setUnderline(cell: Cell, underline: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const strikeThrough = this.getCellData(cell.id())?.style?.strikeThrough;
+      const textDecoration = this.getTextDecoration(strikeThrough, underline);
+
+      cellText.textDecoration(textDecoration);
+    }
   }
 
   setHorizontalTextAlign(cell: Cell, horizontalTextAlign: HorizontalTextAlign) {
@@ -419,7 +518,7 @@ class CellRenderer {
     )!;
     const cellRect = getCellRectFromCell(cell);
 
-    cellRect.fill(defaultCellFill);
+    cellRect.fill('white');
     cellRect.stroke(this.spreadsheet.styles.gridLine.stroke as string);
     cellRect.strokeWidth(this.spreadsheet.styles.gridLine.strokeWidth!);
 

@@ -10,7 +10,31 @@ $iconSize: 18px;
   display: inline-block;
 }
 
-.iconButton {
+.tooltip {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+.dropdownContent {
+  overflow: auto;
+  display: flex;
+}
+
+.dropdownIconButton {
+  .arrowDownIconContainer {
+    width: 10px;
+
+    .arrowDown {
+      left: -130px;
+    }
+  }
+}
+
+.iconButton,
+.dropdownButton {
   @include button();
   position: relative;
   user-select: none;
@@ -47,11 +71,11 @@ $iconSize: 18px;
     left: -4 * $iconSize;
     top: 0;
   }
-  &.fontBold {
+  &.bold {
     left: -5 * $iconSize;
     top: 0;
   }
-  &.fontItalic {
+  &.italic {
     left: -6 * $iconSize;
     top: 0;
   }
@@ -59,11 +83,11 @@ $iconSize: 18px;
     left: -7 * $iconSize;
     top: 0;
   }
-  &.strike {
+  &.strikeThrough {
     left: -8 * $iconSize;
     top: 0;
   }
-  &.color {
+  &.fontColor {
     left: -9 * $iconSize;
     top: 0;
   }

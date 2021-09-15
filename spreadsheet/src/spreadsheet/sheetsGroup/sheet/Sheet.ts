@@ -76,9 +76,14 @@ export type HorizontalTextAlign = 'left' | 'center' | 'right';
 export type VerticalTextAlign = 'top' | 'middle' | 'bottom';
 
 export interface ICellStyle {
-  backgroundColor?: string;
   borders?: BorderStyle[];
+  backgroundColor?: string;
+  fontColor?: string;
   textWrap?: TextWrap;
+  underline?: boolean;
+  strikeThrough?: boolean;
+  bold?: boolean;
+  italic?: boolean;
   horizontalTextAlign?: HorizontalTextAlign;
   verticalTextAlign?: VerticalTextAlign;
 }

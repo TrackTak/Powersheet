@@ -4,8 +4,6 @@ import { CellId, getCellId } from './CellRenderer';
 
 export type AssociatedMergedCellId = CellId;
 
-export const defaultCellFill = 'white';
-
 class Merger {
   associatedMergedCellIdMap: Map<AssociatedMergedCellId, IMergedCells>;
 

@@ -16,15 +16,15 @@ import {
   createColorPickerContent,
   createDropdownIconButton,
   createFunctionDropdownContent,
-  createHorizontalAlignContent,
+  createHorizontalTextAlignContent,
   createTooltip,
-  createVerticalAlignContent,
+  createVerticalTextAlignContent,
   DropdownIconName,
-  HorizontalAlignName,
+  HorizontalTextAlignName,
   IconElementsName,
   toggleIconNames,
   toolbarPrefix,
-  VerticalAlignName,
+  VerticalTextAlignName,
 } from './toolbarHtmlElementHelpers';
 import {
   createGroup,
@@ -135,13 +135,14 @@ class Toolbar {
 
           break;
         }
-        case 'horizontalAlign': {
-          const { dropdownContent, aligns } = createHorizontalAlignContent();
+        case 'horizontalTextAlign': {
+          const { dropdownContent, aligns } =
+            createHorizontalTextAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
-            const name = key as HorizontalAlignName;
+            const name = key as HorizontalTextAlignName;
             const value = aligns[name];
 
             this.iconElementsMap[name] = value;
@@ -149,13 +150,13 @@ class Toolbar {
 
           break;
         }
-        case 'verticalAlign': {
-          const { dropdownContent, aligns } = createVerticalAlignContent();
+        case 'verticalTextAlign': {
+          const { dropdownContent, aligns } = createVerticalTextAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
-            const name = key as VerticalAlignName;
+            const name = key as VerticalTextAlignName;
             const value = aligns[name];
 
             this.iconElementsMap[name] = value;
@@ -255,8 +256,8 @@ class Toolbar {
       },
       {
         elements: [
-          icons.horizontalAlign.buttonContainer,
-          icons.verticalAlign.buttonContainer,
+          icons.horizontalTextAlign.buttonContainer,
+          icons.verticalTextAlign.buttonContainer,
           icons.textWrap.buttonContainer,
         ],
       },
@@ -554,11 +555,12 @@ class Toolbar {
 
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
+    const firstSelectedCellId = firstSelectedCell!.id();
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellRenderer.cellsMap.has(firstSelectedCell!.id())) {
-      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCell!.id())!;
+    if (sheet.cellRenderer.cellsMap.has(firstSelectedCellId)) {
+      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCellId)!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;
@@ -574,8 +576,10 @@ class Toolbar {
 
     this.setActive(
       this.iconElementsMap.textWrap,
-      this.isTextWrapActive(firstSelectedCell!.id())
+      this.isTextWrapActive(firstSelectedCellId)
     );
+    this.setActiveHorizontalIcon(firstSelectedCellId);
+    this.setActiveVerticalIcon(firstSelectedCellId);
 
     this.setMergedState(selectedCells);
   };
@@ -632,6 +636,44 @@ class Toolbar {
       picker,
       colorPicker,
     };
+  }
+
+  setActiveHorizontalIcon(cellId: CellId) {
+    const horizontalTextAlign =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.horizontalTextAlign;
+    const icon = this.iconElementsMap.horizontalTextAlign.icon;
+
+    switch (horizontalTextAlign) {
+      case 'center':
+        icon.dataset.activeIcon = 'center';
+        break;
+      case 'right':
+        icon.dataset.activeIcon = 'right';
+        break;
+      default:
+        icon.dataset.activeIcon = 'left';
+        break;
+    }
+  }
+
+  setActiveVerticalIcon(cellId: CellId) {
+    const verticalTextAlign =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.verticalTextAlign;
+    const icon = this.iconElementsMap.verticalTextAlign.icon;
+
+    switch (verticalTextAlign) {
+      case 'top':
+        icon.dataset.activeIcon = 'top';
+        break;
+      case 'bottom':
+        icon.dataset.activeIcon = 'bottom';
+        break;
+      default:
+        icon.dataset.activeIcon = 'middle';
+        break;
+    }
   }
 
   isFreezeActive() {

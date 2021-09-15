@@ -115,6 +115,8 @@ CellsData.args = {
       cellsData: {
         '1_0': {
           style: {
+            horizontalTextAlign: 'right',
+            verticalTextAlign: 'bottom',
             backgroundColor: 'red',
           },
           value: 'HI!',
@@ -125,6 +127,7 @@ CellsData.args = {
             horizontalTextAlign: 'center',
             verticalTextAlign: 'middle',
           },
+          comment: 'Powersheet is the best',
           value:
             'A very long piece of text that should wrap to the next line on the word.',
         },

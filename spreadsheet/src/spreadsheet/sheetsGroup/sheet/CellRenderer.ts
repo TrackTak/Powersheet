@@ -125,6 +125,7 @@ class CellRenderer {
     const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
     const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
     const cellRect = getCellRectFromCell(cell);
+    const cellText = getCellTextFromCell(cell);
     const isMerged = this.sheet.merger.getIsCellMerged(id);
 
     cell.x(colGroup.x());
@@ -147,6 +148,13 @@ class CellRenderer {
     } else {
       cellRect.width(colGroup.width());
       cellRect.height(rowGroup.height());
+    }
+
+    const clientRect = cell.getClientRect({ skipStroke: true });
+
+    if (cellText) {
+      cellText.height(clientRect.height);
+      cellText.width(clientRect.width);
     }
   }
 
@@ -353,14 +361,13 @@ class CellRenderer {
   }
 
   setCellTextValue(cell: Cell, value: string) {
-    const { width, height } = cell.getClientRect({
-      skipStroke: true,
-    });
+    const { width } = cell.getClientRect({ skipStroke: true });
+
     const text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
+      // Only set the width for textWrapping to work
       width,
-      height,
     });
 
     cell.add(text);

@@ -76,28 +76,32 @@ $iconSize: 18px;
     top: 0;
   }
   &.alignLeft,
-  &.horizontalAlign {
+  &[data-active-icon='left'] {
     left: -12 * $iconSize;
     top: 0;
   }
-  &.alignCenter {
+  &.alignCenter,
+  &[data-active-icon='center'] {
     left: -13 * $iconSize;
     top: 0;
   }
-  &.alignRight {
+  &.alignRight,
+  &[data-active-icon='right'] {
     left: 0;
     top: -1 * $iconSize;
   }
-  &.alignTop {
+  &.alignTop,
+  &[data-active-icon='top'] {
     left: -1 * $iconSize;
     top: -1 * $iconSize;
   }
   &.alignMiddle,
-  &.verticalAlign {
+  &[data-active-icon='middle'] {
     left: -2 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.alignBottom {
+  &.alignBottom,
+  &[data-active-icon='bottom'] {
     left: -3 * $iconSize;
     top: -1 * $iconSize;
   }

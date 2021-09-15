@@ -142,8 +142,11 @@ CellsData.args = {
         },
         '4_1': {
           style: {
+            underline: true,
+            strikeThrough: true,
             borders: ['borderBottom'],
           },
+          value: 'Some value',
         },
       },
     },

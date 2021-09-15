@@ -9,13 +9,15 @@ import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
 import { defaultCellFill } from './Merger';
 import Sheet, {
-  BorderStyleOption,
+  BorderStyle,
   getCellGroupFromScrollGroup,
   getCellRectFromCell,
   getCellTextFromCell,
+  HorizontalTextAlign,
   ICellData,
   ICellStyle,
   TextWrap,
+  VerticalTextAlign,
 } from './Sheet';
 
 export type CellId = string;
@@ -57,7 +59,7 @@ class CellRenderer {
     }
   }
 
-  setBorderStyle(id: CellId, borderType: BorderStyleOption) {
+  setBorderStyle(id: CellId, borderType: BorderStyle) {
     const borders = this.getCellData(id)?.style?.borders ?? [];
 
     if (borders.indexOf(borderType) === -1) {
@@ -123,6 +125,7 @@ class CellRenderer {
     const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
     const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
     const cellRect = getCellRectFromCell(cell);
+    const cellText = getCellTextFromCell(cell);
     const isMerged = this.sheet.merger.getIsCellMerged(id);
 
     cell.x(colGroup.x());
@@ -146,6 +149,13 @@ class CellRenderer {
       cellRect.width(colGroup.width());
       cellRect.height(rowGroup.height());
     }
+
+    const clientRect = cell.getClientRect({ skipStroke: true });
+
+    if (cellText) {
+      cellText.height(clientRect.height);
+      cellText.width(clientRect.width);
+    }
   }
 
   updateCellsStyles() {
@@ -166,10 +176,23 @@ class CellRenderer {
     }
 
     if (style) {
-      const { backgroundColor, borders } = style;
+      const {
+        backgroundColor,
+        borders,
+        horizontalTextAlign,
+        verticalTextAlign,
+      } = style;
 
       if (backgroundColor) {
         this.setCellBackgroundColor(cell, backgroundColor);
+      }
+
+      if (horizontalTextAlign) {
+        this.setHorizontalTextAlign(cell, horizontalTextAlign);
+      }
+
+      if (verticalTextAlign) {
+        this.setVerticalTextAlign(cell, verticalTextAlign);
       }
 
       if (borders) {
@@ -247,7 +270,7 @@ class CellRenderer {
     });
   }
 
-  private setBorder(cell: Cell, type: BorderStyleOption) {
+  private setBorder(cell: Cell, type: BorderStyle) {
     const clientRect = cell.getClientRect({
       skipStroke: true,
     });
@@ -306,6 +329,22 @@ class CellRenderer {
     cellRect.fill(backgroundColor);
   }
 
+  setHorizontalTextAlign(cell: Cell, horizontalTextAlign: HorizontalTextAlign) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.align(horizontalTextAlign);
+    }
+  }
+
+  setVerticalTextAlign(cell: Cell, verticalTextAlign: VerticalTextAlign) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.verticalAlign(verticalTextAlign);
+    }
+  }
+
   setCellCommentMarker(cell: Cell) {
     const clientRect = cell.getClientRect({
       skipStroke: true,
@@ -322,10 +361,13 @@ class CellRenderer {
   }
 
   setCellTextValue(cell: Cell, value: string) {
+    const { width } = cell.getClientRect({ skipStroke: true });
+
     const text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
-      width: cell.getClientRect().width,
+      // Only set the width for textWrapping to work
+      width,
     });
 
     cell.add(text);

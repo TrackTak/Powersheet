@@ -24,20 +24,23 @@ export type BorderIconSecondRowsName =
 
 export type BorderIconName = BorderIconFirstRowsName | BorderIconSecondRowsName;
 
-export type HorizontalAlignName = 'alignLeft' | 'alignCenter' | 'alignRight';
+export type HorizontalTextAlignName =
+  | 'alignLeft'
+  | 'alignCenter'
+  | 'alignRight';
 
-export type VerticalAlignName = 'alignTop' | 'alignMiddle' | 'alignBottom';
+export type VerticalTextAlignName = 'alignTop' | 'alignMiddle' | 'alignBottom';
 
 export type InnerDropdownIconName =
   | BorderIconName
-  | HorizontalAlignName
-  | VerticalAlignName;
+  | HorizontalTextAlignName
+  | VerticalTextAlignName;
 
 export type DropdownIconName =
   | ColorPickerIconName
   | 'functions'
-  | 'verticalAlign'
-  | 'horizontalAlign'
+  | 'verticalTextAlign'
+  | 'horizontalTextAlign'
   | 'borders';
 
 export const borderTypes: [
@@ -66,8 +69,8 @@ export const toggleIconNames = <const>[
   'color',
   'backgroundColor',
   'merge',
-  'horizontalAlign',
-  'verticalAlign',
+  'horizontalTextAlign',
+  'verticalTextAlign',
   'textWrap',
   'functions',
   'freeze',
@@ -188,7 +191,7 @@ export const createBordersContent = () => {
   return { dropdownContent, borderGroups, firstBordersRow, secondBordersRow };
 };
 
-export const createVerticalAlignContent = () => {
+export const createVerticalTextAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
   const aligns = {
@@ -204,7 +207,7 @@ export const createVerticalAlignContent = () => {
   return { dropdownContent, aligns };
 };
 
-export const createHorizontalAlignContent = () => {
+export const createHorizontalTextAlignContent = () => {
   const dropdownContent = createDropdownContent();
 
   const aligns = {

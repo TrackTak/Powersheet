@@ -59,22 +59,28 @@ export interface ISizes {
   [index: number]: number;
 }
 
-export type BorderStyleOption =
+export interface IRowColData {
+  sizes: ISizes;
+}
+
+export type BorderStyle =
   | 'borderLeft'
   | 'borderTop'
   | 'borderRight'
   | 'borderBottom';
 
-export interface IRowColData {
-  sizes: ISizes;
-}
-
 export type TextWrap = 'wrap';
+
+export type HorizontalTextAlign = 'left' | 'center' | 'right';
+
+export type VerticalTextAlign = 'top' | 'middle' | 'bottom';
 
 export interface ICellStyle {
   backgroundColor?: string;
-  borders?: BorderStyleOption[];
+  borders?: BorderStyle[];
   textWrap?: TextWrap;
+  horizontalTextAlign?: HorizontalTextAlign;
+  verticalTextAlign?: VerticalTextAlign;
 }
 
 export interface ICellData {

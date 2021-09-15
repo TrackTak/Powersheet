@@ -1,7 +1,13 @@
 import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
-import { BorderStyleOption } from '../sheetsGroup/sheet/Sheet';
+import {
+  BorderStyle,
+  HorizontalTextAlign,
+  ICellStyle,
+  TextWrap,
+  VerticalTextAlign,
+} from '../sheetsGroup/sheet/Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
@@ -10,15 +16,15 @@ import {
   createColorPickerContent,
   createDropdownIconButton,
   createFunctionDropdownContent,
-  createHorizontalAlignContent,
+  createHorizontalTextAlignContent,
   createTooltip,
-  createVerticalAlignContent,
+  createVerticalTextAlignContent,
   DropdownIconName,
-  HorizontalAlignName,
+  HorizontalTextAlignName,
   IconElementsName,
   toggleIconNames,
   toolbarPrefix,
-  VerticalAlignName,
+  VerticalTextAlignName,
 } from './toolbarHtmlElementHelpers';
 import {
   createGroup,
@@ -129,13 +135,14 @@ class Toolbar {
 
           break;
         }
-        case 'horizontalAlign': {
-          const { dropdownContent, aligns } = createHorizontalAlignContent();
+        case 'horizontalTextAlign': {
+          const { dropdownContent, aligns } =
+            createHorizontalTextAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
-            const name = key as HorizontalAlignName;
+            const name = key as HorizontalTextAlignName;
             const value = aligns[name];
 
             this.iconElementsMap[name] = value;
@@ -143,13 +150,13 @@ class Toolbar {
 
           break;
         }
-        case 'verticalAlign': {
-          const { dropdownContent, aligns } = createVerticalAlignContent();
+        case 'verticalTextAlign': {
+          const { dropdownContent, aligns } = createVerticalTextAlignContent();
 
           this.setDropdownContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
-            const name = key as VerticalAlignName;
+            const name = key as VerticalTextAlignName;
             const value = aligns[name];
 
             this.iconElementsMap[name] = value;
@@ -249,8 +256,8 @@ class Toolbar {
       },
       {
         elements: [
-          icons.horizontalAlign.buttonContainer,
-          icons.verticalAlign.buttonContainer,
+          icons.horizontalTextAlign.buttonContainer,
+          icons.verticalTextAlign.buttonContainer,
           icons.textWrap.buttonContainer,
         ],
       },
@@ -286,7 +293,7 @@ class Toolbar {
   private setBorderStyles(
     cells: Cell[],
     cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
-    borderType: BorderStyleOption
+    borderType: BorderStyle
   ) {
     const sheet = this.spreadsheet.focusedSheet!;
     const borderCells = cells.filter(cellsFilter);
@@ -389,41 +396,90 @@ class Toolbar {
     });
   }
 
+  private deleteStyleForSelectedCells(key: keyof ICellStyle) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    sheet.selector.selectedCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.cellRenderer.deleteCellStyle(id, key);
+    });
+  }
+
+  private setStyleForSelectedCells<T>(key: keyof ICellStyle, value: T) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    sheet.selector.selectedCells.forEach((cell) => {
+      const id = cell.id();
+
+      sheet.cellRenderer.setCellDataStyle(id, {
+        [key]: value,
+      });
+    });
+  }
+
   setValue = (name: IconElementsName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'alignLeft': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'left'
+        );
+        break;
+      }
+      case 'alignCenter': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'center'
+        );
+        break;
+      }
+      case 'alignRight': {
+        this.setStyleForSelectedCells<HorizontalTextAlign>(
+          'horizontalTextAlign',
+          'right'
+        );
+        break;
+      }
+      case 'alignTop': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'top'
+        );
+        break;
+      }
+      case 'alignMiddle': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'middle'
+        );
+        break;
+      }
+      case 'alignBottom': {
+        this.setStyleForSelectedCells<VerticalTextAlign>(
+          'verticalTextAlign',
+          'bottom'
+        );
+        break;
+      }
       case 'textWrap': {
         if (this.iconElementsMap.textWrap.active) {
-          sheet.selector.selectedCells.forEach((cell) => {
-            const id = cell.id();
-
-            sheet.cellRenderer.deleteCellStyle(id, 'textWrap');
-          });
+          this.deleteStyleForSelectedCells('textWrap');
         } else {
-          sheet.selector.selectedCells.forEach((cell) => {
-            const id = cell.id();
-
-            sheet.cellRenderer.setCellDataStyle(id, {
-              textWrap: 'wrap',
-            });
-          });
+          this.setStyleForSelectedCells<TextWrap>('textWrap', 'wrap');
         }
-
         break;
       }
       case 'backgroundColor': {
         if (!value) break;
         const backgroundColor = value;
 
-        sheet.selector.selectedCells.forEach((cell) => {
-          const id = cell.id();
-
-          sheet.cellRenderer.setCellDataStyle(id, {
-            backgroundColor,
-          });
-        });
-
+        this.setStyleForSelectedCells<string>(
+          'backgroundColor',
+          backgroundColor
+        );
         break;
       }
       case 'merge': {
@@ -499,11 +555,12 @@ class Toolbar {
 
     const selectedCells = sheet.selector.selectedCells;
     const firstSelectedCell = sheet.selector.selectedFirstCell;
+    const firstSelectedCellId = firstSelectedCell!.id();
 
     this.iconElementsMap.merge.button.disabled = true;
 
-    if (sheet.cellRenderer.cellsMap.has(firstSelectedCell!.id())) {
-      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCell!.id())!;
+    if (sheet.cellRenderer.cellsMap.has(firstSelectedCellId)) {
+      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCellId)!;
       const cellRect = cell.children?.find(
         (x) => x.attrs.type === 'cellRect'
       ) as Rect;
@@ -519,8 +576,10 @@ class Toolbar {
 
     this.setActive(
       this.iconElementsMap.textWrap,
-      this.isTextWrapActive(firstSelectedCell!.id())
+      this.isTextWrapActive(firstSelectedCellId)
     );
+    this.setActiveHorizontalIcon(firstSelectedCellId);
+    this.setActiveVerticalIcon(firstSelectedCellId);
 
     this.setMergedState(selectedCells);
   };
@@ -577,6 +636,44 @@ class Toolbar {
       picker,
       colorPicker,
     };
+  }
+
+  setActiveHorizontalIcon(cellId: CellId) {
+    const horizontalTextAlign =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.horizontalTextAlign;
+    const icon = this.iconElementsMap.horizontalTextAlign.icon;
+
+    switch (horizontalTextAlign) {
+      case 'center':
+        icon.dataset.activeIcon = 'center';
+        break;
+      case 'right':
+        icon.dataset.activeIcon = 'right';
+        break;
+      default:
+        icon.dataset.activeIcon = 'left';
+        break;
+    }
+  }
+
+  setActiveVerticalIcon(cellId: CellId) {
+    const verticalTextAlign =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.verticalTextAlign;
+    const icon = this.iconElementsMap.verticalTextAlign.icon;
+
+    switch (verticalTextAlign) {
+      case 'top':
+        icon.dataset.activeIcon = 'top';
+        break;
+      case 'bottom':
+        icon.dataset.activeIcon = 'bottom';
+        break;
+      default:
+        icon.dataset.activeIcon = 'middle';
+        break;
+    }
   }
 
   isFreezeActive() {

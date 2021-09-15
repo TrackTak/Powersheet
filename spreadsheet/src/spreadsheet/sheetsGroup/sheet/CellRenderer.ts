@@ -75,13 +75,13 @@ class CellRenderer {
   setCellData(id: CellId, newValue: ICellData) {
     const data = this.sheet.getData();
 
-    data.cellsData = {
+    this.sheet.save('cellsData', {
       ...data.cellsData,
       [id]: {
         ...data.cellsData?.[id],
         ...newValue,
       },
-    };
+    });
 
     const cellAddress = this.getCellHyperformulaAddress(id);
     try {

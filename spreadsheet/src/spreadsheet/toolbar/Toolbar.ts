@@ -452,7 +452,7 @@ class Toolbar {
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.getData().frozenCells = { row: row.x, col: col.x };
+          sheet.save('frozenCells', { row: row.x, col: col.x });
         }
 
         this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
@@ -496,6 +496,14 @@ class Toolbar {
       }
       case 'borderNone': {
         this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        break;
+      }
+      case 'undo': {
+        this.spreadsheet.focusedSheet?.undo();
+        break;
+      }
+      case 'redo': {
+        this.spreadsheet.focusedSheet?.redo();
         break;
       }
     }

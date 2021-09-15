@@ -20,6 +20,7 @@ import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId } from './CellRenderer';
+import Manager from 'undo-redo-manager';
 
 export interface IDimensions {
   width: number;
@@ -330,6 +331,7 @@ class Sheet {
   cellEditor?: CellEditor;
   rightClickMenu?: RightClickMenu;
   comment: Comment;
+  history: Manager;
   private spreadsheet: Spreadsheet;
 
   constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
@@ -457,7 +459,55 @@ class Sheet {
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
+
+    /*
+const history = new Manager(({ type, name, data }) => {
+    let currentData;
+    let currentSheet =
+      type === "main" ? spreadsheet.sheet : variablesSpreadsheet.sheet;
+
+    currentData = currentSheet.getData().getData();
+    currentSheet.getData().setData(data);
+
+    spreadsheet.sheet.sheetReset();
+    variablesSpreadsheet.sheet.sheetReset();
+
+    return {
+      type,
+      name,
+      data: currentData,
+    };
+    */
+    this.history = new Manager((data: IData) => {
+      const currentData = this.getData();
+      this.spreadsheet.data[this.sheetId] = data;
+      return currentData;
+    }, 20);
   }
+
+  save = <T extends keyof IData>(
+    dataKey: T,
+    newValue: IData[T],
+    withHistory = true
+  ) => {
+    const sheetData = this.getData();
+    if (this.history && withHistory) {
+      this.history.push({ ...sheetData });
+    }
+    sheetData[dataKey] = newValue;
+  };
+
+  undo = () => {
+    if (!this.history.canUndo) return;
+    this.history.undo();
+    this.updateViewport();
+  };
+
+  redo = () => {
+    if (!this.history.canRedo) return;
+    this.history.redo();
+    this.updateViewport();
+  };
 
   restoreHyperformulaData = () => {
     const data = this.getData().cellsData || {};

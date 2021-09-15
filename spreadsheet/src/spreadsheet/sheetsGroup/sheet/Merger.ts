@@ -28,9 +28,10 @@ class Merger {
       this.sheet.cellRenderer.getCellData(topLeftCellId)?.style;
     const cellsData = data.cellsData;
 
-    data.mergedCells = data.mergedCells
-      ? [...data.mergedCells, mergedCells]
-      : [mergedCells];
+    this.sheet.save(
+      'mergedCells',
+      data.mergedCells ? [...data.mergedCells, mergedCells] : [mergedCells]
+    );
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
@@ -54,12 +55,13 @@ class Merger {
     const data = this.sheet.getData();
     const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
 
-    data.mergedCells = data.mergedCells?.filter(({ row, col }) => {
+    const updatedMergedCells = data.mergedCells?.filter(({ row, col }) => {
       return !this.getAreMergedCellsOverlapping(mergedCells, {
         row,
         col,
       });
     });
+    this.sheet.save('mergedCells', updatedMergedCells);
 
     if (!this.getIsCellMerged(mergedCellId)) return;
 

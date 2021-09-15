@@ -145,13 +145,13 @@ class Resizer {
     const sizeChange = newSize - size;
 
     if (sizeChange !== 0) {
-      data[this.type] = {
+      this.sheet.save(this.type, {
         ...data[this.type],
         sizes: {
           ...data[this.type]?.sizes,
           [index]: newSize,
         },
-      };
+      });
     }
   }
 

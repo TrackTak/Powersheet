@@ -75,12 +75,20 @@ export type HorizontalTextAlign = 'left' | 'center' | 'right';
 
 export type VerticalTextAlign = 'top' | 'middle' | 'bottom';
 
+export type TextFormat =
+  | 'automatic'
+  | 'plainText'
+  | 'number'
+  | 'percent'
+  | 'currency';
+
 export interface ICellStyle {
   borders?: BorderStyle[];
   backgroundColor?: string;
   fontColor?: string;
   fontSize?: number;
   textWrap?: TextWrap;
+  textFormat?: TextFormat;
   underline?: boolean;
   strikeThrough?: boolean;
   bold?: boolean;

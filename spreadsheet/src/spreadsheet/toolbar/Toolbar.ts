@@ -5,6 +5,7 @@ import {
   BorderStyle,
   HorizontalTextAlign,
   ICellStyle,
+  TextFormat,
   TextWrap,
   VerticalTextAlign,
 } from '../sheetsGroup/sheet/Sheet';
@@ -16,6 +17,7 @@ import {
   createFontSizeContent,
   createFunctionDropdownContent,
   createHorizontalTextAlignContent,
+  createTextFormatContent,
   createVerticalTextAlignContent,
   HorizontalTextAlignName,
   IconElementsName,
@@ -39,6 +41,7 @@ import {
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
+import { sentenceCase } from 'sentence-case';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -68,6 +71,10 @@ interface IFontSizeElements {
   fontSizes: Record<number, HTMLButtonElement>;
 }
 
+interface ITextFormatElements {
+  textFormats: Record<TextFormat, HTMLButtonElement>;
+}
+
 class Toolbar {
   toolbarEl: HTMLDivElement;
   iconElementsMap: Record<IconElementsName, IIconElements>;
@@ -76,7 +83,8 @@ class Toolbar {
   colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
   borderElements: IBorderElements;
   fontSizeElements: IFontSizeElements;
-  functionElement: IFunctionElements;
+  textFormatElements: ITextFormatElements;
+  functionElements: IFunctionElements;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -93,15 +101,28 @@ class Toolbar {
       IColorPickerElements
     >;
     this.borderElements = {} as IBorderElements;
-    this.functionElement = {} as IFunctionElements;
+    this.textFormatElements = {} as ITextFormatElements;
+    this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
-    const { dropdownContent, fontSizes } = createFontSizeContent();
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent();
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent();
 
-    this.setDropdownButtonContent('fontSize', dropdownContent, true);
+    this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
+    this.setDropdownButtonContent(
+      'textFormat',
+      textFormatDropdownContent,
+      true
+    );
 
     this.fontSizeElements = {
       fontSizes,
+    };
+
+    this.textFormatElements = {
+      textFormats,
     };
 
     toggleIconNames.forEach((name) => {
@@ -193,7 +214,7 @@ class Toolbar {
 
           this.setDropdownIconContent(name, dropdownContent, true);
 
-          this.functionElement = {
+          this.functionElements = {
             registeredFunctionButtons,
           };
 
@@ -266,6 +287,9 @@ class Toolbar {
         elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
       },
       {
+        elements: [this.buttonElementsMap.textFormat.buttonContainer],
+      },
+      {
         elements: [this.buttonElementsMap.fontSize.buttonContainer],
       },
       {
@@ -324,6 +348,17 @@ class Toolbar {
         'click',
         () => {
           this.setValue('fontSize', fontSize);
+        }
+      );
+    });
+
+    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
+      const textFormat = key as TextFormat;
+
+      this.textFormatElements.textFormats[textFormat].addEventListener(
+        'click',
+        () => {
+          this.setValue('textFormat', textFormat);
         }
       );
     });
@@ -667,6 +702,7 @@ class Toolbar {
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
     this.setActiveFontSize(firstSelectedCellId);
+    this.setActiveTextFormat(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
   };
 
@@ -814,6 +850,16 @@ class Toolbar {
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
     ).toString();
+  }
+
+  setActiveTextFormat(cellId: CellId) {
+    const textFormat =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.textFormat;
+
+    this.buttonElementsMap.textFormat.text.textContent = sentenceCase(
+      textFormat ?? 'automatic'
+    );
   }
 
   isFreezeActive() {

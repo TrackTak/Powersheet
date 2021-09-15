@@ -1,9 +1,11 @@
 import { ACPController, createPicker } from 'a-color-picker';
+import { sentenceCase } from 'sentence-case';
 import {
   createDropdownContent,
   createIconButton,
   DropdownIconName,
 } from '../htmlElementHelpers';
+import { TextFormat } from '../sheetsGroup/sheet/Sheet';
 import { prefix } from '../utils';
 import styles from './Toolbar.module.scss';
 
@@ -201,6 +203,41 @@ export const createHorizontalTextAlignContent = () => {
   return { dropdownContent, aligns };
 };
 
+export const createTextFormatContent = () => {
+  const dropdownContent = createDropdownContent(
+    toolbarPrefix,
+    styles.textFormats
+  );
+
+  const createTextFormatButton = (textFormat: TextFormat) => {
+    const textFormatButton = document.createElement('button');
+
+    textFormatButton.textContent = sentenceCase(textFormat);
+
+    textFormatButton.classList.add(
+      `${toolbarPrefix}-format`,
+      styles.textFormatButton,
+      textFormat
+    );
+
+    return textFormatButton;
+  };
+
+  const textFormats = {
+    automatic: createTextFormatButton('automatic'),
+    plainText: createTextFormatButton('plainText'),
+    number: createTextFormatButton('number'),
+    percent: createTextFormatButton('percent'),
+    currency: createTextFormatButton('currency'),
+  };
+
+  Object.values(textFormats).forEach((textFormatButton) => {
+    dropdownContent.appendChild(textFormatButton);
+  });
+
+  return { dropdownContent, textFormats };
+};
+
 export const createFontSizeContent = () => {
   const dropdownContent = createDropdownContent(
     toolbarPrefix,
@@ -246,10 +283,7 @@ export const createFunctionDropdownContent = (
     (functionName) => {
       const button = document.createElement('button');
 
-      button.classList.add(
-        styles.functionName,
-        `${toolbarPrefix}-${functionName}`
-      );
+      button.classList.add(functionName, styles.functionNameButton);
 
       button.textContent = functionName;
 

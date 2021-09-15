@@ -25,7 +25,7 @@ export interface IIconElements extends IActionElements {
   icon: HTMLElement;
 }
 
-export type DropdownButtonName = 'fontSize';
+export type DropdownButtonName = 'fontSize' | 'textFormat';
 
 export type DropdownName = DropdownIconName | DropdownButtonName;
 

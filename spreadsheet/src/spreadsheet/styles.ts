@@ -158,7 +158,7 @@ export const defaultStyles: IStyles = {
     text: {
       ...sharedStyles.headerText,
       type: 'cellText',
-      fontSize: 16,
+      fontSize: 14,
       fill: 'black',
       align: 'left',
       wrap: 'none',

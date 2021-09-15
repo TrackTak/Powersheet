@@ -257,11 +257,16 @@ class CellRenderer {
       this.setCellTextValue(cell, hyperformulaValue?.toString()!);
     }
 
+    // We set these styles here because they affect the cell size
     if (style) {
-      const { textWrap } = style;
+      const { textWrap, fontSize } = style;
 
       if (textWrap) {
         this.setTextWrap(cell, textWrap);
+      }
+
+      if (fontSize) {
+        this.setFontSize(cell, fontSize);
       }
     }
 
@@ -358,6 +363,14 @@ class CellRenderer {
 
     if (cellText) {
       cellText.fill(fontColor);
+    }
+  }
+
+  setFontSize(cell: Cell, fontSize: number) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.fontSize(fontSize);
     }
   }
 

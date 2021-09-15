@@ -76,7 +76,7 @@ export const toggleIconNames = <const>[
   'formula',
 ];
 
-const fontSizeArray = <const>[6, 7, 8, 9, 10, 11, 12, 14, 18, 24, 36];
+export const fontSizeArray = <const>[6, 7, 8, 9, 10, 11, 12, 14, 18, 24, 36];
 
 export type IconElementsName =
   | DropdownIconName

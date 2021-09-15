@@ -102,8 +102,6 @@ class Toolbar {
 
     this.setDropdownButtonContent('fontSize', dropdownContent, true);
 
-    this.buttonElementsMap.fontSize.text.textContent = '10';
-
     this.fontSizeElements = {
       fontSizes,
     };
@@ -321,6 +319,17 @@ class Toolbar {
       });
     });
 
+    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
+      const fontSize = parseInt(key, 10);
+
+      this.fontSizeElements.fontSizes[fontSize].addEventListener(
+        'click',
+        () => {
+          this.setValue('fontSize', fontSize);
+        }
+      );
+    });
+
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
   }
 
@@ -452,7 +461,7 @@ class Toolbar {
     });
   }
 
-  setValue = (name: IconElementsName, value?: any) => {
+  setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
@@ -496,6 +505,10 @@ class Toolbar {
           'verticalTextAlign',
           'bottom'
         );
+        break;
+      }
+      case 'fontSize': {
+        this.setStyleForSelectedCells<number>('fontSize', value);
         break;
       }
       case 'textWrap': {
@@ -655,6 +668,7 @@ class Toolbar {
     );
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
+    this.setActiveFontSize(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
   };
 
@@ -725,7 +739,9 @@ class Toolbar {
   ) {
     const isBackgroundColor = colorPickerIconName === 'backgroundColor';
     const sheet = this.spreadsheet.focusedSheet!;
-    const defaultFill = isBackgroundColor ? '' : 'black';
+    const defaultFill = isBackgroundColor
+      ? ''
+      : this.spreadsheet.styles.cell.text.fill!;
 
     if (sheet.cellRenderer.cellsMap.has(cellId)) {
       const cell = sheet.cellRenderer.cellsMap.get(cellId)!;
@@ -795,6 +811,16 @@ class Toolbar {
         icon.dataset.activeIcon = 'middle';
         break;
     }
+  }
+
+  setActiveFontSize(cellId: CellId) {
+    const fontSize =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.fontSize;
+
+    this.buttonElementsMap.fontSize.text.textContent = (
+      fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
+    ).toString();
   }
 
   isFreezeActive() {

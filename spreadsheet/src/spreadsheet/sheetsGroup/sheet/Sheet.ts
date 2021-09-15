@@ -9,7 +9,6 @@ import Selector, { iterateSelection } from './Selector';
 import Merger from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
@@ -19,8 +18,10 @@ import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer, { Cell, CellId } from './CellRenderer';
 import Manager from 'undo-redo-manager';
+import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
+import { Text } from 'konva/lib/shapes/Text';
+import { cloneDeep, merge } from 'lodash';
 
 export interface IDimensions {
   width: number;
@@ -56,22 +57,36 @@ export interface IMergedCells {
 }
 
 export interface ISizes {
-  [index: string]: number;
+  [index: number]: number;
 }
-
-export type BorderStyleOption =
-  | 'borderLeft'
-  | 'borderTop'
-  | 'borderRight'
-  | 'borderBottom';
 
 export interface IRowColData {
   sizes: ISizes;
 }
 
+export type BorderStyle =
+  | 'borderLeft'
+  | 'borderTop'
+  | 'borderRight'
+  | 'borderBottom';
+
+export type TextWrap = 'wrap';
+
+export type HorizontalTextAlign = 'left' | 'center' | 'right';
+
+export type VerticalTextAlign = 'top' | 'middle' | 'bottom';
+
 export interface ICellStyle {
+  borders?: BorderStyle[];
   backgroundColor?: string;
-  borders?: BorderStyleOption[];
+  fontColor?: string;
+  textWrap?: TextWrap;
+  underline?: boolean;
+  strikeThrough?: boolean;
+  bold?: boolean;
+  italic?: boolean;
+  horizontalTextAlign?: HorizontalTextAlign;
+  verticalTextAlign?: VerticalTextAlign;
 }
 
 export interface ICellData {
@@ -108,63 +123,18 @@ export interface ICustomSizes {
   size: number;
 }
 
-type operator = 'add' | 'subtract';
-
-// This is for canvas not making odd lines crisp looking
-// https://stackoverflow.com/questions/7530593/html5-canvas-and-line-width/7531540#7531540
-export const offsetShapeValue = (
-  val: number,
-  operator: operator = 'subtract'
-) => {
-  if (val % 1 === 0) return operator === 'add' ? val + 0.5 : val - 0.5;
-
-  return val;
-};
-
-export const makeShapeCrisp = (shape: Shape, operator?: operator) => {
-  shape.x(offsetShapeValue(shape.x(), operator));
-  shape.y(offsetShapeValue(shape.y(), operator));
-};
-
-export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
-
-export const convertFromCellIdToRowCol = (id: CellId) => {
-  const sections = id.split('_');
-
-  return {
-    row: parseInt(sections[0], 10),
-    col: parseInt(sections[1], 10),
-  };
-};
-
-export const getOtherCellChildren = (
-  cell: Cell,
-  typesToFilterOut: string[] = []
-) => {
-  const otherChildren = cell.children
-    ?.filter((x) => typesToFilterOut.every((z) => z !== x.attrs.type))
-    .map((x) => x.clone());
-
-  return otherChildren ?? [];
-};
-
-export const setCellChildren = (
-  cell: Cell,
-  children: (Group | Shape<ShapeConfig>)[]
-) => {
-  cell.destroyChildren();
-
-  if (children?.length) {
-    cell.add(...children);
-  }
-};
-
 export const getCellRectFromCell = (cell: Cell) => {
   const cellRect = cell.children?.find(
     (x) => x.attrs.type === 'cellRect'
   ) as Rect;
 
   return cellRect;
+};
+
+export const getCellTextFromCell = (cell: Cell) => {
+  const text = cell.children?.find((x) => x.attrs.type === 'cellText') as Text;
+
+  return text;
 };
 
 export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
@@ -200,14 +170,6 @@ export const getRowColGroupFromScrollGroup = (scrollGroup: Group) => {
 export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
     (x) => x.attrs.type === 'cell'
-  ) as Group;
-
-  return cellGroup;
-};
-
-export const getMergedCellGroupFromScrollGroup = (scrollGroup: Group) => {
-  const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
-    (x) => x.attrs.type === 'mergedCell'
   ) as Group;
 
   return cellGroup;
@@ -369,11 +331,6 @@ class Sheet {
         type: 'cell',
       });
 
-      const mergedCellGroup = new Group({
-        ...performanceProperties,
-        type: 'mergedCell',
-      });
-
       const rowColGroup = new Group({
         ...performanceProperties,
         type: 'rowCol',
@@ -386,7 +343,7 @@ class Sheet {
       });
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(cellGroup, rowColGroup, mergedCellGroup);
+      sheetGroup.add(rowColGroup, cellGroup);
       scrollGroup.add(sheetGroup, headerGroup);
     });
 
@@ -422,14 +379,14 @@ class Sheet {
       this.layer.add(group);
     });
 
+    this.spreadsheet.hyperformula.addSheet(sheetId);
+
+    this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
 
     this.col.setup();
     this.row.setup();
-
-    this.cellRenderer = new CellRenderer(this);
-    this.spreadsheet.hyperformula.addSheet(sheetId);
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
@@ -460,26 +417,9 @@ class Sheet {
 
     this.cellEditor = new CellEditor(this);
 
-    /*
-const history = new Manager(({ type, name, data }) => {
-    let currentData;
-    let currentSheet =
-      type === "main" ? spreadsheet.sheet : variablesSpreadsheet.sheet;
-
-    currentData = currentSheet.getData().getData();
-    currentSheet.getData().setData(data);
-
-    spreadsheet.sheet.sheetReset();
-    variablesSpreadsheet.sheet.sheetReset();
-
-    return {
-      type,
-      name,
-      data: currentData,
-    };
-    */
     this.history = new Manager((data: IData) => {
       const currentData = this.getData();
+      console.log('apply', currentData, data);
       this.spreadsheet.data[this.sheetId] = data;
       return currentData;
     }, 20);
@@ -499,12 +439,14 @@ const history = new Manager(({ type, name, data }) => {
 
   undo = () => {
     if (!this.history.canUndo) return;
+    console.log('undo');
     this.history.undo();
     this.updateViewport();
   };
 
   redo = () => {
     if (!this.history.canRedo) return;
+    console.log('undo');
     this.history.redo();
     this.updateViewport();
   };
@@ -605,8 +547,15 @@ const history = new Manager(({ type, name, data }) => {
     this.col.scrollBar.updateCustomSizePositions();
     this.row.scrollBar.updateCustomSizePositions();
 
-    this.stage.width(this.col.totalSize + this.getViewportVector().x);
-    this.stage.height(this.row.totalSize + this.getViewportVector().y);
+    const width = this.col.totalSize + this.getViewportVector().x;
+    const height = this.row.totalSize + this.getViewportVector().y;
+
+    this.stage.width(width);
+    this.stage.height(height);
+
+    const context = this.layer.canvas.getContext();
+
+    context.translate(0.5, 0.5);
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -623,12 +572,27 @@ const history = new Manager(({ type, name, data }) => {
     this.sheetId = sheetId;
   }
 
+  setData(value: Partial<IData>) {
+    console.log('SAVE', this.getData());
+    const sheetData = this.getData();
+    if (this.history) {
+      this.history.push({ ...sheetData });
+      console.log('push', this.history.undoStack);
+    }
+
+    console.log(value);
+    this.spreadsheet.data[this.sheetId] = merge(
+      this.spreadsheet.data[this.sheetId],
+      value
+    );
+  }
+
   getHyperformulaSheetId() {
     return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
   }
 
   getData() {
-    return this.spreadsheet.data[this.sheetId];
+    return cloneDeep(this.spreadsheet.data[this.sheetId]);
   }
 
   updateSheetDimensions() {
@@ -662,14 +626,11 @@ const history = new Manager(({ type, name, data }) => {
     for (const ri of iterateSelection(rowIndexes)) {
       for (const ci of iterateSelection(colIndexes)) {
         const existingCellId = getCellId(ri, ci);
-        const mergedCellId =
+        const mergedCells =
           this.merger.associatedMergedCellIdMap.get(existingCellId);
 
-        if (mergedCellId) {
-          const mergedCell = this.cellRenderer.cellsMap.get(mergedCellId)!;
-
-          const row = mergedCell.attrs.row;
-          const col = mergedCell.attrs.col;
+        if (mergedCells) {
+          const { row, col } = mergedCells;
 
           if (col.x < colIndexes.x) {
             colIndexes.x = col.x;
@@ -728,10 +689,12 @@ const history = new Manager(({ type, name, data }) => {
 
   updateViewport() {
     this.updateSheetDimensions();
+    this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateCells();
+    this.cellRenderer.updateCellsStyles();
     this.selector.updateSelectedCells();
+    this.spreadsheet.toolbar?.updateActiveStates();
   }
 
   drawNextItems() {

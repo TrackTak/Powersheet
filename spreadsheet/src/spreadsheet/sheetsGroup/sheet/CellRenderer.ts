@@ -2,28 +2,37 @@ import { Group } from 'konva/lib/Group';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
+import { merge } from 'lodash';
 import Spreadsheet from '../../Spreadsheet';
 import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
 import Sheet, {
-  BorderStyleOption,
-  centerRectTwoInRectOne,
-  convertFromCellIdToRowCol,
+  BorderStyle,
   getCellGroupFromScrollGroup,
-  getCellId,
   getCellRectFromCell,
-  getMergedCellGroupFromScrollGroup,
-  getOtherCellChildren,
+  getCellTextFromCell,
+  HorizontalTextAlign,
   ICellData,
   ICellStyle,
-  makeShapeCrisp,
-  setCellChildren,
+  TextWrap,
+  VerticalTextAlign,
 } from './Sheet';
 
 export type CellId = string;
 
 export type Cell = Group;
+
+export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
+
+export const convertFromCellIdToRowCol = (id: CellId) => {
+  const sections = id.split('_');
+
+  return {
+    row: parseInt(sections[0], 10),
+    col: parseInt(sections[1], 10),
+  };
+};
 
 class CellRenderer {
   cellsMap: Map<CellId, Cell>;
@@ -41,7 +50,15 @@ class CellRenderer {
     return this.sheet.getData().cellsData?.[id];
   }
 
-  setBorderStyle(id: CellId, borderType: BorderStyleOption) {
+  deleteCellStyle(id: CellId, name: keyof ICellStyle) {
+    const cellData = this.getCellData(id);
+
+    if (cellData?.style?.[name]) {
+      delete cellData.style[name];
+    }
+  }
+
+  setBorderStyle(id: CellId, borderType: BorderStyle) {
     const borders = this.getCellData(id)?.style?.borders ?? [];
 
     if (borders.indexOf(borderType) === -1) {
@@ -72,22 +89,24 @@ class CellRenderer {
     }
   }
 
-  setCellData(id: CellId, newValue: ICellData) {
+  setCellData(id: CellId, newValue: Partial<ICellData>) {
     const data = this.sheet.getData();
 
-    this.sheet.save('cellsData', {
-      ...data.cellsData,
-      [id]: {
-        ...data.cellsData?.[id],
-        ...newValue,
-      },
-    });
+    this.sheet.setData(
+      merge(data, {
+        cellsData: {
+          [id]: {
+            ...newValue,
+          },
+        },
+      })
+    );
 
     const cellAddress = this.getCellHyperformulaAddress(id);
     try {
       this.spreadsheet.hyperformula.setCellContents(
         cellAddress,
-        newValue.value
+        data.cellsData[id].value
       );
     } catch (e) {
       console.error(e);
@@ -103,6 +122,162 @@ class CellRenderer {
     });
   }
 
+  updateCellClientRect(cell: Cell) {
+    const id = cell.id();
+    const { row, col } = convertFromCellIdToRowCol(id);
+    const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
+    const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
+    const cellRect = getCellRectFromCell(cell);
+    const cellText = getCellTextFromCell(cell);
+    const isMerged = this.sheet.merger.getIsCellMerged(id);
+
+    cell.x(colGroup.x());
+    cell.y(rowGroup.y());
+
+    if (isMerged) {
+      const rows = this.sheet.row.convertFromRangeToGroups(cell.attrs.row);
+      const cols = this.sheet.col.convertFromRangeToGroups(cell.attrs.col);
+
+      const width = cols.reduce((prev, curr) => {
+        return (prev += curr.width());
+      }, 0);
+
+      const height = rows.reduce((prev, curr) => {
+        return (prev += curr.height());
+      }, 0);
+
+      cellRect.width(width);
+      cellRect.height(height);
+    } else {
+      cellRect.width(colGroup.width());
+      cellRect.height(rowGroup.height());
+    }
+
+    const clientRect = cell.getClientRect({ skipStroke: true });
+
+    if (cellText) {
+      cellText.height(clientRect.height);
+      cellText.width(clientRect.width);
+    }
+  }
+
+  updateCellsStyles() {
+    for (const cell of this.cellsMap.values()) {
+      this.updateCellStyles(cell);
+    }
+  }
+
+  updateCellStyles(cell: Cell) {
+    const id = cell.id();
+    const cellData = this.sheet.getData().cellsData?.[id];
+    const style = cellData?.style;
+
+    this.updateCellClientRect(cell);
+
+    if (cellData?.comment) {
+      this.setCellCommentMarker(cell);
+    }
+
+    if (style) {
+      const {
+        borders,
+        backgroundColor,
+        fontColor,
+        bold,
+        italic,
+        strikeThrough,
+        underline,
+        horizontalTextAlign,
+        verticalTextAlign,
+      } = style;
+
+      if (backgroundColor) {
+        this.setBackgroundColor(cell, backgroundColor);
+      }
+
+      if (fontColor) {
+        this.setFontColor(cell, fontColor);
+      }
+
+      if (bold) {
+        this.setBold(cell, bold);
+      }
+
+      if (italic) {
+        this.setItalic(cell, italic);
+      }
+
+      if (strikeThrough) {
+        this.setStrikeThrough(cell, strikeThrough);
+      }
+
+      if (underline) {
+        this.setUnderline(cell, underline);
+      }
+
+      if (horizontalTextAlign) {
+        this.setHorizontalTextAlign(cell, horizontalTextAlign);
+      }
+
+      if (verticalTextAlign) {
+        this.setVerticalTextAlign(cell, verticalTextAlign);
+      }
+
+      if (borders) {
+        borders.forEach((borderType) => {
+          switch (borderType) {
+            case 'borderLeft':
+              this.setLeftBorder(cell);
+              break;
+            case 'borderTop':
+              this.setTopBorder(cell);
+              break;
+            case 'borderRight':
+              this.setRightBorder(cell);
+              break;
+            case 'borderBottom':
+              this.setBottomBorder(cell);
+              break;
+          }
+        });
+      }
+    }
+
+    return cell;
+  }
+
+  updateCell(cell: Cell) {
+    const id = cell.id();
+    const cellData = this.sheet.getData().cellsData?.[id];
+    const style = cellData?.style;
+
+    this.updateCellClientRect(cell);
+
+    if (cellData?.value) {
+      const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(
+        this.getCellHyperformulaAddress(id)
+      );
+
+      this.setCellTextValue(cell, hyperformulaValue?.toString()!);
+    }
+
+    if (style) {
+      const { textWrap } = style;
+
+      if (textWrap) {
+        this.setTextWrap(cell, textWrap);
+      }
+    }
+
+    if (this.cellsMap.has(id)) {
+      this.cellsMap.get(id)!.destroy();
+    }
+
+    this.cellsMap.set(id, cell);
+
+    this.drawCell(cell);
+  }
+
   updateCells() {
     for (const cell of this.cellsMap.values()) {
       cell.destroy();
@@ -115,64 +290,18 @@ class CellRenderer {
     const cellsData = this.sheet.getData().cellsData ?? {};
 
     Object.keys(cellsData).forEach((id) => {
-      const cellData = cellsData[id];
-      const style = cellData.style;
+      this.cleanCellData(id);
 
-      this.updateCellRect(id);
+      const cell = this.convertFromCellIdToCell(id);
 
-      if (style?.backgroundColor) {
-        this.setCellBackgroundColor(id, style.backgroundColor);
-      }
-
-      if (cellData?.comment) {
-        this.setCellCommentMarker(id);
-      }
-
-      if (style?.borders) {
-        style.borders.forEach((borderType) => {
-          switch (borderType) {
-            case 'borderLeft':
-              this.setLeftBorder(id);
-              break;
-            case 'borderTop':
-              this.setTopBorder(id);
-              break;
-            case 'borderRight':
-              this.setRightBorder(id);
-              break;
-            case 'borderBottom':
-              this.setBottomBorder(id);
-              break;
-          }
-        });
-      }
-
-      if (cellData?.value) {
-        const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(
-          this.getCellHyperformulaAddress(id)
-        );
-        this.setCellTextValue(id, hyperformulaValue?.toString()!);
-      }
+      this.updateCell(cell);
     });
   }
 
-  updateCellRect(id: CellId) {
-    const cell = this.convertFromCellIdToCell(id);
-    if (this.cellsMap.has(id)) {
-      const otherChildren = getOtherCellChildren(this.cellsMap.get(id)!, [
-        'cellRect',
-      ]);
-
-      setCellChildren(cell, [getCellRectFromCell(cell), ...otherChildren]);
-
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-  }
-
-  private *setBorder(id: CellId, type: BorderStyleOption) {
-    const { cell, clientRect } = this.drawNewCell(id, [type]);
+  private setBorder(cell: Cell, type: BorderStyle) {
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
 
     const line = new Line({
       ...performanceProperties,
@@ -185,58 +314,144 @@ class CellRenderer {
 
     line.moveToTop();
 
-    yield { cell, clientRect, line };
-
-    makeShapeCrisp(line);
+    return { cell, clientRect, line };
   }
 
-  setBottomBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderBottom');
-    const { line, clientRect } = generator.next().value!;
+  setBottomBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderBottom');
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
   }
 
-  setRightBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderRight');
-    const { line, clientRect } = generator.next().value!;
+  setRightBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderRight');
 
     line.x(clientRect.width);
     line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
   }
 
-  setTopBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderTop');
-    const { line, clientRect } = generator.next().value!;
+  setTopBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderTop');
 
     line.points([0, 0, clientRect.width, 0]);
-
-    generator.next();
   }
 
-  setLeftBorder(id: CellId) {
-    const generator = this.setBorder(id, 'borderLeft');
-    const { line, clientRect } = generator.next().value!;
+  setLeftBorder(cell: Cell) {
+    const { line, clientRect } = this.setBorder(cell, 'borderLeft');
 
     line.points([0, 0, 0, clientRect.height]);
-
-    generator.next();
   }
 
-  setCellBackgroundColor(id: CellId, backgroundColor: string) {
-    const { cell } = this.drawNewCell(id);
+  setTextWrap(cell: Cell, textWrap: TextWrap) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.wrap(textWrap);
+    }
+  }
+
+  setBackgroundColor(cell: Cell, backgroundColor: string) {
     const cellRect = getCellRectFromCell(cell);
 
     cellRect.fill(backgroundColor);
   }
 
-  setCellCommentMarker(id: CellId) {
-    const { cell, clientRect } = this.drawNewCell(id, ['commentMarker']);
+  setFontColor(cell: Cell, fontColor: string) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.fill(fontColor);
+    }
+  }
+
+  private getFontStyle(bold: boolean | undefined, italic: boolean | undefined) {
+    if (bold && italic) return 'italic bold';
+
+    if (bold && !italic) return 'bold';
+
+    if (!bold && italic) return 'italic';
+
+    return 'normal';
+  }
+
+  setBold(cell: Cell, bold: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const italic = this.getCellData(cell.id())?.style?.italic;
+      const fontStyle = this.getFontStyle(bold, italic);
+
+      cellText.fontStyle(fontStyle);
+    }
+  }
+
+  setItalic(cell: Cell, italic: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const bold = this.getCellData(cell.id())?.style?.bold;
+      const fontStyle = this.getFontStyle(bold, italic);
+
+      cellText.fontStyle(fontStyle);
+    }
+  }
+
+  private getTextDecoration(
+    strikeThrough: boolean | undefined,
+    underline: boolean | undefined
+  ) {
+    if (strikeThrough && underline) return 'line-through underline';
+
+    if (strikeThrough && !underline) return 'line-through';
+
+    if (!strikeThrough && underline) return 'underline';
+
+    return '';
+  }
+
+  setStrikeThrough(cell: Cell, strikeThrough: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const underline = this.getCellData(cell.id())?.style?.underline;
+      const textDecoration = this.getTextDecoration(strikeThrough, underline);
+
+      cellText.textDecoration(textDecoration);
+    }
+  }
+
+  setUnderline(cell: Cell, underline: boolean) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const strikeThrough = this.getCellData(cell.id())?.style?.strikeThrough;
+      const textDecoration = this.getTextDecoration(strikeThrough, underline);
+
+      cellText.textDecoration(textDecoration);
+    }
+  }
+
+  setHorizontalTextAlign(cell: Cell, horizontalTextAlign: HorizontalTextAlign) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.align(horizontalTextAlign);
+    }
+  }
+
+  setVerticalTextAlign(cell: Cell, verticalTextAlign: VerticalTextAlign) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.verticalAlign(verticalTextAlign);
+    }
+  }
+
+  setCellCommentMarker(cell: Cell) {
+    const clientRect = cell.getClientRect({
+      skipStroke: true,
+    });
 
     const commentMarker = new Line({
       ...this.commentMarkerConfig,
@@ -248,29 +463,22 @@ class CellRenderer {
     rotateAroundCenter(commentMarker, 180);
   }
 
-  setCellTextValue(id: CellId, value: string) {
-    const { cell, clientRect } = this.drawNewCell(id, ['cellText']);
+  setCellTextValue(cell: Cell, value: string) {
+    const { width } = cell.getClientRect({ skipStroke: true });
 
     const text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
-      type: 'cellText',
-      width: clientRect.width,
+      // Only set the width for textWrapping to work
+      width,
     });
-
-    const midPoints = centerRectTwoInRectOne(clientRect, text.getClientRect());
-
-    text.x(midPoints.x - clientRect.x);
-    text.y(midPoints.y - clientRect.y);
 
     cell.add(text);
   }
 
-  getNewCell(id: string | null, rect: IRect, row: Vector2d, col: Vector2d) {
+  getNewCell(id: string | null, row: Vector2d, col: Vector2d) {
     const cell = new Group({
       ...performanceProperties,
-      x: rect.x,
-      y: rect.y,
       row,
       col,
     });
@@ -279,15 +487,15 @@ class CellRenderer {
       cell.id(id);
     }
 
-    const cellRect = new Rect({
-      type: 'cellRect',
-      width: rect.width,
-      height: rect.height,
-    });
-
-    cell.add(cellRect);
+    cell.add(this.getNewCellRect());
 
     return cell;
+  }
+
+  getNewCellRect() {
+    return new Rect({
+      type: 'cellRect',
+    });
   }
 
   convertFromCellIdToCell(id: CellId) {
@@ -308,41 +516,24 @@ class CellRenderer {
     return cell;
   }
 
-  private getConvertedMergedCell(mergedCell: Cell) {
-    const rect = getCellRectFromCell(mergedCell);
-    // We don't use getClientRect as we don't want the
-    // mergedCells gridLines taken into account
-    const cell = this.getNewCell(
-      mergedCell.id(),
-      {
-        x: mergedCell.x(),
-        y: mergedCell.y(),
-        width: rect.width(),
-        height: rect.height(),
-      },
-      mergedCell.attrs.row,
-      mergedCell.attrs.col
-    );
+  private setMergedCellProperties(cell: Cell) {
+    const { row, col } = this.sheet.merger.associatedMergedCellIdMap.get(
+      cell.id()
+    )!;
+    const cellRect = getCellRectFromCell(cell);
 
-    return cell;
+    cellRect.fill('white');
+    cellRect.stroke(this.spreadsheet.styles.gridLine.stroke as string);
+    cellRect.strokeWidth(this.spreadsheet.styles.gridLine.strokeWidth!);
+
+    cell.attrs.row = row;
+    cell.attrs.col = col;
   }
 
   convertFromRowColToCell(rowGroup: Group, colGroup: Group) {
     const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-    const mergedCellId = this.sheet.merger.associatedMergedCellIdMap.get(id);
+    const isMergedCell = this.sheet.merger.getIsCellMerged(id);
 
-    if (mergedCellId) {
-      const mergedCell = this.cellsMap.get(mergedCellId)!;
-
-      return this.sheet.merger.getConvertedMergedCell(mergedCell);
-    }
-
-    const rect: IRect = {
-      x: colGroup.x(),
-      y: rowGroup.y(),
-      width: colGroup.width(),
-      height: rowGroup.height(),
-    };
     const row = {
       x: rowGroup.attrs.index,
       y: rowGroup.attrs.index,
@@ -353,7 +544,11 @@ class CellRenderer {
       y: colGroup.attrs.index,
     };
 
-    const cell = this.getNewCell(id, rect, row, col);
+    const cell = this.getNewCell(id, row, col);
+
+    if (isMergedCell) {
+      this.setMergedCellProperties(cell);
+    }
 
     return cell;
   }
@@ -365,23 +560,20 @@ class CellRenderer {
     rows.forEach((rowGroup) => {
       cols.forEach((colGroup) => {
         const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
-        const mergedCellId =
-          this.sheet.merger.associatedMergedCellIdMap.get(id);
-        let cell;
+        const mergedCells = this.sheet.merger.associatedMergedCellIdMap.get(id);
+        const cell = this.convertFromRowColToCell(rowGroup, colGroup);
 
-        if (mergedCellId) {
-          const mergedCell = this.cellsMap.get(mergedCellId)!;
+        if (mergedCells) {
+          const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
 
           if (!mergedCellsAddedMap?.get(mergedCellId)) {
-            cell = this.getConvertedMergedCell(mergedCell);
+            this.setMergedCellProperties(cell);
 
             mergedCellsAddedMap?.set(mergedCellId, cell);
+
+            cells.push(cell);
           }
         } else {
-          cell = this.convertFromRowColToCell(rowGroup, colGroup);
-        }
-
-        if (cell) {
           cells.push(cell);
         }
       });
@@ -400,61 +592,32 @@ class CellRenderer {
     }
   }
 
-  drawNewCell(id: CellId, childrenToFilterOut: string[] = []) {
-    const cell = this.convertFromCellIdToCell(id);
-
-    const clientRect = cell.getClientRect({
-      skipStroke: true,
-    });
-
-    if (this.cellsMap.has(id)) {
-      const children = getOtherCellChildren(
-        this.cellsMap.get(id)!,
-        childrenToFilterOut
-      );
-
-      setCellChildren(cell, children);
-
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-
-    this.drawCell(cell);
-
-    return { cell, clientRect };
-  }
-
   drawCell(cell: Cell) {
-    const id = cell.id();
-
     const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
-    const getCellGroupMethod = (scrollGroup: Group) =>
-      this.sheet.merger.getIsCellMerged(id)
-        ? getMergedCellGroupFromScrollGroup(scrollGroup)
-        : getCellGroupFromScrollGroup(scrollGroup);
 
     if (isFrozenRow && isFrozenCol) {
-      const xyStickyCellGroup = getCellGroupMethod(
+      const xyStickyCellGroup = getCellGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );
 
       xyStickyCellGroup.add(cell);
     } else if (isFrozenRow) {
-      const yStickyCellGroup = getCellGroupMethod(
+      const yStickyCellGroup = getCellGroupFromScrollGroup(
         this.sheet.scrollGroups.ySticky
       );
 
       yStickyCellGroup.add(cell);
     } else if (isFrozenCol) {
-      const xStickyCellGroup = getCellGroupMethod(
+      const xStickyCellGroup = getCellGroupFromScrollGroup(
         this.sheet.scrollGroups.xSticky
       );
 
       xStickyCellGroup.add(cell);
     } else {
-      const mainCellGroup = getCellGroupMethod(this.sheet.scrollGroups.main);
+      const mainCellGroup = getCellGroupFromScrollGroup(
+        this.sheet.scrollGroups.main
+      );
 
       mainCellGroup.add(cell);
     }

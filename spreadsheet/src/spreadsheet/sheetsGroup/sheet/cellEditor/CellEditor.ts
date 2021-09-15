@@ -100,7 +100,11 @@ class CellEditor {
 
   private showCellEditor = () => {
     const selectedCell = this.sheet.selector.selectedFirstCell!;
-    this.setCellEditorElPosition(selectedCell.getClientRect());
+    this.setCellEditorElPosition(
+      selectedCell.getClientRect({
+        skipStroke: true,
+      })
+    );
     this.cellEditorEl.focus();
   };
 

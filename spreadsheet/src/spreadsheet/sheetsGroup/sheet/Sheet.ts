@@ -419,7 +419,6 @@ class Sheet {
 
     this.history = new Manager((data: IData) => {
       const currentData = this.getData();
-      console.log('apply', currentData, data);
       this.spreadsheet.data[this.sheetId] = data;
       return currentData;
     }, 20);
@@ -439,14 +438,12 @@ class Sheet {
 
   undo = () => {
     if (!this.history.canUndo) return;
-    console.log('undo');
     this.history.undo();
     this.updateViewport();
   };
 
   redo = () => {
     if (!this.history.canRedo) return;
-    console.log('undo');
     this.history.redo();
     this.updateViewport();
   };
@@ -573,14 +570,11 @@ class Sheet {
   }
 
   setData(value: Partial<IData>) {
-    console.log('SAVE', this.getData());
     const sheetData = this.getData();
     if (this.history) {
       this.history.push({ ...sheetData });
-      console.log('push', this.history.undoStack);
     }
 
-    console.log(value);
     this.spreadsheet.data[this.sheetId] = merge(
       this.spreadsheet.data[this.sheetId],
       value

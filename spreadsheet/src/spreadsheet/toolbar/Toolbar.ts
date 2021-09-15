@@ -34,6 +34,8 @@ import {
   DropdownButtonName,
   DropdownIconName,
   DropdownName,
+  IActionElements,
+  IButtonElements,
   IIconElements,
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
@@ -47,7 +49,6 @@ export interface IToolbarActionGroups {
 interface IDropdownElements {
   arrowContainer?: HTMLSpanElement;
   arrowIcon?: HTMLElement;
-  tooltip: HTMLSpanElement;
   dropdownContent: HTMLDivElement;
 }
 
@@ -67,11 +68,6 @@ interface IFunctionElements {
 
 interface IFontSizeElements {
   fontSizes: Record<number, HTMLButtonElement>;
-}
-
-interface IButtonElements {
-  button: HTMLButtonElement;
-  text: HTMLSpanElement;
 }
 
 class Toolbar {
@@ -230,13 +226,18 @@ class Toolbar {
 
     const setDropdownActive = (element: HTMLButtonElement, active: boolean) => {
       const button = element as HTMLButtonElement;
-      const name = button.dataset.name as DropdownIconName;
+      const name = button.dataset.name!;
 
-      this.setActive(this.iconElementsMap[name], active);
+      // @ts-ignore
+      const actionElements = (this.buttonElementsMap[name] ??
+        // @ts-ignore
+        this.iconElementsMap[name]) as IActionElements;
+
+      this.setActive(actionElements, active);
     };
 
     this.dropdown = delegate(this.toolbarEl, {
-      target: `.${toolbarPrefix}-dropdown-icon-button`,
+      target: `.${toolbarPrefix}-dropdown-button`,
       trigger: 'click',
       theme: 'dropdown',
       placement: 'auto',
@@ -266,43 +267,43 @@ class Toolbar {
 
     this.toolbarActionGroups = [
       {
-        elements: [icons.redo.button, icons.undo.button],
+        elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
       },
       {
-        elements: [this.buttonElementsMap.fontSize.button],
+        elements: [this.buttonElementsMap.fontSize.buttonContainer],
       },
       {
         elements: [
-          icons.bold.button,
-          icons.italic.button,
-          icons.underline.button,
-          icons.strikeThrough.button,
-          icons.fontColor.button,
+          icons.bold.buttonContainer,
+          icons.italic.buttonContainer,
+          icons.underline.buttonContainer,
+          icons.strikeThrough.buttonContainer,
+          icons.fontColor.buttonContainer,
         ],
       },
       {
         elements: [
-          icons.backgroundColor.button,
-          icons.borders.button,
-          icons.merge.button,
+          icons.backgroundColor.buttonContainer,
+          icons.borders.buttonContainer,
+          icons.merge.buttonContainer,
         ],
       },
       {
         elements: [
-          icons.horizontalTextAlign.button,
-          icons.verticalTextAlign.button,
-          icons.textWrap.button,
+          icons.horizontalTextAlign.buttonContainer,
+          icons.verticalTextAlign.buttonContainer,
+          icons.textWrap.buttonContainer,
         ],
       },
       {
         elements: [
-          icons.freeze.button,
-          icons.functions.button,
-          icons.formula.button,
+          icons.freeze.buttonContainer,
+          icons.functions.buttonContainer,
+          icons.formula.buttonContainer,
         ],
       },
       {
-        elements: [icons.export.button],
+        elements: [icons.export.buttonContainer],
       },
     ];
 
@@ -670,11 +671,13 @@ class Toolbar {
     const { iconButtonValues, arrowIconValues, tooltip } =
       createDropdownIconButton(name, toolbarPrefix, createArrow);
 
-    this.iconElementsMap[name] = iconButtonValues;
+    this.iconElementsMap[name] = {
+      ...iconButtonValues,
+      tooltip,
+    };
 
     this.dropdownMap[name] = {
       dropdownContent,
-      tooltip,
       ...arrowIconValues,
     };
   }
@@ -684,20 +687,18 @@ class Toolbar {
     dropdownContent: HTMLDivElement,
     createArrow?: boolean
   ) {
-    const { button, text, arrowIconValues, tooltip } = createDropdownButton(
-      name,
-      toolbarPrefix,
-      createArrow
-    );
+    const { buttonContainer, button, text, arrowIconValues, tooltip } =
+      createDropdownButton(name, toolbarPrefix, createArrow);
 
     this.buttonElementsMap[name] = {
+      buttonContainer,
       button,
       text,
+      tooltip,
     };
 
     this.dropdownMap[name] = {
       dropdownContent,
-      tooltip,
       ...arrowIconValues,
     };
   }
@@ -805,13 +806,13 @@ class Toolbar {
       ?.style?.[key];
   }
 
-  setActive(iconElements: IIconElements, active: boolean) {
-    iconElements.active = active;
+  setActive(actionElements: IActionElements, active: boolean) {
+    actionElements.active = active;
 
     if (active) {
-      iconElements.button.classList.add('active');
+      actionElements.button.classList.add('active');
     } else {
-      iconElements.button.classList.remove('active');
+      actionElements.button.classList.remove('active');
     }
   }
 

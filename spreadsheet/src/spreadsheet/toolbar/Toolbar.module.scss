@@ -9,6 +9,12 @@
   @include tippyContentNoPadding;
 }
 
+button.fontSizeButton {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.fontSizeButton,
 .functionName {
   @include button();
   @include buttonAction;
@@ -18,6 +24,7 @@
   max-height: 400px;
 }
 
+.fontSizes,
 .functions,
 .borders {
   flex-direction: column;

@@ -126,7 +126,7 @@ export const createColorBar = (picker: ACPController) => {
 };
 
 export const createBordersContent = () => {
-  const dropdownContent = createDropdownContent(styles.borders);
+  const dropdownContent = createDropdownContent(toolbarPrefix, styles.borders);
 
   const firstBordersRow = {
     borderAll: createToolbarIconButton('borderAll'),
@@ -150,11 +150,11 @@ export const createBordersContent = () => {
   ];
 
   Object.values(firstBordersRow).forEach((border) => {
-    borderGroups[0].appendChild(border.button);
+    borderGroups[0].appendChild(border.buttonContainer);
   });
 
   Object.values(secondBordersRow).forEach((border) => {
-    borderGroups[1].appendChild(border.button);
+    borderGroups[1].appendChild(border.buttonContainer);
   });
 
   borderGroups.forEach((borderGroup) => {
@@ -179,33 +179,10 @@ export const createVerticalTextAlignContent = () => {
   };
 
   Object.values(aligns).forEach((align) => {
-    dropdownContent.appendChild(align.button);
+    dropdownContent.appendChild(align.buttonContainer);
   });
 
   return { dropdownContent, aligns };
-};
-
-export const createFontSizeContent = () => {
-  const dropdownContent = createDropdownContent(toolbarPrefix);
-
-  const createFontSizeButton = (fontSize: number) => {
-    const fontSizeButton = document.createElement('button');
-
-    fontSizeButton.classList.add(
-      `${toolbarPrefix}-font-size`,
-      fontSize.toString()
-    );
-
-    return fontSizeButton;
-  };
-
-  const fontSizes: FontSizes = {} as FontSizes;
-
-  fontSizeArray.forEach((fontSize) => {
-    fontSizes[fontSize] = createFontSizeButton(fontSize);
-  });
-
-  return { dropdownContent, fontSizes };
 };
 
 export const createHorizontalTextAlignContent = () => {
@@ -218,16 +195,52 @@ export const createHorizontalTextAlignContent = () => {
   };
 
   Object.values(aligns).forEach((align) => {
-    dropdownContent.appendChild(align.button);
+    dropdownContent.appendChild(align.buttonContainer);
   });
 
   return { dropdownContent, aligns };
 };
 
+export const createFontSizeContent = () => {
+  const dropdownContent = createDropdownContent(
+    toolbarPrefix,
+    styles.fontSizes
+  );
+
+  const createFontSizeButton = (fontSize: number) => {
+    const fontSizeButton = document.createElement('button');
+
+    fontSizeButton.textContent = fontSize.toString();
+
+    fontSizeButton.classList.add(
+      `${toolbarPrefix}-font-size`,
+      styles.fontSizeButton,
+      fontSize.toString()
+    );
+
+    return fontSizeButton;
+  };
+
+  const fontSizes: FontSizes = {} as FontSizes;
+
+  fontSizeArray.forEach((fontSize) => {
+    const fontSizeButton = createFontSizeButton(fontSize);
+
+    fontSizes[fontSize] = fontSizeButton;
+
+    dropdownContent.appendChild(fontSizeButton);
+  });
+
+  return { dropdownContent, fontSizes };
+};
+
 export const createFunctionDropdownContent = (
   registeredFunctionNames: string[]
 ) => {
-  const dropdownContent = createDropdownContent(styles.functions);
+  const dropdownContent = createDropdownContent(
+    toolbarPrefix,
+    styles.functions
+  );
 
   const registeredFunctionButtons = registeredFunctionNames.map(
     (functionName) => {

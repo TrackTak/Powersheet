@@ -9,12 +9,20 @@ import {
 } from './bottomBar/bottomBarHtmlElementHelpers';
 import { sentenceCase } from 'sentence-case';
 
-export interface IIconElements {
+export interface IActionElements {
+  buttonContainer: HTMLDivElement;
   button: HTMLButtonElement;
+  tooltip?: HTMLSpanElement;
   active?: boolean;
+}
+
+export interface IButtonElements extends IActionElements {
+  text: HTMLSpanElement;
+}
+
+export interface IIconElements extends IActionElements {
   iconContainer: HTMLSpanElement;
   icon: HTMLElement;
-  tooltip?: HTMLSpanElement;
 }
 
 export type DropdownButtonName = 'fontSize';
@@ -96,41 +104,12 @@ const createDropdownActionElement = (
   return { arrowIconValues, tooltip };
 };
 
-export const createDropdownIconButton = (
-  name: DropdownIconName,
-  classNamePrefix: string,
-  createArrow: boolean = false
-) => {
-  const iconButtonValues = createIconButton(name, classNamePrefix);
-
-  iconButtonValues.button.classList.add(
-    styles.dropdownIconButton,
-    `${classNamePrefix}-dropdown-icon-button`
-  );
-
-  const { arrowIconValues, tooltip } = createDropdownActionElement(
-    name,
-    iconButtonValues.button,
-    classNamePrefix,
-    createArrow
-  );
-
-  return { iconButtonValues, arrowIconValues, tooltip };
-};
-
-export const createDropdown = (classNamePrefix: string) => {
-  const dropdown = document.createElement('div');
-
-  dropdown.classList.add(styles.dropdown, `${classNamePrefix}-dropdown`);
-
-  return dropdown;
-};
-
 export const createDropdownButton = (
   name: DropdownButtonName,
   classNamePrefix: string,
   createArrow: boolean = false
 ) => {
+  const buttonContainer = createButtonContainer(classNamePrefix);
   const button = document.createElement('button');
   const text = document.createElement('span');
 
@@ -151,13 +130,56 @@ export const createDropdownButton = (
     createArrow
   );
 
-  return { button, text, arrowIconValues, tooltip };
+  buttonContainer.append(button);
+
+  return { buttonContainer, button, text, arrowIconValues, tooltip };
+};
+
+export const createDropdownIconButton = (
+  name: DropdownIconName,
+  classNamePrefix: string,
+  createArrow: boolean = false
+) => {
+  const iconButtonValues = createIconButton(name, classNamePrefix);
+
+  iconButtonValues.button.classList.add(
+    styles.dropdownIconButton,
+    `${classNamePrefix}-dropdown-button`,
+    `${classNamePrefix}-dropdown-icon-button`,
+    `${classNamePrefix}-${name}-icon-button`
+  );
+
+  const { arrowIconValues, tooltip } = createDropdownActionElement(
+    name,
+    iconButtonValues.button,
+    classNamePrefix,
+    createArrow
+  );
+
+  return { iconButtonValues, arrowIconValues, tooltip };
+};
+
+export const createDropdown = (classNamePrefix: string) => {
+  const dropdown = document.createElement('div');
+
+  dropdown.classList.add(styles.dropdown, `${classNamePrefix}-dropdown`);
+
+  return dropdown;
+};
+
+export const createButtonContainer = (classNamePrefix: string) => {
+  const buttonContainer = document.createElement('div');
+
+  buttonContainer.classList.add(`${classNamePrefix}-button-container`);
+
+  return buttonContainer;
 };
 
 export const createIconButton = (
   name: IconElementsName | SelectSheetsIcon | AddSheetIcon,
   classNamePrefix: string
 ) => {
+  const buttonContainer = createButtonContainer(classNamePrefix);
   const button = document.createElement('button');
 
   button.dataset.name = name;
@@ -171,8 +193,9 @@ export const createIconButton = (
   const iconValues = createIcon(name, classNamePrefix);
 
   button.appendChild(iconValues.iconContainer);
+  buttonContainer.appendChild(button);
 
-  return { button, ...iconValues };
+  return { buttonContainer, button, ...iconValues };
 };
 
 export const createIcon = (name: string, classNamePrefix: string) => {

@@ -42,7 +42,7 @@ class BottomBar {
       'add',
       bottomBarPrefix
     );
-    this.createNewSheetButtonElements.buttonContainer.classList.add(
+    this.createNewSheetButtonElements.button.classList.add(
       styles.createNewSheetButtonContainer
     );
     this.createNewSheetButtonElements.button.addEventListener(
@@ -94,7 +94,7 @@ class BottomBar {
       this.sheetSelectionButton.button
     );
     this.tabContainer.appendChild(this.scrollSliderContainer);
-    this.content.appendChild(this.createNewSheetButtonElements.buttonContainer);
+    this.content.appendChild(this.createNewSheetButtonElements.button);
     this.content.appendChild(this.sheetSelectionButtonContainer);
     this.bottomBar.appendChild(this.content);
     this.bottomBar.appendChild(this.tabContainer);

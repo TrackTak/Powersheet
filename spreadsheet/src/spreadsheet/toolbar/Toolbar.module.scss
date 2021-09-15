@@ -14,11 +14,6 @@
   @include buttonAction;
 }
 
-.dropdownContent {
-  overflow: auto;
-  display: flex;
-}
-
 .functions {
   max-height: 400px;
 }
@@ -50,24 +45,6 @@
   &:last-of-type:after {
     display: none;
   }
-}
-
-.dropdownIconButton {
-  .arrowDownIconContainer {
-    width: 10px;
-
-    .arrowDown {
-      left: -130px;
-    }
-  }
-}
-
-.tooltip {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  top: 0;
-  left: 0;
 }
 
 .colorBar {

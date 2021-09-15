@@ -15,12 +15,10 @@ import {
   createBordersContent,
   createColorBar,
   createColorPickerContent,
-  createDropdownIconButton,
+  createFontSizeContent,
   createFunctionDropdownContent,
   createHorizontalTextAlignContent,
-  createTooltip,
   createVerticalTextAlignContent,
-  DropdownIconName,
   HorizontalTextAlignName,
   IconElementsName,
   toggleIconNames,
@@ -28,8 +26,14 @@ import {
   VerticalTextAlignName,
 } from './toolbarHtmlElementHelpers';
 import {
+  createDropdownButton,
+  createDropdownIconButton,
   createGroup,
   createIconButton,
+  createTooltip,
+  DropdownButtonName,
+  DropdownIconName,
+  DropdownName,
   IIconElements,
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
@@ -57,17 +61,28 @@ interface IBorderElements {
   borderGroups: [HTMLDivElement, HTMLDivElement];
 }
 
-interface IFunctionElement {
+interface IFunctionElements {
   registeredFunctionButtons: HTMLButtonElement[];
+}
+
+interface IFontSizeElements {
+  fontSizes: Record<number, HTMLButtonElement>;
+}
+
+interface IButtonElements {
+  button: HTMLButtonElement;
+  text: HTMLSpanElement;
 }
 
 class Toolbar {
   toolbarEl: HTMLDivElement;
   iconElementsMap: Record<IconElementsName, IIconElements>;
-  dropdownIconMap: Record<DropdownIconName, IDropdownElements>;
+  buttonElementsMap: Record<DropdownButtonName, IButtonElements>;
+  dropdownMap: Record<DropdownName, IDropdownElements>;
   colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
   borderElements: IBorderElements;
-  functionElement: IFunctionElement;
+  fontSizeElements: IFontSizeElements;
+  functionElement: IFunctionElements;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -78,13 +93,24 @@ class Toolbar {
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
     this.iconElementsMap = {} as Record<string, IIconElements>;
-    this.dropdownIconMap = {} as Record<DropdownIconName, IDropdownElements>;
+    this.dropdownMap = {} as Record<DropdownName, IDropdownElements>;
     this.colorPickerElementsMap = {} as Record<
       ColorPickerIconName,
       IColorPickerElements
     >;
     this.borderElements = {} as IBorderElements;
-    this.functionElement = {} as IFunctionElement;
+    this.functionElement = {} as IFunctionElements;
+    this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
+
+    const { dropdownContent, fontSizes } = createFontSizeContent();
+
+    this.setDropdownButtonContent('fontSize', dropdownContent, true);
+
+    this.buttonElementsMap.fontSize.text.textContent = '10';
+
+    this.fontSizeElements = {
+      fontSizes,
+    };
 
     toggleIconNames.forEach((name) => {
       switch (name) {
@@ -118,7 +144,7 @@ class Toolbar {
             secondBordersRow,
           } = createBordersContent();
 
-          this.setDropdownContent(name, dropdownContent, true);
+          this.setDropdownIconContent(name, dropdownContent, true);
 
           this.borderElements = {
             borderGroups,
@@ -143,7 +169,7 @@ class Toolbar {
           const { dropdownContent, aligns } =
             createHorizontalTextAlignContent();
 
-          this.setDropdownContent(name, dropdownContent, true);
+          this.setDropdownIconContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
             const name = key as HorizontalTextAlignName;
@@ -157,7 +183,7 @@ class Toolbar {
         case 'verticalTextAlign': {
           const { dropdownContent, aligns } = createVerticalTextAlignContent();
 
-          this.setDropdownContent(name, dropdownContent, true);
+          this.setDropdownIconContent(name, dropdownContent, true);
 
           Object.keys(aligns).forEach((key) => {
             const name = key as VerticalTextAlignName;
@@ -173,7 +199,7 @@ class Toolbar {
               this.spreadsheet.registeredFunctionNames
             );
 
-          this.setDropdownContent(name, dropdownContent, true);
+          this.setDropdownIconContent(name, dropdownContent, true);
 
           this.functionElement = {
             registeredFunctionButtons,
@@ -183,7 +209,7 @@ class Toolbar {
         }
         default: {
           const iconElements = createIconButton(name, toolbarPrefix);
-          const tooltip = createTooltip(name);
+          const tooltip = createTooltip(name, toolbarPrefix);
 
           iconElements.button.appendChild(tooltip);
 
@@ -232,7 +258,7 @@ class Toolbar {
 
         setDropdownActive(e as HTMLButtonElement, true);
 
-        return this.dropdownIconMap[name].dropdownContent;
+        return this.dropdownMap[name].dropdownContent;
       },
     });
 
@@ -240,40 +266,43 @@ class Toolbar {
 
     this.toolbarActionGroups = [
       {
-        elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
+        elements: [icons.redo.button, icons.undo.button],
+      },
+      {
+        elements: [this.buttonElementsMap.fontSize.button],
       },
       {
         elements: [
-          icons.bold.buttonContainer,
-          icons.italic.buttonContainer,
-          icons.underline.buttonContainer,
-          icons.strikeThrough.buttonContainer,
-          icons.fontColor.buttonContainer,
+          icons.bold.button,
+          icons.italic.button,
+          icons.underline.button,
+          icons.strikeThrough.button,
+          icons.fontColor.button,
         ],
       },
       {
         elements: [
-          icons.backgroundColor.buttonContainer,
-          icons.borders.buttonContainer,
-          icons.merge.buttonContainer,
+          icons.backgroundColor.button,
+          icons.borders.button,
+          icons.merge.button,
         ],
       },
       {
         elements: [
-          icons.horizontalTextAlign.buttonContainer,
-          icons.verticalTextAlign.buttonContainer,
-          icons.textWrap.buttonContainer,
+          icons.horizontalTextAlign.button,
+          icons.verticalTextAlign.button,
+          icons.textWrap.button,
         ],
       },
       {
         elements: [
-          icons.freeze.buttonContainer,
-          icons.functions.buttonContainer,
-          icons.formula.buttonContainer,
+          icons.freeze.button,
+          icons.functions.button,
+          icons.formula.button,
         ],
       },
       {
-        elements: [icons.export.buttonContainer],
+        elements: [icons.export.button],
       },
     ];
 
@@ -633,17 +662,40 @@ class Toolbar {
     this.tooltip.destroy();
   }
 
-  setDropdownContent(
+  setDropdownIconContent(
     name: DropdownIconName,
     dropdownContent: HTMLDivElement,
     createArrow?: boolean
   ) {
     const { iconButtonValues, arrowIconValues, tooltip } =
-      createDropdownIconButton(name, createArrow);
+      createDropdownIconButton(name, toolbarPrefix, createArrow);
 
     this.iconElementsMap[name] = iconButtonValues;
 
-    this.dropdownIconMap[name] = {
+    this.dropdownMap[name] = {
+      dropdownContent,
+      tooltip,
+      ...arrowIconValues,
+    };
+  }
+
+  setDropdownButtonContent(
+    name: DropdownButtonName,
+    dropdownContent: HTMLDivElement,
+    createArrow?: boolean
+  ) {
+    const { button, text, arrowIconValues, tooltip } = createDropdownButton(
+      name,
+      toolbarPrefix,
+      createArrow
+    );
+
+    this.buttonElementsMap[name] = {
+      button,
+      text,
+    };
+
+    this.dropdownMap[name] = {
       dropdownContent,
       tooltip,
       ...arrowIconValues,
@@ -653,7 +705,7 @@ class Toolbar {
   setDropdownColorPicker(name: ColorPickerIconName) {
     const { dropdownContent, colorPicker, picker } = createColorPickerContent();
 
-    this.setDropdownContent(name, dropdownContent);
+    this.setDropdownIconContent(name, dropdownContent);
 
     const colorBar = createColorBar(picker);
 

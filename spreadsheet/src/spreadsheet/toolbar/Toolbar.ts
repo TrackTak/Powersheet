@@ -572,7 +572,7 @@ class Toolbar {
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.save('frozenCells', { row: row.x, col: col.x });
+          sheet.setData({ frozenCells: { row: row.x, col: col.x } });
         }
         break;
       }

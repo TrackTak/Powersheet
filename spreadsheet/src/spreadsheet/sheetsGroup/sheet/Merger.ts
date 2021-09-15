@@ -19,10 +19,11 @@ class Merger {
       this.sheet.cellRenderer.getCellData(topLeftCellId)?.style;
     const cellsData = data.cellsData;
 
-    this.sheet.save(
-      'mergedCells',
-      data.mergedCells ? [...data.mergedCells, mergedCells] : [mergedCells]
-    );
+    this.sheet.setData({
+      mergedCells: data.mergedCells
+        ? [...data.mergedCells, mergedCells]
+        : [mergedCells],
+    });
 
     for (const ri of iterateSelection(mergedCells.row)) {
       for (const ci of iterateSelection(mergedCells.col)) {
@@ -52,7 +53,9 @@ class Merger {
         col,
       });
     });
-    this.sheet.save('mergedCells', updatedMergedCells);
+    this.sheet.setData({
+      mergedCells: updatedMergedCells,
+    });
 
     if (!this.getIsCellMerged(mergedCellId)) return;
 

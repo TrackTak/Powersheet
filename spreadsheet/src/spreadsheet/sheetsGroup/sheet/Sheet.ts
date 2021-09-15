@@ -424,30 +424,6 @@ class Sheet {
     }, 20);
   }
 
-  save = <T extends keyof IData>(
-    dataKey: T,
-    newValue: IData[T],
-    withHistory = true
-  ) => {
-    const sheetData = this.getData();
-    if (this.history && withHistory) {
-      this.history.push({ ...sheetData });
-    }
-    sheetData[dataKey] = newValue;
-  };
-
-  undo = () => {
-    if (!this.history.canUndo) return;
-    this.history.undo();
-    this.updateViewport();
-  };
-
-  redo = () => {
-    if (!this.history.canRedo) return;
-    this.history.redo();
-    this.updateViewport();
-  };
-
   restoreHyperformulaData = () => {
     const data = this.getData().cellsData || {};
     Object.keys(data).forEach((id) => {
@@ -580,6 +556,18 @@ class Sheet {
       value
     );
   }
+
+  undo = () => {
+    if (!this.history.canUndo) return;
+    this.history.undo();
+    this.updateViewport();
+  };
+
+  redo = () => {
+    if (!this.history.canRedo) return;
+    this.history.redo();
+    this.updateViewport();
+  };
 
   getHyperformulaSheetId() {
     return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;

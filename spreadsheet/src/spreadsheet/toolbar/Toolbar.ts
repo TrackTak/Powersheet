@@ -3,12 +3,13 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import {
   BorderStyle,
+  getCellRectFromCell,
+  getCellTextFromCell,
   HorizontalTextAlign,
   ICellStyle,
   TextWrap,
   VerticalTextAlign,
 } from '../sheetsGroup/sheet/Sheet';
-import { Rect } from 'konva/lib/shapes/Rect';
 import {
   ColorPickerIconName,
   createBordersContent,
@@ -98,12 +99,15 @@ class Toolbar {
           );
           break;
         }
-        case 'color': {
+        case 'fontColor': {
           this.setDropdownColorPicker(name);
 
-          this.colorPickerElementsMap.color.picker.on('change', (_, color) => {
-            this.setValue(name, color);
-          });
+          this.colorPickerElementsMap.fontColor.picker.on(
+            'change',
+            (_, fontColor) => {
+              this.setValue(name, fontColor);
+            }
+          );
           break;
         }
         case 'borders': {
@@ -240,11 +244,11 @@ class Toolbar {
       },
       {
         elements: [
-          icons.fontBold.buttonContainer,
-          icons.fontItalic.buttonContainer,
+          icons.bold.buttonContainer,
+          icons.italic.buttonContainer,
           icons.underline.buttonContainer,
-          icons.strike.buttonContainer,
-          icons.color.buttonContainer,
+          icons.strikeThrough.buttonContainer,
+          icons.fontColor.buttonContainer,
         ],
       },
       {
@@ -474,12 +478,53 @@ class Toolbar {
       }
       case 'backgroundColor': {
         if (!value) break;
+
         const backgroundColor = value;
 
         this.setStyleForSelectedCells<string>(
           'backgroundColor',
           backgroundColor
         );
+        break;
+      }
+      case 'fontColor': {
+        if (!value) break;
+
+        const fontColor = value;
+
+        this.setStyleForSelectedCells<string>('fontColor', fontColor);
+        break;
+      }
+      case 'bold': {
+        if (this.iconElementsMap.bold.active) {
+          this.deleteStyleForSelectedCells('bold');
+        } else {
+          this.setStyleForSelectedCells<true>('bold', true);
+        }
+        break;
+      }
+      case 'italic': {
+        if (this.iconElementsMap.italic.active) {
+          this.deleteStyleForSelectedCells('italic');
+        } else {
+          this.setStyleForSelectedCells<true>('italic', true);
+        }
+        break;
+      }
+      case 'strikeThrough': {
+        if (this.iconElementsMap.strikeThrough.active) {
+          this.deleteStyleForSelectedCells('strikeThrough');
+        } else {
+          this.setStyleForSelectedCells<true>('strikeThrough', true);
+        }
+        break;
+      }
+      case 'underline': {
+        if (this.iconElementsMap.underline.active) {
+          this.deleteStyleForSelectedCells('underline');
+        } else {
+          this.setStyleForSelectedCells<true>('underline', true);
+        }
         break;
       }
       case 'merge': {
@@ -499,8 +544,6 @@ class Toolbar {
 
           sheet.getData().frozenCells = { row: row.x, col: col.x };
         }
-
-        this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
         break;
       }
       case 'borderBottom': {
@@ -557,48 +600,33 @@ class Toolbar {
     const firstSelectedCell = sheet.selector.selectedFirstCell;
     const firstSelectedCellId = firstSelectedCell!.id();
 
-    this.iconElementsMap.merge.button.disabled = true;
-
-    if (sheet.cellRenderer.cellsMap.has(firstSelectedCellId)) {
-      const cell = sheet.cellRenderer.cellsMap.get(firstSelectedCellId)!;
-      const cellRect = cell.children?.find(
-        (x) => x.attrs.type === 'cellRect'
-      ) as Rect;
-
-      this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
-        cellRect.fill();
-    } else {
-      this.colorPickerElementsMap.backgroundColor.colorBar.style.backgroundColor =
-        'white';
-    }
-
+    this.setActiveColor(firstSelectedCellId, 'backgroundColor');
+    this.setActiveColor(firstSelectedCellId, 'fontColor');
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
-
     this.setActive(
       this.iconElementsMap.textWrap,
-      this.isTextWrapActive(firstSelectedCellId)
+      this.isActive(firstSelectedCellId, 'textWrap')
+    );
+    this.setActive(
+      this.iconElementsMap.bold,
+      this.isActive(firstSelectedCellId, 'bold')
+    );
+    this.setActive(
+      this.iconElementsMap.italic,
+      this.isActive(firstSelectedCellId, 'italic')
+    );
+    this.setActive(
+      this.iconElementsMap.strikeThrough,
+      this.isActive(firstSelectedCellId, 'strikeThrough')
+    );
+    this.setActive(
+      this.iconElementsMap.underline,
+      this.isActive(firstSelectedCellId, 'underline')
     );
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
-
-    this.setMergedState(selectedCells);
+    this.setActiveMergedCells(selectedCells);
   };
-
-  setMergedState(selectedCells: Cell[]) {
-    const cell = selectedCells[0];
-    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellMerged(
-      cell.id()
-    );
-    const isActive = selectedCells.length === 1 && isMerged;
-
-    if (isActive) {
-      this.iconElementsMap.merge.button.disabled = false;
-    } else {
-      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
-    }
-
-    this.setActive(this.iconElementsMap.merge, isActive);
-  }
 
   destroy() {
     this.toolbarEl.remove();
@@ -636,6 +664,46 @@ class Toolbar {
       picker,
       colorPicker,
     };
+  }
+
+  private setActiveColor(
+    cellId: CellId,
+    colorPickerIconName: ColorPickerIconName
+  ) {
+    const isBackgroundColor = colorPickerIconName === 'backgroundColor';
+    const sheet = this.spreadsheet.focusedSheet!;
+    const defaultFill = isBackgroundColor ? '' : 'black';
+
+    if (sheet.cellRenderer.cellsMap.has(cellId)) {
+      const cell = sheet.cellRenderer.cellsMap.get(cellId)!;
+      const shape = isBackgroundColor
+        ? getCellRectFromCell(cell)
+        : getCellTextFromCell(cell);
+
+      this.colorPickerElementsMap[
+        colorPickerIconName
+      ].colorBar.style.backgroundColor = shape?.fill() ?? defaultFill;
+    } else {
+      this.colorPickerElementsMap[
+        colorPickerIconName
+      ].colorBar.style.backgroundColor = defaultFill;
+    }
+  }
+
+  setActiveMergedCells(selectedCells: Cell[]) {
+    const cell = selectedCells[0];
+    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellMerged(
+      cell.id()
+    );
+    const isActive = selectedCells.length === 1 && isMerged;
+
+    if (isActive) {
+      this.iconElementsMap.merge.button.disabled = false;
+    } else {
+      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
+    }
+
+    this.setActive(this.iconElementsMap.merge, isActive);
   }
 
   setActiveHorizontalIcon(cellId: CellId) {
@@ -680,9 +748,9 @@ class Toolbar {
     return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
   }
 
-  isTextWrapActive(cellId: CellId) {
+  isActive(cellId: CellId, key: keyof ICellStyle) {
     return !!this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)
-      ?.style?.textWrap;
+      ?.style?.[key];
   }
 
   setActive(iconElements: IIconElements, active: boolean) {

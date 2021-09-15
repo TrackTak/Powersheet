@@ -47,11 +47,11 @@ $iconSize: 18px;
     left: -4 * $iconSize;
     top: 0;
   }
-  &.fontBold {
+  &.bold {
     left: -5 * $iconSize;
     top: 0;
   }
-  &.fontItalic {
+  &.italic {
     left: -6 * $iconSize;
     top: 0;
   }
@@ -59,11 +59,11 @@ $iconSize: 18px;
     left: -7 * $iconSize;
     top: 0;
   }
-  &.strike {
+  &.strikeThrough {
     left: -8 * $iconSize;
     top: 0;
   }
-  &.color {
+  &.fontColor {
     left: -9 * $iconSize;
     top: 0;
   }

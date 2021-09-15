@@ -6,7 +6,7 @@ import styles from './Toolbar.module.scss';
 
 export const toolbarPrefix = `${prefix}-toolbar`;
 
-export type ColorPickerIconName = 'backgroundColor' | 'color';
+export type ColorPickerIconName = 'backgroundColor' | 'fontColor';
 
 export type BorderIconFirstRowsName =
   | 'borderAll'
@@ -62,11 +62,11 @@ export const borderTypes: [
 export const toggleIconNames = <const>[
   'undo',
   'redo',
-  'fontBold',
-  'fontItalic',
+  'bold',
+  'italic',
+  'fontColor',
   'underline',
-  'strike',
-  'color',
+  'strikeThrough',
   'backgroundColor',
   'merge',
   'horizontalTextAlign',

@@ -3,8 +3,6 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import {
   BorderStyle,
-  getCellRectFromCell,
-  getCellTextFromCell,
   HorizontalTextAlign,
   ICellStyle,
   TextWrap,
@@ -737,26 +735,21 @@ class Toolbar {
     cellId: CellId,
     colorPickerIconName: ColorPickerIconName
   ) {
-    const isBackgroundColor = colorPickerIconName === 'backgroundColor';
-    const sheet = this.spreadsheet.focusedSheet!;
-    const defaultFill = isBackgroundColor
-      ? ''
-      : this.spreadsheet.styles.cell.text.fill!;
+    let fill;
 
-    if (sheet.cellRenderer.cellsMap.has(cellId)) {
-      const cell = sheet.cellRenderer.cellsMap.get(cellId)!;
-      const shape = isBackgroundColor
-        ? getCellRectFromCell(cell)
-        : getCellTextFromCell(cell);
-
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = shape?.fill() ?? defaultFill;
+    if (colorPickerIconName === 'backgroundColor') {
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.backgroundColor ?? '';
     } else {
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = defaultFill;
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
     }
+
+    this.colorPickerElementsMap[
+      colorPickerIconName
+    ].colorBar.style.backgroundColor = fill;
   }
 
   setActiveMergedCells(selectedCells: Cell[]) {

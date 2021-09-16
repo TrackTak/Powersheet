@@ -166,12 +166,10 @@ class SheetsGroup {
 
   setSheetData(sheetId: SheetId, newValue: IData) {
     const sheetsData = cloneDeep(this.spreadsheet.data);
-    if (this.history) {
-      const dataToPush = isEmpty(sheetsData)
-        ? { [sheetId]: newValue }
-        : sheetsData;
-      this.history.push(dataToPush);
-    }
+    const dataToPush = isEmpty(sheetsData)
+      ? { [sheetId]: newValue }
+      : sheetsData;
+    this.history.push(dataToPush);
 
     this.spreadsheet.data[sheetId] = {
       ...this.spreadsheet.data[sheetId],

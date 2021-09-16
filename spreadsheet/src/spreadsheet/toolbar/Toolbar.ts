@@ -617,11 +617,11 @@ class Toolbar {
         break;
       }
       case 'undo': {
-        this.spreadsheet.sheetsGroups[0].undo();
+        sheet.sheetsGroup.undo();
         break;
       }
       case 'redo': {
-        this.spreadsheet.sheetsGroups[0].redo();
+        sheet.sheetsGroup.redo();
         break;
       }
     }

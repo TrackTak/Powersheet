@@ -897,17 +897,8 @@ class Toolbar {
   }
 
   setActiveHistoryIcons(history: Manager) {
-    if (history.canUndo) {
-      this.setDisabled(this.iconElementsMap.undo, false);
-    } else {
-      this.setDisabled(this.iconElementsMap.undo, true);
-    }
-
-    if (history.canRedo) {
-      this.setDisabled(this.iconElementsMap.redo, false);
-    } else {
-      this.setDisabled(this.iconElementsMap.redo, true);
-    }
+    this.setDisabled(this.iconElementsMap.undo, !history.canUndo);
+    this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
   }
 
   isFreezeActive() {

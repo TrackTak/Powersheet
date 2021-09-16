@@ -85,8 +85,10 @@ class CellEditor {
   };
 
   setTextContent(value: string | undefined | null) {
-    this.cellEditorEl.textContent = value || '';
+    const textContent = value || '';
 
+    this.cellEditorEl.textContent = textContent;
+    this.spreadsheet.formulaBar?.setTextContent(textContent);
     this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
   }
 

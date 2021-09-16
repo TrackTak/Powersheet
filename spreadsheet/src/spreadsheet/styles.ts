@@ -161,6 +161,7 @@ export const defaultStyles: IStyles = {
       fontSize: 14,
       fill: 'black',
       align: 'left',
+      verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
     },

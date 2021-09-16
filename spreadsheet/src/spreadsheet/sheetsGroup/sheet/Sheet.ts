@@ -450,30 +450,17 @@ class Sheet {
     }
   };
 
-  hasDoubleClickedOnCell = () => {
+  hasDoubleClickedOnCell() {
     const timeNow = new Date().getTime();
     const delayTime = 500;
-    const viewportVector = this.getViewportVector();
-    const previousSelectedCellPosition =
-      this.selector.previousSelectedCellPosition;
-    if (!previousSelectedCellPosition) {
-      return;
-    }
-    const { x, y } = {
-      x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
-      y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
-    };
-    const isInCellX =
-      x >= previousSelectedCellPosition.x &&
-      x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
-    const isInCellY =
-      y >= previousSelectedCellPosition.y &&
-      y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
-    const isClickedInCell = isInCellX && isInCellY;
 
     this.lastClickTime = timeNow;
-    return isClickedInCell && timeNow <= this.lastClickTime + delayTime;
-  };
+
+    return (
+      !this.selector.hasChangedCellSelection() &&
+      timeNow <= this.lastClickTime + delayTime
+    );
+  }
 
   keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();

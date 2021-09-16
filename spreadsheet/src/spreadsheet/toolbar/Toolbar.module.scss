@@ -9,13 +9,15 @@
   @include tippyContentNoPadding;
 }
 
+button.textFormatButton,
 button.fontSizeButton {
   padding-left: 15px;
   padding-right: 15px;
 }
 
+.textFormatButton,
 .fontSizeButton,
-.functionName {
+.functionNameButton {
   @include button();
   @include buttonAction;
 }
@@ -24,6 +26,7 @@ button.fontSizeButton {
   max-height: 400px;
 }
 
+.textFormats,
 .fontSizes,
 .functions,
 .borders {

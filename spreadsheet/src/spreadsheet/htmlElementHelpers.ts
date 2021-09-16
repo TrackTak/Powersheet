@@ -25,7 +25,7 @@ export interface IIconElements extends IActionElements {
   icon: HTMLElement;
 }
 
-export type DropdownButtonName = 'fontSize';
+export type DropdownButtonName = 'fontSize' | 'textFormatPattern';
 
 export type DropdownName = DropdownIconName | DropdownButtonName;
 
@@ -120,7 +120,7 @@ export const createDropdownButton = (
     `${classNamePrefix}-dropdown-button`
   );
 
-  text.classList.add(`${classNamePrefix}-text`);
+  text.classList.add(styles.text, `${classNamePrefix}-text`);
 
   button.appendChild(text);
 

@@ -16,6 +16,7 @@ import {
   createFontSizeContent,
   createFunctionDropdownContent,
   createHorizontalTextAlignContent,
+  createTextFormatContent,
   createVerticalTextAlignContent,
   HorizontalTextAlignName,
   IconElementsName,
@@ -39,6 +40,7 @@ import {
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
+import { sentenceCase } from 'sentence-case';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -68,6 +70,16 @@ interface IFontSizeElements {
   fontSizes: Record<number, HTMLButtonElement>;
 }
 
+interface ITextFormatElements {
+  textFormats: Record<string, HTMLButtonElement>;
+}
+
+export interface ITextFormatMap {
+  plainText: string;
+  number: string;
+  percent: string;
+}
+
 class Toolbar {
   toolbarEl: HTMLDivElement;
   iconElementsMap: Record<IconElementsName, IIconElements>;
@@ -76,7 +88,9 @@ class Toolbar {
   colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
   borderElements: IBorderElements;
   fontSizeElements: IFontSizeElements;
-  functionElement: IFunctionElements;
+  textFormatElements: ITextFormatElements;
+  textFormatMap: ITextFormatMap;
+  functionElements: IFunctionElements;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -93,15 +107,33 @@ class Toolbar {
       IColorPickerElements
     >;
     this.borderElements = {} as IBorderElements;
-    this.functionElement = {} as IFunctionElements;
+    this.textFormatElements = {} as ITextFormatElements;
+    this.textFormatMap = {
+      plainText: '',
+      number: '#,##0.00',
+      percent: '0.00%',
+    };
+    this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
-    const { dropdownContent, fontSizes } = createFontSizeContent();
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent();
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent(this.textFormatMap);
 
-    this.setDropdownButtonContent('fontSize', dropdownContent, true);
+    this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
+    this.setDropdownButtonContent(
+      'textFormatPattern',
+      textFormatDropdownContent,
+      true
+    );
 
     this.fontSizeElements = {
       fontSizes,
+    };
+
+    this.textFormatElements = {
+      textFormats,
     };
 
     toggleIconNames.forEach((name) => {
@@ -193,7 +225,7 @@ class Toolbar {
 
           this.setDropdownIconContent(name, dropdownContent, true);
 
-          this.functionElement = {
+          this.functionElements = {
             registeredFunctionButtons,
           };
 
@@ -266,6 +298,9 @@ class Toolbar {
         elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
       },
       {
+        elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],
+      },
+      {
         elements: [this.buttonElementsMap.fontSize.buttonContainer],
       },
       {
@@ -326,6 +361,12 @@ class Toolbar {
           this.setValue('fontSize', fontSize);
         }
       );
+    });
+
+    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
+      this.textFormatElements.textFormats[key].addEventListener('click', () => {
+        this.setValue('textFormatPattern', key);
+      });
     });
 
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
@@ -517,6 +558,15 @@ class Toolbar {
         }
         break;
       }
+      case 'textFormatPattern': {
+        const format = value as keyof ITextFormatMap;
+
+        this.setStyleForSelectedCells<string>(
+          'textFormatPattern',
+          this.textFormatMap[format]
+        );
+        break;
+      }
       case 'backgroundColor': {
         if (!value) break;
 
@@ -667,6 +717,7 @@ class Toolbar {
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
     this.setActiveFontSize(firstSelectedCellId);
+    this.setActiveTextFormat(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
   };
 
@@ -814,6 +865,25 @@ class Toolbar {
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
     ).toString();
+  }
+
+  setActiveTextFormat(cellId: CellId) {
+    const textFormatPattern =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.textFormatPattern;
+
+    let textFormat = 'plainText';
+
+    Object.keys(this.textFormatMap).forEach((key) => {
+      const value = this.textFormatMap[key as keyof ITextFormatMap];
+
+      if (textFormatPattern === value) {
+        textFormat = key;
+      }
+    });
+
+    this.buttonElementsMap.textFormatPattern.text.textContent =
+      sentenceCase(textFormat);
   }
 
   isFreezeActive() {

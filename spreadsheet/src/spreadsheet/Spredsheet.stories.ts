@@ -149,6 +149,12 @@ CellsData.args = {
           },
           value: 'Some value',
         },
+        '4_4': {
+          style: {
+            textFormatPattern: '0.00%',
+          },
+          value: '0.05',
+        },
       },
     },
   },

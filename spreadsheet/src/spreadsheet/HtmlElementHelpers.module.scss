@@ -10,6 +10,10 @@ $iconSize: 18px;
   display: inline-block;
 }
 
+.text {
+  white-space: nowrap;
+}
+
 .tooltip {
   position: absolute;
   height: 100%;

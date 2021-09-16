@@ -296,7 +296,7 @@ class Toolbar {
 
     this.toolbarActionGroups = [
       {
-        elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
+        elements: [icons.undo.buttonContainer, icons.redo.buttonContainer],
       },
       {
         elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],

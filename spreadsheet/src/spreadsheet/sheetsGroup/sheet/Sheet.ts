@@ -478,8 +478,14 @@ class Sheet {
       case 'Escape':
         this.destroyCellEditor();
         break;
+      case e.ctrlKey && 'z':
+        this.sheetsGroup.undo();
+        break;
+      case e.ctrlKey && 'y':
+        this.sheetsGroup.redo();
+        break;
       default:
-        if (!this.cellEditor) {
+        if (!this.cellEditor && !e.ctrlKey) {
           this.createCellEditor();
         }
     }

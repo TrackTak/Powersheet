@@ -186,11 +186,13 @@ class SheetsGroup {
   undo = () => {
     if (!this.history.canUndo) return;
     this.history.undo();
+    this.sheets.forEach((sheet) => sheet.updateViewport());
   };
 
   redo = () => {
     if (!this.history.canRedo) return;
     this.history.redo();
+    this.sheets.forEach((sheet) => sheet.updateViewport());
   };
 }
 

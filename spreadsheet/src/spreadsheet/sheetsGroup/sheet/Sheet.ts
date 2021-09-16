@@ -420,15 +420,6 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
   }
 
-  restoreHyperformulaData = () => {
-    const data = this.getData().cellsData || {};
-    Object.keys(data).forEach((id) => {
-      this.cellRenderer.setCellData(id, data[id]);
-    });
-
-    this.updateViewport();
-  };
-
   stageOnClick = () => {
     if (!this.cellEditor.getIsHidden()) {
       this.cellEditor.hide();
@@ -639,6 +630,9 @@ class Sheet {
     this.cellRenderer.updateCellsStyles();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
+    this.spreadsheet.formulaBar?.updateValue(
+      this.selector.selectedFirstCell?.id() ?? ''
+    );
   }
 
   drawNextItems() {

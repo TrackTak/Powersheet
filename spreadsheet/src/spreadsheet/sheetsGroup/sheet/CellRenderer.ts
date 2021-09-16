@@ -90,9 +90,18 @@ class CellRenderer {
     }
   }
 
+  setHyperformulaCellData(id: CellId, value: string | undefined) {
+    const cellAddress = this.getCellHyperformulaAddress(id);
+
+    try {
+      this.spreadsheet.hyperformula.setCellContents(cellAddress, value);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   setCellData(id: CellId, newValue: Partial<ICellData>) {
     const data = this.sheet.getData();
-
     const updatedData = merge({}, data, {
       cellsData: {
         [id]: {
@@ -100,17 +109,10 @@ class CellRenderer {
         },
       },
     });
+
     this.sheet.setData(updatedData);
 
-    const cellAddress = this.getCellHyperformulaAddress(id);
-    try {
-      this.spreadsheet.hyperformula.setCellContents(
-        cellAddress,
-        updatedData.cellsData[id].value
-      );
-    } catch (e) {
-      console.error(e);
-    }
+    this.setHyperformulaCellData(id, updatedData.cellsData[id].value);
   }
 
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {

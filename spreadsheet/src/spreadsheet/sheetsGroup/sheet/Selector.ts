@@ -90,8 +90,7 @@ class Selector {
     this.selectCells(cells);
 
     this.spreadsheet.setFocusedSheet(this.sheet);
-    this.spreadsheet.toolbar?.updateActiveStates();
-    this.spreadsheet.formulaBar?.updateValue(selectedFirstCell.id());
+    this.sheet.updateViewport();
 
     this.sheet.emit(
       events.selector.startSelection,

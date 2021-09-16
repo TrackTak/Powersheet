@@ -20,7 +20,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { cloneDeep, merge } from 'lodash';
+import { cloneDeep, merge, update } from 'lodash';
 
 export interface IDimensions {
   width: number;
@@ -547,11 +547,7 @@ class Sheet {
   }
 
   setData(value: Partial<IData>) {
-    const updatedData = {
-      ...this.getData(),
-      ...value,
-    };
-
+    const updatedData = merge({}, this.spreadsheet.data[this.sheetId], value);
     this.sheetsGroup.setSheetData(this.sheetId, updatedData);
   }
 

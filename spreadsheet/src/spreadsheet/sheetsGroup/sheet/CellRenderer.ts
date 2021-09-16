@@ -18,6 +18,7 @@ import Sheet, {
   VerticalTextAlign,
 } from './Sheet';
 import numfmt from 'numfmt';
+import { merge } from 'lodash';
 
 export type CellId = string;
 
@@ -92,20 +93,20 @@ class CellRenderer {
   setCellData(id: CellId, newValue: Partial<ICellData>) {
     const data = this.sheet.getData();
 
-    this.sheet.setData({
+    const updatedData = merge({}, data, {
       cellsData: {
-        ...data.cellsData,
         [id]: {
           ...newValue,
         },
       },
     });
+    this.sheet.setData(updatedData);
 
     const cellAddress = this.getCellHyperformulaAddress(id);
     try {
       this.spreadsheet.hyperformula.setCellContents(
         cellAddress,
-        this.sheet.getData().cellsData[id].value
+        updatedData.cellsData[id].value
       );
     } catch (e) {
       console.error(e);

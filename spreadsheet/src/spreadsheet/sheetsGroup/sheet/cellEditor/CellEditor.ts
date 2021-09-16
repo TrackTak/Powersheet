@@ -15,6 +15,7 @@ class CellEditor {
   private isEditing = false;
   private formulaHelper: FormulaHelper;
   private spreadsheet: Spreadsheet;
+  private cellId: string;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -50,11 +51,21 @@ class CellEditor {
     );
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
 
-    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+    this.cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
 
-    this.setTextContent(this.sheet.cellRenderer.getCellData(cellId)?.value);
+    this.setTextContent(
+      this.sheet.cellRenderer.getCellData(this.cellId)?.value
+    );
 
     this.showCellEditor();
+  }
+
+  saveContentToCell() {
+    if (this.cellEditorEl.textContent) {
+      this.sheet.cellRenderer.setCellData(this.cellId, {
+        value: this.cellEditorEl.textContent,
+      });
+    }
   }
 
   destroy() {
@@ -71,14 +82,6 @@ class CellEditor {
   };
 
   private setTextContent(value: string | undefined | null) {
-    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
-
-    if (value) {
-      this.sheet.cellRenderer.setCellData(cellId, {
-        value,
-      });
-    }
-
     this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
     this.cellEditorEl.textContent = value || '';
   }

@@ -41,6 +41,7 @@ import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
+import Manager from 'undo-redo-manager';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -295,7 +296,7 @@ class Toolbar {
 
     this.toolbarActionGroups = [
       {
-        elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
+        elements: [icons.undo.buttonContainer, icons.redo.buttonContainer],
       },
       {
         elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],
@@ -633,7 +634,7 @@ class Toolbar {
         } else {
           const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
-          sheet.getData().frozenCells = { row: row.x, col: col.x };
+          sheet.setData({ frozenCells: { row: row.x, col: col.x } });
         }
         break;
       }
@@ -675,6 +676,14 @@ class Toolbar {
       }
       case 'borderNone': {
         this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        break;
+      }
+      case 'undo': {
+        sheet.sheetsGroup.undo();
+        break;
+      }
+      case 'redo': {
+        sheet.sheetsGroup.redo();
         break;
       }
     }
@@ -719,6 +728,7 @@ class Toolbar {
     this.setActiveFontSize(firstSelectedCellId);
     this.setActiveTextFormat(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
+    this.setActiveHistoryIcons(sheet.sheetsGroup.history);
   };
 
   destroy() {
@@ -884,6 +894,11 @@ class Toolbar {
 
     this.buttonElementsMap.textFormatPattern.text.textContent =
       sentenceCase(textFormat);
+  }
+
+  setActiveHistoryIcons(history: Manager) {
+    this.setDisabled(this.iconElementsMap.undo, !history.canUndo);
+    this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
   }
 
   isFreezeActive() {

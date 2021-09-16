@@ -1,8 +1,11 @@
 import BottomBar from '../bottomBar/BottomBar';
-import Sheet, { IData, SheetId } from './sheet/Sheet';
+import Sheet, { IData, ISheetsData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
+import Manager from 'undo-redo-manager';
+import { isEmpty, cloneDeep } from 'lodash';
 
+const HISTORY_SIZE = 20;
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
   sheetsEl: HTMLDivElement;
@@ -10,6 +13,7 @@ class SheetsGroup {
   bottomBar: BottomBar;
   activeSheetId!: SheetId;
   sheetIndex: number;
+  history: Manager;
 
   constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
@@ -26,6 +30,12 @@ class SheetsGroup {
 
     this.sheetsGroupEl.prepend(this.sheetsEl);
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
+
+    this.history = new Manager((data: ISheetsData) => {
+      const currentData = this.spreadsheet.data;
+      this.spreadsheet.data = data;
+      return currentData;
+    }, HISTORY_SIZE);
 
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
@@ -137,9 +147,13 @@ class SheetsGroup {
   }
 
   createNewSheet(sheetId: SheetId, data: IData) {
-    this.setSheetData(sheetId, {
-      sheetName: data.sheetName,
-    });
+    this.setSheetData(
+      sheetId,
+      {
+        sheetName: data.sheetName,
+      },
+      false
+    );
 
     const sheet = new Sheet(this, sheetId);
 
@@ -154,12 +168,32 @@ class SheetsGroup {
     sheet.setSize();
   }
 
-  setSheetData(sheetId: SheetId, newValue: IData) {
+  setSheetData(sheetId: SheetId, newValue: IData, withHistory: boolean = true) {
+    if (withHistory) {
+      const sheetsData = cloneDeep(this.spreadsheet.data);
+      const dataToPush = isEmpty(sheetsData)
+        ? { [sheetId]: newValue }
+        : sheetsData;
+      this.history.push(dataToPush);
+    }
+
     this.spreadsheet.data[sheetId] = {
       ...this.spreadsheet.data[sheetId],
       ...newValue,
     };
   }
+
+  undo = () => {
+    if (!this.history.canUndo) return;
+    this.history.undo();
+    this.sheets.forEach((sheet) => sheet.updateViewport());
+  };
+
+  redo = () => {
+    if (!this.history.canRedo) return;
+    this.history.redo();
+    this.sheets.forEach((sheet) => sheet.updateViewport());
+  };
 }
 
 export default SheetsGroup;

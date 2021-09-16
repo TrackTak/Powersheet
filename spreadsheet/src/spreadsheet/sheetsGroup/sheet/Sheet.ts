@@ -414,6 +414,8 @@ class Sheet {
     this.updateViewport();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+
+    this.cellEditor = new CellEditor(this);
   }
 
   restoreHyperformulaData = () => {
@@ -476,8 +478,14 @@ class Sheet {
       case 'Escape':
         this.destroyCellEditor();
         break;
+      case e.ctrlKey && 'z':
+        this.sheetsGroup.undo();
+        break;
+      case e.ctrlKey && 'y':
+        this.sheetsGroup.redo();
+        break;
       default:
-        if (!this.cellEditor) {
+        if (!this.cellEditor && !e.ctrlKey) {
           this.createCellEditor();
         }
     }
@@ -490,6 +498,7 @@ class Sheet {
 
   destroyCellEditor = () => {
     if (this.cellEditor) {
+      this.cellEditor.saveContentToCell();
       this.cellEditor.destroy();
       this.stage.off('mousedown', this.destroyCellEditor);
       this.cellEditor = undefined;
@@ -538,17 +547,15 @@ class Sheet {
   }
 
   setData(value: Partial<IData>) {
-    this.spreadsheet.data[this.sheetId] = merge(
-      this.spreadsheet.data[this.sheetId],
-      value
-    );
+    const updatedData = merge({}, this.spreadsheet.data[this.sheetId], value);
+    this.sheetsGroup.setSheetData(this.sheetId, updatedData);
   }
 
   getHyperformulaSheetId() {
     return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
   }
 
-  getData() {
+  getData(): IData {
     return this.spreadsheet.data[this.sheetId];
   }
 

@@ -151,9 +151,9 @@ CellsData.args = {
         },
         '4_4': {
           style: {
-            textFormat: 'number',
+            textFormatPattern: '0.00%',
           },
-          value: '33.334',
+          value: '0.05',
         },
       },
     },

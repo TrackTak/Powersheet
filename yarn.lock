@@ -16050,6 +16050,11 @@ number-is-nan@^1.0.0:
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
   integrity sha1-CXtgK1NCKlIsGvuHkDGDNpQaAR0=
 
+numfmt@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/numfmt/-/numfmt-2.1.0.tgz#98bb11ca5eb242d537f4fb025c43768956c748b7"
+  integrity sha512-V+aEhwp4eXJgFQv3L1PjdtDGGHDSESRRJkO2t9cSDC2Vw/roDJNj04mwYNXCwDzH1uc2vwa0YWsxa5IkW1kwAg==
+
 nyc@^15.1.0:
   version "15.1.0"
   resolved "https://registry.yarnpkg.com/nyc/-/nyc-15.1.0.tgz#1335dae12ddc87b6e249d5a1994ca4bdaea75f02"

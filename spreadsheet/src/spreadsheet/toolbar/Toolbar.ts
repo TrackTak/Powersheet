@@ -5,7 +5,6 @@ import {
   BorderStyle,
   HorizontalTextAlign,
   ICellStyle,
-  TextFormat,
   TextWrap,
   VerticalTextAlign,
 } from '../sheetsGroup/sheet/Sheet';
@@ -72,7 +71,13 @@ interface IFontSizeElements {
 }
 
 interface ITextFormatElements {
-  textFormats: Record<TextFormat, HTMLButtonElement>;
+  textFormats: Record<string, HTMLButtonElement>;
+}
+
+export interface ITextFormatMap {
+  plainText: string;
+  number: string;
+  percent: string;
 }
 
 class Toolbar {
@@ -84,6 +89,7 @@ class Toolbar {
   borderElements: IBorderElements;
   fontSizeElements: IFontSizeElements;
   textFormatElements: ITextFormatElements;
+  textFormatMap: ITextFormatMap;
   functionElements: IFunctionElements;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
@@ -102,17 +108,22 @@ class Toolbar {
     >;
     this.borderElements = {} as IBorderElements;
     this.textFormatElements = {} as ITextFormatElements;
+    this.textFormatMap = {
+      plainText: '',
+      number: '#,##0.00',
+      percent: '0.00%',
+    };
     this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
     const { dropdownContent: fontSizeDropdownContent, fontSizes } =
       createFontSizeContent();
     const { dropdownContent: textFormatDropdownContent, textFormats } =
-      createTextFormatContent();
+      createTextFormatContent(this.textFormatMap);
 
     this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
     this.setDropdownButtonContent(
-      'textFormat',
+      'textFormatPattern',
       textFormatDropdownContent,
       true
     );
@@ -287,7 +298,7 @@ class Toolbar {
         elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
       },
       {
-        elements: [this.buttonElementsMap.textFormat.buttonContainer],
+        elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],
       },
       {
         elements: [this.buttonElementsMap.fontSize.buttonContainer],
@@ -353,14 +364,9 @@ class Toolbar {
     });
 
     Object.keys(this.textFormatElements.textFormats).forEach((key) => {
-      const textFormat = key as TextFormat;
-
-      this.textFormatElements.textFormats[textFormat].addEventListener(
-        'click',
-        () => {
-          this.setValue('textFormat', textFormat);
-        }
-      );
+      this.textFormatElements.textFormats[key].addEventListener('click', () => {
+        this.setValue('textFormatPattern', key);
+      });
     });
 
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
@@ -550,6 +556,15 @@ class Toolbar {
         } else {
           this.setStyleForSelectedCells<TextWrap>('textWrap', 'wrap');
         }
+        break;
+      }
+      case 'textFormatPattern': {
+        const format = value as keyof ITextFormatMap;
+
+        this.setStyleForSelectedCells<string>(
+          'textFormatPattern',
+          this.textFormatMap[format]
+        );
         break;
       }
       case 'backgroundColor': {
@@ -853,13 +868,22 @@ class Toolbar {
   }
 
   setActiveTextFormat(cellId: CellId) {
-    const textFormat =
+    const textFormatPattern =
       this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-        ?.textFormat;
+        ?.textFormatPattern;
 
-    this.buttonElementsMap.textFormat.text.textContent = sentenceCase(
-      textFormat ?? 'automatic'
-    );
+    let textFormat = 'plainText';
+
+    Object.keys(this.textFormatMap).forEach((key) => {
+      const value = this.textFormatMap[key as keyof ITextFormatMap];
+
+      if (textFormatPattern === value) {
+        textFormat = key;
+      }
+    });
+
+    this.buttonElementsMap.textFormatPattern.text.textContent =
+      sentenceCase(textFormat);
   }
 
   isFreezeActive() {

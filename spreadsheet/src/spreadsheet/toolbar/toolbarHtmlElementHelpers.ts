@@ -5,8 +5,8 @@ import {
   createIconButton,
   DropdownIconName,
 } from '../htmlElementHelpers';
-import { TextFormat } from '../sheetsGroup/sheet/Sheet';
 import { prefix } from '../utils';
+import { ITextFormatMap } from './Toolbar';
 import styles from './Toolbar.module.scss';
 
 export const toolbarPrefix = `${prefix}-toolbar`;
@@ -203,13 +203,13 @@ export const createHorizontalTextAlignContent = () => {
   return { dropdownContent, aligns };
 };
 
-export const createTextFormatContent = () => {
+export const createTextFormatContent = (textFormatMap: ITextFormatMap) => {
   const dropdownContent = createDropdownContent(
     toolbarPrefix,
     styles.textFormats
   );
 
-  const createTextFormatButton = (textFormat: TextFormat) => {
+  const createTextFormatButton = (textFormat: keyof ITextFormatMap) => {
     const textFormatButton = document.createElement('button');
 
     textFormatButton.textContent = sentenceCase(textFormat);
@@ -223,15 +223,13 @@ export const createTextFormatContent = () => {
     return textFormatButton;
   };
 
-  const textFormats = {
-    automatic: createTextFormatButton('automatic'),
-    plainText: createTextFormatButton('plainText'),
-    number: createTextFormatButton('number'),
-    percent: createTextFormatButton('percent'),
-    currency: createTextFormatButton('currency'),
-  };
+  const textFormats: Record<string, HTMLButtonElement> = {};
 
-  Object.values(textFormats).forEach((textFormatButton) => {
+  Object.keys(textFormatMap).forEach((key) => {
+    const textFormat = key as keyof ITextFormatMap;
+    const textFormatButton = createTextFormatButton(textFormat);
+
+    textFormats[key] = textFormatButton;
     dropdownContent.appendChild(textFormatButton);
   });
 

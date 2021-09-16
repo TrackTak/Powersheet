@@ -369,6 +369,19 @@ class Toolbar {
       });
     });
 
+    this.dropdownMap.functions.dropdownContent.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+
+        if (target?.matches('button')) {
+          const functionName = target.dataset.function;
+
+          this.setValue('functions', functionName);
+        }
+      }
+    );
+
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
   }
 
@@ -504,6 +517,22 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'functions': {
+        if (sheet.selector.selectedCells.length > 1) {
+          const rowRange = sheet.row.convertFromCellsToRange(
+            sheet.selector.selectedCells
+          );
+          const colRange = sheet.col.convertFromCellsToRange(
+            sheet.selector.selectedCells
+          );
+        } else {
+          const firstSelectedCell = sheet.selector.selectedFirstCell!;
+
+          console.log(value);
+        }
+
+        break;
+      }
       case 'alignLeft': {
         this.setStyleForSelectedCells<HorizontalTextAlign>(
           'horizontalTextAlign',

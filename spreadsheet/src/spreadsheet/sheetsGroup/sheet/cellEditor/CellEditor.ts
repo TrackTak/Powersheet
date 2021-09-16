@@ -45,8 +45,23 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
+
     this.formulaHelper = new FormulaHelper(formulas, this.onItemClick);
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
+  }
+
+  saveContentToCell() {
+    if (this.cellEditorEl.textContent) {
+      this.sheet.cellRenderer.setCellData(this.currentCell!.id(), {
+        value: this.cellEditorEl.textContent,
+      });
+    } else {
+      const cell = this.sheet.cellRenderer.getCellData(this.currentCell!.id());
+
+      if (cell) {
+        delete cell.value;
+      }
+    }
   }
 
   destroy() {
@@ -68,20 +83,6 @@ class CellEditor {
   };
 
   setTextContent(value: string | undefined | null) {
-    const cellId = this.currentCell!.id();
-
-    if (value) {
-      this.sheet.cellRenderer.setCellData(cellId, {
-        value,
-      });
-    } else {
-      const cell = this.sheet.cellRenderer.getCellData(cellId);
-
-      if (cell) {
-        delete cell.value;
-      }
-    }
-
     this.cellEditorEl.textContent = value || '';
 
     this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
@@ -125,6 +126,7 @@ class CellEditor {
 
     this.cellEditorContainerEl.style.display = 'none';
 
+    this.saveContentToCell();
     this.sheet.updateViewport();
   }
 

@@ -21492,6 +21492,11 @@ unc-path-regex@^0.1.2:
   resolved "https://registry.yarnpkg.com/unc-path-regex/-/unc-path-regex-0.1.2.tgz#e73dd3d7b0d7c5ed86fbac6b0ae7d8c6a69d50fa"
   integrity sha1-5z3T17DXxe2G+6xrCufYxqadUPo=
 
+undo-redo-manager@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/undo-redo-manager/-/undo-redo-manager-1.0.0.tgz#845bd079b8324d816e6c2d903efc510a30e135c8"
+  integrity sha512-nMBzETo2VdM0Nw6Ygi2Dhv4S3eH/EsLv8CXjZ0Mw2tcgezND/veuRYYKNEoj5uJRpDnog2mWKk8KlsEi92v2Vw==
+
 unfetch@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/unfetch/-/unfetch-4.2.0.tgz#7e21b0ef7d363d8d9af0fb929a5555f6ef97a3be"

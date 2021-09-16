@@ -42,7 +42,6 @@ import { Group } from 'konva/lib/Group';
 import { Cell, CellId, getCellId } from '../sheetsGroup/sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
 import { HyperFormula } from 'hyperformula';
-import Manager from 'undo-redo-manager';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -580,6 +579,11 @@ class Toolbar {
         this.setFunction(value);
         break;
       }
+      case 'formula': {
+        this.spreadsheet.options.showFormulas =
+          !this.spreadsheet.options.showFormulas;
+        break;
+      }
       case 'alignLeft': {
         this.setStyleForSelectedCells<HorizontalTextAlign>(
           'horizontalTextAlign',
@@ -798,6 +802,10 @@ class Toolbar {
       this.iconElementsMap.underline,
       this.isActive(selectedFirstCellId, 'underline')
     );
+    this.setActive(
+      this.iconElementsMap.formula,
+      this.spreadsheet.options.showFormulas
+    );
     this.setActiveHorizontalIcon(selectedFirstCellId);
     this.setActiveVerticalIcon(selectedFirstCellId);
     this.setActiveFontSize(selectedFirstCellId);
@@ -971,7 +979,7 @@ class Toolbar {
       sentenceCase(textFormat);
   }
 
-  setActiveHistoryIcons(history: Manager) {
+  setActiveHistoryIcons(history: any) {
     this.setDisabled(this.iconElementsMap.undo, !history.canUndo);
     this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
   }

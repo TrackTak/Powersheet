@@ -13,7 +13,7 @@ class SheetsGroup {
   bottomBar: BottomBar;
   activeSheetId!: SheetId;
   sheetIndex: number;
-  history: Manager;
+  history: any;
 
   constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;

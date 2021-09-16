@@ -248,13 +248,14 @@ class CellRenderer {
     const id = cell.id();
     const cellData = this.sheet.getData().cellsData?.[id];
     const style = cellData?.style;
+    const address = this.getCellHyperformulaAddress(id);
 
-    if (cellData?.value) {
-      const hyperformulaValue = this.spreadsheet.hyperformula.getCellValue(
-        this.getCellHyperformulaAddress(id)
-      );
+    const hyperformulaValue = this.spreadsheet.options.showFormulas
+      ? this.spreadsheet.hyperformula.getCellSerialized(address)
+      : this.spreadsheet.hyperformula.getCellValue(address);
 
-      this.setCellTextValue(cell, hyperformulaValue?.toString()!);
+    if (hyperformulaValue) {
+      this.setCellTextValue(cell, hyperformulaValue?.toString());
     }
 
     // We set these styles here because they affect the cell size

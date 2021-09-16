@@ -48,6 +48,8 @@ class CellEditor {
 
     this.formulaHelper = new FormulaHelper(formulas, this.onItemClick);
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
+
+    this.cellEditorContainerEl.style.display = 'none';
   }
 
   saveContentToCell() {
@@ -122,11 +124,12 @@ class CellEditor {
   }
 
   hide() {
+    this.saveContentToCell();
+
     this.currentCell = null;
 
     this.cellEditorContainerEl.style.display = 'none';
 
-    this.saveContentToCell();
     this.sheet.updateViewport();
   }
 

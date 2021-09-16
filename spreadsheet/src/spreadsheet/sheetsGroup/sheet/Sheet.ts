@@ -430,7 +430,9 @@ class Sheet {
   };
 
   stageOnClick = () => {
-    this.cellEditor.hide();
+    if (!this.cellEditor.getIsHidden()) {
+      this.cellEditor.hide();
+    }
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
@@ -481,12 +483,15 @@ class Sheet {
       case 'Escape': {
         this.cellEditor.hide();
         break;
-      case e.ctrlKey && 'z':
+      }
+      case e.ctrlKey && 'z': {
         this.sheetsGroup.undo();
         break;
-      case e.ctrlKey && 'y':
+      }
+      case e.ctrlKey && 'y': {
         this.sheetsGroup.redo();
         break;
+      }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           this.cellEditor.show(this.selector.selectedFirstCell!);

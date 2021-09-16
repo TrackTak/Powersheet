@@ -20,7 +20,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { cloneDeep, merge, update } from 'lodash';
+import { merge } from 'lodash';
 
 export interface IDimensions {
   width: number;

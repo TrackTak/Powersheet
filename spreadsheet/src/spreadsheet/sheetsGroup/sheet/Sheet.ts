@@ -79,7 +79,9 @@ export interface ICellStyle {
   borders?: BorderStyle[];
   backgroundColor?: string;
   fontColor?: string;
+  fontSize?: number;
   textWrap?: TextWrap;
+  textFormatPattern?: string;
   underline?: boolean;
   strikeThrough?: boolean;
   bold?: boolean;

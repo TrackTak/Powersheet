@@ -18,6 +18,7 @@ import Sheet, {
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
+import numfmt from 'numfmt';
 
 export type CellId = string;
 
@@ -189,6 +190,7 @@ class CellRenderer {
         underline,
         horizontalTextAlign,
         verticalTextAlign,
+        textFormatPattern,
       } = style;
 
       if (backgroundColor) {
@@ -221,6 +223,10 @@ class CellRenderer {
 
       if (verticalTextAlign) {
         this.setVerticalTextAlign(cell, verticalTextAlign);
+      }
+
+      if (textFormatPattern) {
+        this.setTextFormat(cell, textFormatPattern);
       }
 
       if (borders) {
@@ -261,11 +267,16 @@ class CellRenderer {
       this.setCellTextValue(cell, hyperformulaValue?.toString()!);
     }
 
+    // We set these styles here because they affect the cell size
     if (style) {
-      const { textWrap } = style;
+      const { textWrap, fontSize } = style;
 
       if (textWrap) {
         this.setTextWrap(cell, textWrap);
+      }
+
+      if (fontSize) {
+        this.setFontSize(cell, fontSize);
       }
     }
 
@@ -365,6 +376,14 @@ class CellRenderer {
     }
   }
 
+  setFontSize(cell: Cell, fontSize: number) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      cellText.fontSize(fontSize);
+    }
+  }
+
   private getFontStyle(bold: boolean | undefined, italic: boolean | undefined) {
     if (bold && italic) return 'italic bold';
 
@@ -445,6 +464,22 @@ class CellRenderer {
 
     if (cellText) {
       cellText.verticalAlign(verticalTextAlign);
+    }
+  }
+
+  setTextFormat(cell: Cell, textFormatPattern: string) {
+    const cellText = getCellTextFromCell(cell);
+
+    if (cellText) {
+      const text = cellText.text();
+      const num = parseFloat(text);
+
+      const formattedText = numfmt.format(
+        textFormatPattern,
+        isFinite(num) ? num : text
+      );
+
+      cellText.text(formattedText);
     }
   }
 

@@ -144,9 +144,16 @@ CellsData.args = {
           style: {
             underline: true,
             strikeThrough: true,
+            fontSize: 36,
             borders: ['borderBottom'],
           },
           value: 'Some value',
+        },
+        '4_4': {
+          style: {
+            textFormatPattern: '0.00%',
+          },
+          value: '0.05',
         },
       },
     },

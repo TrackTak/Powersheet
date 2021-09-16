@@ -3,8 +3,6 @@ import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import {
   BorderStyle,
-  getCellRectFromCell,
-  getCellTextFromCell,
   HorizontalTextAlign,
   ICellStyle,
   TextWrap,
@@ -18,6 +16,7 @@ import {
   createFontSizeContent,
   createFunctionDropdownContent,
   createHorizontalTextAlignContent,
+  createTextFormatContent,
   createVerticalTextAlignContent,
   HorizontalTextAlignName,
   IconElementsName,
@@ -41,6 +40,7 @@ import {
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
+import { sentenceCase } from 'sentence-case';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -70,6 +70,16 @@ interface IFontSizeElements {
   fontSizes: Record<number, HTMLButtonElement>;
 }
 
+interface ITextFormatElements {
+  textFormats: Record<string, HTMLButtonElement>;
+}
+
+export interface ITextFormatMap {
+  plainText: string;
+  number: string;
+  percent: string;
+}
+
 class Toolbar {
   toolbarEl: HTMLDivElement;
   iconElementsMap: Record<IconElementsName, IIconElements>;
@@ -78,7 +88,9 @@ class Toolbar {
   colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
   borderElements: IBorderElements;
   fontSizeElements: IFontSizeElements;
-  functionElement: IFunctionElements;
+  textFormatElements: ITextFormatElements;
+  textFormatMap: ITextFormatMap;
+  functionElements: IFunctionElements;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -95,17 +107,33 @@ class Toolbar {
       IColorPickerElements
     >;
     this.borderElements = {} as IBorderElements;
-    this.functionElement = {} as IFunctionElements;
+    this.textFormatElements = {} as ITextFormatElements;
+    this.textFormatMap = {
+      plainText: '',
+      number: '#,##0.00',
+      percent: '0.00%',
+    };
+    this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
-    const { dropdownContent, fontSizes } = createFontSizeContent();
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent();
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent(this.textFormatMap);
 
-    this.setDropdownButtonContent('fontSize', dropdownContent, true);
-
-    this.buttonElementsMap.fontSize.text.textContent = '10';
+    this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
+    this.setDropdownButtonContent(
+      'textFormatPattern',
+      textFormatDropdownContent,
+      true
+    );
 
     this.fontSizeElements = {
       fontSizes,
+    };
+
+    this.textFormatElements = {
+      textFormats,
     };
 
     toggleIconNames.forEach((name) => {
@@ -197,7 +225,7 @@ class Toolbar {
 
           this.setDropdownIconContent(name, dropdownContent, true);
 
-          this.functionElement = {
+          this.functionElements = {
             registeredFunctionButtons,
           };
 
@@ -270,6 +298,9 @@ class Toolbar {
         elements: [icons.redo.buttonContainer, icons.undo.buttonContainer],
       },
       {
+        elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],
+      },
+      {
         elements: [this.buttonElementsMap.fontSize.buttonContainer],
       },
       {
@@ -318,6 +349,23 @@ class Toolbar {
 
       this.iconElementsMap[name].button.addEventListener('click', () => {
         this.setValue(name);
+      });
+    });
+
+    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
+      const fontSize = parseInt(key, 10);
+
+      this.fontSizeElements.fontSizes[fontSize].addEventListener(
+        'click',
+        () => {
+          this.setValue('fontSize', fontSize);
+        }
+      );
+    });
+
+    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
+      this.textFormatElements.textFormats[key].addEventListener('click', () => {
+        this.setValue('textFormatPattern', key);
       });
     });
 
@@ -452,7 +500,7 @@ class Toolbar {
     });
   }
 
-  setValue = (name: IconElementsName, value?: any) => {
+  setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
@@ -498,12 +546,25 @@ class Toolbar {
         );
         break;
       }
+      case 'fontSize': {
+        this.setStyleForSelectedCells<number>('fontSize', value);
+        break;
+      }
       case 'textWrap': {
         if (this.iconElementsMap.textWrap.active) {
           this.deleteStyleForSelectedCells('textWrap');
         } else {
           this.setStyleForSelectedCells<TextWrap>('textWrap', 'wrap');
         }
+        break;
+      }
+      case 'textFormatPattern': {
+        const format = value as keyof ITextFormatMap;
+
+        this.setStyleForSelectedCells<string>(
+          'textFormatPattern',
+          this.textFormatMap[format]
+        );
         break;
       }
       case 'backgroundColor': {
@@ -663,6 +724,8 @@ class Toolbar {
     );
     this.setActiveHorizontalIcon(firstSelectedCellId);
     this.setActiveVerticalIcon(firstSelectedCellId);
+    this.setActiveFontSize(firstSelectedCellId);
+    this.setActiveTextFormat(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
   };
 
@@ -731,24 +794,21 @@ class Toolbar {
     cellId: CellId,
     colorPickerIconName: ColorPickerIconName
   ) {
-    const isBackgroundColor = colorPickerIconName === 'backgroundColor';
-    const sheet = this.spreadsheet.focusedSheet!;
-    const defaultFill = isBackgroundColor ? '' : 'black';
+    let fill;
 
-    if (sheet.cellRenderer.cellsMap.has(cellId)) {
-      const cell = sheet.cellRenderer.cellsMap.get(cellId)!;
-      const shape = isBackgroundColor
-        ? getCellRectFromCell(cell)
-        : getCellTextFromCell(cell);
-
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = shape?.fill() ?? defaultFill;
+    if (colorPickerIconName === 'backgroundColor') {
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.backgroundColor ?? '';
     } else {
-      this.colorPickerElementsMap[
-        colorPickerIconName
-      ].colorBar.style.backgroundColor = defaultFill;
+      fill =
+        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+          ?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
     }
+
+    this.colorPickerElementsMap[
+      colorPickerIconName
+    ].colorBar.style.backgroundColor = fill;
   }
 
   setActiveMergedCells(selectedCells: Cell[]) {
@@ -803,6 +863,35 @@ class Toolbar {
         icon.dataset.activeIcon = 'middle';
         break;
     }
+  }
+
+  setActiveFontSize(cellId: CellId) {
+    const fontSize =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.fontSize;
+
+    this.buttonElementsMap.fontSize.text.textContent = (
+      fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
+    ).toString();
+  }
+
+  setActiveTextFormat(cellId: CellId) {
+    const textFormatPattern =
+      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
+        ?.textFormatPattern;
+
+    let textFormat = 'plainText';
+
+    Object.keys(this.textFormatMap).forEach((key) => {
+      const value = this.textFormatMap[key as keyof ITextFormatMap];
+
+      if (textFormatPattern === value) {
+        textFormat = key;
+      }
+    });
+
+    this.buttonElementsMap.textFormatPattern.text.textContent =
+      sentenceCase(textFormat);
   }
 
   isFreezeActive() {

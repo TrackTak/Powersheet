@@ -60,13 +60,15 @@ class CellEditor {
     this.showCellEditor();
   }
 
-  destroy() {
+  saveContentToCell() {
     if (this.cellEditorEl.textContent) {
       this.sheet.cellRenderer.setCellData(this.cellId, {
         value: this.cellEditorEl.textContent,
       });
     }
+  }
 
+  destroy() {
     this.cellTooltip.destroy();
     this.cellEditorContainerEl.remove();
     this.cellEditorEl.removeEventListener('input', this.handleInput);

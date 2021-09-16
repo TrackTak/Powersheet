@@ -18,7 +18,6 @@ import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import Manager from 'undo-redo-manager';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { cloneDeep, merge } from 'lodash';
@@ -293,7 +292,6 @@ class Sheet {
   cellEditor?: CellEditor;
   rightClickMenu?: RightClickMenu;
   comment: Comment;
-  history: Manager;
   private spreadsheet: Spreadsheet;
 
   constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
@@ -416,12 +414,6 @@ class Sheet {
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
-
-    this.history = new Manager((data: IData) => {
-      const currentData = this.getData();
-      this.spreadsheet.data[this.sheetId] = data;
-      return currentData;
-    }, 20);
   }
 
   restoreHyperformulaData = () => {
@@ -498,6 +490,7 @@ class Sheet {
 
   destroyCellEditor = () => {
     if (this.cellEditor) {
+      this.cellEditor.saveContentToCell();
       this.cellEditor.destroy();
       this.stage.off('mousedown', this.destroyCellEditor);
       this.cellEditor = undefined;
@@ -546,35 +539,17 @@ class Sheet {
   }
 
   setData(value: Partial<IData>) {
-    const sheetData = this.getData();
-    if (this.history) {
-      this.history.push({ ...sheetData });
-    }
+    const updatedData = merge(this.spreadsheet.data[this.sheetId], value);
 
-    this.spreadsheet.data[this.sheetId] = merge(
-      this.spreadsheet.data[this.sheetId],
-      value
-    );
+    this.sheetsGroup.setSheetData(this.sheetId, updatedData);
   }
-
-  undo = () => {
-    if (!this.history.canUndo) return;
-    this.history.undo();
-    this.updateViewport();
-  };
-
-  redo = () => {
-    if (!this.history.canRedo) return;
-    this.history.redo();
-    this.updateViewport();
-  };
 
   getHyperformulaSheetId() {
     return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
   }
 
-  getData() {
-    return cloneDeep(this.spreadsheet.data[this.sheetId]);
+  getData(): IData {
+    return this.spreadsheet.data[this.sheetId];
   }
 
   updateSheetDimensions() {

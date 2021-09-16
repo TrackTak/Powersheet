@@ -617,11 +617,11 @@ class Toolbar {
         break;
       }
       case 'undo': {
-        this.spreadsheet.focusedSheet?.undo();
+        this.spreadsheet.sheetsGroups[0].undo();
         break;
       }
       case 'redo': {
-        this.spreadsheet.focusedSheet?.redo();
+        this.spreadsheet.sheetsGroups[0].redo();
         break;
       }
     }

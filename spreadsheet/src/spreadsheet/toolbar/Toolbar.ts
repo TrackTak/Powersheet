@@ -41,6 +41,7 @@ import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
 import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
+import Manager from 'undo-redo-manager';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -727,6 +728,7 @@ class Toolbar {
     this.setActiveFontSize(firstSelectedCellId);
     this.setActiveTextFormat(firstSelectedCellId);
     this.setActiveMergedCells(selectedCells);
+    this.setActiveHistoryIcons(sheet.sheetsGroup.history);
   };
 
   destroy() {
@@ -892,6 +894,20 @@ class Toolbar {
 
     this.buttonElementsMap.textFormatPattern.text.textContent =
       sentenceCase(textFormat);
+  }
+
+  setActiveHistoryIcons(history: Manager) {
+    if (history.canUndo) {
+      this.setDisabled(this.iconElementsMap.undo, false);
+    } else {
+      this.setDisabled(this.iconElementsMap.undo, true);
+    }
+
+    if (history.canRedo) {
+      this.setDisabled(this.iconElementsMap.redo, false);
+    } else {
+      this.setDisabled(this.iconElementsMap.redo, true);
+    }
   }
 
   isFreezeActive() {

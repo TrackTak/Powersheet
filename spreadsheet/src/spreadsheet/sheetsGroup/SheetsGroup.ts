@@ -147,9 +147,13 @@ class SheetsGroup {
   }
 
   createNewSheet(sheetId: SheetId, data: IData) {
-    this.setSheetData(sheetId, {
-      sheetName: data.sheetName,
-    });
+    this.setSheetData(
+      sheetId,
+      {
+        sheetName: data.sheetName,
+      },
+      false
+    );
 
     const sheet = new Sheet(this, sheetId);
 
@@ -164,12 +168,14 @@ class SheetsGroup {
     sheet.setSize();
   }
 
-  setSheetData(sheetId: SheetId, newValue: IData) {
-    const sheetsData = cloneDeep(this.spreadsheet.data);
-    const dataToPush = isEmpty(sheetsData)
-      ? { [sheetId]: newValue }
-      : sheetsData;
-    this.history.push(dataToPush);
+  setSheetData(sheetId: SheetId, newValue: IData, withHistory: boolean = true) {
+    if (withHistory) {
+      const sheetsData = cloneDeep(this.spreadsheet.data);
+      const dataToPush = isEmpty(sheetsData)
+        ? { [sheetId]: newValue }
+        : sheetsData;
+      this.history.push(dataToPush);
+    }
 
     this.spreadsheet.data[sheetId] = {
       ...this.spreadsheet.data[sheetId],

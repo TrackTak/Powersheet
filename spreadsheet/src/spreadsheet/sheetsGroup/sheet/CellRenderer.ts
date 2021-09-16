@@ -3,7 +3,6 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
-import { merge } from 'lodash';
 import Spreadsheet from '../../Spreadsheet';
 import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
@@ -93,21 +92,20 @@ class CellRenderer {
   setCellData(id: CellId, newValue: Partial<ICellData>) {
     const data = this.sheet.getData();
 
-    this.sheet.setData(
-      merge(data, {
-        cellsData: {
-          [id]: {
-            ...newValue,
-          },
+    this.sheet.setData({
+      cellsData: {
+        ...data.cellsData,
+        [id]: {
+          ...newValue,
         },
-      })
-    );
+      },
+    });
 
     const cellAddress = this.getCellHyperformulaAddress(id);
     try {
       this.spreadsheet.hyperformula.setCellContents(
         cellAddress,
-        data.cellsData[id].value
+        this.sheet.getData().cellsData[id].value
       );
     } catch (e) {
       console.error(e);

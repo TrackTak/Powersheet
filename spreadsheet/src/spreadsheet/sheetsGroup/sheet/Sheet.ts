@@ -541,7 +541,10 @@ class Sheet {
   }
 
   setData(value: Partial<IData>) {
-    const updatedData = merge(this.spreadsheet.data[this.sheetId], value);
+    const updatedData = {
+      ...this.getData(),
+      ...value,
+    };
 
     this.sheetsGroup.setSheetData(this.sheetId, updatedData);
   }

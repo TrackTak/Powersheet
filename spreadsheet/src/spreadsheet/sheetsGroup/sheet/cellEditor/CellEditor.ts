@@ -74,6 +74,12 @@ class CellEditor {
       this.sheet.cellRenderer.setCellData(cellId, {
         value,
       });
+    } else {
+      const cell = this.sheet.cellRenderer.getCellData(cellId);
+
+      if (cell) {
+        delete cell.value;
+      }
     }
 
     this.cellEditorEl.textContent = value || '';

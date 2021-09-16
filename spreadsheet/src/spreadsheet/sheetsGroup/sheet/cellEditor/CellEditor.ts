@@ -7,14 +7,15 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import { HyperFormula } from 'hyperformula';
 import FormulaHelper from '../../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../../Spreadsheet';
+import { Cell } from '../CellRenderer';
 
 class CellEditor {
-  private cellEditorContainerEl: HTMLDivElement;
-  private cellEditorEl: HTMLDivElement;
-  private cellTooltip: DelegateInstance;
-  private isEditing = false;
-  private formulaHelper: FormulaHelper;
-  private spreadsheet: Spreadsheet;
+  cellEditorContainerEl: HTMLDivElement;
+  cellEditorEl: HTMLDivElement;
+  cellTooltip: DelegateInstance;
+  formulaHelper: FormulaHelper;
+  spreadsheet: Spreadsheet;
+  currentCell: Cell | null = null;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -44,17 +45,8 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
-    this.formulaHelper = new FormulaHelper(
-      formulas,
-      this.handleFormulaSuggestionClick
-    );
+    this.formulaHelper = new FormulaHelper(formulas, this.onItemClick);
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
-
-    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
-
-    this.setTextContent(this.sheet.cellRenderer.getCellData(cellId)?.value);
-
-    this.showCellEditor();
   }
 
   destroy() {
@@ -64,14 +56,19 @@ class CellEditor {
     this.formulaHelper.destroy();
   }
 
-  private handleFormulaSuggestionClick = (suggestion: string) => {
+  getIsHidden() {
+    return this.cellEditorContainerEl.style.display === 'none';
+  }
+
+  onItemClick = (suggestion: string) => {
     const value = `=${suggestion}()`;
+
     this.setTextContent(value);
     this.formulaHelper.hide();
   };
 
-  private setTextContent(value: string | undefined | null) {
-    const cellId = this.sheet.selector.selectedFirstCell?.attrs.id;
+  setTextContent(value: string | undefined | null) {
+    const cellId = this.currentCell!.id();
 
     if (value) {
       this.sheet.cellRenderer.setCellData(cellId, {
@@ -79,17 +76,19 @@ class CellEditor {
       });
     }
 
-    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
     this.cellEditorEl.textContent = value || '';
+
+    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
   }
 
-  private handleInput(e: Event) {
+  handleInput(e: Event) {
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
     this.setTextContent(textContent);
 
     const isFormulaInput = textContent?.startsWith('=');
+
     if (isFormulaInput) {
       this.formulaHelper.show(textContent?.slice(1));
     } else {
@@ -97,32 +96,47 @@ class CellEditor {
     }
   }
 
-  private showCellEditor = () => {
-    const selectedCell = this.sheet.selector.selectedFirstCell!;
+  show(cell: Cell) {
+    this.currentCell = cell;
+
+    const id = cell.id();
+
+    this.cellEditorEl.textContent = '';
+    this.cellEditorContainerEl.style.display = 'block';
+
+    this.setTextContent(this.sheet.cellRenderer.getCellData(id)?.value);
+
     this.setCellEditorElPosition(
-      selectedCell.getClientRect({
+      cell.getClientRect({
         skipStroke: true,
       })
     );
     this.cellEditorEl.focus();
-  };
+  }
 
-  private setCellEditorElPosition = (position: IRect) => {
+  hide() {
+    this.currentCell = null;
+
+    this.cellEditorContainerEl.style.display = 'none';
+
+    this.sheet.updateViewport();
+  }
+
+  setCellEditorElPosition = (position: IRect) => {
     this.cellEditorContainerEl.style.top = `${position.y}px`;
     this.cellEditorContainerEl.style.left = `${position.x}px`;
     this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
     this.cellEditorContainerEl.style.height = `${position.height}px`;
   };
 
-  private hideCellTooltip = () => {
+  hideCellTooltip = () => {
     this.cellTooltip.hide();
   };
 
-  private showCellTooltip = () => {
-    if (this.isEditing) {
-      const selectedCell = this.sheet.selector.selectedFirstCell!;
-      const row = selectedCell.attrs.row;
-      const col = selectedCell.attrs.col;
+  showCellTooltip = () => {
+    if (this.currentCell) {
+      const row = this.currentCell.attrs.row;
+      const col = this.currentCell.attrs.col;
       const rowText = this.sheet.row.getHeaderText(row.x);
       const colText = this.sheet.col.getHeaderText(col.x);
 
@@ -131,7 +145,7 @@ class CellEditor {
     }
   };
 
-  private handleScroll = () => {
+  handleScroll = () => {
     const rowScrollOffset = this.sheet.row.scrollBar.scrollOffset;
     const colScrollOffset = this.sheet.col.scrollBar.scrollOffset;
 

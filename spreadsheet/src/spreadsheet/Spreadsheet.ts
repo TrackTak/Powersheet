@@ -13,7 +13,6 @@ import { HyperFormula } from 'hyperformula';
 import hyperformulaConfig from './hyperformulaConfig';
 
 interface IConstructor {
-  registeredFunctionNames: string[];
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: ISheetsData;
@@ -21,7 +20,6 @@ interface IConstructor {
 
 class Spreadsheet {
   sheetsGroups: SheetsGroup[];
-  registeredFunctionNames: string[];
   spreadsheetEl: HTMLDivElement;
   styles: IStyles;
   eventEmitter: EventEmitter;
@@ -35,9 +33,7 @@ class Spreadsheet {
   constructor(params: IConstructor) {
     this.options = params.options;
     this.data = params.data ?? {};
-    this.registeredFunctionNames = params.registeredFunctionNames;
     this.styles = merge({}, defaultStyles, params.styles);
-    this.registeredFunctionNames = params.registeredFunctionNames;
     this.eventEmitter = new EventEmitter();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(

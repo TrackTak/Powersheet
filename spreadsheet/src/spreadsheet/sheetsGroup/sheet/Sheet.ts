@@ -291,8 +291,8 @@ class Sheet {
   shapes: IShapes;
   sheetDimensions: IDimensions;
   lastClickTime: number = new Date().getTime();
-  cellEditor?: CellEditor;
-  rightClickMenu?: RightClickMenu;
+  cellEditor: CellEditor;
+  rightClickMenu: RightClickMenu;
   comment: Comment;
   private spreadsheet: Spreadsheet;
 
@@ -392,8 +392,10 @@ class Sheet {
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
+    this.cellEditor = new CellEditor(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
+    this.stage.on('mousedown', this.stageOnClick);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
@@ -425,18 +427,18 @@ class Sheet {
     this.updateViewport();
   };
 
+  stageOnClick = () => {
+    this.cellEditor.hide();
+  };
+
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
-    if (this.cellEditor) {
-      this.destroyCellEditor();
-      return;
-    }
-
     if (e.evt.button === 0) {
-      if (this.hasDoubleClickedOnCell()) {
-        this.createCellEditor();
-      }
+      const selectedFirstcell = this.selector.selectedFirstCell!;
+      const id = selectedFirstcell.id();
 
-      const id = this.selector.selectedFirstCell!.id();
+      if (this.hasDoubleClickedOnCell()) {
+        this.cellEditor.show(selectedFirstcell);
+      }
 
       if (this.cellRenderer.getCellData(id)?.comment) {
         this.comment.show();
@@ -471,29 +473,18 @@ class Sheet {
 
   keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();
+
     switch (e.key) {
       case 'Enter':
-      case 'Escape':
-        this.destroyCellEditor();
+      case 'Escape': {
+        this.cellEditor.hide();
         break;
-      default:
-        if (!this.cellEditor) {
-          this.createCellEditor();
+      }
+      default: {
+        if (this.cellEditor.getIsHidden()) {
+          this.cellEditor.show(this.selector.selectedFirstCell!);
         }
-    }
-  };
-
-  createCellEditor = () => {
-    this.cellEditor = new CellEditor(this);
-    this.stage.on('mousedown', this.destroyCellEditor);
-  };
-
-  destroyCellEditor = () => {
-    if (this.cellEditor) {
-      this.cellEditor.destroy();
-      this.stage.off('mousedown', this.destroyCellEditor);
-      this.cellEditor = undefined;
-      this.updateViewport();
+      }
     }
   };
 

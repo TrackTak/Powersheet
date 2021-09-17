@@ -291,8 +291,8 @@ class Sheet {
   shapes: IShapes;
   sheetDimensions: IDimensions;
   lastClickTime: number = new Date().getTime();
-  cellEditor?: CellEditor;
-  rightClickMenu?: RightClickMenu;
+  cellEditor: CellEditor;
+  rightClickMenu: RightClickMenu;
   comment: Comment;
   private spreadsheet: Spreadsheet;
 
@@ -392,8 +392,10 @@ class Sheet {
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
+    this.cellEditor = new CellEditor(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
+    this.stage.on('mousedown', this.stageOnClick);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
@@ -418,27 +420,20 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
   }
 
-  restoreHyperformulaData = () => {
-    const data = this.getData().cellsData || {};
-    Object.keys(data).forEach((id) => {
-      this.cellRenderer.setCellData(id, data[id]);
-    });
-
-    this.updateViewport();
+  stageOnClick = () => {
+    if (!this.cellEditor.getIsHidden()) {
+      this.cellEditor.hide();
+    }
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
-    if (this.cellEditor) {
-      this.destroyCellEditor();
-      return;
-    }
-
     if (e.evt.button === 0) {
-      if (this.hasDoubleClickedOnCell()) {
-        this.createCellEditor();
-      }
+      const selectedFirstcell = this.selector.selectedFirstCell!;
+      const id = selectedFirstcell.id();
 
-      const id = this.selector.selectedFirstCell!.id();
+      if (this.hasDoubleClickedOnCell()) {
+        this.cellEditor.show(selectedFirstcell);
+      }
 
       if (this.cellRenderer.getCellData(id)?.comment) {
         this.comment.show();
@@ -446,63 +441,39 @@ class Sheet {
     }
   };
 
-  hasDoubleClickedOnCell = () => {
+  hasDoubleClickedOnCell() {
     const timeNow = new Date().getTime();
     const delayTime = 500;
-    const viewportVector = this.getViewportVector();
-    const previousSelectedCellPosition =
-      this.selector.previousSelectedCellPosition;
-    if (!previousSelectedCellPosition) {
-      return;
-    }
-    const { x, y } = {
-      x: this.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
-      y: this.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
-    };
-    const isInCellX =
-      x >= previousSelectedCellPosition.x &&
-      x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width;
-    const isInCellY =
-      y >= previousSelectedCellPosition.y &&
-      y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height;
-    const isClickedInCell = isInCellX && isInCellY;
 
     this.lastClickTime = timeNow;
-    return isClickedInCell && timeNow <= this.lastClickTime + delayTime;
-  };
+
+    return (
+      !this.selector.hasChangedCellSelection() &&
+      timeNow <= this.lastClickTime + delayTime
+    );
+  }
 
   keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();
+
     switch (e.key) {
       case 'Enter':
-      case 'Escape':
-        this.destroyCellEditor();
+      case 'Escape': {
+        this.cellEditor.hide();
         break;
-      case e.ctrlKey && 'z':
+      }
+      case e.ctrlKey && 'z': {
         this.sheetsGroup.undo();
         break;
-      case e.ctrlKey && 'y':
+      }
+      case e.ctrlKey && 'y': {
         this.sheetsGroup.redo();
         break;
+      }
       default:
-        if (!this.cellEditor && !e.ctrlKey) {
-          this.createCellEditor();
+        if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
+          this.cellEditor.show(this.selector.selectedFirstCell!);
         }
-    }
-  };
-
-  createCellEditor = () => {
-    this.cellEditor = new CellEditor(this);
-    this.stage.on('mousedown', this.destroyCellEditor);
-  };
-
-  destroyCellEditor = () => {
-    if (this.cellEditor) {
-      this.cellEditor.saveContentToCell();
-      this.cellEditor.destroy();
-      this.stage.off('mousedown', this.destroyCellEditor);
-      this.cellEditor = undefined;
-      this.updateViewport();
     }
   };
 
@@ -659,6 +630,9 @@ class Sheet {
     this.cellRenderer.updateCellsStyles();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
+    this.spreadsheet.formulaBar?.updateValue(
+      this.selector.selectedFirstCell?.id() ?? ''
+    );
   }
 
   drawNextItems() {

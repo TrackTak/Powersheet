@@ -10,6 +10,7 @@ export interface IOptions {
   row: IRowColOptions;
   col: IRowColOptions;
   devMode: boolean;
+  showFormulas: boolean;
 }
 
 export const defaultOptions: IOptions = {
@@ -25,5 +26,6 @@ export const defaultOptions: IOptions = {
     minSize: 60,
     defaultSize: 100,
   },
+  showFormulas: false,
   devMode: false,
 };

@@ -16,13 +16,10 @@ interface IArgs {
 }
 
 const buildSpreadsheet = (args: IArgs) => {
-  const registeredFunctionNames =
-    HyperFormula.getRegisteredFunctionNames('enGB');
   const options = args.options;
   const data = args.data;
 
   const spreadsheet = new Spreadsheet({
-    registeredFunctionNames,
     options,
     data,
   });

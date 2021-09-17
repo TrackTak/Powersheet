@@ -11,9 +11,8 @@ class SheetsGroup {
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   bottomBar: BottomBar;
-  activeSheetId!: SheetId;
   sheetIndex: number;
-  history: Manager;
+  history: any;
 
   constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
@@ -66,22 +65,33 @@ class SheetsGroup {
     }
 
     this.sheets.forEach((sheet) => {
-      sheet.restoreHyperformulaData();
+      const data = sheet.getData().cellsData || {};
+
+      Object.keys(data).forEach((id) => {
+        sheet.cellRenderer.setHyperformulaCellData(id, data[id].value);
+      });
     });
+
+    this.update();
   };
 
   getSheetName() {
     return `Sheet${this.sheetIndex}`;
   }
 
+  getActiveSheetId() {
+    return this.spreadsheet.focusedSheet!.sheetId;
+  }
+
   update() {
     this.bottomBar.updateSheetTabs();
+    this.sheets.forEach((sheet) => sheet.updateViewport());
   }
 
   deleteSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
 
-    if (this.activeSheetId === sheetId) {
+    if (this.getActiveSheetId() === sheetId) {
       const sheetIds = Array.from(this.sheets.keys());
       const currentIndex = sheetIds.indexOf(sheetId);
 
@@ -103,7 +113,7 @@ class SheetsGroup {
 
   switchSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
-    const activeSheet = this.sheets.get(this.activeSheetId);
+    const activeSheet = this.sheets.get(this.getActiveSheetId());
 
     if (activeSheet) {
       activeSheet.hide();
@@ -111,7 +121,7 @@ class SheetsGroup {
 
     sheet.show();
 
-    this.activeSheetId = sheetId;
+    this.spreadsheet.setFocusedSheet(sheet);
 
     this.update();
   }
@@ -140,8 +150,6 @@ class SheetsGroup {
       ...sheetData,
       sheetName,
     };
-
-    this.activeSheetId = sheetName;
 
     this.update();
   }
@@ -185,14 +193,16 @@ class SheetsGroup {
 
   undo = () => {
     if (!this.history.canUndo) return;
+
     this.history.undo();
-    this.sheets.forEach((sheet) => sheet.updateViewport());
+    this.update();
   };
 
   redo = () => {
     if (!this.history.canRedo) return;
+
     this.history.redo();
-    this.sheets.forEach((sheet) => sheet.updateViewport());
+    this.update();
   };
 }
 

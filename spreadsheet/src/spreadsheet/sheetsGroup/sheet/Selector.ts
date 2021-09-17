@@ -80,20 +80,22 @@ class Selector {
 
   startSelection(start: Vector2d, end: Vector2d) {
     this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
+
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
     const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
+    const selectedFirstCell = cells[0];
 
-    this.setFirstCell(cells[0]);
+    this.setFirstCell(selectedFirstCell);
     this.selectCells(cells);
 
     this.spreadsheet.setFocusedSheet(this.sheet);
-    this.spreadsheet.toolbar?.updateActiveStates();
+    this.sheet.updateViewport();
 
     this.sheet.emit(
       events.selector.startSelection,
       this.sheet,
-      this.selectedFirstCell
+      selectedFirstCell
     );
   }
 
@@ -221,6 +223,35 @@ class Selector {
 
       this.sheet.cellRenderer.drawCell(cell);
     });
+  }
+
+  hasChangedCellSelection() {
+    const viewportVector = this.sheet.getViewportVector();
+    const previousSelectedCellPosition = this.previousSelectedCellPosition;
+
+    if (!previousSelectedCellPosition) {
+      return true;
+    }
+
+    const { x, y } = {
+      x:
+        this.sheet.shapes.sheet.getRelativePointerPosition().x +
+        viewportVector.x,
+      y:
+        this.sheet.shapes.sheet.getRelativePointerPosition().y +
+        viewportVector.y,
+    };
+    const hasCellXPosMoved = !(
+      x >= previousSelectedCellPosition.x &&
+      x <= previousSelectedCellPosition.x + previousSelectedCellPosition.width
+    );
+
+    const hasCellYPosMoved = !(
+      y >= previousSelectedCellPosition.y &&
+      y <= previousSelectedCellPosition.y + previousSelectedCellPosition.height
+    );
+
+    return hasCellXPosMoved || hasCellYPosMoved;
   }
 
   setSelectionBorder() {

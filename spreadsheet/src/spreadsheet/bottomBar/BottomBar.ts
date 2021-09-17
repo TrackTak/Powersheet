@@ -104,7 +104,7 @@ class BottomBar {
   setSheetTabElements(sheetId: SheetId) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab();
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton();
-    const isActive = sheetId === this.sheetsGroup.activeSheetId;
+    const isActive = sheetId === this.sheetsGroup.getActiveSheetId();
 
     if (isActive) {
       sheetTab.classList.add('active');

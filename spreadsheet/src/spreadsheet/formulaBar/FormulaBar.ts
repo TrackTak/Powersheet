@@ -1,5 +1,4 @@
-import events from '../events';
-import Sheet from '../sheetsGroup/sheet/Sheet';
+import { CellId } from '../sheetsGroup/sheet/CellRenderer';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from './../utils';
 import styles from './FormulaBar.module.scss';
@@ -12,14 +11,12 @@ class FormulaBar {
   editorArea: HTMLDivElement;
   editableContentContainer: HTMLDivElement;
   editableContent: HTMLDivElement;
-  focusedSheet: Sheet | null;
 
   constructor(private spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
 
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
-    this.focusedSheet = null;
 
     const { editorArea, editableContentContainer, editableContent } =
       createFormulaEditorArea();
@@ -36,16 +33,18 @@ class FormulaBar {
     this.editableContent = editableContent;
 
     this.spreadsheet.spreadsheetEl.appendChild(this.formulaBarEl);
-
-    this.spreadsheet.eventEmitter.on(
-      events.cellEditor.change,
-      this.onCellEditorChange
-    );
   }
 
-  onCellEditorChange = (textContent: string | null) => {
+  updateValue(cellId: CellId) {
+    const sheet = this.spreadsheet.focusedSheet;
+    const cell = sheet?.cellRenderer.getCellData(cellId);
+
+    this.setTextContent(cell?.value ?? '');
+  }
+
+  setTextContent(textContent: string) {
     this.editableContent.textContent = textContent;
-  };
+  }
 }
 
 export default FormulaBar;

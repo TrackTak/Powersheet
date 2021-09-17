@@ -39,9 +39,9 @@ import {
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
-import { Cell, CellId } from '../sheetsGroup/sheet/CellRenderer';
+import { Cell, CellId, getCellId } from '../sheetsGroup/sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
-import Manager from 'undo-redo-manager';
+import { HyperFormula } from 'hyperformula';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -219,9 +219,12 @@ class Toolbar {
           break;
         }
         case 'functions': {
+          const registeredFunctionNames =
+            HyperFormula.getRegisteredFunctionNames('enGB');
+
           const { dropdownContent, registeredFunctionButtons } =
             createFunctionDropdownContent(
-              this.spreadsheet.registeredFunctionNames
+              registeredFunctionNames.sort((a, b) => a.localeCompare(b))
             );
 
           this.setDropdownIconContent(name, dropdownContent, true);
@@ -348,9 +351,11 @@ class Toolbar {
     Object.keys(this.iconElementsMap).forEach((key) => {
       const name = key as IconElementsName;
 
-      this.iconElementsMap[name].button.addEventListener('click', () => {
-        this.setValue(name);
-      });
+      if (!this.dropdownMap[key as DropdownName]) {
+        this.iconElementsMap[name].button.addEventListener('click', () => {
+          this.setValue(name);
+        });
+      }
     });
 
     Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
@@ -370,7 +375,72 @@ class Toolbar {
       });
     });
 
+    this.dropdownMap.functions.dropdownContent.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+
+        if (target?.matches('button')) {
+          const functionName = target.dataset.function;
+
+          this.setValue('functions', functionName);
+        }
+      }
+    );
+
     this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
+  }
+
+  setFunction(functionName: string) {
+    const sheet = this.spreadsheet.focusedSheet!;
+
+    if (sheet.selector.selectedCells.length > 1) {
+      const rowRange = sheet.row.convertFromCellsToRange(
+        sheet.selector.selectedCells
+      );
+      const colRange = sheet.col.convertFromCellsToRange(
+        sheet.selector.selectedCells
+      );
+
+      const ri = rowRange.y + 1;
+      const ci = colRange.x;
+
+      const cell = sheet.cellRenderer.convertFromCellIdToCell(
+        getCellId(ri, ci)
+      );
+
+      const viewportVector = sheet.getViewportVector();
+
+      const xCellId = getCellId(rowRange.x, colRange.x);
+      const yCellId = getCellId(rowRange.y, colRange.y);
+
+      const xAddress = sheet.cellRenderer.getCellHyperformulaAddress(xCellId);
+      const yAddress = sheet.cellRenderer.getCellHyperformulaAddress(yCellId);
+
+      const xCellAddress =
+        this.spreadsheet.hyperformula.simpleCellAddressToString(
+          xAddress,
+          xAddress.sheet
+        );
+      const yCellAddress =
+        this.spreadsheet.hyperformula.simpleCellAddressToString(
+          yAddress,
+          yAddress.sheet
+        );
+
+      cell.x(cell.x() + viewportVector.x);
+      cell.y(cell.y() + viewportVector.y);
+
+      sheet.cellEditor.show(cell);
+      sheet.cellEditor.setTextContent(
+        `=${functionName}(${xCellAddress}:${yCellAddress})`
+      );
+    } else {
+      const selectedFirstCell = sheet.selector.selectedFirstCell!;
+
+      sheet.cellEditor.show(selectedFirstCell);
+      sheet.cellEditor.setTextContent(`=${functionName}()`);
+    }
   }
 
   private setBorderStyles(
@@ -505,6 +575,15 @@ class Toolbar {
     const sheet = this.spreadsheet.focusedSheet!;
 
     switch (name) {
+      case 'functions': {
+        this.setFunction(value);
+        break;
+      }
+      case 'formula': {
+        this.spreadsheet.options.showFormulas =
+          !this.spreadsheet.options.showFormulas;
+        break;
+      }
       case 'alignLeft': {
         this.setStyleForSelectedCells<HorizontalTextAlign>(
           'horizontalTextAlign',
@@ -697,36 +776,40 @@ class Toolbar {
     if (!sheet) return;
 
     const selectedCells = sheet.selector.selectedCells;
-    const firstSelectedCell = sheet.selector.selectedFirstCell;
-    const firstSelectedCellId = firstSelectedCell!.id();
+    const selectedFirstCell = sheet.selector.selectedFirstCell;
+    const selectedFirstCellId = selectedFirstCell!.id();
 
-    this.setActiveColor(firstSelectedCellId, 'backgroundColor');
-    this.setActiveColor(firstSelectedCellId, 'fontColor');
+    this.setActiveColor(selectedFirstCellId, 'backgroundColor');
+    this.setActiveColor(selectedFirstCellId, 'fontColor');
     this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
     this.setActive(
       this.iconElementsMap.textWrap,
-      this.isActive(firstSelectedCellId, 'textWrap')
+      this.isActive(selectedFirstCellId, 'textWrap')
     );
     this.setActive(
       this.iconElementsMap.bold,
-      this.isActive(firstSelectedCellId, 'bold')
+      this.isActive(selectedFirstCellId, 'bold')
     );
     this.setActive(
       this.iconElementsMap.italic,
-      this.isActive(firstSelectedCellId, 'italic')
+      this.isActive(selectedFirstCellId, 'italic')
     );
     this.setActive(
       this.iconElementsMap.strikeThrough,
-      this.isActive(firstSelectedCellId, 'strikeThrough')
+      this.isActive(selectedFirstCellId, 'strikeThrough')
     );
     this.setActive(
       this.iconElementsMap.underline,
-      this.isActive(firstSelectedCellId, 'underline')
+      this.isActive(selectedFirstCellId, 'underline')
     );
-    this.setActiveHorizontalIcon(firstSelectedCellId);
-    this.setActiveVerticalIcon(firstSelectedCellId);
-    this.setActiveFontSize(firstSelectedCellId);
-    this.setActiveTextFormat(firstSelectedCellId);
+    this.setActive(
+      this.iconElementsMap.formula,
+      this.spreadsheet.options.showFormulas
+    );
+    this.setActiveHorizontalIcon(selectedFirstCellId);
+    this.setActiveVerticalIcon(selectedFirstCellId);
+    this.setActiveFontSize(selectedFirstCellId);
+    this.setActiveTextFormat(selectedFirstCellId);
     this.setActiveMergedCells(selectedCells);
     this.setActiveHistoryIcons(sheet.sheetsGroup.history);
   };
@@ -896,7 +979,7 @@ class Toolbar {
       sentenceCase(textFormat);
   }
 
-  setActiveHistoryIcons(history: Manager) {
+  setActiveHistoryIcons(history: any) {
     this.setDisabled(this.iconElementsMap.undo, !history.canUndo);
     this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
   }

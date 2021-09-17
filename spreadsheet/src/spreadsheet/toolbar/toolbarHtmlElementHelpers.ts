@@ -281,9 +281,10 @@ export const createFunctionDropdownContent = (
     (functionName) => {
       const button = document.createElement('button');
 
-      button.classList.add(functionName, styles.functionNameButton);
+      button.classList.add(styles.functionNameButton);
 
       button.textContent = functionName;
+      button.dataset.function = functionName;
 
       dropdownContent.appendChild(button);
 

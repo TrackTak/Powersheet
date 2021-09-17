@@ -1,23 +1,20 @@
 import BottomBar from '../bottomBar/BottomBar';
-import Sheet, { IData, ISheetsData, SheetId } from './sheet/Sheet';
+import Sheet, { IData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
-import Manager from 'undo-redo-manager';
-import { isEmpty, cloneDeep } from 'lodash';
 
-const HISTORY_SIZE = 20;
+export type SheetsGroupId = number;
+
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   bottomBar: BottomBar;
-  sheetIndex: number;
-  history: any;
 
-  constructor(public spreadsheet: Spreadsheet) {
+  constructor(public spreadsheet: Spreadsheet, public sheetsGroupId: number) {
     this.spreadsheet = spreadsheet;
     this.sheets = new Map();
-    this.sheetIndex = 1;
+    this.sheetsGroupId = sheetsGroupId;
 
     this.sheetsGroupEl = document.createElement('div');
     this.sheetsGroupEl.classList.add(`${prefix}-sheets-group`);
@@ -30,12 +27,6 @@ class SheetsGroup {
     this.sheetsGroupEl.prepend(this.sheetsEl);
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
 
-    this.history = new Manager((data: ISheetsData) => {
-      const currentData = this.spreadsheet.data;
-      this.spreadsheet.data = data;
-      return currentData;
-    }, HISTORY_SIZE);
-
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
@@ -44,25 +35,19 @@ class SheetsGroup {
   }
 
   onDOMContentLoaded = () => {
-    const dataKeysArray = Object.keys(this.spreadsheet.data);
+    const data = this.getData();
 
-    if (dataKeysArray.length) {
-      dataKeysArray.forEach((key) => {
-        const data = this.spreadsheet.data[key];
-
-        this.createNewSheet(key, data);
+    if (data.length) {
+      data.forEach((data) => {
+        this.createNewSheet(data);
       });
-
-      this.switchSheet(dataKeysArray[0]);
     } else {
-      const sheetName = this.getSheetName();
-
-      this.createNewSheet(sheetName, {
-        sheetName,
+      this.createNewSheet({
+        sheetName: this.getSheetName(),
       });
-
-      this.switchSheet(sheetName);
     }
+
+    this.switchSheet(0);
 
     this.sheets.forEach((sheet) => {
       const data = sheet.getData().cellsData || {};
@@ -75,8 +60,12 @@ class SheetsGroup {
     this.update();
   };
 
+  getData() {
+    return this.spreadsheet.data[this.sheetsGroupId];
+  }
+
   getSheetName() {
-    return `Sheet${this.sheetIndex}`;
+    return `Sheet${this.spreadsheet.sheetIndex + 1}`;
   }
 
   getActiveSheetId() {
@@ -85,7 +74,9 @@ class SheetsGroup {
 
   update() {
     this.bottomBar.updateSheetTabs();
-    this.sheets.forEach((sheet) => sheet.updateViewport());
+    this.sheets.forEach((sheet) => {
+      sheet.updateViewport();
+    });
   }
 
   deleteSheet(sheetId: SheetId) {
@@ -106,7 +97,7 @@ class SheetsGroup {
 
     this.sheets.delete(sheetId);
 
-    delete this.spreadsheet.data[sheetId];
+    delete this.getData()[sheetId];
 
     this.update();
   }
@@ -126,42 +117,14 @@ class SheetsGroup {
     this.update();
   }
 
-  renameSheet(oldSheetId: SheetId, sheetName: SheetId) {
-    const sheet = this.sheets.get(oldSheetId)!;
-    const sheetData = this.spreadsheet.data?.[oldSheetId];
-
-    sheet.setSheetId(sheetName);
-
-    const newSheets = new Map<SheetId, Sheet>();
-
-    for (const [currentSheetId, sheet] of this.sheets) {
-      if (currentSheetId === oldSheetId) {
-        newSheets.set(sheetName, sheet);
-      } else {
-        newSheets.set(currentSheetId, sheet);
-      }
-    }
-
-    this.sheets = newSheets;
-
-    delete this.spreadsheet.data[oldSheetId];
-
-    this.spreadsheet.data[sheetName] = {
-      ...sheetData,
-      sheetName,
-    };
+  renameSheet(sheetId: SheetId, sheetName: string) {
+    this.getData()[sheetId].sheetName = sheetName;
 
     this.update();
   }
 
-  createNewSheet(sheetId: SheetId, data: IData) {
-    this.setSheetData(
-      sheetId,
-      {
-        sheetName: data.sheetName,
-      },
-      false
-    );
+  createNewSheet(data: IData, sheetId: SheetId = this.spreadsheet.sheetIndex) {
+    this.spreadsheet.data[this.sheetsGroupId][sheetId] = data;
 
     const sheet = new Sheet(this, sheetId);
 
@@ -169,41 +132,12 @@ class SheetsGroup {
 
     sheet.hide();
 
-    this.sheetIndex++;
+    this.spreadsheet.sheetIndex++;
 
     this.update();
 
     sheet.setSize();
   }
-
-  setSheetData(sheetId: SheetId, newValue: IData, withHistory: boolean = true) {
-    if (withHistory) {
-      const sheetsData = cloneDeep(this.spreadsheet.data);
-      const dataToPush = isEmpty(sheetsData)
-        ? { [sheetId]: newValue }
-        : sheetsData;
-      this.history.push(dataToPush);
-    }
-
-    this.spreadsheet.data[sheetId] = {
-      ...this.spreadsheet.data[sheetId],
-      ...newValue,
-    };
-  }
-
-  undo = () => {
-    if (!this.history.canUndo) return;
-
-    this.history.undo();
-    this.update();
-  };
-
-  redo = () => {
-    if (!this.history.canRedo) return;
-
-    this.history.redo();
-    this.update();
-  };
 }
 
 export default SheetsGroup;

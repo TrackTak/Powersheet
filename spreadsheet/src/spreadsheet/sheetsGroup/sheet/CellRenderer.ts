@@ -24,9 +24,14 @@ export type CellId = string;
 
 export type Cell = Group;
 
+export interface IRowColAddress {
+  row: number;
+  col: number;
+}
+
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
-export const convertFromCellIdToRowCol = (id: CellId) => {
+export const convertFromCellIdToRowCol = (id: CellId): IRowColAddress => {
   const sections = id.split('_');
 
   return {

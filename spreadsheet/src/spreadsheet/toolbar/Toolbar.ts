@@ -758,11 +758,11 @@ class Toolbar {
         break;
       }
       case 'undo': {
-        sheet.sheetsGroup.undo();
+        this.spreadsheet.undo();
         break;
       }
       case 'redo': {
-        sheet.sheetsGroup.redo();
+        this.spreadsheet.redo();
         break;
       }
     }
@@ -811,7 +811,7 @@ class Toolbar {
     this.setActiveFontSize(selectedFirstCellId);
     this.setActiveTextFormat(selectedFirstCellId);
     this.setActiveMergedCells(selectedCells);
-    this.setActiveHistoryIcons(sheet.sheetsGroup.history);
+    this.setActiveHistoryIcons(this.spreadsheet.history);
   };
 
   destroy() {

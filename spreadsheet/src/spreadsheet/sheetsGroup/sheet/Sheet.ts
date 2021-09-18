@@ -43,7 +43,7 @@ export interface ICustomSizePosition {
   size: number;
 }
 
-export type SheetId = string;
+export type SheetId = number;
 
 export interface IFrozenCells {
   row: number;
@@ -107,10 +107,6 @@ export interface IData {
 
 export interface ICellsData {
   [cellId: CellId]: ICellData;
-}
-
-export interface ISheetsData {
-  [sheetId: SheetId]: IData;
 }
 
 export interface IScrollGroups {
@@ -379,8 +375,6 @@ class Sheet {
       this.layer.add(group);
     });
 
-    this.spreadsheet.hyperformula.addSheet(sheetId);
-
     this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
@@ -392,7 +386,6 @@ class Sheet {
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
-    this.cellEditor = new CellEditor(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
     this.stage.on('mousedown', this.stageOnClick);
@@ -463,11 +456,11 @@ class Sheet {
         break;
       }
       case e.ctrlKey && 'z': {
-        this.sheetsGroup.undo();
+        this.spreadsheet.undo();
         break;
       }
       case e.ctrlKey && 'y': {
-        this.sheetsGroup.redo();
+        this.spreadsheet.redo();
         break;
       }
       default:
@@ -509,25 +502,17 @@ class Sheet {
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }
 
-  setSheetId(sheetId: SheetId) {
-    this.spreadsheet.hyperformula.renameSheet(
-      this.getHyperformulaSheetId(),
-      sheetId
-    );
-    this.sheetId = sheetId;
-  }
-
   setData(value: Partial<IData>) {
-    const updatedData = merge({}, this.spreadsheet.data[this.sheetId], value);
-    this.sheetsGroup.setSheetData(this.sheetId, updatedData);
-  }
+    const updatedData = merge({}, this.getData(), value);
 
-  getHyperformulaSheetId() {
-    return this.spreadsheet.hyperformula.getSheetId(this.sheetId)!;
+    this.spreadsheet.data[this.sheetsGroup.sheetsGroupId][this.sheetId] =
+      updatedData;
+
+    this.spreadsheet.addToHistory();
   }
 
   getData(): IData {
-    return this.spreadsheet.data[this.sheetId];
+    return this.sheetsGroup.getData()[this.sheetId];
   }
 
   updateSheetDimensions() {
@@ -613,7 +598,7 @@ class Sheet {
 
     this.cellEditor?.destroy();
 
-    this.spreadsheet.hyperformula.removeSheet(this.getHyperformulaSheetId());
+    this.spreadsheet.hyperformula.removeSheet(this.sheetId);
   }
 
   drawTopLeftOffsetRect() {

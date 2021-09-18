@@ -717,6 +717,10 @@ class Toolbar {
         }
         break;
       }
+      case 'export': {
+        this.spreadsheet.export?.exportWorkbook();
+        break;
+      }
       case 'borderBottom': {
         this.setBottomBorders(sheet.selector.selectedCells);
         break;

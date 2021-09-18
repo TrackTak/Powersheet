@@ -180,12 +180,21 @@ Formulas.args = {
         cellsData: {
           '0_1': {
             value: '5',
+            style: {
+              textFormatPattern: '#,##0.00',
+            },
           },
           '1_1': {
             value: '2',
+            style: {
+              textFormatPattern: '#,##0.00',
+            },
           },
           '2_1': {
             value: '=SUM(B1, B2)',
+            style: {
+              textFormatPattern: '#,##0.00',
+            },
           },
           '2_0': {
             value: 'SUM',
@@ -195,6 +204,9 @@ Formulas.args = {
           },
           '4_1': {
             value: "='Other'!A1 * 30",
+            style: {
+              textFormatPattern: '#,##0.00',
+            },
           },
         },
       },
@@ -203,6 +215,9 @@ Formulas.args = {
         cellsData: {
           '0_0': {
             value: '100',
+            style: {
+              textFormatPattern: '#,##0.00',
+            },
           },
         },
       },

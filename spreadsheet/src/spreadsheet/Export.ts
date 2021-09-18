@@ -1,26 +1,35 @@
-import numfmt from 'numfmt';
-import { XLSX$Utils } from 'xlsx';
+import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import {
   convertFromCellIdToRowCol,
   IRowColAddress,
 } from './sheetsGroup/sheet/CellRenderer';
-import { IData, SheetId } from './sheetsGroup/sheet/Sheet';
+import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
 import Spreadsheet from './Spreadsheet';
+import numfmt from 'numfmt';
+import { isNil } from 'lodash';
 
 class Export {
-  constructor(private spreadsheet: Spreadsheet) {}
+  constructor(private spreadsheet: Spreadsheet) {
+    this.spreadsheet = spreadsheet;
+  }
 
-  private appendWorksheet(sheetId: SheetId, data: IData) {
-    const worksheet = {
-      '!cols': [],
-    };
+  private getWorksheet(sheet: Sheet, data: IData) {
+    const worksheet: WorkSheet = {};
     const cellsData = data.cellsData ?? {};
+    const sheetId = this.spreadsheet.hyperformula.getSheetId(data.sheetName)!;
+
+    let startRowColAddress: IRowColAddress | null = null;
+
+    const endRowColAddress: IRowColAddress = {
+      row: 0,
+      col: 0,
+    };
 
     Object.keys(cellsData).forEach((key) => {
       const cell = cellsData[key];
       const { row, col } = convertFromCellIdToRowCol(key);
       const address = {
-        sheet: this.spreadsheet.hyperformula.getSheetId(sheetId)!,
+        sheet: sheetId,
         row,
         col,
       };
@@ -29,250 +38,138 @@ class Export {
         address.sheet
       )!;
 
+      startRowColAddress = {
+        row: Math.min(row, startRowColAddress?.row ?? Infinity),
+        col: Math.min(col, startRowColAddress?.col ?? Infinity),
+      };
+
+      endRowColAddress.row = Math.max(row, endRowColAddress.row);
+      endRowColAddress.col = Math.max(col, endRowColAddress.col);
+
+      let t;
+
+      const textFormatPattern = cell.style?.textFormatPattern;
+
+      if (isNil(cell.value) && isNil(textFormatPattern)) {
+        t = 'z';
+      } else if (numfmt.isText(textFormatPattern) || isNil(textFormatPattern)) {
+        t = 's';
+      } else if (numfmt.isDate(textFormatPattern)) {
+        t = 'd';
+      } else {
+        t = 'n';
+      }
+
       worksheet[cellId] = {
-        z: cell.style?.textFormatPattern,
+        z: textFormatPattern,
         v: cell.value,
+        t,
       };
 
       if (this.spreadsheet.hyperformula.doesCellHaveFormula(address)) {
         worksheet[cellId].f = cell.value!.slice(1);
       }
     });
+
+    for (const [cellId, { row, col }] of sheet.merger
+      .associatedMergedCellIdMap) {
+      const isTopLeftCell = sheet.merger.getIsTopLeftCell(cellId);
+
+      if (isTopLeftCell) {
+        if (!worksheet['!merges']) {
+          worksheet['!merges'] = [];
+        }
+
+        worksheet['!merges'].push({
+          s: {
+            r: row.x,
+            c: col.x,
+          },
+          e: {
+            r: row.y,
+            c: col.y,
+          },
+        });
+      }
+    }
+
+    const startCellAddress =
+      this.spreadsheet.hyperformula.simpleCellAddressToString(
+        {
+          ...(startRowColAddress ?? {
+            row: 0,
+            col: 0,
+          }),
+          sheet: sheetId,
+        },
+        sheetId
+      )!;
+
+    const endCellAddress =
+      this.spreadsheet.hyperformula.simpleCellAddressToString(
+        {
+          ...endRowColAddress,
+          sheet: sheetId,
+        },
+        sheetId
+      )!;
+
+    worksheet['!ref'] = `${startCellAddress}:${endCellAddress}`;
+
+    const cols: ColInfo[] = [];
+    const rows: RowInfo[] = [];
+    const colSizes = data.col?.sizes ?? {};
+    const rowSizes = data.row?.sizes ?? {};
+
+    Object.keys(colSizes).forEach((key) => {
+      const value = colSizes[parseInt(key, 10)];
+
+      cols.push({
+        wpx: value,
+      });
+    });
+
+    Object.keys(rowSizes).forEach((key) => {
+      const value = rowSizes[parseInt(key, 10)];
+
+      rows.push({
+        hpx: value,
+      });
+    });
+
+    worksheet['!cols'] = cols;
+    worksheet['!rows'] = rows;
+
+    return worksheet;
   }
 
   private getWorkbook(utils: XLSX$Utils) {
-    var workbook = utils.book_new();
+    const workbook = utils.book_new();
 
-    Object.keys(this.spreadsheet.data).forEach((key) => {
-      const value = this.spreadsheet.data[key];
+    this.spreadsheet.data.forEach((sheetsGroupData, i) => {
+      sheetsGroupData.forEach((data) => {
+        const sheet = Array.from(
+          this.spreadsheet.sheetsGroups[i].sheets.values()
+        ).find((x) => x.getData().sheetName === data.sheetName)!;
 
-      this.appendWorksheet(key, value);
+        const worksheet = this.getWorksheet(sheet, data);
+
+        utils.book_append_sheet(workbook, worksheet, data.sheetName);
+      });
     });
+
+    return workbook;
   }
 
-  async export(name: string) {
+  async exportWorkbook() {
     const { writeFile, utils } = await import('xlsx');
 
-    const workBook = this.getWorkbook(utils);
+    const workbook = this.getWorkbook(utils);
 
-    writeFile(workbook, name);
+    console.log(workbook);
+
+    writeFile(workbook, this.spreadsheet.options.exportSpreadsheetName);
   }
 }
 
 export default Export;
-
-/**
- * Transform a sheet index to it's column letter.
- * Warning: Begin at 1 ! 1=>A, 2=>B...
- *
- * @param  {number} column
- * @param  {string}
- */
-function columnToLetter(column: number) {
-  var temp,
-    letter = '';
-  letter = letter.toUpperCase();
-  while (column > 0) {
-    temp = (column - 1) % 26;
-    letter = String.fromCharCode(temp + 65) + letter;
-    column = (column - temp - 1) / 26;
-  }
-  return letter;
-}
-
-/**
- * Transform coordinates to it's reference.
- * Warning: Begin at 1 ! row= 1 & col= 1 => A1
- *
- * @param  {string} row
- * @param  {string} col
- * @returns {string} a sheet like coordinate
- */
-function coordinateToReference(row, col) {
-  return columnToLetter(col) + String(row);
-}
-
-// Source: https://github.com/myliang/x-spreadsheet/issues/419
-const xtos = (
-  hyperformula,
-  utils,
-  sheetsDatas,
-  formats,
-  customFunctionNames
-) => {
-  var workbook = utils.book_new();
-
-  const appendWorksheet = (dataSheet) => {
-    const sheet = hyperformula.getSheetId(dataSheet.name);
-
-    var ws = {
-      '!cols': [],
-    };
-
-    let minCoord, maxCoord;
-
-    const serializedValues = getHyperformulaValuesSerializedAsAMap(
-      hyperformula,
-      sheet
-    );
-
-    Object.keys(serializedValues).forEach((rowKey) => {
-      const row = serializedValues[rowKey];
-      const ri = parseInt(rowKey, 10);
-
-      Object.keys(row).forEach((colKey) => {
-        const value = row[colKey];
-        const ci = parseInt(colKey, 10);
-        const cellAddress = {
-          sheet,
-          row: ri,
-          col: ci,
-        };
-        const cell = dataSheet.rows?.[ri]?.cells[ci];
-
-        let newValue = value ?? '';
-
-        const format = getFormatFromCell(value, cell, dataSheet.styles);
-
-        var lastRef = coordinateToReference(ri + 1, ci + 1);
-        if (minCoord === undefined) {
-          minCoord = {
-            r: ri,
-            c: ci,
-          };
-        } else {
-          if (ri < minCoord.r) minCoord.r = ri;
-          if (ci < minCoord.c) minCoord.c = ci;
-        }
-        if (maxCoord === undefined) {
-          maxCoord = {
-            r: ri,
-            c: ci,
-          };
-        } else {
-          if (ri > maxCoord.r) maxCoord.r = ri;
-          if (ci > maxCoord.c) maxCoord.c = ci;
-        }
-
-        let pattern = formats[format]?.pattern;
-
-        const excelFormat = {
-          t: formatToExcelType(formats[format]?.type),
-          z: pattern,
-        };
-
-        if (isNil(newValue) || (newValue === '' && !format)) {
-          excelFormat.t = 'z';
-        }
-
-        // Already formatted to %
-        if (numfmt.isPercent(newValue)) {
-          newValue = parseFloat(newValue) / 100;
-        }
-
-        let formula;
-
-        if (hyperformula.doesCellHaveFormula(cellAddress)) {
-          formula = newValue.slice(1);
-
-          customFunctionNames.forEach((customFunctionName) => {
-            // TODO: Not perfect regex, doesn't handle nested custom functions
-            const regex = new RegExp(`${customFunctionName}\\(.*?\\)`, 'g');
-            const matches = formula.match(regex) ?? [];
-
-            // Replace any custom functon calls with
-            // the actual value because excel won't support
-            // custom functions natively
-            matches.forEach((match) => {
-              let value = hyperformula.calculateFormula(`=${match}`, sheet);
-
-              if (typeof value === 'string') {
-                if (value) {
-                  value = `"${value}"`;
-                } else {
-                  value = '0';
-                }
-              }
-
-              formula = formula.replace(match, value);
-            });
-
-            excelFormat.t = 's';
-          });
-        }
-
-        ws[lastRef] = {
-          ...excelFormat,
-          v: newValue,
-          f: formula,
-        };
-
-        if (cell?.merge !== undefined) {
-          if (ws['!merges'] === undefined) {
-            ws['!merges'] = [];
-          }
-
-          ws['!merges'].push({
-            s: {
-              r: ri,
-              c: ci,
-            },
-            e: {
-              r: ri + cell.merge[0],
-              c: ci + cell.merge[1],
-            },
-          });
-        }
-      });
-    });
-
-    ws['!ref'] =
-      coordinateToReference(minCoord.r + 1, minCoord.c + 1) +
-      ':' +
-      coordinateToReference(maxCoord.r + 1, maxCoord.c + 1);
-
-    // Set col widths
-    for (let index = 0; index <= maxCoord.c; index++) {
-      const col = dataSheet.cols[index];
-
-      ws['!cols'].push({
-        wpx: col?.width ?? sharedOptions.col.width,
-      });
-    }
-
-    utils.book_append_sheet(workbook, ws, dataSheet.name);
-  };
-
-  sheetsDatas.variablesDatas.forEach((sheetData) => {
-    appendWorksheet(sheetData);
-  });
-
-  sheetsDatas.datas.forEach((sheetData) => {
-    appendWorksheet(sheetData);
-  });
-
-  utils.book_append_sheet(workbook);
-
-  return workbook;
-};
-
-const makeExportToExcel =
-  (hyperformula, datas) => (workbookName, formats, customFunctionNames) => {
-    const newFormats = {
-      ...sharedOptions.formats,
-      ...formats,
-    };
-    import('xlsx/xlsx.mini').then(({ writeFile, utils }) => {
-      const workbook = xtos(
-        hyperformula,
-        utils,
-        datas,
-        newFormats,
-        customFunctionNames
-      );
-
-      writeFile(workbook, workbookName);
-    });
-  };
-
-export default makeExportToExcel;

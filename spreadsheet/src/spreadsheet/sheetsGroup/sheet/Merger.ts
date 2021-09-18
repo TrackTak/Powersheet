@@ -120,6 +120,14 @@ class Merger {
     return this.associatedMergedCellIdMap.has(id ?? '');
   }
 
+  getIsTopLeftCell(id: CellId) {
+    const { row, col } = this.associatedMergedCellIdMap.get(id)!;
+
+    const topLeftCellId = getCellId(row.x, col.x);
+
+    return topLeftCellId === id;
+  }
+
   mergeSelectedCells() {
     const selectedCells = this.sheet.selector.selectedCells;
 

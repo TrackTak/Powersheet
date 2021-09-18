@@ -12,6 +12,7 @@ export interface IOptions {
   devMode: boolean;
   showFormulas: boolean;
   undoRedoHistorySize: number;
+  exportSpreadsheetName: string;
 }
 
 export const defaultOptions: IOptions = {
@@ -29,5 +30,6 @@ export const defaultOptions: IOptions = {
   },
   showFormulas: false,
   undoRedoHistorySize: 20,
+  exportSpreadsheetName: 'Powersheet.xlsx',
   devMode: false,
 };

@@ -388,7 +388,6 @@ class Sheet {
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
-    this.cellEditor = new CellEditor(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
     this.stage.on('mousedown', this.stageOnClick);

@@ -12,6 +12,7 @@ import styles from './Spreadsheet.module.scss';
 import { HyperFormula } from 'hyperformula';
 import hyperformulaConfig from './hyperformulaConfig';
 import Manager from 'undo-redo-manager';
+import Export from './Export';
 
 interface IConstructor {
   styles?: Partial<IStyles>;
@@ -29,6 +30,7 @@ class Spreadsheet {
   data: IData[][];
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  export?: Export;
   hyperformula: HyperFormula;
   history: any;
   sheetIndex = 0;
@@ -48,6 +50,7 @@ class Spreadsheet {
 
     this.toolbar = new Toolbar(this);
     this.formulaBar = new FormulaBar(this);
+    this.export = new Export(this);
 
     this.hyperformula = HyperFormula.buildEmpty(hyperformulaConfig);
     this.history = new Manager((data: IData[][]) => {
@@ -74,7 +77,9 @@ class Spreadsheet {
   }
 
   createNewSheetsGroup(sheetsGroupId: number) {
-    this.data[sheetsGroupId] = [];
+    if (!this.data[sheetsGroupId]) {
+      this.data[sheetsGroupId] = [];
+    }
 
     const sheetsGroup = new SheetsGroup(this, sheetsGroupId);
 

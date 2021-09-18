@@ -122,19 +122,21 @@ class Export {
     const rowSizes = data.row?.sizes ?? {};
 
     Object.keys(colSizes).forEach((key) => {
-      const value = colSizes[parseInt(key, 10)];
+      const index = parseInt(key, 10);
+      const value = colSizes[index];
 
-      cols.push({
+      cols[index] = {
         wpx: value,
-      });
+      };
     });
 
     Object.keys(rowSizes).forEach((key) => {
-      const value = rowSizes[parseInt(key, 10)];
+      const index = parseInt(key, 10);
+      const value = rowSizes[index];
 
-      rows.push({
+      rows[index] = {
         hpx: value,
-      });
+      };
     });
 
     worksheet['!cols'] = cols;

@@ -166,8 +166,6 @@ class Export {
 
     const workbook = this.getWorkbook(utils);
 
-    console.log(workbook);
-
     writeFile(workbook, this.spreadsheet.options.exportSpreadsheetName);
   }
 }

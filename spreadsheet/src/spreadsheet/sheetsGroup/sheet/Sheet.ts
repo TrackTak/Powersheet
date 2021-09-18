@@ -375,8 +375,6 @@ class Sheet {
       this.layer.add(group);
     });
 
-    this.spreadsheet.hyperformula.addSheet(this.getData().sheetName);
-
     this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
@@ -513,10 +511,6 @@ class Sheet {
     this.spreadsheet.addToHistory();
   }
 
-  getHyperformulaSheetId() {
-    return this.spreadsheet.hyperformula.getSheetId(this.getData().sheetName)!;
-  }
-
   getData(): IData {
     return this.sheetsGroup.getData()[this.sheetId];
   }
@@ -604,7 +598,7 @@ class Sheet {
 
     this.cellEditor?.destroy();
 
-    this.spreadsheet.hyperformula.removeSheet(this.getHyperformulaSheetId());
+    this.spreadsheet.hyperformula.removeSheet(this.sheetId);
   }
 
   drawTopLeftOffsetRect() {

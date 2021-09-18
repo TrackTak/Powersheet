@@ -674,7 +674,7 @@ class CellRenderer {
   getCellHyperformulaAddress(id: CellId) {
     return {
       ...convertFromCellIdToRowCol(id),
-      sheet: this.sheet.getHyperformulaSheetId(),
+      sheet: this.sheet.sheetId,
     };
   }
 }

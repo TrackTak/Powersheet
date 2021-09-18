@@ -127,7 +127,7 @@ class BottomBar {
     const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
       createSheetTabDropdownContent();
 
-    deleteSheetButton.disabled = this.sheetsGroup.sheets.length === 1;
+    deleteSheetButton.disabled = this.sheetsGroup.sheets.size === 1;
 
     const sheetTabDropdown = tippy(sheetTab, {
       placement: 'top',

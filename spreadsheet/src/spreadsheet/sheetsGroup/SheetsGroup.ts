@@ -74,7 +74,15 @@ class SheetsGroup {
 
   update() {
     this.bottomBar.updateSheetTabs();
+
     this.sheets.forEach((sheet) => {
+      const activeSheetId = this.getActiveSheetId();
+
+      if (sheet.sheetId === activeSheetId) {
+        sheet.show();
+      } else {
+        sheet.hide();
+      }
       sheet.updateViewport();
     });
   }
@@ -110,8 +118,6 @@ class SheetsGroup {
       activeSheet.hide();
     }
 
-    sheet.show();
-
     this.spreadsheet.setFocusedSheet(sheet);
 
     this.update();
@@ -120,17 +126,21 @@ class SheetsGroup {
   renameSheet(sheetId: SheetId, sheetName: string) {
     this.getData()[sheetId].sheetName = sheetName;
 
+    this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName);
+
     this.update();
   }
 
-  createNewSheet(data: IData, sheetId: SheetId = this.spreadsheet.sheetIndex) {
+  createNewSheet(data: IData) {
+    this.spreadsheet.hyperformula.addSheet(data.sheetName);
+
+    const sheetId = this.spreadsheet.hyperformula.getSheetId(data.sheetName)!;
+
     this.spreadsheet.data[this.sheetsGroupId][sheetId] = data;
 
     const sheet = new Sheet(this, sheetId);
 
     this.sheets.set(sheetId, sheet);
-
-    sheet.hide();
 
     this.spreadsheet.sheetIndex++;
 

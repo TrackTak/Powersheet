@@ -46,24 +46,24 @@ class Export {
       endRowColAddress.row = Math.max(row, endRowColAddress.row);
       endRowColAddress.col = Math.max(col, endRowColAddress.col);
 
-      let t;
+      let type;
 
       const textFormatPattern = cell.style?.textFormatPattern;
 
       if (isNil(cell.value) && isNil(textFormatPattern)) {
-        t = 'z';
+        type = 'z';
       } else if (numfmt.isText(textFormatPattern) || isNil(textFormatPattern)) {
-        t = 's';
+        type = 's';
       } else if (numfmt.isDate(textFormatPattern)) {
-        t = 'd';
+        type = 'd';
       } else {
-        t = 'n';
+        type = 'n';
       }
 
       worksheet[cellId] = {
         z: textFormatPattern,
         v: cell.value,
-        t,
+        t: type,
       };
 
       if (this.spreadsheet.hyperformula.doesCellHaveFormula(address)) {

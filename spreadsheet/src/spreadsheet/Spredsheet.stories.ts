@@ -127,7 +127,6 @@ CellsData.args = {
           },
           '1_1': {
             style: {
-              textWrap: 'wrap',
               horizontalTextAlign: 'center',
               verticalTextAlign: 'middle',
               bold: true,
@@ -152,7 +151,7 @@ CellsData.args = {
             style: {
               underline: true,
               strikeThrough: true,
-              fontSize: 36,
+              fontSize: 14,
               borders: ['borderBottom'],
             },
             value: 'Some value',

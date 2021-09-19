@@ -172,6 +172,17 @@ export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   return cellGroup;
 };
 
+export const destroyGroupIfOutOfScreen = (
+  group: Group,
+  map: Map<number, Group>,
+  margin?: Vector2d
+) => {
+  if (!group.isClientRectOnScreen(margin)) {
+    group.destroy();
+    map.delete(group.attrs.index);
+  }
+};
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -612,7 +623,7 @@ class Sheet {
     this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateCellsStyles();
+    this.cellRenderer.updateViewport();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(

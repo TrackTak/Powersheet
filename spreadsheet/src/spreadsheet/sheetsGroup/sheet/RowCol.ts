@@ -1,5 +1,5 @@
 import { Group } from 'konva/lib/Group';
-import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
@@ -297,16 +297,41 @@ class RowCol {
     return groups;
   }
 
-  private destroyGroupIfOutOfScreen(group: Group, map: Map<number, Group>) {
+  destroyGroupIfOutOfScreen(
+    group: Group,
+    map: Map<number | string, Group>,
+    margin?: Partial<Vector2d>
+  ) {
     if (
       !group.isClientRectOnScreen({
-        x: -this.sheet.getViewportVector().x,
-        y: -this.sheet.getViewportVector().y,
+        x: -(this.sheet.getViewportVector().x + (margin?.x ?? 0)),
+        y: -(this.sheet.getViewportVector().y + (margin?.y ?? 0)),
       })
     ) {
       group.destroy();
       map.delete(group.attrs.index);
     }
+  }
+
+  destroyGroupIfOverlappingWithFrozenCell(
+    group: Group,
+    map: Map<number | string, Group>,
+    rowColIndex: number,
+    size: number = 0
+  ) {
+    const data = this.sheet.getData();
+
+    if (!data.frozenCells || this.getIsFrozen(rowColIndex)) return;
+
+    const lastFrozenNumber = data.frozenCells[this.type];
+
+    for (let index = 0; index <= lastFrozenNumber; index++) {
+      size += this.getSize(index);
+    }
+
+    this.destroyGroupIfOutOfScreen(group, map, {
+      [this.functions.axis]: size,
+    });
   }
 
   destroyOutOfViewportItems() {
@@ -315,7 +340,36 @@ class RowCol {
     });
 
     this.rowColGroupMap.forEach((rowColGroup) => {
-      this.destroyGroupIfOutOfScreen(rowColGroup, this.rowColGroupMap);
+      const data = this.sheet.getData();
+
+      if (data.frozenCells) {
+        this.destroyGroupIfOverlappingWithFrozenCell(
+          rowColGroup,
+          this.rowColGroupMap,
+          rowColGroup.attrs.index
+        );
+      } else {
+        this.destroyGroupIfOutOfScreen(rowColGroup, this.rowColGroupMap);
+      }
+    });
+
+    this.sheet.cellRenderer.cellsMap.forEach((cell) => {
+      const data = this.sheet.getData();
+      const clientRect = cell.getClientRect({ skipStroke: true });
+      const size = clientRect[this.functions.size];
+
+      if (data.frozenCells) {
+        this.destroyGroupIfOverlappingWithFrozenCell(
+          cell,
+          this.sheet.cellRenderer.cellsMap,
+          cell.attrs[this.type].y,
+          clientRect[this.functions.size]
+        );
+      } else {
+        this.destroyGroupIfOutOfScreen(cell, this.sheet.cellRenderer.cellsMap, {
+          [this.functions.axis]: size,
+        });
+      }
     });
   }
 

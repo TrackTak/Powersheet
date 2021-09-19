@@ -161,10 +161,10 @@ class CellRenderer {
     }
   }
 
-  updateCellsStyles() {
-    for (const cell of this.cellsMap.values()) {
+  updateViewport() {
+    this.cellsMap.forEach((cell) => {
       this.updateCellStyles(cell);
-    }
+    });
   }
 
   updateCellStyles(cell: Cell) {

@@ -1,5 +1,5 @@
 import { Group } from 'konva/lib/Group';
-import { ShapeConfig } from 'konva/lib/Shape';
+import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
@@ -231,6 +231,8 @@ class RowCol {
   }
 
   *drawNextItems() {
+    this.destroyOutOfViewportItems();
+
     const generator = {
       x: iteratePreviousDownToCurrent(
         this.previousSheetViewportPosition.x,
@@ -264,8 +266,6 @@ class RowCol {
       yield index;
     } while (isFinite(index));
 
-    this.destroyOutOfViewportItems();
-
     this.sheet.shapes.topLeftRect.moveToTop();
 
     this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
@@ -297,29 +297,26 @@ class RowCol {
     return groups;
   }
 
+  private destroyGroupIfOutOfScreen(group: Group, map: Map<number, Group>) {
+    if (
+      !group.isClientRectOnScreen({
+        x: -this.sheet.getViewportVector().x,
+        y: -this.sheet.getViewportVector().y,
+      })
+    ) {
+      group.destroy();
+      map.delete(group.attrs.index);
+    }
+  }
+
   destroyOutOfViewportItems() {
-    // this.headerGroupMap.forEach((headerGroup) => {
-    //   if (
-    //     !headerGroup.isClientRectOnScreen({
-    //       x: -this.sheet.getViewportVector().x,
-    //       y: -this.sheet.getViewportVector().y,
-    //     })
-    //   ) {
-    //     headerGroup.destroy();
-    //     this.headerGroupMap.delete(headerGroup.attrs.index);
-    //   }
-    // });
-    // this.rowColGroupMap.forEach((group) => {
-    //   if (
-    //     !group.isClientRectOnScreen({
-    //       x: -this.sheet.getViewportVector().x,
-    //       y: -this.sheet.getViewportVector().y,
-    //     })
-    //   ) {
-    //     group.destroy();
-    //     this.rowColGroupMap.delete(group.attrs.index);
-    //   }
-    // });
+    this.headerGroupMap.forEach((headerGroup) => {
+      this.destroyGroupIfOutOfScreen(headerGroup, this.headerGroupMap);
+    });
+
+    this.rowColGroupMap.forEach((rowColGroup) => {
+      this.destroyGroupIfOutOfScreen(rowColGroup, this.rowColGroupMap);
+    });
   }
 
   getTotalSize() {
@@ -528,8 +525,8 @@ class RowCol {
 
     const group = this.shapes.group.clone(groupConfig) as Group;
 
-    const isFrozen = this.getIsLastFrozen(index);
-    const line = isFrozen
+    const isLastFrozen = this.getIsLastFrozen(index);
+    const line = isLastFrozen
       ? this.sheet.shapes.frozenGridLine
       : this.shapes.gridLine;
 
@@ -546,6 +543,8 @@ class RowCol {
     group.add(gridLine);
 
     this.rowColGroupMap.set(index, group);
+
+    const isFrozen = this.getIsFrozen(index);
 
     if (isFrozen) {
       const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(

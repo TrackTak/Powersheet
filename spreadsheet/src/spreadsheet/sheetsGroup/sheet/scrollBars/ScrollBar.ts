@@ -19,6 +19,10 @@ class ScrollBar {
   scrollEl: HTMLDivElement;
   customSizePositions: ICustomSizePosition[];
   scrollOffset: IScrollOffset;
+  scrollAmount = 0;
+  previousScrollAmount = 0;
+  index = 0;
+  previousIndex = 0;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -87,9 +91,8 @@ class ScrollBar {
       };
     });
 
-    const scrollSize =
-      this.sheet.sheetDimensions[this.functions.size] +
-      this.sheet.getViewportVector()[this.functions.axis];
+    const scrollSize = this.sheet.sheetDimensions[this.functions.size];
+    //   this.sheet.getViewportVector()[this.functions.axis];
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }
@@ -100,72 +103,36 @@ class ScrollBar {
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
 
-    // TODO: Remove when we have scrollbar snapping
-    const customSizeChanges = this.customSizePositions.map(({ axis, size }) => {
-      let sizeChange = 0;
-
-      if (axis < scroll) {
-        const change = Math.min(scroll - axis, size);
-
-        sizeChange = change;
-      }
-      return {
-        axis,
-        size: sizeChange,
-      };
-    });
-
-    const totalSizeDifference = customSizeChanges.reduce(
-      (totalSize, { axis, size }) => {
-        let newSize = size;
-
-        if (axis < scroll) {
-          newSize -= this.spreadsheet.options[this.type].defaultSize;
-        }
-
-        return totalSize + newSize;
-      },
-      0
-    );
-
-    const scrollAmount = scroll * -1;
     const scrollPercent =
-      (scroll - totalSizeDifference) /
-      (this.sheet.sheetDimensions[this.functions.size] - totalSizeDifference);
-    const index = Math.trunc(
+      scroll / this.sheet.sheetDimensions[this.functions.size];
+    let index = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
-    this.sheet[this.type].sheetViewportPosition.x = index;
-    this.sheet[this.type].sheetViewportPosition.y = this.sheet[
-      this.type
-    ].calculateSheetViewportEndPosition(
-      this.sheet.stage[this.functions.size](),
-      this.sheet[this.type].sheetViewportPosition.x,
-      customSizeChanges
-    );
+    console.log(index);
 
-    if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(scrollAmount);
-    } else {
-      this.sheet.scrollGroups.xSticky.y(scrollAmount);
+    if (index !== this.previousIndex) {
+      const indexDifference = index - this.previousIndex;
+      const modifiedAmountToScroll =
+        this.spreadsheet.options[this.type].defaultSize * indexDifference * -1;
+
+      this.scrollAmount = modifiedAmountToScroll;
+
+      if (this.isCol) {
+        this.sheet.scrollGroups.ySticky.x(this.scrollAmount);
+      } else {
+        this.sheet.scrollGroups.xSticky.y(this.scrollAmount);
+      }
+
+      this.sheet.scrollGroups.main[this.functions.axis](this.scrollAmount);
+
+      this.sheet.drawNextItems();
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](scrollAmount);
+    this.previousIndex = this.index;
+    this.previousScrollAmount = this.scrollAmount;
 
-    this.sheet.drawNextItems();
-
-    const item = this.sheet[this.type].headerGroupMap.get(index)!;
-
-    this.scrollOffset = {
-      index,
-      size:
-        scroll +
-        this.sheet.getViewportVector()[this.functions.axis] -
-        item[this.functions.axis](),
-    };
-
-    this.sheet.emit(events.scroll[this.scrollType], e, scrollAmount);
+    this.sheet.emit(events.scroll[this.scrollType], e, this.scrollAmount);
   };
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {

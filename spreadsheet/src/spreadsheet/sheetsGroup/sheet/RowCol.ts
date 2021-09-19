@@ -7,7 +7,6 @@ import { Vector2d } from 'konva/lib/types';
 import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
-  ICustomSizes,
   ISheetViewportPosition,
   getRowColGroupFromScrollGroup,
   iteratePreviousDownToCurrent,
@@ -201,21 +200,13 @@ class RowCol {
 
   calculateSheetViewportEndPosition = (
     sheetViewportDimensionSize: number,
-    sheetViewportStartYIndex: number,
-    customSizeChanges?: ICustomSizes[]
+    sheetViewportStartYIndex: number
   ) => {
     let sumOfSizes = 0;
     let i = sheetViewportStartYIndex;
 
     const getSize = () => {
-      // TODO: Remove when we have snapping to row/col for scroll
-      let offset = 0;
-
-      if (customSizeChanges?.[i]?.size) {
-        offset = customSizeChanges[i].size;
-      }
-
-      return this.getSize(i) - offset;
+      return this.getSize(i);
     };
 
     while (sumOfSizes + getSize() < sheetViewportDimensionSize) {
@@ -231,7 +222,7 @@ class RowCol {
   }
 
   *drawNextItems() {
-    this.destroyOutOfViewportItems();
+    // this.destroyOutOfViewportItems();
 
     const generator = {
       x: iteratePreviousDownToCurrent(
@@ -419,7 +410,17 @@ class RowCol {
           skipStroke: true,
         })[this.functions.size];
 
-        size = Math.max(size, cellSize);
+        if (cellSize > size) {
+          size = cellSize;
+
+          this.sheet.setData({
+            [this.type]: {
+              sizes: {
+                [index]: size,
+              },
+            },
+          });
+        }
       }
     }
 
@@ -436,16 +437,7 @@ class RowCol {
   }
 
   getIndexesBetweenVectors(position: Vector2d) {
-    const customSizes: ICustomSizes[] = [];
-
-    customSizes[this.scrollBar.scrollOffset.index] = {
-      size: this.scrollBar.scrollOffset.size,
-    };
-
-    const params: [number, ICustomSizes[]] = [
-      this.sheetViewportPosition.x,
-      customSizes,
-    ];
+    const params: [number] = [this.sheetViewportPosition.x];
 
     const indexes = {
       x: this.calculateSheetViewportEndPosition(position.x, ...params),

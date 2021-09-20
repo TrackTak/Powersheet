@@ -470,6 +470,10 @@ class Sheet {
         this.sheetsGroup.redo();
         break;
       }
+      case e.ctrlKey && 'x': {
+        this.spreadsheet.clipboard.cut();
+        break;
+      }
       case e.ctrlKey && 'c': {
         this.spreadsheet.clipboard.copy();
         break;

@@ -5,9 +5,20 @@ import Spreadsheet from './Spreadsheet';
 
 class Clipboard {
   private sourceRange: SimpleCellRange | null = null;
+  private isCut: boolean = false;
 
   constructor(private spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
+  }
+
+  cut() {
+    const cellRange = this.getCellRangeForSelection();
+    if (!cellRange) {
+      return;
+    }
+    this.sourceRange = cellRange;
+    this.spreadsheet.hyperformula.cut(cellRange);
+    this.isCut = true;
   }
 
   copy() {
@@ -48,6 +59,13 @@ class Clipboard {
             targetRange.start.col + columnIndex
           );
           const sourceCellData = sheetData?.cellsData?.[sourceCellId] || {};
+
+          if (this.isCut) {
+            this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
+              sourceCellId
+            );
+          }
+
           return {
             ...allColumnData,
             [targetCellId]: {
@@ -67,6 +85,7 @@ class Clipboard {
 
     this.spreadsheet.focusedSheet?.cellRenderer.setCellDataBatch(cellData);
     this.spreadsheet.focusedSheet?.updateViewport();
+    this.isCut = false;
   }
 
   private getCellRangeForSelection(

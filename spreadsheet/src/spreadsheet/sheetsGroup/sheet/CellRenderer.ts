@@ -90,6 +90,10 @@ class CellRenderer {
     }
   }
 
+  deleteCellData(id: CellId) {
+    delete this.sheet.getData().cellsData?.[id];
+  }
+
   setHyperformulaCellData(id: CellId, value: string | undefined) {
     const cellAddress = this.getCellHyperformulaAddress(id);
 

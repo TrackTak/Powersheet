@@ -19,11 +19,8 @@ class ScrollBar {
   scrollEl: HTMLDivElement;
   customSizePositions: ICustomSizePosition[];
   scrollOffset: IScrollOffset;
-  scrollAmount = 0;
-  previousScrollAmount = 0;
-  previousScroll = 0;
+  scroll = 0;
   index = 0;
-  previousIndex = 0;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -113,7 +110,7 @@ class ScrollBar {
     const data = this.sheet.getData();
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
-    let toScroll = this.previousScroll;
+    let newScroll = Math.abs(this.scroll);
 
     const getNewSrollAmount = (start: number, end: number) => {
       let newScrollAmount = 0;
@@ -131,30 +128,28 @@ class ScrollBar {
       return newScrollAmount;
     };
 
-    const scrollAmount = getNewSrollAmount(this.previousIndex, index);
-    const scrollReverseAmount =
-      getNewSrollAmount(index, this.previousIndex) * -1;
+    const scrollAmount = getNewSrollAmount(this.index, index);
+    const scrollReverseAmount = getNewSrollAmount(index, this.index) * -1;
 
-    toScroll += scrollAmount;
-    toScroll += scrollReverseAmount;
+    newScroll += scrollAmount;
+    newScroll += scrollReverseAmount;
 
-    this.scrollAmount = toScroll * -1;
+    newScroll *= -1;
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(this.scrollAmount);
+      this.sheet.scrollGroups.ySticky.x(newScroll);
     } else {
-      this.sheet.scrollGroups.xSticky.y(this.scrollAmount);
+      this.sheet.scrollGroups.xSticky.y(newScroll);
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](this.scrollAmount);
+    this.sheet.scrollGroups.main[this.functions.axis](newScroll);
 
-    this.sheet.drawNextItems();
+    // this.sheet.drawNextItems();
 
-    this.previousIndex = index;
-    this.previousScrollAmount = this.scrollAmount;
-    this.previousScroll = toScroll;
+    this.index = index;
+    this.scroll = newScroll;
 
-    this.sheet.emit(events.scroll[this.scrollType], e, this.scrollAmount);
+    this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {

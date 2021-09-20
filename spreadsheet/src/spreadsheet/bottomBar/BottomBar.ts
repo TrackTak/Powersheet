@@ -113,7 +113,7 @@ class BottomBar {
     }
 
     sheetSelectionDropdownButton.textContent =
-      this.sheetsGroup.spreadsheet.data[sheetId].sheetName;
+      this.sheetsGroup.getData()[sheetId].sheetName;
 
     const switchSheet = () => {
       this.sheetsGroup.switchSheet(sheetId);
@@ -209,8 +209,7 @@ class BottomBar {
       { once: true }
     );
 
-    nameContainer.textContent =
-      this.sheetsGroup.spreadsheet.data[sheetId].sheetName;
+    nameContainer.textContent = this.sheetsGroup.getData()[sheetId].sheetName;
 
     this.scrollSliderContainer.appendChild(sheetTabContainer);
     this.sheetSelectionDropdownContent.appendChild(
@@ -230,9 +229,9 @@ class BottomBar {
     this.scrollSliderContainer.innerHTML = '';
     this.sheetSelectionDropdownContent.innerHTML = '';
 
-    for (const [sheetId] of this.sheetsGroup.sheets) {
-      this.setSheetTabElements(sheetId);
-    }
+    this.sheetsGroup.sheets.forEach((sheet) => {
+      this.setSheetTabElements(sheet.sheetId);
+    });
   }
 
   sheetSelectionOnClick = () => {
@@ -242,7 +241,7 @@ class BottomBar {
   createNewSheetButtonOnClick = () => {
     const sheetName = this.sheetsGroup.getSheetName();
 
-    this.sheetsGroup.createNewSheet(sheetName, {
+    this.sheetsGroup.createNewSheet({
       sheetName,
     });
   };

@@ -8,6 +8,7 @@ import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
+  IFrozenCells,
   iterateXToY,
 } from './Sheet';
 import Resizer from './Resizer';
@@ -53,14 +54,18 @@ class RowCol {
   scrollBar: ScrollBar;
   headerGroupMap: Map<HeaderGroupId, Group>;
   rowColGroupMap: Map<RowColGroupId, Group>;
+  rowColCellMap: Map<IRowColAddress, CellId[]>;
+  xFrozenRowColGroupsMap = new Map<RowColGroupId, Group>();
+  yFrozenRowColGroupsMap = new Map<RowColGroupId, Group>();
+  xyFrozenRowColGroupsMap = new Map<RowColGroupId, Group>();
   totalSize: number;
   shapes: IShapes;
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
-  rowColCellMap: Map<IRowColAddress, CellId[]>;
-  frozenGridLine?: Group;
-  private getLineConfig: (sheetSize: number) => LineConfig;
+  frozenLine?: Group;
+  private getLinePoints: (size: number) => number[];
   private functions: IRowColFunctions;
+  private oppositeType: RowColType;
   private oppositeFunctions: IRowColFunctions;
   private isCol: boolean;
   private spreadsheet: Spreadsheet;
@@ -86,6 +91,7 @@ class RowCol {
       }),
     };
     if (this.isCol) {
+      this.oppositeType = 'row';
       this.functions = {
         axis: 'x',
         size: 'width',
@@ -104,11 +110,8 @@ class RowCol {
         const letter = String.fromCharCode(startCharCode + index);
         return letter;
       };
-      this.getLineConfig = (sheetHeight: number) => {
-        const lineConfig: LineConfig = {
-          points: [0, 0, 0, sheetHeight],
-        };
-        return lineConfig;
+      this.getLinePoints = (height: number) => {
+        return [0, 0, 0, height];
       };
       this.getAvailableSize = () => {
         return (
@@ -118,6 +121,7 @@ class RowCol {
         );
       };
     } else {
+      this.oppositeType = 'col';
       this.functions = {
         axis: 'y',
         size: 'height',
@@ -134,11 +138,8 @@ class RowCol {
       this.getHeaderText = (index) => {
         return (index + 1).toString();
       };
-      this.getLineConfig = (sheetWidth: number) => {
-        const lineConfig: LineConfig = {
-          points: [0, 0, sheetWidth, 0],
-        };
-        return lineConfig;
+      this.getLinePoints = (width: number) => {
+        return [0, 0, width, 0];
       };
       this.getAvailableSize = () => {
         const bottomBarHeight =
@@ -473,7 +474,8 @@ class RowCol {
 
   draw(index: number, drawingAtX = false) {
     this.drawHeader(index, drawingAtX);
-    this.drawGridLines(index);
+    this.drawGridLine(index);
+    this.drawFrozenGridLine(index);
   }
 
   private drawHeader(index: number, drawingAtX = false) {
@@ -553,10 +555,11 @@ class RowCol {
     };
   }
 
-  private drawGridLines(index: number) {
-    if (this.rowColGroupMap.has(index)) {
-      this.rowColGroupMap.get(index)!.destroy();
-    }
+  private getGridLine(
+    index: number,
+    lineConfig: LineConfig,
+    line = this.shapes.gridLine
+  ) {
     const headerGroup = this.headerGroupMap.get(index)!;
 
     const size = headerGroup![this.functions.size]();
@@ -571,27 +574,167 @@ class RowCol {
 
     const group = this.shapes.group.clone(groupConfig) as Group;
 
+    const mergedLineConfig: LineConfig = {
+      [this.functions.axis]: size,
+      ...lineConfig,
+    };
+    const gridLine = line.clone(mergedLineConfig) as Line;
+
+    group.add(gridLine);
+
+    return group;
+  }
+
+  private getFrozenGridLine(
+    index: number,
+    frozenCells: IFrozenCells,
+    scrollGroup: Group,
+    map: Map<number, Group>,
+    getGroup: (size: number) => Group
+  ) {
+    if (this.xFrozenRowColGroupsMap.has(index)) {
+      this.xFrozenRowColGroupsMap.get(index)!.destroy();
+    }
+
+    let size = 0;
+
+    for (let index = 0; index <= frozenCells[this.oppositeType]; index++) {
+      size += this.sheet[this.oppositeType].getSize(index);
+    }
+
+    const stickyGroup = getRowColGroupFromScrollGroup(scrollGroup);
+    const group = getGroup(size);
+
+    stickyGroup.add(group);
+
+    map.set(index, group);
+  }
+
+  private drawXRowFrozenGridLine(index: number, frozenCells: IFrozenCells) {
+    if (!this.isCol && index > frozenCells[this.type]) {
+      this.getFrozenGridLine(
+        index,
+        frozenCells,
+        this.sheet.scrollGroups.xSticky,
+        this.xFrozenRowColGroupsMap,
+        (size) =>
+          this.getGridLine(index, {
+            points: this.getLinePoints(size),
+          })
+      );
+    }
+  }
+
+  private drawXColFrozenGridLine(index: number, frozenCells: IFrozenCells) {
+    if (this.isCol && index < frozenCells[this.type]) {
+      this.getFrozenGridLine(
+        index,
+        frozenCells,
+        this.sheet.scrollGroups.xSticky,
+        this.xFrozenRowColGroupsMap,
+        (size) =>
+          this.getGridLine(index, {
+            y: size,
+            points: this.getLinePoints(this.sheet.stage.height()),
+          })
+      );
+    }
+  }
+
+  private drawYRowFrozenGridLine(index: number, frozenCells: IFrozenCells) {
+    if (!this.isCol && index < frozenCells[this.type]) {
+      this.getFrozenGridLine(
+        index,
+        frozenCells,
+        this.sheet.scrollGroups.ySticky,
+        this.yFrozenRowColGroupsMap,
+        (size) =>
+          this.getGridLine(index, {
+            x: size,
+            points: this.getLinePoints(this.sheet.stage.width()),
+          })
+      );
+    }
+  }
+
+  private drawYColFrozenGridLine(index: number, frozenCells: IFrozenCells) {
+    if (this.isCol && index > frozenCells[this.type]) {
+      this.getFrozenGridLine(
+        index,
+        frozenCells,
+        this.sheet.scrollGroups.ySticky,
+        this.yFrozenRowColGroupsMap,
+        (size) =>
+          this.getGridLine(index, {
+            points: this.getLinePoints(size),
+          })
+      );
+    }
+  }
+
+  private drawXYFrozenGridLine(index: number, frozenCells: IFrozenCells) {
+    if (index < frozenCells[this.type]) {
+      this.getFrozenGridLine(
+        index,
+        frozenCells,
+        this.sheet.scrollGroups.xySticky,
+        this.xyFrozenRowColGroupsMap,
+        (size) =>
+          this.getGridLine(index, {
+            points: this.getLinePoints(size),
+          })
+      );
+    }
+  }
+
+  private drawFrozenGridLine(index: number) {
+    const { frozenCells } = this.sheet.getData();
+
+    if (frozenCells) {
+      this.drawXYFrozenGridLine(index, frozenCells);
+      this.drawXRowFrozenGridLine(index, frozenCells);
+      this.drawXColFrozenGridLine(index, frozenCells);
+      this.drawYRowFrozenGridLine(index, frozenCells);
+      this.drawYColFrozenGridLine(index, frozenCells);
+    } else {
+      const frozenRowColGroupMaps = [
+        this.xFrozenRowColGroupsMap,
+        this.yFrozenRowColGroupsMap,
+        this.xyFrozenRowColGroupsMap,
+      ];
+
+      frozenRowColGroupMaps.forEach((frozenRowColGroupMap) => {
+        frozenRowColGroupMap.forEach((group) => {
+          group.destroy();
+        });
+        frozenRowColGroupMap.clear();
+      });
+    }
+  }
+
+  private drawGridLine(index: number) {
+    if (this.rowColGroupMap.has(index)) {
+      this.rowColGroupMap.get(index)!.destroy();
+    }
+
     const isLastFrozen = this.getIsLastFrozen(index);
-    const line = isLastFrozen
-      ? this.sheet.shapes.frozenGridLine
-      : this.shapes.gridLine;
 
     const sheetSize =
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const lineConfig: LineConfig = {
-      ...this.getLineConfig(sheetSize),
-      [this.functions.axis]: size,
-    };
-    const gridLine = line.clone(lineConfig) as Line;
-
-    group.add(gridLine);
+    const group = this.getGridLine(
+      index,
+      {
+        points: this.getLinePoints(sheetSize),
+      },
+      isLastFrozen ? this.sheet.shapes.frozenLine : undefined
+    );
 
     this.rowColGroupMap.set(index, group);
 
     if (isLastFrozen) {
-      this.frozenGridLine = group;
+      this.frozenLine = group;
 
       const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky

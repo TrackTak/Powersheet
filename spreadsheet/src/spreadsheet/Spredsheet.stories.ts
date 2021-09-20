@@ -50,8 +50,8 @@ FrozenCells.args = {
       {
         sheetName: 'Frozen Cells',
         frozenCells: {
-          row: 0,
-          col: 0,
+          row: 3,
+          col: 2,
         },
       },
     ],
@@ -131,6 +131,7 @@ CellsData.args = {
               verticalTextAlign: 'middle',
               bold: true,
               italic: true,
+              textWrap: 'wrap',
             },
             comment: 'Powersheet is the best',
             value:

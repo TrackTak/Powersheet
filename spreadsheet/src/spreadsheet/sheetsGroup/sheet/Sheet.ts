@@ -34,7 +34,7 @@ export interface ISheetViewportPosition {
 
 interface IShapes {
   sheet: Rect;
-  frozenGridLine: Line;
+  frozenLine: Line;
   topLeftRect: Rect;
 }
 
@@ -383,8 +383,8 @@ class Sheet {
         listening: true,
         opacity: 0,
       }),
-      frozenGridLine: new Line({
-        ...this.spreadsheet.styles.frozenGridLine,
+      frozenLine: new Line({
+        ...this.spreadsheet.styles.frozenLine,
       }),
       topLeftRect: new Rect({
         ...this.spreadsheet.styles.topLeftRect,
@@ -402,7 +402,7 @@ class Sheet {
     this.stage.add(this.layer);
     this.layer.add(this.shapes.sheet);
 
-    this.shapes.frozenGridLine.cache();
+    this.shapes.frozenLine.cache();
 
     Object.values(this.scrollGroups).forEach((group) => {
       this.layer.add(group);
@@ -652,11 +652,11 @@ class Sheet {
       this.scrollGroups.xySticky
     );
 
-    if (frozenCells && this.row.frozenGridLine && this.col.frozenGridLine) {
-      const colClientRect = this.col.frozenGridLine.getClientRect({
+    if (frozenCells && this.row.frozenLine && this.col.frozenLine) {
+      const colClientRect = this.col.frozenLine.getClientRect({
         skipStroke: true,
       });
-      const rowClientRect = this.row.frozenGridLine.getClientRect({
+      const rowClientRect = this.row.frozenLine.getClientRect({
         skipStroke: true,
       });
 

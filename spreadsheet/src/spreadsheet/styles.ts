@@ -28,7 +28,7 @@ export interface IStyles {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   gridLine: LineConfig;
-  frozenGridLine: LineConfig;
+  frozenLine: LineConfig;
   rowResizeMarker: RectConfig;
   colResizeMarker: RectConfig;
   rowHeader: IRowHeaderConfig;
@@ -79,7 +79,7 @@ const sharedStyles = {
 };
 
 export const defaultStyles: IStyles = {
-  frozenGridLine: {
+  frozenLine: {
     ...sharedStyles.gridLine,
     stroke: 'blue',
   },

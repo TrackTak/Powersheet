@@ -21,6 +21,7 @@ class ScrollBar {
   scrollOffset: IScrollOffset;
   scrollAmount = 0;
   previousScrollAmount = 0;
+  previousScroll = 0;
   index = 0;
   previousIndex = 0;
   private scrollType: ScrollBarType;
@@ -109,28 +110,49 @@ class ScrollBar {
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
-    console.log(index);
+    const data = this.sheet.getData();
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
-    if (index !== this.previousIndex) {
-      const indexDifference = index - this.previousIndex;
-      const modifiedAmountToScroll =
-        this.spreadsheet.options[this.type].defaultSize * indexDifference * -1;
+    let toScroll = this.previousScroll;
 
-      this.scrollAmount = modifiedAmountToScroll;
+    const getNewSrollAmount = (start: number, end: number) => {
+      let newScrollAmount = 0;
 
-      if (this.isCol) {
-        this.sheet.scrollGroups.ySticky.x(this.scrollAmount);
-      } else {
-        this.sheet.scrollGroups.xSticky.y(this.scrollAmount);
+      for (let i = start; i < end; i++) {
+        const size = data[this.type]?.sizes[i];
+
+        if (size) {
+          newScrollAmount += size;
+        } else {
+          newScrollAmount += defaultSize;
+        }
       }
 
-      this.sheet.scrollGroups.main[this.functions.axis](this.scrollAmount);
+      return newScrollAmount;
+    };
 
-      this.sheet.drawNextItems();
+    const scrollAmount = getNewSrollAmount(this.previousIndex, index);
+    const scrollReverseAmount =
+      getNewSrollAmount(index, this.previousIndex) * -1;
+
+    toScroll += scrollAmount;
+    toScroll += scrollReverseAmount;
+
+    this.scrollAmount = toScroll * -1;
+
+    if (this.isCol) {
+      this.sheet.scrollGroups.ySticky.x(this.scrollAmount);
+    } else {
+      this.sheet.scrollGroups.xSticky.y(this.scrollAmount);
     }
 
-    this.previousIndex = this.index;
+    this.sheet.scrollGroups.main[this.functions.axis](this.scrollAmount);
+
+    this.sheet.drawNextItems();
+
+    this.previousIndex = index;
     this.previousScrollAmount = this.scrollAmount;
+    this.previousScroll = toScroll;
 
     this.sheet.emit(events.scroll[this.scrollType], e, this.scrollAmount);
   };

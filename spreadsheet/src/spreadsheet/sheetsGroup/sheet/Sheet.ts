@@ -632,16 +632,25 @@ class Sheet {
   }
 
   drawNextItems() {
-    const colGenerator = this.col.drawNextItems();
-    const rowGenerator = this.row.drawNextItems();
+    // TODO: fix viewport drawing
+    for (let index = 0; index < this.spreadsheet.options.row.amount; index++) {
+      this.row.draw(index);
+    }
 
-    let colIteratorResult;
-    let rowIteratorResult;
+    for (let index = 0; index < this.spreadsheet.options.col.amount; index++) {
+      this.col.draw(index);
+    }
 
-    do {
-      colIteratorResult = colGenerator.next();
-      rowIteratorResult = rowGenerator.next();
-    } while (!colIteratorResult.done || !rowIteratorResult.done);
+    // const colGenerator = this.col.drawNextItems();
+    // const rowGenerator = this.row.drawNextItems();
+
+    // let colIteratorResult;
+    // let rowIteratorResult;
+
+    // do {
+    //   colIteratorResult = colGenerator.next();
+    //   rowIteratorResult = rowGenerator.next();
+    // } while (!colIteratorResult.done || !rowIteratorResult.done);
   }
 }
 

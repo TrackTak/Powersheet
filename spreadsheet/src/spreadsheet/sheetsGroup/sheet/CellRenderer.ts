@@ -284,6 +284,21 @@ class CellRenderer {
 
     this.cellsMap.set(id, cell);
 
+    const existingRowCellMapValue = this.sheet.row.rowColCellMap.get(
+      cell.attrs.row
+    );
+    const existingColCellMapValue = this.sheet.col.rowColCellMap.get(
+      cell.attrs.col
+    );
+    this.sheet.row.rowColCellMap.set(
+      cell.attrs.row,
+      existingRowCellMapValue ? [...existingRowCellMapValue, id] : [id]
+    );
+    this.sheet.col.rowColCellMap.set(
+      cell.attrs.col,
+      existingColCellMapValue ? [...existingColCellMapValue, id] : [id]
+    );
+
     this.drawCell(cell);
   }
 
@@ -293,6 +308,8 @@ class CellRenderer {
     }
 
     this.cellsMap.clear();
+    this.sheet.row.rowColCellMap.clear();
+    this.sheet.col.rowColCellMap.clear();
 
     this.sheet.merger.updateMergedCells();
 
@@ -626,16 +643,6 @@ class CellRenderer {
     });
 
     return cells;
-  }
-
-  destroyCell(cellId: string) {
-    if (this.cellsMap.has(cellId)) {
-      const cell = this.cellsMap.get(cellId)!;
-
-      cell.destroy();
-
-      this.cellsMap.delete(cellId);
-    }
   }
 
   drawCell(cell: Cell) {

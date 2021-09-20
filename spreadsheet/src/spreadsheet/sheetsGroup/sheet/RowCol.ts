@@ -8,15 +8,18 @@ import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
-  iteratePreviousDownToCurrent,
-  iteratePreviousUpToCurrent,
   iterateXToY,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell, convertFromCellIdToRowCol } from './CellRenderer';
+import {
+  Cell,
+  CellId,
+  convertFromCellIdToRowCol,
+  IRowColAddress,
+} from './CellRenderer';
 
 interface IShapes {
   group: Group;
@@ -54,6 +57,7 @@ class RowCol {
   shapes: IShapes;
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
+  rowColCellMap: Map<IRowColAddress, CellId[]>;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
@@ -67,6 +71,7 @@ class RowCol {
     this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.headerGroupMap = new Map();
     this.rowColGroupMap = new Map();
+    this.rowColCellMap = new Map();
 
     this.totalSize = 0;
     this.shapes = {
@@ -212,42 +217,32 @@ class RowCol {
   }
 
   *drawNextItems() {
-    // this.destroyOutOfViewportItems();
-
-    const generator = {
-      x: iteratePreviousDownToCurrent(
-        this.scrollBar.previousSheetViewportPosition.x,
-        this.scrollBar.sheetViewportPosition.x
-      ),
-      y: iteratePreviousUpToCurrent(
-        this.scrollBar.previousSheetViewportPosition.y,
-        this.scrollBar.sheetViewportPosition.y
-      ),
-    };
-
-    let index = -Infinity;
-
-    do {
-      const generatorX = generator.x.next();
-      const generatorY = generator.y.next();
-
-      index = Math.max(
-        generatorX.value ?? -Infinity,
-        generatorY.value ?? -Infinity
-      );
-
-      if (isFinite(index)) {
-        const params: [number, boolean?] = !generatorX.done
-          ? [index - 1, true]
-          : [index];
-
-        this.draw(...params);
-      }
-
-      yield index;
-    } while (isFinite(index));
-
-    this.sheet.shapes.topLeftRect.moveToTop();
+    // const generator = {
+    //   x: iteratePreviousDownToCurrent(
+    //     this.scrollBar.previousSheetViewportPosition.x,
+    //     this.scrollBar.sheetViewportPosition.x
+    //   ),
+    //   y: iteratePreviousUpToCurrent(
+    //     this.scrollBar.previousSheetViewportPosition.y,
+    //     this.scrollBar.sheetViewportPosition.y
+    //   ),
+    // };
+    // let index = -Infinity;
+    // do {
+    //   const generatorX = generator.x.next();
+    //   const generatorY = generator.y.next();
+    //   index = Math.max(
+    //     generatorX.value ?? -Infinity,
+    //     generatorY.value ?? -Infinity
+    //   );
+    //   if (isFinite(index)) {
+    //     const params: [number, boolean?] = !generatorX.done
+    //       ? [index - 1, true]
+    //       : [index];
+    //     this.draw(...params);
+    //   }
+    //   yield index;
+    // } while (isFinite(index));
   }
 
   convertFromCellsToRange(cells: Cell[]) {
@@ -276,25 +271,19 @@ class RowCol {
     return groups;
   }
 
-  destroyGroupIfOutOfScreen(
-    group: Group,
-    map: Map<number | string, Group>,
-    margin?: Partial<Vector2d>
-  ) {
+  hideGroupIfOutOfScreen(group: Group, margin?: Partial<Vector2d>) {
     if (
       !group.isClientRectOnScreen({
         x: -(this.sheet.getViewportVector().x + (margin?.x ?? 0)),
         y: -(this.sheet.getViewportVector().y + (margin?.y ?? 0)),
       })
     ) {
-      group.destroy();
-      map.delete(group.attrs.index);
+      group.hide();
     }
   }
 
-  destroyGroupIfOverlappingWithFrozenCell(
+  hideGroupIfOverlappingWithFrozenCell(
     group: Group,
-    map: Map<number | string, Group>,
     rowColIndex: number,
     size: number = 0
   ) {
@@ -308,48 +297,70 @@ class RowCol {
       size += this.getSize(index);
     }
 
-    this.destroyGroupIfOutOfScreen(group, map, {
+    this.hideGroupIfOutOfScreen(group, {
       [this.functions.axis]: size,
     });
   }
 
+  render() {
+    this.destroyOutOfViewportItems();
+    this.renderItemsInView();
+  }
+
+  renderItemsInView() {}
+
   destroyOutOfViewportItems() {
-    this.headerGroupMap.forEach((headerGroup) => {
-      this.destroyGroupIfOutOfScreen(headerGroup, this.headerGroupMap);
-    });
-
-    this.rowColGroupMap.forEach((rowColGroup) => {
-      const data = this.sheet.getData();
-
-      if (data.frozenCells) {
-        this.destroyGroupIfOverlappingWithFrozenCell(
-          rowColGroup,
-          this.rowColGroupMap,
-          rowColGroup.attrs.index
-        );
-      } else {
-        this.destroyGroupIfOutOfScreen(rowColGroup, this.rowColGroupMap);
-      }
-    });
-
-    this.sheet.cellRenderer.cellsMap.forEach((cell) => {
-      const data = this.sheet.getData();
-      const clientRect = cell.getClientRect({ skipStroke: true });
-      const size = clientRect[this.functions.size];
-
-      if (data.frozenCells) {
-        this.destroyGroupIfOverlappingWithFrozenCell(
-          cell,
-          this.sheet.cellRenderer.cellsMap,
-          cell.attrs[this.type].y,
-          clientRect[this.functions.size]
-        );
-      } else {
-        this.destroyGroupIfOutOfScreen(cell, this.sheet.cellRenderer.cellsMap, {
-          [this.functions.axis]: size,
-        });
-      }
-    });
+    // this.headerGroupMap.forEach((headerGroup) => {
+    //   this.destroyGroupIfOutOfScreen(headerGroup, this.headerGroupMap);
+    // });
+    // this.rowColGroupMap.forEach((rowColGroup) => {
+    //   const data = this.sheet.getData();
+    //   if (data.frozenCells) {
+    //     this.destroyGroupIfOverlappingWithFrozenCell(
+    //       rowColGroup,
+    //       this.rowColGroupMap,
+    //       rowColGroup.attrs.index
+    //     );
+    //   } else {
+    //     this.destroyGroupIfOutOfScreen(rowColGroup, this.rowColGroupMap);
+    //   }
+    // });
+    // console.log(this.sheet.cellRenderer.rowColCellMap);
+    // for (const index of this.scrollBar.iterateSheetViewportX()) {
+    //   if (!isNil(index)) {
+    //     const cellId = this.sheet.cellRenderer.rowColCellMap.get(index);
+    //     const data = this.sheet.getData();
+    //     const clientRect = cell.getClientRect({ skipStroke: true });
+    //     const size = clientRect[this.functions.size];
+    //     if (data.frozenCells) {
+    //       this.hideGroupIfOverlappingWithFrozenCell(
+    //         cell,
+    //         cell.attrs[this.type].y,
+    //         clientRect[this.functions.size]
+    //       );
+    //     } else {
+    //       this.hideGroupIfOutOfScreen(cell, {
+    //         [this.functions.axis]: size,
+    //       });
+    //     }
+    //   }
+    // }
+    // this.sheet.cellRenderer.cellsMap.forEach((cell) => {
+    //   const data = this.sheet.getData();
+    //   const clientRect = cell.getClientRect({ skipStroke: true });
+    //   const size = clientRect[this.functions.size];
+    //   if (data.frozenCells) {
+    //     this.hideGroupIfOverlappingWithFrozenCell(
+    //       cell,
+    //       cell.attrs[this.type].y,
+    //       clientRect[this.functions.size]
+    //     );
+    //   } else {
+    //     this.hideGroupIfOutOfScreen(cell, {
+    //       [this.functions.axis]: size,
+    //     });
+    //   }
+    // });
   }
 
   getTotalSize() {

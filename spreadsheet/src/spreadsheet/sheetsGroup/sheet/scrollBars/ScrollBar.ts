@@ -78,6 +78,24 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
+  *iterateSheetViewportX() {
+    const isScrollingDown =
+      this.previousSheetViewportPosition.x < this.sheetViewportPosition.x;
+
+    const start = isScrollingDown
+      ? this.previousSheetViewportPosition.x
+      : this.sheetViewportPosition.x;
+    const end = isScrollingDown
+      ? this.sheetViewportPosition.x
+      : this.previousSheetViewportPosition.x;
+
+    for (let index = start; index < end; index++) {
+      yield isScrollingDown ? index + 1 : index;
+    }
+
+    yield null;
+  }
+
   updateCustomSizePositions() {
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
@@ -174,6 +192,7 @@ class ScrollBar {
 
     this.sheet.scrollGroups.main[this.functions.axis](newScroll);
 
+    this.sheet[this.type].render();
     // this.sheet.drawNextItems();
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;

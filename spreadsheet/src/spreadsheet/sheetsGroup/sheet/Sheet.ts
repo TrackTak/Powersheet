@@ -502,6 +502,9 @@ class Sheet {
     this.stage.width(width);
     this.stage.height(height);
 
+    this.row.scrollBar.setYIndex();
+    this.col.scrollBar.setYIndex();
+
     const context = this.layer.canvas.getContext();
 
     context.translate(0.5, 0.5);

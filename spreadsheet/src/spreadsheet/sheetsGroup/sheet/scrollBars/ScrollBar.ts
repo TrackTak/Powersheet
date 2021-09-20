@@ -20,7 +20,8 @@ class ScrollBar {
   customSizePositions: ICustomSizePosition[];
   scrollOffset: IScrollOffset;
   scroll = 0;
-  index = 0;
+  xIndex = 0;
+  yIndex = 0;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -69,6 +70,10 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
+  setYIndex() {
+    this.yIndex = this.getYIndex();
+  }
+
   updateCustomSizePositions() {
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
@@ -95,6 +100,37 @@ class ScrollBar {
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }
 
+  private getNewScrollAmount(start: number, end: number) {
+    const data = this.sheet.getData();
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+
+    let newScrollAmount = 0;
+
+    for (let i = start; i < end; i++) {
+      const size = data[this.type]?.sizes[i];
+
+      if (size) {
+        newScrollAmount += size;
+      } else {
+        newScrollAmount += defaultSize;
+      }
+    }
+
+    return newScrollAmount;
+  }
+
+  private getYIndex() {
+    const xIndex = this.xIndex;
+    const stageSize = this.sheet.stage[this.functions.size]();
+
+    const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
+      stageSize,
+      xIndex
+    );
+
+    return yIndex;
+  }
+
   onScroll = (e: Event) => {
     e.preventDefault();
 
@@ -103,33 +139,15 @@ class ScrollBar {
 
     const scrollPercent =
       scroll / this.sheet.sheetDimensions[this.functions.size];
-    let index = Math.trunc(
+    let xIndex = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
-    const data = this.sheet.getData();
-    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-
     let newScroll = Math.abs(this.scroll);
 
-    const getNewSrollAmount = (start: number, end: number) => {
-      let newScrollAmount = 0;
-
-      for (let i = start; i < end; i++) {
-        const size = data[this.type]?.sizes[i];
-
-        if (size) {
-          newScrollAmount += size;
-        } else {
-          newScrollAmount += defaultSize;
-        }
-      }
-
-      return newScrollAmount;
-    };
-
-    const scrollAmount = getNewSrollAmount(this.index, index);
-    const scrollReverseAmount = getNewSrollAmount(index, this.index) * -1;
+    const scrollAmount = this.getNewScrollAmount(this.xIndex, xIndex);
+    const scrollReverseAmount =
+      this.getNewScrollAmount(xIndex, this.xIndex) * -1;
 
     newScroll += scrollAmount;
     newScroll += scrollReverseAmount;
@@ -146,8 +164,13 @@ class ScrollBar {
 
     // this.sheet.drawNextItems();
 
-    this.index = index;
+    this.xIndex = xIndex;
+    this.yIndex = this.getYIndex();
     this.scroll = newScroll;
+
+    if (!this.isCol) {
+      console.log(this.yIndex);
+    }
 
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };

@@ -11,6 +11,7 @@ import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
 import { HyperFormula } from 'hyperformula';
 import hyperformulaConfig from './hyperformulaConfig';
+import Clipboard from './Clipboard';
 
 interface IConstructor {
   styles?: Partial<IStyles>;
@@ -29,6 +30,7 @@ class Spreadsheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   hyperformula: HyperFormula;
+  clipboard: Clipboard;
 
   constructor(params: IConstructor) {
     this.options = params.options;
@@ -48,6 +50,8 @@ class Spreadsheet {
     this.hyperformula = HyperFormula.buildEmpty(hyperformulaConfig);
 
     this.sheetsGroups = [this.getNewSheetsGroup()];
+
+    this.clipboard = new Clipboard(this);
   }
 
   setFocusedSheet(sheet: Sheet) {

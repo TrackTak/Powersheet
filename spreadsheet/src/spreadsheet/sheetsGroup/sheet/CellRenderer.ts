@@ -115,6 +115,12 @@ class CellRenderer {
     this.setHyperformulaCellData(id, updatedData.cellsData[id].value);
   }
 
+  setCellDataBatch(cellData: Record<CellId, Partial<ICellData>>) {
+    Object.keys(cellData).forEach((id) => {
+      this.setCellData(id, cellData[id]);
+    });
+  }
+
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {
     this.setCellData(id, {
       style: {

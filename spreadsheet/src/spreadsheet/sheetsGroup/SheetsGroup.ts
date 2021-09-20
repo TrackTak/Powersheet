@@ -189,12 +189,14 @@ class SheetsGroup {
       ...this.spreadsheet.data[sheetId],
       ...newValue,
     };
+    this.update();
   }
 
   undo = () => {
     if (!this.history.canUndo) return;
 
     this.history.undo();
+    this.spreadsheet.hyperformula.undo();
     this.update();
   };
 
@@ -202,6 +204,7 @@ class SheetsGroup {
     if (!this.history.canRedo) return;
 
     this.history.redo();
+    this.spreadsheet.hyperformula.redo();
     this.update();
   };
 }

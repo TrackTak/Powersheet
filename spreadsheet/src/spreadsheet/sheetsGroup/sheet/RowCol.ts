@@ -7,7 +7,6 @@ import { Vector2d } from 'konva/lib/types';
 import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
-  ISheetViewportPosition,
   getRowColGroupFromScrollGroup,
   iteratePreviousDownToCurrent,
   iteratePreviousUpToCurrent,
@@ -53,10 +52,8 @@ class RowCol {
   rowColGroupMap: Map<RowColGroupId, Group>;
   totalSize: number;
   shapes: IShapes;
-  sheetViewportPosition: ISheetViewportPosition;
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
-  private previousSheetViewportPosition: ISheetViewportPosition;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
@@ -70,14 +67,7 @@ class RowCol {
     this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.headerGroupMap = new Map();
     this.rowColGroupMap = new Map();
-    this.sheetViewportPosition = {
-      x: 0,
-      y: 0,
-    };
-    this.previousSheetViewportPosition = {
-      x: 0,
-      y: 0,
-    };
+
     this.totalSize = 0;
     this.shapes = {
       headerRect: new Rect(),
@@ -195,7 +185,7 @@ class RowCol {
 
     this.totalSize = sumOfSizes;
 
-    this.sheetViewportPosition.y = yIndex;
+    this.scrollBar.sheetViewportPosition.y = yIndex;
   }
 
   calculateSheetViewportEndPosition = (
@@ -226,12 +216,12 @@ class RowCol {
 
     const generator = {
       x: iteratePreviousDownToCurrent(
-        this.previousSheetViewportPosition.x,
-        this.sheetViewportPosition.x
+        this.scrollBar.previousSheetViewportPosition.x,
+        this.scrollBar.sheetViewportPosition.x
       ),
       y: iteratePreviousUpToCurrent(
-        this.previousSheetViewportPosition.y,
-        this.sheetViewportPosition.y
+        this.scrollBar.previousSheetViewportPosition.y,
+        this.scrollBar.sheetViewportPosition.y
       ),
     };
 
@@ -258,8 +248,6 @@ class RowCol {
     } while (isFinite(index));
 
     this.sheet.shapes.topLeftRect.moveToTop();
-
-    this.previousSheetViewportPosition = { ...this.sheetViewportPosition };
   }
 
   convertFromCellsToRange(cells: Cell[]) {
@@ -429,7 +417,7 @@ class RowCol {
 
   updateViewport() {
     for (const index of iterateXToY(
-      this.sheet[this.type].sheetViewportPosition
+      this.sheet[this.type].scrollBar.sheetViewportPosition
     )) {
       this.sheet[this.type].draw(index);
     }
@@ -437,7 +425,7 @@ class RowCol {
   }
 
   getIndexesBetweenVectors(position: Vector2d) {
-    const params: [number] = [this.sheetViewportPosition.x];
+    const params: [number] = [this.scrollBar.sheetViewportPosition.x];
 
     const indexes = {
       x: this.calculateSheetViewportEndPosition(position.x, ...params),

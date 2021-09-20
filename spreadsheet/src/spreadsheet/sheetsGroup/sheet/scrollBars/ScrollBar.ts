@@ -2,7 +2,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
-import Sheet, { ICustomSizePosition } from '../Sheet';
+import Sheet, { ICustomSizePosition, ISheetViewportPosition } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
@@ -20,8 +20,8 @@ class ScrollBar {
   customSizePositions: ICustomSizePosition[];
   scrollOffset: IScrollOffset;
   scroll = 0;
-  xIndex = 0;
-  yIndex = 0;
+  sheetViewportPosition: ISheetViewportPosition;
+  previousSheetViewportPosition: ISheetViewportPosition;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -42,6 +42,14 @@ class ScrollBar {
     this.scrollOffset = {
       size: 0,
       index: 0,
+    };
+    this.sheetViewportPosition = {
+      x: 0,
+      y: 0,
+    };
+    this.previousSheetViewportPosition = {
+      x: 0,
+      y: 0,
     };
 
     this.scrollBarEl = document.createElement('div');
@@ -68,10 +76,6 @@ class ScrollBar {
     this.sheet.stage.on('wheel', this.onWheel);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
-  }
-
-  setYIndex() {
-    this.yIndex = this.getYIndex();
   }
 
   updateCustomSizePositions() {
@@ -120,7 +124,7 @@ class ScrollBar {
   }
 
   private getYIndex() {
-    const xIndex = this.xIndex;
+    const xIndex = this.sheetViewportPosition.x;
     const stageSize = this.sheet.stage[this.functions.size]();
 
     const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
@@ -139,15 +143,23 @@ class ScrollBar {
 
     const scrollPercent =
       scroll / this.sheet.sheetDimensions[this.functions.size];
-    let xIndex = Math.trunc(
+
+    this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
+    this.sheetViewportPosition.y = this.getYIndex();
 
     let newScroll = Math.abs(this.scroll);
 
-    const scrollAmount = this.getNewScrollAmount(this.xIndex, xIndex);
+    const scrollAmount = this.getNewScrollAmount(
+      this.previousSheetViewportPosition.x,
+      this.sheetViewportPosition.x
+    );
     const scrollReverseAmount =
-      this.getNewScrollAmount(xIndex, this.xIndex) * -1;
+      this.getNewScrollAmount(
+        this.sheetViewportPosition.x,
+        this.previousSheetViewportPosition.x
+      ) * -1;
 
     newScroll += scrollAmount;
     newScroll += scrollReverseAmount;
@@ -164,13 +176,9 @@ class ScrollBar {
 
     // this.sheet.drawNextItems();
 
-    this.xIndex = xIndex;
-    this.yIndex = this.getYIndex();
+    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
+    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
     this.scroll = newScroll;
-
-    if (!this.isCol) {
-      console.log(this.yIndex);
-    }
 
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };

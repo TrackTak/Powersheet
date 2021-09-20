@@ -58,6 +58,7 @@ class RowCol {
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
   rowColCellMap: Map<IRowColAddress, CellId[]>;
+  frozenGridLine?: Group;
   private getLineConfig: (sheetSize: number) => LineConfig;
   private functions: IRowColFunctions;
   private oppositeFunctions: IRowColFunctions;
@@ -507,24 +508,24 @@ class RowCol {
     this.headerGroupMap.set(index, headerGroup);
 
     if (isFrozen) {
-      const xyStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+      const xyStickyGroup = getHeaderGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );
 
-      xyStickyHeaderGroup.add(headerGroup);
+      xyStickyGroup.add(headerGroup);
     } else {
       if (this.isCol) {
-        const yStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+        const yStickyGroup = getHeaderGroupFromScrollGroup(
           this.sheet.scrollGroups.ySticky
         );
 
-        yStickyHeaderGroup.add(headerGroup);
+        yStickyGroup.add(headerGroup);
       } else {
-        const xStickyHeaderGroup = getHeaderGroupFromScrollGroup(
+        const xStickyGroup = getHeaderGroupFromScrollGroup(
           this.sheet.scrollGroups.xSticky
         );
 
-        xStickyHeaderGroup.add(headerGroup);
+        xStickyGroup.add(headerGroup);
       }
     }
   }
@@ -589,16 +590,14 @@ class RowCol {
 
     this.rowColGroupMap.set(index, group);
 
-    const isFrozen = this.getIsFrozen(index);
+    if (isLastFrozen) {
+      this.frozenGridLine = group;
 
-    if (isFrozen) {
       const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );
 
       xyStickyGridLineGroup.add(group);
-
-      group.moveToBottom();
     } else {
       const mainGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.main

@@ -172,6 +172,14 @@ export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   return cellGroup;
 };
 
+export const getFrozenBackgroundFromScrollGroup = (scrollGroup: Group) => {
+  const frozenBackground = getSheetGroupFromScrollGroup(
+    scrollGroup
+  ).children?.find((x) => x.attrs.type === 'frozenBackground') as Group;
+
+  return frozenBackground;
+};
+
 export const destroyGroupIfOutOfScreen = (
   group: Group,
   map: Map<number, Group>,
@@ -325,7 +333,10 @@ class Sheet {
       xySticky: new Group(),
     };
 
-    Object.values(this.scrollGroups).forEach((scrollGroup: Group) => {
+    Object.keys(this.scrollGroups).forEach((key) => {
+      const scrollGroup =
+        this.scrollGroups[key as keyof typeof this.scrollGroups];
+
       const sheetGroup = new Group({
         ...performanceProperties,
         ...this.getViewportVector(),
@@ -348,6 +359,17 @@ class Sheet {
         listening: true,
         type: 'header',
       });
+
+      const frozenBackground = new Rect({
+        ...performanceProperties,
+        type: 'frozenBackground',
+        fill: 'white',
+        visible: false,
+      });
+
+      if (key !== 'main') {
+        sheetGroup.add(frozenBackground);
+      }
 
       // The order added here matters as it determines the zIndex for konva
       sheetGroup.add(rowColGroup, cellGroup);
@@ -618,6 +640,50 @@ class Sheet {
     this.shapes.topLeftRect.moveToTop();
   }
 
+  updateFrozenBackgrounds() {
+    const frozenCells = this.getData().frozenCells;
+    const xStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.xSticky
+    );
+    const yStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.ySticky
+    );
+    const xyStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.xySticky
+    );
+
+    if (frozenCells && this.row.frozenGridLine && this.col.frozenGridLine) {
+      const colClientRect = this.col.frozenGridLine.getClientRect({
+        skipStroke: true,
+      });
+      const rowClientRect = this.row.frozenGridLine.getClientRect({
+        skipStroke: true,
+      });
+
+      colClientRect.x -= this.getViewportVector().x;
+      rowClientRect.y -= this.getViewportVector().y;
+
+      xStickyFrozenBackground.width(colClientRect.x);
+      xStickyFrozenBackground.height(this.stage.height());
+      xStickyFrozenBackground.y(rowClientRect.y);
+
+      yStickyFrozenBackground.width(this.stage.width());
+      yStickyFrozenBackground.height(rowClientRect.y);
+      yStickyFrozenBackground.x(colClientRect.x);
+
+      xyStickyFrozenBackground.width(colClientRect.x);
+      xyStickyFrozenBackground.height(rowClientRect.y);
+
+      xStickyFrozenBackground.show();
+      yStickyFrozenBackground.show();
+      xyStickyFrozenBackground.show();
+    } else {
+      xStickyFrozenBackground.hide();
+      yStickyFrozenBackground.hide();
+      xyStickyFrozenBackground.hide();
+    }
+  }
+
   updateViewport() {
     this.updateSheetDimensions();
     this.cellRenderer.updateCells();
@@ -629,6 +695,7 @@ class Sheet {
     this.spreadsheet.formulaBar?.updateValue(
       this.selector.selectedFirstCell?.id() ?? ''
     );
+    this.updateFrozenBackgrounds();
   }
 
   drawNextItems() {

@@ -78,23 +78,6 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
-  *iterateSheetViewport(axis: 'x' | 'y') {
-    const isScrollingNormal =
-      this.previousSheetViewportPosition[axis] <
-      this.sheetViewportPosition[axis];
-
-    const start = isScrollingNormal
-      ? this.previousSheetViewportPosition[axis]
-      : this.sheetViewportPosition[axis];
-    const end = isScrollingNormal
-      ? this.sheetViewportPosition[axis]
-      : this.previousSheetViewportPosition[axis];
-
-    for (let index = start; index < end; index++) {
-      yield { index, isScrollingNormal };
-    }
-  }
-
   updateCustomSizePositions() {
     let customSizeDifference = 0;
     const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
@@ -153,11 +136,11 @@ class ScrollBar {
     return yIndex + 1;
   }
 
-  renderItems() {
+  drawItems() {
     this.sheetViewportPosition.y = this.getYIndex();
 
-    this.createInViewportItemsOnScroll();
     this.destroyOutOfViewportItemsOnScroll();
+    this.drawViewportItemsOnScroll();
   }
 
   onScroll = (e: Event) => {
@@ -173,7 +156,7 @@ class ScrollBar {
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
-    this.renderItems();
+    this.drawItems();
 
     let newScroll = Math.abs(this.scroll);
 
@@ -207,7 +190,7 @@ class ScrollBar {
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
 
-  private createItem(index: number) {
+  private drawItem(index: number) {
     const cellIds = this.sheet[this.type].rowColCellMap.get(index);
 
     cellIds?.forEach((cellId) => {
@@ -219,49 +202,42 @@ class ScrollBar {
     this.sheet[this.type].draw(index);
   }
 
-  private createInViewportItemsOnScroll() {
-    for (const { isScrollingNormal, index } of this.iterateSheetViewport('x')) {
-      if (!isScrollingNormal) {
-        this.createItem(index);
-      }
-    }
-
-    for (const { isScrollingNormal, index } of this.iterateSheetViewport('y')) {
-      if (isScrollingNormal) {
-        this.createItem(index);
-      }
+  private drawViewportItemsOnScroll() {
+    for (
+      let index = this.sheetViewportPosition.x;
+      index <= this.sheetViewportPosition.y;
+      index++
+    ) {
+      this.drawItem(index);
     }
   }
 
-  private destroyItem(index: number) {
-    // const cellIds = this.sheet[this.type].rowColCellMap.get(index);
-    const header = this.sheet[this.type].headerGroupMap.get(index)!;
-    const rowCol = this.sheet[this.type].rowColMap.get(index)!;
+  // private destroyItem(index: number) {
+  //   // const cellIds = this.sheet[this.type].rowColCellMap.get(index);
+  //   const header = this.sheet[this.type].headerGroupMap.get(index)!;
+  //   const rowCol = this.sheet[this.type].rowColMap.get(index)!;
 
-    // cellIds?.forEach((cellId) => {
-    //   const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
+  //   // cellIds?.forEach((cellId) => {
+  //   //   const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
 
-    //   cell.destroy();
-    // });
+  //   //   cell.destroy();
+  //   // });
 
-    // console.log(header.parent._id);
-
-    header.destroy();
-    rowCol.destroy();
-  }
+  //   header.destroy();
+  //   rowCol.destroy();
+  // }
 
   private destroyOutOfViewportItemsOnScroll() {
-    for (const { isScrollingNormal, index } of this.iterateSheetViewport('x')) {
-      if (isScrollingNormal) {
-        this.destroyItem(index);
-      }
-    }
+    this.sheet[this.type].rowColMap.forEach((rowCol) => {
+      rowCol.destroy();
+    });
 
-    for (const { isScrollingNormal, index } of this.iterateSheetViewport('y')) {
-      if (!isScrollingNormal) {
-        this.destroyItem(index);
-      }
-    }
+    this.sheet[this.type].headerGroupMap.forEach((header) => {
+      header.destroy();
+    });
+
+    this.sheet[this.type].rowColMap.clear();
+    this.sheet[this.type].headerGroupMap.clear();
   }
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {

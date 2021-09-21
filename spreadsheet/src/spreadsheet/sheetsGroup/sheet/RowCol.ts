@@ -393,18 +393,15 @@ class RowCol {
   }
 
   private drawHeader(index: number) {
-    const prevIndex = index - 1;
-
     if (this.headerGroupMap.has(index)) {
       this.headerGroupMap.get(index)!.destroy();
     }
 
     const size = this.getSize(index);
-    const prevHeader = this.headerGroupMap.get(prevIndex);
 
-    const axis = prevHeader
-      ? prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
-      : this.sheet.getViewportVector()[this.functions.axis];
+    const axis =
+      this.spreadsheet.options[this.type].defaultSize * index +
+      this.sheet.getViewportVector()[this.functions.axis];
 
     const groupConfig: ShapeConfig = {
       index,
@@ -442,7 +439,6 @@ class RowCol {
         xStickyGroup.add(headerGroup);
       }
     }
-    // console.log('drawHeader', headerGroup.parent._id);
   }
 
   private getHeader(index: number) {
@@ -455,6 +451,7 @@ class RowCol {
       ...performanceProperties,
       text: this.getHeaderText(index),
     });
+
     const midPoints = centerRectTwoInRectOne(
       rect.getClientRect(),
       text.getClientRect()

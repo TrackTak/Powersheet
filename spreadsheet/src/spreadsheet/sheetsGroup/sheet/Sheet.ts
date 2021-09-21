@@ -438,8 +438,9 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    this.row.scrollBar.renderItems();
-    this.col.scrollBar.renderItems();
+    // TODO: Fix textWrapping resizing row breaking this
+    this.col.scrollBar.drawItems();
+    this.row.scrollBar.drawItems();
     this.updateViewport();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
@@ -531,10 +532,9 @@ class Sheet {
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
-
     // TODO: Fix textWrapping resizing row breaking this
-    this.col.scrollBar.renderItems();
-    this.row.scrollBar.renderItems();
+    this.col.scrollBar.drawItems();
+    this.row.scrollBar.drawItems();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;

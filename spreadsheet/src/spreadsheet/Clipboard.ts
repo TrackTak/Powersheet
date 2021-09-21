@@ -46,25 +46,44 @@ class Clipboard {
       pastedData
     );
 
+    const getIndex = (
+      cellRange: SimpleCellRange,
+      rowCol: 'row' | 'col',
+      currentIndex: number
+    ) => {
+      const index =
+        currentIndex % (cellRange.end[rowCol] - cellRange.start[rowCol] + 1);
+
+      const result = cellRange.start[rowCol] + index;
+
+      return result;
+    };
+
     const sheetData = this.spreadsheet.focusedSheet?.getData();
     const cellData = pastedData.reduce((all, rowData, rowIndex) => {
       const colData = rowData.reduce(
         (allColumnData, currentValue, columnIndex) => {
-          const sourceCellId = getCellId(
-            this.sourceRange!.start.row + rowIndex,
-            this.sourceRange!.start.col + columnIndex
+          const sourceRowIndex = getIndex(this.sourceRange!, 'row', rowIndex);
+          const sourceColIndex = getIndex(
+            this.sourceRange!,
+            'col',
+            columnIndex
           );
+          const sourceCellId = getCellId(sourceRowIndex, sourceColIndex);
           const targetCellId = getCellId(
             targetRange.start.row + rowIndex,
             targetRange.start.col + columnIndex
           );
-          const sourceCellData = sheetData?.cellsData?.[sourceCellId] || {};
+          const sourceCellData = sheetData?.cellsData?.[sourceCellId] ?? {};
 
           if (this.isCut) {
             this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
               sourceCellId
             );
           }
+          this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
+            targetCellId
+          );
 
           return {
             ...allColumnData,
@@ -112,7 +131,6 @@ class Clipboard {
     if (expandSelectionForPaste) {
       const colOffset = this.sourceRange!.end.col - this.sourceRange!.start.col;
       const rowOffset = this.sourceRange!.end.row - this.sourceRange!.start.row;
-
       endCellAddress = {
         sheet: startCellAddress.sheet,
         col: endCellAddress.col + colOffset,

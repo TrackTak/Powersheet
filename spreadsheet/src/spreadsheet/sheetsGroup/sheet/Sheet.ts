@@ -514,13 +514,15 @@ class Sheet {
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }
 
-  setData(value: Partial<IData>) {
+  setData(value: Partial<IData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
+
+    if (addToHistory) {
+      this.spreadsheet.addToHistory();
+    }
 
     this.spreadsheet.data[this.sheetsGroup.sheetsGroupId][this.sheetId] =
       updatedData;
-
-    this.spreadsheet.addToHistory();
   }
 
   getData(): IData {

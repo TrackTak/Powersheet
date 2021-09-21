@@ -163,6 +163,9 @@ CellsData.args = {
             },
             value: '0.05',
           },
+          '40_4': {
+            value: 'Cell Value',
+          },
         },
       },
     ],

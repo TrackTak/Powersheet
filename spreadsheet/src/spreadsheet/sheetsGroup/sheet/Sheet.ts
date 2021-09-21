@@ -438,12 +438,24 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    this.drawNextItems();
+    this.row.drawAll();
+    this.col.drawAll();
     this.updateViewport();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
+  }
+
+  hideGroupIfOutOfScreen(group: Group, margin?: Partial<Vector2d>) {
+    if (
+      !group.isClientRectOnScreen({
+        x: -(this.getViewportVector().x + (margin?.x ?? 0)),
+        y: -(this.getViewportVector().y + (margin?.y ?? 0)),
+      })
+    ) {
+      group.hide();
+    }
   }
 
   stageOnClick = () => {
@@ -696,28 +708,6 @@ class Sheet {
       this.selector.selectedFirstCell?.id() ?? ''
     );
     this.updateFrozenBackgrounds();
-  }
-
-  drawNextItems() {
-    // TODO: fix viewport drawing
-    for (let index = 0; index < this.spreadsheet.options.row.amount; index++) {
-      this.row.draw(index);
-    }
-
-    for (let index = 0; index < this.spreadsheet.options.col.amount; index++) {
-      this.col.draw(index);
-    }
-
-    // const colGenerator = this.col.drawNextItems();
-    // const rowGenerator = this.row.drawNextItems();
-
-    // let colIteratorResult;
-    // let rowIteratorResult;
-
-    // do {
-    //   colIteratorResult = colGenerator.next();
-    //   rowIteratorResult = rowGenerator.next();
-    // } while (!colIteratorResult.done || !rowIteratorResult.done);
   }
 }
 

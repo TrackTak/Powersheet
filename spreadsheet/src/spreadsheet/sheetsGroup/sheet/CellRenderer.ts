@@ -285,17 +285,17 @@ class CellRenderer {
     this.cellsMap.set(id, cell);
 
     const existingRowCellMapValue = this.sheet.row.rowColCellMap.get(
-      cell.attrs.row
+      cell.attrs.row.x
     );
     const existingColCellMapValue = this.sheet.col.rowColCellMap.get(
-      cell.attrs.col
+      cell.attrs.col.x
     );
     this.sheet.row.rowColCellMap.set(
-      cell.attrs.row,
+      cell.attrs.row.x,
       existingRowCellMapValue ? [...existingRowCellMapValue, id] : [id]
     );
     this.sheet.col.rowColCellMap.set(
-      cell.attrs.col,
+      cell.attrs.col.x,
       existingColCellMapValue ? [...existingColCellMapValue, id] : [id]
     );
 
@@ -676,6 +676,8 @@ class CellRenderer {
     }
 
     cell.moveToTop();
+
+    this.sheet.hideGroupIfOutOfScreen(cell);
   }
 
   getCellHyperformulaAddress(id: CellId) {

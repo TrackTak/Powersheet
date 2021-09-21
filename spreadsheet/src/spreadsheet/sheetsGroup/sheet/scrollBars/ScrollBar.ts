@@ -78,22 +78,21 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
-  *iterateSheetViewportX() {
-    const isScrollingDown =
-      this.previousSheetViewportPosition.x < this.sheetViewportPosition.x;
+  *iterateSheetViewport(axis: 'x' | 'y') {
+    const isScrollingNormal =
+      this.previousSheetViewportPosition[axis] <
+      this.sheetViewportPosition[axis];
 
-    const start = isScrollingDown
-      ? this.previousSheetViewportPosition.x
-      : this.sheetViewportPosition.x;
-    const end = isScrollingDown
-      ? this.sheetViewportPosition.x
-      : this.previousSheetViewportPosition.x;
+    const start = isScrollingNormal
+      ? this.previousSheetViewportPosition[axis]
+      : this.sheetViewportPosition[axis];
+    const end = isScrollingNormal
+      ? this.sheetViewportPosition[axis]
+      : this.previousSheetViewportPosition[axis];
 
     for (let index = start; index < end; index++) {
-      yield isScrollingDown ? index + 1 : index;
+      yield index;
     }
-
-    yield null;
   }
 
   updateCustomSizePositions() {
@@ -150,7 +149,17 @@ class ScrollBar {
       xIndex
     );
 
-    return yIndex;
+    // Add 1 to make it inclusive
+    return yIndex + 1;
+  }
+
+  renderItems() {
+    this.sheetViewportPosition.y = this.getYIndex();
+
+    console.log(this.sheetViewportPosition);
+
+    this.hideOutOfViewportItemsOnScroll();
+    this.showInViewportItemsOnScroll();
   }
 
   onScroll = (e: Event) => {
@@ -165,7 +174,8 @@ class ScrollBar {
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
-    this.sheetViewportPosition.y = this.getYIndex();
+
+    this.renderItems();
 
     let newScroll = Math.abs(this.scroll);
 
@@ -192,15 +202,62 @@ class ScrollBar {
 
     this.sheet.scrollGroups.main[this.functions.axis](newScroll);
 
-    this.sheet[this.type].render();
-    // this.sheet.drawNextItems();
-
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
     this.scroll = newScroll;
 
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
+
+  private showItem(index: number) {
+    const cellIds = this.sheet[this.type].rowColCellMap.get(index);
+    const header = this.sheet[this.type].headerGroupMap.get(index);
+    const rowCol = this.sheet[this.type].rowColGroupMap.get(index);
+
+    cellIds?.forEach((cellId) => {
+      const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
+
+      cell.show();
+    });
+
+    header?.show();
+    rowCol?.show();
+  }
+
+  private showInViewportItemsOnScroll() {
+    for (const index of this.iterateSheetViewport('x')) {
+      this.showItem(index);
+    }
+
+    for (const index of this.iterateSheetViewport('y')) {
+      this.showItem(index);
+    }
+  }
+
+  private hideItem(index: number) {
+    const cellIds = this.sheet[this.type].rowColCellMap.get(index);
+    const header = this.sheet[this.type].headerGroupMap.get(index);
+    const rowCol = this.sheet[this.type].rowColGroupMap.get(index);
+
+    cellIds?.forEach((cellId) => {
+      const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
+
+      cell.hide();
+    });
+
+    header?.hide();
+    rowCol?.hide();
+  }
+
+  private hideOutOfViewportItemsOnScroll() {
+    for (const index of this.iterateSheetViewport('x')) {
+      this.hideItem(index);
+    }
+
+    for (const index of this.iterateSheetViewport('y')) {
+      this.hideItem(index);
+    }
+  }
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();

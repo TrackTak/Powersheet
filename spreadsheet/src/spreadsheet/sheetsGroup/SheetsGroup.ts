@@ -58,6 +58,9 @@ class SheetsGroup {
     });
 
     this.update();
+
+    this.spreadsheet.focusedSheet!.col.scrollBar.renderItems();
+    this.spreadsheet.focusedSheet!.row.scrollBar.renderItems();
   };
 
   getData() {

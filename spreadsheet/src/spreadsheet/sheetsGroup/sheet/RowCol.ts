@@ -398,14 +398,14 @@ class RowCol {
     return index === this.sheet.getData().frozenCells?.[this.type];
   }
 
-  draw(index: number, drawingAtX = false) {
-    this.drawHeader(index, drawingAtX);
+  draw(index: number) {
+    this.drawHeader(index);
     this.drawGridLine(index);
     this.drawFrozenGridLine(index);
   }
 
-  private drawHeader(index: number, drawingAtX = false) {
-    const prevIndex = drawingAtX ? index + 1 : index - 1;
+  private drawHeader(index: number) {
+    const prevIndex = index - 1;
 
     if (this.headerGroupMap.has(index)) {
       this.headerGroupMap.get(index)!.destroy();
@@ -415,9 +415,7 @@ class RowCol {
     const prevHeader = this.headerGroupMap.get(prevIndex);
 
     const axis = prevHeader
-      ? drawingAtX
-        ? prevHeader[this.functions.axis]() - size
-        : prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
+      ? prevHeader[this.functions.axis]() + prevHeader[this.functions.size]()
       : this.sheet.getViewportVector()[this.functions.axis];
 
     const groupConfig: ShapeConfig = {

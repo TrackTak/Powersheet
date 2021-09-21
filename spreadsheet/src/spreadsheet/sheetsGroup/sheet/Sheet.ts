@@ -543,6 +543,10 @@ class Sheet {
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
 
+    // TODO: Fix textWrapping resizing row breaking this
+    this.col.scrollBar.renderItems();
+    this.row.scrollBar.renderItems();
+
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }

@@ -128,7 +128,7 @@ CellsData.args = {
               verticalTextAlign: 'middle',
               bold: true,
               italic: true,
-              textWrap: 'wrap',
+              //    textWrap: 'wrap',
             },
             comment: 'Powersheet is the best',
             value:

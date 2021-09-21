@@ -21,7 +21,6 @@ import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { merge } from 'lodash';
-import { Shape } from 'konva/lib/Shape';
 
 export interface IDimensions {
   width: number;
@@ -439,24 +438,13 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    this.row.drawAll();
-    this.col.drawAll();
+    this.row.scrollBar.renderItems();
+    this.col.scrollBar.renderItems();
     this.updateViewport();
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
     this.cellEditor = new CellEditor(this);
-  }
-
-  hideShapeIfOutOfScreen(shape: Group | Shape, margin?: Partial<Vector2d>) {
-    if (
-      !shape.isClientRectOnScreen({
-        x: -(this.getViewportVector().x + (margin?.x ?? 0)),
-        y: -(this.getViewportVector().y + (margin?.y ?? 0)),
-      })
-    ) {
-      shape.hide();
-    }
   }
 
   stageOnClick = () => {
@@ -703,11 +691,11 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
-    this.cellRenderer.updateCells();
+    // this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateViewport();
-    this.selector.updateSelectedCells();
+    //  this.cellRenderer.updateViewport();
+    //  this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
       this.selector.selectedFirstCell?.id() ?? ''

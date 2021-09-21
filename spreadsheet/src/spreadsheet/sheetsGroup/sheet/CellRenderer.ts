@@ -676,8 +676,6 @@ class CellRenderer {
     }
 
     cell.moveToTop();
-
-    this.sheet.hideShapeIfOutOfScreen(cell);
   }
 
   getCellHyperformulaAddress(id: CellId) {

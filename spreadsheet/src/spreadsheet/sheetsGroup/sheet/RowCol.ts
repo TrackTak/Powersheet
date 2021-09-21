@@ -172,16 +172,6 @@ class RowCol {
     this.shapes.gridLine.cache();
   }
 
-  drawAll() {
-    for (
-      let index = 0;
-      index < this.spreadsheet.options[this.type].amount;
-      index++
-    ) {
-      this.draw(index);
-    }
-  }
-
   setup() {
     const yIndex = this.calculateSheetViewportEndPosition(
       this.getAvailableSize(),
@@ -452,8 +442,7 @@ class RowCol {
         xStickyGroup.add(headerGroup);
       }
     }
-
-    this.sheet.hideShapeIfOutOfScreen(headerGroup);
+    // console.log('drawHeader', headerGroup.parent._id);
   }
 
   private getHeader(index: number) {
@@ -659,8 +648,6 @@ class RowCol {
 
       mainGridLineGroup.add(line);
     }
-
-    this.sheet.hideShapeIfOutOfScreen(line);
   }
 
   private getResizeLine(index: number) {

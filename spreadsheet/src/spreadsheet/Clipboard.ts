@@ -111,6 +111,7 @@ class Clipboard {
     expandSelectionForPaste: boolean = false
   ): SimpleCellRange | null {
     const selectedCells = this.spreadsheet.focusedSheet?.selector.selectedCells;
+
     if (
       isEmpty(selectedCells) ||
       (expandSelectionForPaste && !this.sourceRange)
@@ -129,13 +130,19 @@ class Clipboard {
       )!;
 
     if (expandSelectionForPaste) {
-      const colOffset = this.sourceRange!.end.col - this.sourceRange!.start.col;
-      const rowOffset = this.sourceRange!.end.row - this.sourceRange!.start.row;
-      endCellAddress = {
-        sheet: startCellAddress.sheet,
-        col: endCellAddress.col + colOffset,
-        row: endCellAddress.row + rowOffset,
-      };
+      const sourceRangeColSize =
+        this.sourceRange!.end.col - this.sourceRange!.start.col;
+      const sourceRangeRowSize =
+        this.sourceRange!.end.row - this.sourceRange!.start.row;
+      const targetRangeColSize = endCellAddress.col - startCellAddress.col;
+      const targetRangeRowSize = endCellAddress.row - endCellAddress.row;
+
+      if (targetRangeColSize < sourceRangeColSize) {
+        endCellAddress.col = startCellAddress.col + sourceRangeColSize;
+      }
+      if (targetRangeRowSize < sourceRangeRowSize) {
+        endCellAddress.row = startCellAddress.row + sourceRangeRowSize;
+      }
     }
 
     return {

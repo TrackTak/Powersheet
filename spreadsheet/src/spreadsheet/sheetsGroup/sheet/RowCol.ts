@@ -6,6 +6,7 @@ import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import Sheet, {
   centerRectTwoInRectOne,
+  getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
   IFrozenCells,
   iterateXToY,
@@ -430,29 +431,29 @@ class RowCol {
 
     this.headerGroupMap.set(index, headerGroup);
 
-    // if (isFrozen) {
-    //   const xyStickyGroup = getHeaderGroupFromScrollGroup(
-    //     this.sheet.scrollGroups.xySticky
-    //   );
+    if (isFrozen) {
+      const xyStickyGroup = getHeaderGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky
+      );
 
-    //   xyStickyGroup.add(headerGroup);
-    // } else {
-    //   if (this.isCol) {
-    //     const yStickyGroup = getHeaderGroupFromScrollGroup(
-    //       this.sheet.scrollGroups.ySticky
-    //     );
+      xyStickyGroup.add(headerGroup);
+    } else {
+      if (this.isCol) {
+        const yStickyGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.ySticky
+        );
 
-    //     yStickyGroup.add(headerGroup);
-    //   } else {
-    //     const xStickyGroup = getHeaderGroupFromScrollGroup(
-    //       this.sheet.scrollGroups.xSticky
-    //     );
+        yStickyGroup.add(headerGroup);
+      } else {
+        const xStickyGroup = getHeaderGroupFromScrollGroup(
+          this.sheet.scrollGroups.xSticky
+        );
 
-    //     xStickyGroup.add(headerGroup);
-    //   }
-    // }
+        xStickyGroup.add(headerGroup);
+      }
+    }
 
-    // this.sheet.hideShapeIfOutOfScreen(headerGroup);
+    this.sheet.hideShapeIfOutOfScreen(headerGroup);
   }
 
   private getHeader(index: number) {

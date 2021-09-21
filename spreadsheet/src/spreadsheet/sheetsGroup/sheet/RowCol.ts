@@ -437,13 +437,56 @@ class RowCol {
     this.scrollBar.updateCustomSizePositions();
   }
 
+  *getSizeForFrozenCell(type: RowColType) {
+    const { frozenCells } = this.sheet.getData();
+
+    if (!frozenCells) return null;
+
+    let size = 0;
+
+    for (let index = 0; index <= frozenCells[type]; index++) {
+      size += this.getSize(index);
+
+      yield { size, index };
+    }
+
+    return size;
+  }
+
   getIndexesBetweenVectors(position: Vector2d) {
-    const params: [number] = [this.scrollBar.sheetViewportPosition.x];
+    let sheetViewportStartYIndex = this.scrollBar.sheetViewportPosition.x;
 
     const indexes = {
-      x: this.calculateSheetViewportEndPosition(position.x, ...params),
-      y: this.calculateSheetViewportEndPosition(position.y, ...params),
+      x: this.calculateSheetViewportEndPosition(
+        position.x,
+        sheetViewportStartYIndex
+      ),
+      y: this.calculateSheetViewportEndPosition(
+        position.y,
+        sheetViewportStartYIndex
+      ),
     };
+
+    let xIndex = null;
+    let yIndex = null;
+
+    for (const { size, index } of this.getSizeForFrozenCell(this.type)) {
+      if (xIndex === null && position.x <= size) {
+        xIndex = index;
+      }
+
+      if (yIndex === null && position.y <= size) {
+        yIndex = index;
+      }
+    }
+
+    if (xIndex !== null) {
+      indexes.x = xIndex;
+    }
+
+    if (yIndex !== null) {
+      indexes.y = yIndex;
+    }
 
     return indexes;
   }
@@ -587,7 +630,6 @@ class RowCol {
 
   private getFrozenGridLine(
     index: number,
-    frozenCells: IFrozenCells,
     scrollGroup: Group,
     map: Map<number, Group>,
     getGroup: (size: number) => Group
@@ -598,8 +640,10 @@ class RowCol {
 
     let size = 0;
 
-    for (let index = 0; index <= frozenCells[this.oppositeType]; index++) {
-      size += this.sheet[this.oppositeType].getSize(index);
+    for (const value of this.sheet[this.oppositeType].getSizeForFrozenCell(
+      this.oppositeType
+    )) {
+      size = value.size;
     }
 
     const stickyGroup = getRowColGroupFromScrollGroup(scrollGroup);
@@ -614,7 +658,6 @@ class RowCol {
     if (!this.isCol && index > frozenCells[this.type]) {
       this.getFrozenGridLine(
         index,
-        frozenCells,
         this.sheet.scrollGroups.xSticky,
         this.xFrozenRowColGroupsMap,
         (size) =>
@@ -629,7 +672,6 @@ class RowCol {
     if (this.isCol && index < frozenCells[this.type]) {
       this.getFrozenGridLine(
         index,
-        frozenCells,
         this.sheet.scrollGroups.xSticky,
         this.xFrozenRowColGroupsMap,
         (size) =>
@@ -645,7 +687,6 @@ class RowCol {
     if (!this.isCol && index < frozenCells[this.type]) {
       this.getFrozenGridLine(
         index,
-        frozenCells,
         this.sheet.scrollGroups.ySticky,
         this.yFrozenRowColGroupsMap,
         (size) =>
@@ -661,7 +702,6 @@ class RowCol {
     if (this.isCol && index > frozenCells[this.type]) {
       this.getFrozenGridLine(
         index,
-        frozenCells,
         this.sheet.scrollGroups.ySticky,
         this.yFrozenRowColGroupsMap,
         (size) =>
@@ -676,7 +716,6 @@ class RowCol {
     if (index < frozenCells[this.type]) {
       this.getFrozenGridLine(
         index,
-        frozenCells,
         this.sheet.scrollGroups.xySticky,
         this.xyFrozenRowColGroupsMap,
         (size) =>

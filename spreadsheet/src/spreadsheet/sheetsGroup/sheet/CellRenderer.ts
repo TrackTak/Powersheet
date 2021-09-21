@@ -129,25 +129,25 @@ class CellRenderer {
     });
   }
 
-  private setCellRect(cell: Cell, rowGroup: Group, colGroup: Group) {
+  private setCellRect(cell: Cell, rowLine: Line, colLine: Line) {
     const cellRect = getCellRectFromCell(cell);
 
-    cell.x(colGroup.x());
-    cell.y(rowGroup.y());
+    cell.x(colLine.x());
+    cell.y(rowLine.y());
 
-    cellRect.width(colGroup.width());
-    cellRect.height(rowGroup.height());
+    cellRect.width(colLine.width());
+    cellRect.height(rowLine.height());
   }
 
   updateCellClientRect(cell: Cell) {
     const id = cell.id();
     const { row, col } = convertFromCellIdToRowCol(id);
-    const rowGroup = this.sheet.row.rowColGroupMap.get(row)!;
-    const colGroup = this.sheet.col.rowColGroupMap.get(col)!;
+    const rowLine = this.sheet.row.rowColMap.get(row)!;
+    const colLine = this.sheet.col.rowColMap.get(col)!;
     const cellText = getCellTextFromCell(cell);
     const isMerged = this.sheet.merger.getIsCellMerged(id);
 
-    this.setCellRect(cell, rowGroup, colGroup);
+    this.setCellRect(cell, rowLine, colLine);
 
     if (isMerged) {
       this.setMergedCellProperties(cell);
@@ -527,8 +527,8 @@ class CellRenderer {
   }
 
   getNewCell(id: string | null, row: Vector2d, col: Vector2d) {
-    const rowGroup = this.sheet.row.rowColGroupMap.get(row.x)!;
-    const colGroup = this.sheet.col.rowColGroupMap.get(col.x)!;
+    const rowLine = this.sheet.row.rowColMap.get(row.x)!;
+    const colLine = this.sheet.col.rowColMap.get(col.x)!;
 
     const cell = new Group({
       ...performanceProperties,
@@ -546,7 +546,7 @@ class CellRenderer {
 
     cell.add(cellRect);
 
-    this.setCellRect(cell, rowGroup, colGroup);
+    this.setCellRect(cell, rowLine, colLine);
 
     const isMergedCell = this.sheet.merger.getIsCellMerged(cell.id());
 
@@ -559,18 +559,18 @@ class CellRenderer {
 
   convertFromCellIdToCell(id: CellId) {
     const { row, col } = convertFromCellIdToRowCol(id);
-    const rowGroup = this.sheet.row.rowColGroupMap.get(row);
-    const colGroup = this.sheet.col.rowColGroupMap.get(col);
+    const rowLine = this.sheet.row.rowColMap.get(row);
+    const colLine = this.sheet.col.rowColMap.get(col);
 
-    if (!rowGroup) {
+    if (!rowLine) {
       throw new Error(`id ${id} is out of range`);
     }
 
-    if (!colGroup) {
+    if (!colLine) {
       throw new Error(`id ${id} is out of range`);
     }
 
-    const cell = this.convertFromRowColToCell(rowGroup, colGroup);
+    const cell = this.convertFromRowColToCell(rowLine, colLine);
 
     return cell;
   }
@@ -579,8 +579,8 @@ class CellRenderer {
     const { row, col } = this.sheet.merger.associatedMergedCellIdMap.get(
       cell.id()
     )!;
-    const rows = this.sheet.row.convertFromRangeToGroups(cell.attrs.row);
-    const cols = this.sheet.col.convertFromRangeToGroups(cell.attrs.col);
+    const rows = this.sheet.row.convertFromRangeToRowCols(cell.attrs.row);
+    const cols = this.sheet.col.convertFromRangeToRowCols(cell.attrs.col);
     const cellRect = getCellRectFromCell(cell);
     const width = cols.reduce((prev, curr) => {
       return (prev += curr.width());
@@ -600,17 +600,17 @@ class CellRenderer {
     cell.attrs.col = col;
   }
 
-  convertFromRowColToCell(rowGroup: Group, colGroup: Group) {
-    const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
+  convertFromRowColToCell(rowLine: Line, colLine: Line) {
+    const id = getCellId(rowLine.attrs.index, colLine.attrs.index);
 
     const row = {
-      x: rowGroup.attrs.index,
-      y: rowGroup.attrs.index,
+      x: rowLine.attrs.index,
+      y: rowLine.attrs.index,
     };
 
     const col = {
-      x: colGroup.attrs.index,
-      y: colGroup.attrs.index,
+      x: colLine.attrs.index,
+      y: colLine.attrs.index,
     };
 
     const cell = this.getNewCell(id, row, col);
@@ -618,15 +618,15 @@ class CellRenderer {
     return cell;
   }
 
-  convertFromRowColsToCells(rows: Group[], cols: Group[]) {
+  convertFromRowColsToCells(rows: Line[], cols: Line[]) {
     const mergedCellsAddedMap = new Map();
     const cells: Cell[] = [];
 
-    rows.forEach((rowGroup) => {
-      cols.forEach((colGroup) => {
-        const id = getCellId(rowGroup.attrs.index, colGroup.attrs.index);
+    rows.forEach((rowLine) => {
+      cols.forEach((colLine) => {
+        const id = getCellId(rowLine.attrs.index, colLine.attrs.index);
         const mergedCells = this.sheet.merger.associatedMergedCellIdMap.get(id);
-        const cell = this.convertFromRowColToCell(rowGroup, colGroup);
+        const cell = this.convertFromRowColToCell(rowLine, colLine);
 
         if (mergedCells) {
           const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
@@ -677,7 +677,7 @@ class CellRenderer {
 
     cell.moveToTop();
 
-    this.sheet.hideGroupIfOutOfScreen(cell);
+    this.sheet.hideShapeIfOutOfScreen(cell);
   }
 
   getCellHyperformulaAddress(id: CellId) {

@@ -210,7 +210,7 @@ class ScrollBar {
   private showItem(index: number) {
     const cellIds = this.sheet[this.type].rowColCellMap.get(index);
     const header = this.sheet[this.type].headerGroupMap.get(index);
-    const rowCol = this.sheet[this.type].rowColGroupMap.get(index);
+    const rowCol = this.sheet[this.type].rowColMap.get(index);
 
     cellIds?.forEach((cellId) => {
       const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
@@ -235,7 +235,7 @@ class ScrollBar {
   private hideItem(index: number) {
     const cellIds = this.sheet[this.type].rowColCellMap.get(index);
     const header = this.sheet[this.type].headerGroupMap.get(index);
-    const rowCol = this.sheet[this.type].rowColGroupMap.get(index);
+    const rowCol = this.sheet[this.type].rowColMap.get(index);
 
     cellIds?.forEach((cellId) => {
       const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;

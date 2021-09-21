@@ -21,6 +21,7 @@ import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { merge } from 'lodash';
+import { Shape } from 'konva/lib/Shape';
 
 export interface IDimensions {
   width: number;
@@ -447,14 +448,14 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
   }
 
-  hideGroupIfOutOfScreen(group: Group, margin?: Partial<Vector2d>) {
+  hideShapeIfOutOfScreen(shape: Group | Shape, margin?: Partial<Vector2d>) {
     if (
-      !group.isClientRectOnScreen({
+      !shape.isClientRectOnScreen({
         x: -(this.getViewportVector().x + (margin?.x ?? 0)),
         y: -(this.getViewportVector().y + (margin?.y ?? 0)),
       })
     ) {
-      group.hide();
+      shape.hide();
     }
   }
 
@@ -620,8 +621,8 @@ class Sheet {
       }
     }
 
-    const rows = this.row.getItemsBetweenIndexes(rowIndexes);
-    const cols = this.col.getItemsBetweenIndexes(colIndexes);
+    const rows = this.row.getRowColsBetweenIndexes(rowIndexes);
+    const cols = this.col.getRowColsBetweenIndexes(colIndexes);
 
     return {
       rows,

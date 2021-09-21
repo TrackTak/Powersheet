@@ -77,8 +77,8 @@ class Merger {
 
     this.sheet.getData().mergedCells?.forEach(({ row, col }) => {
       const id = getCellId(row.x, col.x);
-      const startRow = this.sheet.row.rowColGroupMap.get(row.x);
-      const startCol = this.sheet.col.rowColGroupMap.get(col.x);
+      const startRow = this.sheet.row.rowColMap.get(row.x);
+      const startCol = this.sheet.col.rowColMap.get(col.x);
       const isInViewport = startCol && startRow ? true : false;
 
       if (isInViewport) {

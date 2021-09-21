@@ -62,8 +62,8 @@ class Selector {
     const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
     const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    const rows = this.sheet.row.convertFromRangeToGroups(row);
-    const cols = this.sheet.col.convertFromRangeToGroups(col);
+    const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    const cols = this.sheet.col.convertFromRangeToRowCols(col);
 
     const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
@@ -260,8 +260,8 @@ class Selector {
     // const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
     // const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    // const rows = this.sheet.row.convertFromRangeToGroups(row);
-    // const cols = this.sheet.col.convertFromRangeToGroups(col);
+    // const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    // const cols = this.sheet.col.convertFromRangeToRowCols(col);
 
     // const width = cols.reduce((prev, curr) => {
     //   return (prev += curr.width());

@@ -16,6 +16,7 @@ import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell, CellId, convertFromCellIdToRowCol } from './CellRenderer';
+import { performanceProperties } from '../../styles';
 
 interface IShapes {
   group: Group;
@@ -466,6 +467,7 @@ class RowCol {
     };
     const rect = this.shapes.headerRect.clone(rectConfig) as Rect;
     const text = new Text({
+      ...performanceProperties,
       text: this.getHeaderText(index),
     });
     const midPoints = centerRectTwoInRectOne(

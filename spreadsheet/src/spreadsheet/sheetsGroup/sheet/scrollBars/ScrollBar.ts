@@ -156,8 +156,6 @@ class ScrollBar {
   renderItems() {
     this.sheetViewportPosition.y = this.getYIndex();
 
-    console.log(this.sheetViewportPosition);
-
     this.hideOutOfViewportItemsOnScroll();
     this.showInViewportItemsOnScroll();
   }

@@ -6,7 +6,6 @@ import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import Sheet, {
   centerRectTwoInRectOne,
-  getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
   IFrozenCells,
   iterateXToY,
@@ -19,7 +18,6 @@ import { Cell, CellId, convertFromCellIdToRowCol } from './CellRenderer';
 import { performanceProperties } from '../../styles';
 
 interface IShapes {
-  group: Group;
   headerGroup: Group;
   headerRect: Rect;
   headerText: Text;
@@ -80,7 +78,6 @@ class RowCol {
       headerRect: new Rect(),
       headerGroup: new Group(),
       headerText: new Text(),
-      group: new Group(),
       gridLine: new Line({
         ...this.spreadsheet.styles.gridLine,
         type: 'gridLine',
@@ -433,29 +430,29 @@ class RowCol {
 
     this.headerGroupMap.set(index, headerGroup);
 
-    if (isFrozen) {
-      const xyStickyGroup = getHeaderGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky
-      );
+    // if (isFrozen) {
+    //   const xyStickyGroup = getHeaderGroupFromScrollGroup(
+    //     this.sheet.scrollGroups.xySticky
+    //   );
 
-      xyStickyGroup.add(headerGroup);
-    } else {
-      if (this.isCol) {
-        const yStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.ySticky
-        );
+    //   xyStickyGroup.add(headerGroup);
+    // } else {
+    //   if (this.isCol) {
+    //     const yStickyGroup = getHeaderGroupFromScrollGroup(
+    //       this.sheet.scrollGroups.ySticky
+    //     );
 
-        yStickyGroup.add(headerGroup);
-      } else {
-        const xStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.xSticky
-        );
+    //     yStickyGroup.add(headerGroup);
+    //   } else {
+    //     const xStickyGroup = getHeaderGroupFromScrollGroup(
+    //       this.sheet.scrollGroups.xSticky
+    //     );
 
-        xStickyGroup.add(headerGroup);
-      }
-    }
+    //     xStickyGroup.add(headerGroup);
+    //   }
+    // }
 
-    this.sheet.hideShapeIfOutOfScreen(headerGroup);
+    // this.sheet.hideShapeIfOutOfScreen(headerGroup);
   }
 
   private getHeader(index: number) {
@@ -489,17 +486,14 @@ class RowCol {
   ) {
     const headerGroup = this.headerGroupMap.get(index)!;
 
-    const size = headerGroup![this.functions.size]();
-
     const mergedLineConfig: LineConfig = {
       index,
-      [this.functions.size]: size,
       [this.functions.axis]:
         headerGroup[this.functions.axis]() -
         this.sheet.getViewportVector()[this.functions.axis],
-
       ...lineConfig,
     };
+
     const gridLine = line.clone(mergedLineConfig) as Line;
 
     return gridLine;

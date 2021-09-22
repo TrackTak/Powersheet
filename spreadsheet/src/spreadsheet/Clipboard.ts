@@ -81,9 +81,6 @@ class Clipboard {
               sourceCellId
             );
           }
-          this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
-            targetCellId
-          );
 
           return {
             ...allColumnData,

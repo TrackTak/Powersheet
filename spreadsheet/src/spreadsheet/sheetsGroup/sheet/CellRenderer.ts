@@ -96,6 +96,7 @@ class CellRenderer {
   }
 
   deleteCellData(id: CellId) {
+    this.spreadsheet.addToHistory();
     delete this.sheet.getData().cellsData?.[id];
   }
 
@@ -131,6 +132,7 @@ class CellRenderer {
   setCellDataBatch(cellData: Record<CellId, Partial<ICellData>>) {
     this.spreadsheet.addToHistory();
     Object.keys(cellData).forEach((id) => {
+      this.deleteCellData(id);
       this.setCellData(id, cellData[id], false);
     });
   }

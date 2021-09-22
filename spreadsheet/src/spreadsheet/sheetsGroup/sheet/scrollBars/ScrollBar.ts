@@ -184,7 +184,12 @@ class ScrollBar {
       this.sheet.cellRenderer.drawCell(cell);
     });
 
-    this.sheet[this.type].draw(index);
+    if (
+      !this.sheet[this.type].headerGroupMap.get(index) ||
+      !this.sheet[this.type].rowColMap.get(index)
+    ) {
+      this.sheet[this.type].draw(index);
+    }
   }
 
   private drawViewportItemsOnScroll() {
@@ -213,16 +218,21 @@ class ScrollBar {
   // }
 
   private destroyOutOfViewportItemsOnScroll() {
-    this.sheet[this.type].rowColMap.forEach((rowCol) => {
-      rowCol.destroy();
-    });
+    for (const [key, rowCol] of this.sheet[this.type].rowColMap) {
+      if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
+        rowCol.destroy();
 
-    this.sheet[this.type].headerGroupMap.forEach((header) => {
-      header.destroy();
-    });
+        this.sheet[this.type].rowColMap.delete(key);
+      }
+    }
 
-    this.sheet[this.type].rowColMap.clear();
-    this.sheet[this.type].headerGroupMap.clear();
+    for (const [key, header] of this.sheet[this.type].headerGroupMap) {
+      if (this.sheet.isShapeOutsideOfViewport(header)) {
+        header.destroy();
+
+        this.sheet[this.type].headerGroupMap.delete(key);
+      }
+    }
   }
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {

@@ -21,6 +21,7 @@ import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { merge } from 'lodash';
+import { Shape } from 'konva/lib/Shape';
 
 export interface IDimensions {
   width: number;
@@ -469,6 +470,13 @@ class Sheet {
     }
 
     this.spreadsheet.eventEmitter.emit(event, ...args);
+  }
+
+  isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {
+    return !shape.isClientRectOnScreen({
+      x: -(this.getViewportVector().x + (margin?.x ?? 0)),
+      y: -(this.getViewportVector().y + (margin?.y ?? 0)),
+    });
   }
 
   setSize() {

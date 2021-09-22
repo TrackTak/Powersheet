@@ -305,7 +305,7 @@ class RowCol {
     )) {
       this.sheet[this.type].draw(index);
     }
-    this.scrollBar.updateCustomSizePositions();
+    this.scrollBar.setScrollSize();
   }
 
   *getSizeForFrozenCell(type: RowColType) {
@@ -393,19 +393,33 @@ class RowCol {
   }
 
   private drawHeader(index: number) {
+    const data = this.sheet.getData();
+
     if (this.headerGroupMap.has(index)) {
       this.headerGroupMap.get(index)!.destroy();
     }
 
-    const size = this.getSize(index);
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+
+    let totalPreviousCustomSizeDifferences =
+      this.scrollBar.totalPreviousCustomSizeDifferences;
+
+    for (let i = this.scrollBar.sheetViewportPosition.x; i < index; i++) {
+      const size = data[this.type]?.sizes[i];
+
+      if (size) {
+        totalPreviousCustomSizeDifferences += size - defaultSize;
+      }
+    }
 
     const axis =
       this.spreadsheet.options[this.type].defaultSize * index +
+      totalPreviousCustomSizeDifferences +
       this.sheet.getViewportVector()[this.functions.axis];
 
     const groupConfig: ShapeConfig = {
       index,
-      [this.functions.size]: size,
+      [this.functions.size]: this.getSize(index),
       [this.functions.axis]: axis,
     };
     const headerGroup = this.shapes.headerGroup.clone(groupConfig) as Group;

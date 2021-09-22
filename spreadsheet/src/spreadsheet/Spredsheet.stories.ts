@@ -103,6 +103,7 @@ DifferentSizeCells.args = {
           sizes: {
             1: 250,
             5: 100,
+            100: 100,
           },
         },
       },
@@ -180,7 +181,7 @@ CellsData.args = {
               verticalTextAlign: 'middle',
               bold: true,
               italic: true,
-              //    textWrap: 'wrap',
+              textWrap: 'wrap',
             },
             comment: 'Powersheet is the best',
             value:

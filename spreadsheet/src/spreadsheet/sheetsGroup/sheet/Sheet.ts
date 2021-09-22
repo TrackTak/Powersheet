@@ -38,11 +38,6 @@ interface IShapes {
   topLeftRect: Rect;
 }
 
-export interface ICustomSizePosition {
-  axis: number;
-  size: number;
-}
-
 export type SheetId = number;
 
 export interface IFrozenCells {
@@ -214,46 +209,6 @@ export const getIsFrozenRow = (ri: number, data: IData) => {
 
 export function* iterateXToY(vector: Vector2d) {
   for (let index = vector.x; index < vector.y; index++) {
-    yield index;
-  }
-
-  return -Infinity;
-}
-
-export function* iteratePreviousUpToCurrent(
-  previousSheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y'],
-  sheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y']
-) {
-  for (
-    let index = previousSheetViewportPosition;
-    index < sheetViewportPosition;
-    index++
-  ) {
-    yield index;
-  }
-
-  return -Infinity;
-}
-
-export function* iteratePreviousDownToCurrent(
-  previousSheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y'],
-  sheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y']
-) {
-  if (previousSheetViewportPosition === sheetViewportPosition) return -Infinity;
-
-  for (
-    let index = previousSheetViewportPosition;
-    index >= sheetViewportPosition;
-    index--
-  ) {
     yield index;
   }
 
@@ -517,8 +472,8 @@ class Sheet {
   }
 
   setSize() {
-    this.col.scrollBar.updateCustomSizePositions();
-    this.row.scrollBar.updateCustomSizePositions();
+    this.col.scrollBar.setScrollSize();
+    this.row.scrollBar.setScrollSize();
 
     const width = this.col.totalSize + this.getViewportVector().x;
     const height = this.row.totalSize + this.getViewportVector().y;

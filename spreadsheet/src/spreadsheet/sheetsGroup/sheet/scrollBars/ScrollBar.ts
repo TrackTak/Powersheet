@@ -2,24 +2,18 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
-import Sheet, { ICustomSizePosition, ISheetViewportPosition } from '../Sheet';
+import Sheet, { ISheetViewportPosition } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
-export interface IScrollOffset {
-  index: number;
-  size: number;
-}
-
 class ScrollBar {
   scrollBarEl: HTMLDivElement;
   scrollEl: HTMLDivElement;
-  customSizePositions: ICustomSizePosition[];
-  scrollOffset: IScrollOffset;
   scroll = 0;
+  totalPreviousCustomSizeDifferences = 0;
   sheetViewportPosition: ISheetViewportPosition;
   previousSheetViewportPosition: ISheetViewportPosition;
   private scrollType: ScrollBarType;
@@ -38,11 +32,6 @@ class ScrollBar {
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;
-    this.customSizePositions = [];
-    this.scrollOffset = {
-      size: 0,
-      index: 0,
-    };
     this.sheetViewportPosition = {
       x: 0,
       y: 0,
@@ -78,26 +67,7 @@ class ScrollBar {
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
   }
 
-  updateCustomSizePositions() {
-    let customSizeDifference = 0;
-    const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
-
-    Object.keys(sizes).forEach((key) => {
-      const index = parseInt(key, 10);
-      const size = sizes[index];
-      const axis =
-        index * this.spreadsheet.options[this.type].defaultSize +
-        customSizeDifference;
-
-      customSizeDifference +=
-        size - this.spreadsheet.options[this.type].defaultSize;
-
-      this.customSizePositions[index] = {
-        axis,
-        size,
-      };
-    });
-
+  setScrollSize() {
     const scrollSize = this.sheet.sheetDimensions[this.functions.size];
     //   this.sheet.getViewportVector()[this.functions.axis];
 
@@ -109,18 +79,23 @@ class ScrollBar {
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let newScrollAmount = 0;
+    let totalCustomSizeDifferencs = 0;
 
     for (let i = start; i < end; i++) {
       const size = data[this.type]?.sizes[i];
 
       if (size) {
+        totalCustomSizeDifferencs += size - defaultSize;
         newScrollAmount += size;
       } else {
         newScrollAmount += defaultSize;
       }
     }
 
-    return newScrollAmount;
+    return {
+      newScrollAmount,
+      totalCustomSizeDifferencs,
+    };
   }
 
   private getYIndex() {
@@ -148,15 +123,13 @@ class ScrollBar {
 
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
+    const scrollHeight = event.scrollHeight;
 
-    const scrollPercent =
-      scroll / this.sheet.sheetDimensions[this.functions.size];
+    const scrollPercent = scroll / scrollHeight;
 
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
-
-    this.drawItems();
 
     let newScroll = Math.abs(this.scroll);
 
@@ -164,14 +137,22 @@ class ScrollBar {
       this.previousSheetViewportPosition.x,
       this.sheetViewportPosition.x
     );
-    const scrollReverseAmount =
-      this.getNewScrollAmount(
-        this.sheetViewportPosition.x,
-        this.previousSheetViewportPosition.x
-      ) * -1;
 
-    newScroll += scrollAmount;
-    newScroll += scrollReverseAmount;
+    const scrollReverseAmount = this.getNewScrollAmount(
+      this.sheetViewportPosition.x,
+      this.previousSheetViewportPosition.x
+    );
+
+    scrollReverseAmount.newScrollAmount *= -1;
+    scrollReverseAmount.totalCustomSizeDifferencs *= -1;
+
+    const totalPreviousCustomSizeDifferences =
+      this.totalPreviousCustomSizeDifferences +
+      scrollAmount.totalCustomSizeDifferencs +
+      scrollReverseAmount.totalCustomSizeDifferencs;
+
+    newScroll +=
+      scrollAmount.newScrollAmount + scrollReverseAmount.newScrollAmount;
 
     newScroll *= -1;
 
@@ -186,6 +167,10 @@ class ScrollBar {
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
     this.scroll = newScroll;
+    this.totalPreviousCustomSizeDifferences =
+      totalPreviousCustomSizeDifferences;
+
+    this.drawItems();
 
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };

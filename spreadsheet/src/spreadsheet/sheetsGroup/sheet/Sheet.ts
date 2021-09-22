@@ -463,6 +463,18 @@ class Sheet {
         this.spreadsheet.redo();
         break;
       }
+      case e.ctrlKey && 'x': {
+        this.spreadsheet.clipboard.cut();
+        break;
+      }
+      case e.ctrlKey && 'c': {
+        this.spreadsheet.clipboard.copy();
+        break;
+      }
+      case e.ctrlKey && 'v': {
+        this.spreadsheet.clipboard.paste();
+        break;
+      }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           this.cellEditor.show(this.selector.selectedFirstCell!);
@@ -502,13 +514,15 @@ class Sheet {
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }
 
-  setData(value: Partial<IData>) {
+  setData(value: Partial<IData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
+
+    if (addToHistory) {
+      this.spreadsheet.addToHistory();
+    }
 
     this.spreadsheet.data[this.sheetsGroup.sheetsGroupId][this.sheetId] =
       updatedData;
-
-    this.spreadsheet.addToHistory();
   }
 
   getData(): IData {

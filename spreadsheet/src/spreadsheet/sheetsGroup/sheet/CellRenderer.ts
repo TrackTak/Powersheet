@@ -95,6 +95,11 @@ class CellRenderer {
     }
   }
 
+  deleteCellData(id: CellId) {
+    this.spreadsheet.addToHistory();
+    delete this.sheet.getData().cellsData?.[id];
+  }
+
   setHyperformulaCellData(id: CellId, value: string | undefined) {
     const cellAddress = this.getCellHyperformulaAddress(id);
 
@@ -105,7 +110,11 @@ class CellRenderer {
     }
   }
 
-  setCellData(id: CellId, newValue: Partial<ICellData>) {
+  setCellData(
+    id: CellId,
+    newValue: Partial<ICellData>,
+    addToHistory: boolean = true
+  ) {
     const data = this.sheet.getData();
     const updatedData = merge({}, data, {
       cellsData: {
@@ -115,9 +124,17 @@ class CellRenderer {
       },
     });
 
-    this.sheet.setData(updatedData);
+    this.sheet.setData(updatedData, addToHistory);
 
     this.setHyperformulaCellData(id, updatedData.cellsData[id].value);
+  }
+
+  setCellDataBatch(cellData: Record<CellId, Partial<ICellData>>) {
+    this.spreadsheet.addToHistory();
+    Object.keys(cellData).forEach((id) => {
+      this.deleteCellData(id);
+      this.setCellData(id, cellData[id], false);
+    });
   }
 
   setCellDataStyle(id: CellId, newStyle: ICellStyle) {

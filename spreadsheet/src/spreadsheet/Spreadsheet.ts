@@ -11,6 +11,7 @@ import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
 import { HyperFormula } from 'hyperformula';
 import hyperformulaConfig from './hyperformulaConfig';
+import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Export from './Export';
 
@@ -32,6 +33,7 @@ class Spreadsheet {
   formulaBar?: FormulaBar;
   export?: Export;
   hyperformula: HyperFormula;
+  clipboard: Clipboard;
   history: any;
   sheetIndex = 0;
 
@@ -51,6 +53,7 @@ class Spreadsheet {
     this.toolbar = new Toolbar(this);
     this.formulaBar = new FormulaBar(this);
     this.export = new Export(this);
+    this.clipboard = new Clipboard(this);
 
     this.hyperformula = HyperFormula.buildEmpty(hyperformulaConfig);
     this.history = new Manager((data: IData[][]) => {

@@ -15,7 +15,7 @@ import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell, CellId } from './CellRenderer';
+import { Cell } from './CellRenderer';
 import { performanceProperties } from '../../styles';
 
 interface IShapes {
@@ -476,7 +476,8 @@ class RowCol {
     const mergedLineConfig: LineConfig = {
       index,
       [this.functions.axis]:
-        headerGroup[this.functions.axis]() -
+        headerGroup[this.functions.axis]() +
+        headerGroup[this.functions.size]() -
         this.sheet.getViewportVector()[this.functions.axis],
       ...lineConfig,
     };
@@ -492,8 +493,8 @@ class RowCol {
     map: Map<number, Line>,
     getLine: (size: number) => Line
   ) {
-    if (this.xFrozenRowColMap.has(index)) {
-      this.xFrozenRowColMap.get(index)!.destroy();
+    if (map.has(index)) {
+      map.get(index)!.destroy();
     }
 
     let size = 0;

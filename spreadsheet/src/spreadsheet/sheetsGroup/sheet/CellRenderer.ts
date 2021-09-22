@@ -2,7 +2,6 @@ import { Group } from 'konva/lib/Group';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { Vector2d } from 'konva/lib/types';
 import Spreadsheet from '../../Spreadsheet';
 import { performanceProperties } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
@@ -14,6 +13,7 @@ import Sheet, {
   HorizontalTextAlign,
   ICellData,
   ICellStyle,
+  iterateXToY,
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
@@ -31,7 +31,7 @@ export interface IRowColAddress {
 
 export const getCellId = (ri: number, ci: number): CellId => `${ri}_${ci}`;
 
-export const convertFromCellIdToRowCol = (id: CellId): IRowColAddress => {
+export const convertFromCellIdToRowColId = (id: CellId): IRowColAddress => {
   const sections = id.split('_');
 
   return {
@@ -129,25 +129,29 @@ class CellRenderer {
     });
   }
 
-  private setCellRect(cell: Cell, rowLine: Line, colLine: Line) {
+  private setCellRect(cell: Cell, row: number, col: number) {
+    const rowClientRct = this.sheet.row.headerGroupMap
+      .get(row)!
+      .getClientRect({ skipStroke: true });
+    const colClientRect = this.sheet.col.headerGroupMap
+      .get(col)!
+      .getClientRect({ skipStroke: true });
     const cellRect = getCellRectFromCell(cell);
 
-    cell.x(colLine.x());
-    cell.y(rowLine.y());
+    cell.x(colClientRect.x - this.sheet.getViewportVector().x);
+    cell.y(rowClientRct.y - this.sheet.getViewportVector().y);
 
-    cellRect.width(colLine.width());
-    cellRect.height(rowLine.height());
+    cellRect.width(colClientRect.width);
+    cellRect.height(rowClientRct.height);
   }
 
   updateCellClientRect(cell: Cell) {
     const id = cell.id();
-    const { row, col } = convertFromCellIdToRowCol(id);
-    const rowLine = this.sheet.row.rowColMap.get(row)!;
-    const colLine = this.sheet.col.rowColMap.get(col)!;
+    const { row, col } = convertFromCellIdToRowColId(id);
     const cellText = getCellTextFromCell(cell);
     const isMerged = this.sheet.merger.getIsCellMerged(id);
 
-    this.setCellRect(cell, rowLine, colLine);
+    this.setCellRect(cell, row, col);
 
     if (isMerged) {
       this.setMergedCellProperties(cell);
@@ -161,18 +165,47 @@ class CellRenderer {
     }
   }
 
-  updateViewport() {
-    this.cellsMap.forEach((cell) => {
-      this.updateCellStyles(cell);
-    });
+  private destroyOutOfViewportCells() {
+    for (const [key, cell] of this.cellsMap) {
+      if (this.sheet.isShapeOutsideOfViewport(cell)) {
+        cell.destroy();
+
+        this.sheet.cellRenderer.cellsMap.delete(key);
+      }
+    }
   }
 
-  updateCellStyles(cell: Cell) {
-    const id = cell.id();
-    const cellData = this.sheet.getData().cellsData?.[id];
+  drawCells() {
+    this.destroyOutOfViewportCells();
+
+    for (const ri of iterateXToY(
+      this.sheet.row.scrollBar.sheetViewportPosition
+    )) {
+      for (const ci of iterateXToY(
+        this.sheet.col.scrollBar.sheetViewportPosition
+      )) {
+        this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+      }
+    }
+  }
+
+  drawCell(cellId: CellId) {
+    const cellData = this.sheet.getData().cellsData?.[cellId];
+
+    if (!cellData) return;
+
+    const cell = this.convertFromCellIdToCell(cellId);
     const style = cellData?.style;
+    const address = this.getCellHyperformulaAddress(cellId);
+    const hyperformulaValue = this.spreadsheet.options.showFormulas
+      ? this.spreadsheet.hyperformula.getCellSerialized(address)
+      : this.spreadsheet.hyperformula.getCellValue(address);
 
     this.updateCellClientRect(cell);
+
+    if (hyperformulaValue) {
+      this.setCellTextValue(cell, hyperformulaValue?.toString());
+    }
 
     if (cellData?.comment) {
       this.setCellCommentMarker(cell);
@@ -180,6 +213,8 @@ class CellRenderer {
 
     if (style) {
       const {
+        textWrap,
+        fontSize,
         borders,
         backgroundColor,
         fontColor,
@@ -191,6 +226,14 @@ class CellRenderer {
         verticalTextAlign,
         textFormatPattern,
       } = style;
+
+      if (textWrap) {
+        this.setTextWrap(cell, textWrap);
+      }
+
+      if (fontSize) {
+        this.setFontSize(cell, fontSize);
+      }
 
       if (backgroundColor) {
         this.setBackgroundColor(cell, backgroundColor);
@@ -248,79 +291,42 @@ class CellRenderer {
       }
     }
 
-    return cell;
-  }
-
-  updateCell(cell: Cell) {
-    const id = cell.id();
-    const cellData = this.sheet.getData().cellsData?.[id];
-    const style = cellData?.style;
-    const address = this.getCellHyperformulaAddress(id);
-
-    const hyperformulaValue = this.spreadsheet.options.showFormulas
-      ? this.spreadsheet.hyperformula.getCellSerialized(address)
-      : this.spreadsheet.hyperformula.getCellValue(address);
-
-    if (hyperformulaValue) {
-      this.setCellTextValue(cell, hyperformulaValue?.toString());
+    if (this.cellsMap.has(cellId)) {
+      this.cellsMap.get(cellId)!.destroy();
     }
 
-    // We set these styles here because they affect the cell size
-    if (style) {
-      const { textWrap, fontSize } = style;
+    this.cellsMap.set(cellId, cell);
 
-      if (textWrap) {
-        this.setTextWrap(cell, textWrap);
-      }
+    this.addCell(cell);
 
-      if (fontSize) {
-        this.setFontSize(cell, fontSize);
+    if (!this.sheet.merger.getIsCellMerged(cellId)) {
+      const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
+      const rowIndex = convertFromCellIdToRowColId(cellId).row;
+      const size = this.sheet.row.getSize(rowIndex);
+      const cellSize = cell.getClientRect({
+        skipStroke: true,
+      }).height;
+
+      if (cellSize > size) {
+        this.sheet.setData({
+          row: {
+            sizes: {
+              [rowIndex]: cellSize,
+            },
+          },
+        });
+        this.sheet.updateViewport();
       }
     }
-
-    if (this.cellsMap.has(id)) {
-      this.cellsMap.get(id)!.destroy();
-    }
-
-    this.cellsMap.set(id, cell);
-
-    const existingRowCellMapValue = this.sheet.row.rowColCellMap.get(
-      cell.attrs.row.x
-    );
-    const existingColCellMapValue = this.sheet.col.rowColCellMap.get(
-      cell.attrs.col.x
-    );
-    this.sheet.row.rowColCellMap.set(
-      cell.attrs.row.x,
-      existingRowCellMapValue ? [...existingRowCellMapValue, id] : [id]
-    );
-    this.sheet.col.rowColCellMap.set(
-      cell.attrs.col.x,
-      existingColCellMapValue ? [...existingColCellMapValue, id] : [id]
-    );
-
-    this.drawCell(cell);
   }
 
-  updateCells() {
-    for (const cell of this.cellsMap.values()) {
-      cell.destroy();
-    }
-
-    this.cellsMap.clear();
-    this.sheet.row.rowColCellMap.clear();
-    this.sheet.col.rowColCellMap.clear();
-
+  updateViewport() {
     this.sheet.merger.updateMergedCells();
 
-    const cellsData = this.sheet.getData().cellsData ?? {};
-
-    Object.keys(cellsData).forEach((id) => {
+    this.cellsMap.forEach((_, id) => {
       this.cleanCellData(id);
 
-      const cell = this.convertFromCellIdToCell(id);
-
-      this.updateCell(cell);
+      this.drawCell(id);
     });
   }
 
@@ -526,10 +532,7 @@ class CellRenderer {
     cell.add(text);
   }
 
-  getNewCell(id: string | null, row: Vector2d, col: Vector2d) {
-    const rowLine = this.sheet.row.rowColMap.get(row.x)!;
-    const colLine = this.sheet.col.rowColMap.get(col.x)!;
-
+  getNewCell(id: string | null, row: number, col: number) {
     const cell = new Group({
       ...performanceProperties,
       row,
@@ -546,7 +549,7 @@ class CellRenderer {
 
     cell.add(cellRect);
 
-    this.setCellRect(cell, rowLine, colLine);
+    this.setCellRect(cell, row, col);
 
     const isMergedCell = this.sheet.merger.getIsCellMerged(cell.id());
 
@@ -557,20 +560,16 @@ class CellRenderer {
     return cell;
   }
 
+  convertFromRowColIdToCell(row: number, col: number) {
+    const id = getCellId(row, col);
+    const cell = this.getNewCell(id, row, col);
+
+    return cell;
+  }
+
   convertFromCellIdToCell(id: CellId) {
-    const { row, col } = convertFromCellIdToRowCol(id);
-    const rowLine = this.sheet.row.rowColMap.get(row);
-    const colLine = this.sheet.col.rowColMap.get(col);
-
-    if (!rowLine) {
-      throw new Error(`id ${id} is out of range`);
-    }
-
-    if (!colLine) {
-      throw new Error(`id ${id} is out of range`);
-    }
-
-    const cell = this.convertFromRowColToCell(rowLine, colLine);
+    const { row, col } = convertFromCellIdToRowColId(id);
+    const cell = this.getNewCell(id, row, col);
 
     return cell;
   }
@@ -600,33 +599,18 @@ class CellRenderer {
     cell.attrs.col = col;
   }
 
-  convertFromRowColToCell(rowLine: Line, colLine: Line) {
-    const id = getCellId(rowLine.attrs.index, colLine.attrs.index);
-
-    const row = {
-      x: rowLine.attrs.index,
-      y: rowLine.attrs.index,
-    };
-
-    const col = {
-      x: colLine.attrs.index,
-      y: colLine.attrs.index,
-    };
-
-    const cell = this.getNewCell(id, row, col);
-
-    return cell;
-  }
-
   convertFromRowColsToCells(rows: Line[], cols: Line[]) {
     const mergedCellsAddedMap = new Map();
     const cells: Cell[] = [];
 
     rows.forEach((rowLine) => {
       cols.forEach((colLine) => {
-        const id = getCellId(rowLine.attrs.index, colLine.attrs.index);
+        const row = rowLine.attrs.index;
+        const col = colLine.attrs.index;
+        const id = getCellId(row, col);
         const mergedCells = this.sheet.merger.associatedMergedCellIdMap.get(id);
-        const cell = this.convertFromRowColToCell(rowLine, colLine);
+
+        const cell = this.convertFromRowColIdToCell(row, col);
 
         if (mergedCells) {
           const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
@@ -645,7 +629,7 @@ class CellRenderer {
     return cells;
   }
 
-  drawCell(cell: Cell) {
+  addCell(cell: Cell) {
     const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
 
@@ -680,7 +664,7 @@ class CellRenderer {
 
   getCellHyperformulaAddress(id: CellId) {
     return {
-      ...convertFromCellIdToRowCol(id),
+      ...convertFromCellIdToRowColId(id),
       sheet: this.sheet.sheetId,
     };
   }

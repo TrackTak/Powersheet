@@ -1,6 +1,6 @@
 import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import {
-  convertFromCellIdToRowCol,
+  convertFromCellIdToRowColId,
   IRowColAddress,
 } from './sheetsGroup/sheet/CellRenderer';
 import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
@@ -27,7 +27,7 @@ class Export {
 
     Object.keys(cellsData).forEach((key) => {
       const cell = cellsData[key];
-      const { row, col } = convertFromCellIdToRowCol(key);
+      const { row, col } = convertFromCellIdToRowColId(key);
       const address = {
         sheet: sheetId,
         row,

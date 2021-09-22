@@ -15,7 +15,7 @@ import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell, CellId, convertFromCellIdToRowCol } from './CellRenderer';
+import { Cell, CellId } from './CellRenderer';
 import { performanceProperties } from '../../styles';
 
 interface IShapes {
@@ -44,12 +44,19 @@ export const getGridLineFromRowColGroup = (group: Group) => {
   return gridLine;
 };
 
+export const getHeaderRectFromHeader = (group: Group) => {
+  const headerRect = group.children?.find(
+    (x) => x.attrs.type === 'headerRect'
+  ) as Line;
+
+  return headerRect;
+};
+
 class RowCol {
   resizer: Resizer;
   scrollBar: ScrollBar;
   headerGroupMap: Map<HeaderGroupId, Group>;
   rowColMap: Map<RowColGroupId, Line>;
-  rowColCellMap: Map<number, CellId[]>;
   xFrozenRowColMap = new Map<RowColGroupId, Line>();
   yFrozenRowColMap = new Map<RowColGroupId, Line>();
   xyFrozenRowColMap = new Map<RowColGroupId, Line>();
@@ -72,11 +79,12 @@ class RowCol {
     this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.headerGroupMap = new Map();
     this.rowColMap = new Map();
-    this.rowColCellMap = new Map();
 
     this.totalSize = 0;
     this.shapes = {
-      headerRect: new Rect(),
+      headerRect: new Rect({
+        type: 'headerRect',
+      }),
       headerGroup: new Group(),
       headerText: new Text(),
       gridLine: new Line({
@@ -270,32 +278,6 @@ class RowCol {
       this.sheet.getData()[this.type]?.sizes[index] ??
       this.spreadsheet.options[this.type].defaultSize;
 
-    for (const [cellId, cell] of this.sheet.cellRenderer.cellsMap) {
-      if (this.sheet.merger.getIsCellMerged(cellId)) {
-        continue;
-      }
-
-      const itemIndex = convertFromCellIdToRowCol(cellId)[this.type];
-
-      if (index === itemIndex) {
-        const cellSize = cell.getClientRect({
-          skipStroke: true,
-        })[this.functions.size];
-
-        if (cellSize > size) {
-          size = cellSize;
-
-          this.sheet.setData({
-            [this.type]: {
-              sizes: {
-                [index]: size,
-              },
-            },
-          });
-        }
-      }
-    }
-
     return size;
   }
 
@@ -392,12 +374,8 @@ class RowCol {
     this.drawFrozenGridLine(index);
   }
 
-  private drawHeader(index: number) {
+  getAxisAtIndex(index: number) {
     const data = this.sheet.getData();
-
-    if (this.headerGroupMap.has(index)) {
-      this.headerGroupMap.get(index)!.destroy();
-    }
 
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
@@ -417,10 +395,18 @@ class RowCol {
       totalPreviousCustomSizeDifferences +
       this.sheet.getViewportVector()[this.functions.axis];
 
+    return axis;
+  }
+
+  private drawHeader(index: number) {
+    if (this.headerGroupMap.has(index)) {
+      this.headerGroupMap.get(index)!.destroy();
+    }
+
     const groupConfig: ShapeConfig = {
       index,
       [this.functions.size]: this.getSize(index),
-      [this.functions.axis]: axis,
+      [this.functions.axis]: this.getAxisAtIndex(index),
     };
     const headerGroup = this.shapes.headerGroup.clone(groupConfig) as Group;
     const header = this.getHeader(index);

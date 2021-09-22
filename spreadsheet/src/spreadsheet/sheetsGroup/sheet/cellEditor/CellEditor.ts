@@ -159,14 +159,13 @@ class CellEditor {
   };
 
   handleScroll = () => {
-    const rowScrollOffset = this.sheet.row.scrollBar.scrollOffset;
-    const colScrollOffset = this.sheet.col.scrollBar.scrollOffset;
-
-    if (rowScrollOffset.index || colScrollOffset.index) {
-      this.showCellTooltip();
-    } else {
-      this.hideCellTooltip();
-    }
+    // const rowScrollOffset = this.sheet.row.scrollBar.scrollOffset;
+    // const colScrollOffset = this.sheet.col.scrollBar.scrollOffset;
+    // if (rowScrollOffset.index || colScrollOffset.index) {
+    //   this.showCellTooltip();
+    // } else {
+    //   this.hideCellTooltip();
+    // }
   };
 }
 

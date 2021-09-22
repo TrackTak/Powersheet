@@ -221,7 +221,7 @@ class Selector {
       this.selectedCells.push(cell);
       this.sheet.cellRenderer.updateCellClientRect(cell);
 
-      this.sheet.cellRenderer.drawCell(cell);
+      this.sheet.cellRenderer.addCell(cell);
     });
   }
 

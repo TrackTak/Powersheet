@@ -394,10 +394,31 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    // TODO: Fix textWrapping resizing row breaking this
+
+    const width = this.col.totalSize + this.getViewportVector().x;
+    const height = this.row.totalSize + this.getViewportVector().y;
+
+    this.stage.width(width);
+    this.stage.height(height);
+
+    const context = this.layer.canvas.getContext();
+
+    context.translate(0.5, 0.5);
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
+
+    this.col.scrollBar.setYIndex();
+    this.row.scrollBar.setYIndex();
+
     this.col.scrollBar.drawItems();
     this.row.scrollBar.drawItems();
+    this.cellRenderer.drawCells();
+
     this.updateViewport();
+
+    // TODO: use scrollBar size instead of hardcoded value
+    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
@@ -477,30 +498,6 @@ class Sheet {
       x: -(this.getViewportVector().x + (margin?.x ?? 0)),
       y: -(this.getViewportVector().y + (margin?.y ?? 0)),
     });
-  }
-
-  setSize() {
-    this.col.scrollBar.setScrollSize();
-    this.row.scrollBar.setScrollSize();
-
-    const width = this.col.totalSize + this.getViewportVector().x;
-    const height = this.row.totalSize + this.getViewportVector().y;
-
-    this.stage.width(width);
-    this.stage.height(height);
-
-    const context = this.layer.canvas.getContext();
-
-    context.translate(0.5, 0.5);
-
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
-    // TODO: Fix textWrapping resizing row breaking this
-    this.col.scrollBar.drawItems();
-    this.row.scrollBar.drawItems();
-
-    // TODO: use scrollBar size instead of hardcoded value
-    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
   }
 
   setData(value: Partial<IData>) {
@@ -654,11 +651,10 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
-    // this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    //  this.cellRenderer.updateViewport();
-    //  this.selector.updateSelectedCells();
+    this.cellRenderer.updateViewport();
+    this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
       this.selector.selectedFirstCell?.id() ?? ''

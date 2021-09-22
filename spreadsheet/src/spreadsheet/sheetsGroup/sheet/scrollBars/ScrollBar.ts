@@ -2,7 +2,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
-import Sheet, { ISheetViewportPosition } from '../Sheet';
+import Sheet, { ISheetViewportPosition, iterateXToY } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
@@ -65,6 +65,8 @@ class ScrollBar {
     this.sheet.stage.on('wheel', this.onWheel);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
+
+    this.setScrollSize();
   }
 
   setScrollSize() {
@@ -111,11 +113,13 @@ class ScrollBar {
     return yIndex + 1;
   }
 
-  drawItems() {
+  setYIndex() {
     this.sheetViewportPosition.y = this.getYIndex();
+  }
 
-    this.destroyOutOfViewportItemsOnScroll();
-    this.drawViewportItemsOnScroll();
+  drawItems() {
+    this.destroyOutOfViewportItems();
+    this.drawViewportItems();
   }
 
   onScroll = (e: Event) => {
@@ -170,20 +174,14 @@ class ScrollBar {
     this.totalPreviousCustomSizeDifferences =
       totalPreviousCustomSizeDifferences;
 
+    this.setYIndex();
     this.drawItems();
+    this.sheet.cellRenderer.drawCells();
 
     this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
 
   private drawItem(index: number) {
-    const cellIds = this.sheet[this.type].rowColCellMap.get(index);
-
-    cellIds?.forEach((cellId) => {
-      const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
-
-      this.sheet.cellRenderer.drawCell(cell);
-    });
-
     if (
       !this.sheet[this.type].headerGroupMap.get(index) ||
       !this.sheet[this.type].rowColMap.get(index)
@@ -192,32 +190,15 @@ class ScrollBar {
     }
   }
 
-  private drawViewportItemsOnScroll() {
-    for (
-      let index = this.sheetViewportPosition.x;
-      index <= this.sheetViewportPosition.y;
-      index++
-    ) {
+  private drawViewportItems() {
+    for (const index of iterateXToY(
+      this.sheet[this.type].scrollBar.sheetViewportPosition
+    )) {
       this.drawItem(index);
     }
   }
 
-  // private destroyItem(index: number) {
-  //   // const cellIds = this.sheet[this.type].rowColCellMap.get(index);
-  //   const header = this.sheet[this.type].headerGroupMap.get(index)!;
-  //   const rowCol = this.sheet[this.type].rowColMap.get(index)!;
-
-  //   // cellIds?.forEach((cellId) => {
-  //   //   const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
-
-  //   //   cell.destroy();
-  //   // });
-
-  //   header.destroy();
-  //   rowCol.destroy();
-  // }
-
-  private destroyOutOfViewportItemsOnScroll() {
+  private destroyOutOfViewportItems() {
     for (const [key, rowCol] of this.sheet[this.type].rowColMap) {
       if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
         rowCol.destroy();

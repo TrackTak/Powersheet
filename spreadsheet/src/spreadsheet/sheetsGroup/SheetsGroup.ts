@@ -145,8 +145,6 @@ class SheetsGroup {
     this.spreadsheet.sheetIndex++;
 
     this.update();
-
-    sheet.setSize();
   }
 }
 

@@ -103,7 +103,6 @@ DifferentSizeCells.args = {
           sizes: {
             1: 250,
             5: 100,
-            100: 100,
           },
         },
       },

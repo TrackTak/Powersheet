@@ -19,7 +19,7 @@ export const defaultOptions: IOptions = {
   width: window.innerWidth,
   height: window.innerHeight,
   row: {
-    amount: 1000,
+    amount: 100,
     minSize: 25,
     defaultSize: 25,
   },

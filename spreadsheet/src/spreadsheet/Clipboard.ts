@@ -135,12 +135,12 @@ class Clipboard {
       const sourceRangeRowSize =
         this.sourceRange!.end.row - this.sourceRange!.start.row;
       const targetRangeColSize = endCellAddress.col - startCellAddress.col;
-      const targetRangeRowSize = endCellAddress.row - endCellAddress.row;
+      const targetRangeRowSize = endCellAddress.row - startCellAddress.row;
 
-      if (targetRangeColSize < sourceRangeColSize) {
+      if (this.isCut || targetRangeColSize < sourceRangeColSize) {
         endCellAddress.col = startCellAddress.col + sourceRangeColSize;
       }
-      if (targetRangeRowSize < sourceRangeRowSize) {
+      if (this.isCut || targetRangeRowSize < sourceRangeRowSize) {
         endCellAddress.row = startCellAddress.row + sourceRangeRowSize;
       }
     }

@@ -130,19 +130,15 @@ class CellRenderer {
   }
 
   private setCellRect(cell: Cell, row: number, col: number) {
-    const rowClientRct = this.sheet.row.headerGroupMap
-      .get(row)!
-      .getClientRect({ skipStroke: true });
-    const colClientRect = this.sheet.col.headerGroupMap
-      .get(col)!
-      .getClientRect({ skipStroke: true });
+    const rowHeader = this.sheet.row.headerGroupMap.get(row)!;
+    const colHeader = this.sheet.col.headerGroupMap.get(col)!;
     const cellRect = getCellRectFromCell(cell);
 
-    cell.x(colClientRect.x - this.sheet.getViewportVector().x);
-    cell.y(rowClientRct.y - this.sheet.getViewportVector().y);
+    cell.x(colHeader.x() - this.sheet.getViewportVector().x);
+    cell.y(rowHeader.y() - this.sheet.getViewportVector().y);
 
-    cellRect.width(colClientRect.width);
-    cellRect.height(rowClientRct.height);
+    cellRect.width(colHeader.width());
+    cellRect.height(rowHeader.height());
   }
 
   updateCellClientRect(cell: Cell) {

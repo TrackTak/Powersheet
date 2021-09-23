@@ -152,6 +152,10 @@ class CellRenderer {
   }
 
   updateViewport() {
+    this.cellsMap.forEach((cell) => {
+      cell.destroy();
+    });
+    this.cellsMap.clear();
     this.sheet.merger.associatedMergedCellIdMap.clear();
 
     this.destroyOutOfViewportCells();
@@ -583,14 +587,14 @@ class CellRenderer {
     cell.attrs.col = col;
   }
 
-  convertFromRowColsToCells(rows: Line[], cols: Line[]) {
+  convertFromRowColsToCells(rows: Group[], cols: Group[]) {
     const mergedCellsAddedMap = new Map();
     const cells: Cell[] = [];
 
-    rows.forEach((rowLine) => {
-      cols.forEach((colLine) => {
-        const row = rowLine.attrs.index;
-        const col = colLine.attrs.index;
+    rows.forEach((rowGroup) => {
+      cols.forEach((colGroup) => {
+        const row = rowGroup.attrs.index;
+        const col = colGroup.attrs.index;
         const id = getCellId(row, col);
         const mergedCells = this.sheet.merger.associatedMergedCellIdMap.get(id);
 
@@ -614,8 +618,8 @@ class CellRenderer {
   }
 
   addCell(cell: Cell) {
-    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row);
-    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col);
+    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
+    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
 
     if (isFrozenRow && isFrozenCol) {
       const xyStickyCellGroup = getCellGroupFromScrollGroup(

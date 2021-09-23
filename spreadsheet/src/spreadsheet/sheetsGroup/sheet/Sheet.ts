@@ -384,7 +384,7 @@ class Sheet {
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
-    this.rightClickMenu = new RightClickMenu(this);
+    this.rightClickMenu = new RightClickMenu(this, this.spreadsheet.clipboard);
     this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);

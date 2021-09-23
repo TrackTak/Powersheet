@@ -529,10 +529,23 @@ class CellRenderer {
   }
 
   getNewCell(id: string | null, row: number, col: number) {
+    const rowGroup = this.sheet.row.rowColMap.get(row)!;
+    const colGroup = this.sheet.col.rowColMap.get(col)!;
+
+    const rowRange = {
+      x: rowGroup.attrs.index,
+      y: rowGroup.attrs.index,
+    };
+
+    const colRange = {
+      x: colGroup.attrs.index,
+      y: colGroup.attrs.index,
+    };
+
     const cell = new Group({
       ...performanceProperties,
-      row,
-      col,
+      row: rowRange,
+      col: colRange,
     });
 
     if (id) {
@@ -574,8 +587,8 @@ class CellRenderer {
     const { row, col } = this.sheet.merger.associatedMergedCellIdMap.get(
       cell.id()
     )!;
-    const rows = this.sheet.row.convertFromRangeToRowCols(cell.attrs.row);
-    const cols = this.sheet.col.convertFromRangeToRowCols(cell.attrs.col);
+    const rows = this.sheet.row.convertFromRangeToRowCols(cell.attrs.row.x);
+    const cols = this.sheet.col.convertFromRangeToRowCols(cell.attrs.col.x);
     const cellRect = getCellRectFromCell(cell);
     const width = cols.reduce((prev, curr) => {
       return (prev += curr.width());
@@ -626,8 +639,8 @@ class CellRenderer {
   }
 
   addCell(cell: Cell) {
-    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
-    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
+    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row);
+    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col);
 
     if (isFrozenRow && isFrozenCol) {
       const xyStickyCellGroup = getCellGroupFromScrollGroup(

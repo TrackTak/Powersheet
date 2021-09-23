@@ -138,6 +138,7 @@ export const defaultStyles: IStyles = {
   selectionFirstCell: {
     ...sharedStyles.selection,
     strokeWidth: 2,
+    fill: 'transparent',
   },
   selection: {
     ...sharedStyles.selection,

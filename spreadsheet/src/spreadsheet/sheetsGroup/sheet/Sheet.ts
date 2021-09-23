@@ -175,17 +175,6 @@ export const getFrozenBackgroundFromScrollGroup = (scrollGroup: Group) => {
   return frozenBackground;
 };
 
-export const destroyGroupIfOutOfScreen = (
-  group: Group,
-  map: Map<number, Group>,
-  margin?: Vector2d
-) => {
-  if (!group.isClientRectOnScreen(margin)) {
-    group.destroy();
-    map.delete(group.attrs.index);
-  }
-};
-
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,

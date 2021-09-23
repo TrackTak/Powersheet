@@ -21,6 +21,7 @@ export interface IColHeaderConfig {
 }
 
 export interface ICellConfig {
+  rect: RectConfig;
   text: TextConfig;
 }
 
@@ -155,6 +156,12 @@ export const defaultStyles: IStyles = {
     closed: true,
   },
   cell: {
+    rect: {
+      type: 'cellRect',
+      fill: 'white',
+      stroke: sharedStyles.gridLine.stroke,
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
+    },
     text: {
       ...sharedStyles.headerText,
       type: 'cellText',

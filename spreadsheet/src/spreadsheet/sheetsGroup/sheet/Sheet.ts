@@ -649,8 +649,17 @@ class Sheet {
   }
 
   updateViewport() {
-    this.updateSheetDimensions();
+    Object.values(this.scrollGroups).forEach((scrollGroup) => {
+      const rowColGroup = getRowColGroupFromScrollGroup(scrollGroup);
+      const headerGroup = getHeaderGroupFromScrollGroup(scrollGroup);
+      const cellGroup = getCellGroupFromScrollGroup(scrollGroup);
 
+      rowColGroup.removeChildren();
+      headerGroup.removeChildren();
+      cellGroup.removeChildren();
+    });
+
+    this.updateSheetDimensions();
     this.col.scrollBar.drawItems();
     this.row.scrollBar.drawItems();
     this.row.updateViewport();

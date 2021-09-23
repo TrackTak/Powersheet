@@ -531,9 +531,7 @@ class CellRenderer {
       cell.id(id);
     }
 
-    const cellRect = new Rect({
-      type: 'cellRect',
-    });
+    const cellRect = new Rect(this.spreadsheet.styles.cell.rect);
 
     cell.add(cellRect);
 
@@ -578,9 +576,6 @@ class CellRenderer {
       return (prev += curr.height());
     }, 0);
 
-    cellRect.fill('white');
-    cellRect.stroke(this.spreadsheet.styles.gridLine.stroke as string);
-    cellRect.strokeWidth(this.spreadsheet.styles.gridLine.strokeWidth!);
     cellRect.width(width);
     cellRect.height(height);
 

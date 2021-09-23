@@ -36,7 +36,6 @@ class Merger {
   }
 
   addMergedCells(mergedCell: IMergedCell) {
-    const { cellsData } = this.sheet.getData();
     const topLeftMergedCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
     const existingTopLeftCellStyle =
       this.sheet.cellRenderer.getCellData(topLeftMergedCellId)?.style;
@@ -46,6 +45,8 @@ class Merger {
         [topLeftMergedCellId]: mergedCell,
       },
     });
+
+    const { cellsData } = this.sheet.getData();
 
     for (const ri of iterateRowColVector(mergedCell.row)) {
       for (const ci of iterateRowColVector(mergedCell.col)) {

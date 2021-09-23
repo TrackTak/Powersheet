@@ -16,12 +16,6 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-export function* iterateSelection(selection: Vector2d) {
-  for (let index = selection.x; index <= selection.y; index++) {
-    yield index;
-  }
-}
-
 class Selector {
   isInSelectionMode: boolean;
   selectedCells: Cell[];
@@ -219,7 +213,6 @@ class Selector {
   selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
-      this.sheet.cellRenderer.updateCellClientRect(cell);
 
       this.sheet.cellRenderer.addCell(cell);
     });

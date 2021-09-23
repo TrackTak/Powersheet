@@ -69,8 +69,8 @@ MergedCells.args = {
     [
       {
         sheetName: 'Merged Cells',
-        mergedCells: [
-          {
+        mergedCells: {
+          '5_1': {
             row: {
               x: 5,
               y: 5,
@@ -80,7 +80,7 @@ MergedCells.args = {
               y: 3,
             },
           },
-        ],
+        },
       },
     ],
   ],
@@ -180,7 +180,7 @@ CellsData.args = {
               verticalTextAlign: 'middle',
               bold: true,
               italic: true,
-              // textWrap: 'wrap',
+              textWrap: 'wrap',
             },
             comment: 'Powersheet is the best',
             value:

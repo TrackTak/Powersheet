@@ -1,35 +1,57 @@
-import Sheet, { IMergedCells } from './Sheet';
-import { iterateSelection } from './Selector';
+import Sheet, { iterateRowColVector } from './Sheet';
 import { CellId, getCellId } from './CellRenderer';
+import { Vector2d } from 'konva/lib/types';
 
 export type AssociatedMergedCellId = CellId;
+export type TopLeftMergedCellId = CellId;
+
+export interface IMergedCell {
+  row: Vector2d;
+  col: Vector2d;
+}
 
 class Merger {
-  associatedMergedCellIdMap: Map<AssociatedMergedCellId, IMergedCells>;
+  associatedMergedCellIdMap: Map<AssociatedMergedCellId, IMergedCell>;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.associatedMergedCellIdMap = new Map();
   }
 
-  addMergedCells(mergedCells: IMergedCells) {
-    const data = this.sheet.getData();
-    const topLeftCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+  setAssociatedMergedCellIds(topLeftMergedCellId: CellId) {
+    const { mergedCells } = this.sheet.getData();
+    const mergedCell = mergedCells?.[topLeftMergedCellId];
+
+    if (mergedCell) {
+      const { row, col } = mergedCell;
+
+      for (const ri of iterateRowColVector(row)) {
+        for (const ci of iterateRowColVector(col)) {
+          const id = getCellId(ri, ci);
+
+          this.associatedMergedCellIdMap.set(id, { row, col });
+        }
+      }
+    }
+  }
+
+  addMergedCells(mergedCell: IMergedCell) {
+    const { cellsData } = this.sheet.getData();
+    const topLeftMergedCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
     const existingTopLeftCellStyle =
-      this.sheet.cellRenderer.getCellData(topLeftCellId)?.style;
-    const cellsData = data.cellsData;
+      this.sheet.cellRenderer.getCellData(topLeftMergedCellId)?.style;
 
     this.sheet.setData({
-      mergedCells: data.mergedCells
-        ? [...data.mergedCells, mergedCells]
-        : [mergedCells],
+      mergedCells: {
+        [topLeftMergedCellId]: mergedCell,
+      },
     });
 
-    for (const ri of iterateSelection(mergedCells.row)) {
-      for (const ci of iterateSelection(mergedCells.col)) {
+    for (const ri of iterateRowColVector(mergedCell.row)) {
+      for (const ci of iterateRowColVector(mergedCell.col)) {
         const id = getCellId(ri, ci);
 
-        if (id !== topLeftCellId && cellsData?.[id]) {
+        if (id !== topLeftMergedCellId && cellsData?.[id]) {
           delete cellsData[id];
         }
       }
@@ -37,33 +59,40 @@ class Merger {
 
     if (existingTopLeftCellStyle) {
       this.sheet.cellRenderer.setCellDataStyle(
-        topLeftCellId,
+        topLeftMergedCellId,
         existingTopLeftCellStyle
       );
     }
   }
 
-  removeMergedCells(mergedCells: IMergedCells) {
-    const data = this.sheet.getData();
-    const mergedCellId = getCellId(mergedCells.row.x, mergedCells.col.x);
+  removeMergedCells(mergedCell: IMergedCell) {
+    const { mergedCells } = this.sheet.getData();
+    const topLeftMergedCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
 
-    const updatedMergedCells = data.mergedCells?.filter(({ row, col }) => {
-      return !this.getAreMergedCellsOverlapping(mergedCells, {
-        row,
-        col,
-      });
+    this.sheet.cellRenderer.cellsMap.forEach((cell, cellId) => {
+      if (this.getIsCellTopLeftMergedCell(cellId) && mergedCells) {
+        const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
+          mergedCell,
+          {
+            row: cell.attrs.row,
+            col: cell.attrs.col,
+          }
+        );
+
+        if (areMergedCellsOverlapping) {
+          delete mergedCells[cellId];
+        }
+      }
     });
-    this.sheet.setData({
-      mergedCells: updatedMergedCells,
-    });
 
-    if (!this.getIsCellMerged(mergedCellId)) return;
+    if (!this.getIsCellTopLeftMergedCell(topLeftMergedCellId)) return;
 
-    const style = this.sheet.cellRenderer.getCellData(mergedCellId)?.style;
+    const style =
+      this.sheet.cellRenderer.getCellData(topLeftMergedCellId)?.style;
 
     if (style) {
-      for (const ri of iterateSelection(mergedCells.row)) {
-        for (const ci of iterateSelection(mergedCells.col)) {
+      for (const ri of iterateRowColVector(mergedCell.row)) {
+        for (const ci of iterateRowColVector(mergedCell.col)) {
           const id = getCellId(ri, ci);
 
           this.sheet.cellRenderer.setCellDataStyle(id, style);
@@ -72,60 +101,33 @@ class Merger {
     }
   }
 
-  updateMergedCells() {
-    this.associatedMergedCellIdMap.clear();
-
-    this.sheet.getData().mergedCells?.forEach(({ row, col }) => {
-      const id = getCellId(row.x, col.x);
-      const startRow = this.sheet.row.rowColMap.get(row.x);
-      const startCol = this.sheet.col.rowColMap.get(col.x);
-      const isInViewport = startCol && startRow ? true : false;
-
-      if (isInViewport) {
-        for (const ri of iterateSelection(row)) {
-          for (const ci of iterateSelection(col)) {
-            const id = getCellId(ri, ci);
-
-            this.associatedMergedCellIdMap.set(id, { row, col });
-          }
-        }
-
-        const cell = this.sheet.cellRenderer.convertFromCellIdToCell(id);
-
-        this.sheet.cellRenderer.updateCell(cell);
-      }
-    });
-  }
-
   getAreMergedCellsOverlapping(
-    firstMergedCells: IMergedCells,
-    secondMergedCells: IMergedCells
+    firstMergedCell: IMergedCell,
+    secondMergedCell: IMergedCell
   ) {
     const isFirstOverlappingSecond =
-      secondMergedCells.row.x >= firstMergedCells.row.x &&
-      secondMergedCells.col.x >= firstMergedCells.col.x &&
-      secondMergedCells.row.y <= firstMergedCells.row.y &&
-      secondMergedCells.col.y <= firstMergedCells.col.y;
+      secondMergedCell.row.x >= firstMergedCell.row.x &&
+      secondMergedCell.col.x >= firstMergedCell.col.x &&
+      secondMergedCell.row.y <= firstMergedCell.row.y &&
+      secondMergedCell.col.y <= firstMergedCell.col.y;
 
     const isSecondOverlappingFirst =
-      firstMergedCells.row.x >= secondMergedCells.row.x &&
-      firstMergedCells.col.x >= secondMergedCells.col.x &&
-      firstMergedCells.row.y <= secondMergedCells.row.y &&
-      firstMergedCells.col.y <= secondMergedCells.col.y;
+      firstMergedCell.row.x >= secondMergedCell.row.x &&
+      firstMergedCell.col.x >= secondMergedCell.col.x &&
+      firstMergedCell.row.y <= secondMergedCell.row.y &&
+      firstMergedCell.col.y <= secondMergedCell.col.y;
 
     return isFirstOverlappingSecond || isSecondOverlappingFirst;
   }
 
-  getIsCellMerged(id: CellId) {
+  getIsCellPartOfMerge(id: CellId) {
     return this.associatedMergedCellIdMap.has(id ?? '');
   }
 
-  getIsTopLeftCell(id: CellId) {
-    const { row, col } = this.associatedMergedCellIdMap.get(id)!;
+  getIsCellTopLeftMergedCell(topLeftMergedCellId: TopLeftMergedCellId) {
+    const data = this.sheet.getData();
 
-    const topLeftCellId = getCellId(row.x, col.x);
-
-    return topLeftCellId === id;
+    return !!data.mergedCells?.[topLeftMergedCellId];
   }
 
   mergeSelectedCells() {

@@ -902,7 +902,7 @@ class Toolbar {
 
   setActiveMergedCells(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellMerged(
+    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellPartOfMerge(
       cell.id()
     );
     const isActive = selectedCells.length === 1 && isMerged;

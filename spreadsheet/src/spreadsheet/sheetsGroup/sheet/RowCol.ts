@@ -9,11 +9,11 @@ import Sheet, {
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
   IFrozenCells,
+  iterateRowColVector,
   iterateXToY,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
-import { iterateSelection } from './Selector';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell } from './CellRenderer';
 import { performanceProperties } from '../../styles';
@@ -231,17 +231,17 @@ class RowCol {
   }
 
   convertFromRangeToRowCols(vector: Vector2d) {
-    const lines: Line[] = [];
+    const rowCols: Group[] = [];
 
-    for (const index of iterateSelection(vector)) {
-      const line = this.sheet[this.type].rowColMap.get(index);
+    for (const index of iterateRowColVector(vector)) {
+      const rowCol = this.sheet[this.type].headerGroupMap.get(index);
 
-      if (line) {
-        lines.push(line);
+      if (rowCol) {
+        rowCols.push(rowCol);
       }
     }
 
-    return lines;
+    return rowCols;
   }
 
   getTotalSize() {
@@ -342,20 +342,6 @@ class RowCol {
     }
 
     return indexes;
-  }
-
-  getRowColsBetweenIndexes(indexes: Vector2d) {
-    let lines: Line[] = [];
-
-    for (let index = indexes.x; index <= indexes.y; index++) {
-      const existingLine = this.rowColMap.get(index)!;
-
-      lines.push(existingLine);
-    }
-
-    const comparer = (a: Line, b: Line) => a.attrs.index - b.attrs.index;
-
-    return lines.sort(comparer);
   }
 
   getIsFrozen(index: number) {

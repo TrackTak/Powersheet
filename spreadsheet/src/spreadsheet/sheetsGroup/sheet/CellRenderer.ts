@@ -141,26 +141,6 @@ class CellRenderer {
     cellRect.height(rowHeader.height());
   }
 
-  updateCellClientRect(cell: Cell) {
-    const id = cell.id();
-    const { row, col } = convertFromCellIdToRowColId(id);
-    const cellText = getCellTextFromCell(cell);
-    const isMerged = this.sheet.merger.getIsCellMerged(id);
-
-    this.setCellRect(cell, row, col);
-
-    if (isMerged) {
-      this.setMergedCellProperties(cell);
-    }
-
-    const clientRect = cell.getClientRect({ skipStroke: true });
-
-    if (cellText) {
-      cellText.height(clientRect.height);
-      cellText.width(clientRect.width);
-    }
-  }
-
   private destroyOutOfViewportCells() {
     for (const [key, cell] of this.cellsMap) {
       if (this.sheet.isShapeOutsideOfViewport(cell)) {
@@ -171,9 +151,14 @@ class CellRenderer {
     }
   }
 
-  drawCells() {
-    this.destroyOutOfViewportCells();
+  updateViewport() {
+    this.sheet.merger.associatedMergedCellIdMap.clear();
 
+    this.destroyOutOfViewportCells();
+    this.drawCells();
+  }
+
+  private drawCells() {
     for (const ri of iterateXToY(
       this.sheet.row.scrollBar.sheetViewportPosition
     )) {
@@ -186,9 +171,15 @@ class CellRenderer {
   }
 
   drawCell(cellId: CellId) {
-    const cellData = this.sheet.getData().cellsData?.[cellId];
+    this.cleanCellData(cellId);
 
-    if (!cellData) return;
+    const cellData = this.getCellData(cellId);
+    const shouldDrawCell =
+      cellData || this.sheet.merger.getIsCellTopLeftMergedCell(cellId);
+
+    if (!shouldDrawCell) return;
+
+    this.sheet.merger.setAssociatedMergedCellIds(cellId);
 
     const cell = this.convertFromCellIdToCell(cellId);
     const style = cellData?.style;
@@ -196,8 +187,6 @@ class CellRenderer {
     const hyperformulaValue = this.spreadsheet.options.showFormulas
       ? this.spreadsheet.hyperformula.getCellSerialized(address)
       : this.spreadsheet.hyperformula.getCellValue(address);
-
-    this.updateCellClientRect(cell);
 
     if (hyperformulaValue) {
       this.setCellTextValue(cell, hyperformulaValue?.toString());
@@ -295,7 +284,7 @@ class CellRenderer {
 
     this.addCell(cell);
 
-    if (!this.sheet.merger.getIsCellMerged(cellId)) {
+    if (!this.sheet.merger.getIsCellPartOfMerge(cellId)) {
       const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
       const rowIndex = convertFromCellIdToRowColId(cellId).row;
       const size = this.sheet.row.getSize(rowIndex);
@@ -314,16 +303,6 @@ class CellRenderer {
         this.sheet.updateViewport();
       }
     }
-  }
-
-  updateViewport() {
-    this.sheet.merger.updateMergedCells();
-
-    this.cellsMap.forEach((_, id) => {
-      this.cleanCellData(id);
-
-      this.drawCell(id);
-    });
   }
 
   private setBorder(cell: Cell, type: BorderStyle) {
@@ -521,7 +500,7 @@ class CellRenderer {
     const text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
-      // Only set the width for textWrapping to work
+      // Only set the width for text wrapping to work
       width,
     });
 
@@ -560,7 +539,7 @@ class CellRenderer {
 
     this.setCellRect(cell, row, col);
 
-    const isMergedCell = this.sheet.merger.getIsCellMerged(cell.id());
+    const isMergedCell = this.sheet.merger.getIsCellPartOfMerge(cell.id());
 
     if (isMergedCell) {
       this.setMergedCellProperties(cell);
@@ -587,9 +566,10 @@ class CellRenderer {
     const { row, col } = this.sheet.merger.associatedMergedCellIdMap.get(
       cell.id()
     )!;
-    const rows = this.sheet.row.convertFromRangeToRowCols(cell.attrs.row.x);
-    const cols = this.sheet.col.convertFromRangeToRowCols(cell.attrs.col.x);
+    const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    const cols = this.sheet.col.convertFromRangeToRowCols(col);
     const cellRect = getCellRectFromCell(cell);
+
     const width = cols.reduce((prev, curr) => {
       return (prev += curr.width());
     }, 0);

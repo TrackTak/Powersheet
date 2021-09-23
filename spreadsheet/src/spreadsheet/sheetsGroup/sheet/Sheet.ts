@@ -5,8 +5,8 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
-import Selector, { iterateSelection } from './Selector';
-import Merger from './Merger';
+import Selector from './Selector';
+import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
@@ -47,8 +47,7 @@ export interface IFrozenCells {
 }
 
 export interface IMergedCells {
-  row: Vector2d;
-  col: Vector2d;
+  [index: TopLeftMergedCellId]: IMergedCell;
 }
 
 export interface ISizes {
@@ -95,7 +94,7 @@ export interface ICellData {
 export interface IData {
   sheetName: string;
   frozenCells?: IFrozenCells;
-  mergedCells?: IMergedCells[];
+  mergedCells?: IMergedCells;
   cellsData?: ICellsData;
   row?: IRowColData;
   col?: IRowColData;
@@ -208,12 +207,16 @@ export const getIsFrozenRow = (ri: number, data: IData) => {
   return data.frozenCells ? ri <= data.frozenCells.row : false;
 };
 
+export function* iterateRowColVector(vector: Vector2d) {
+  for (let index = vector.x; index <= vector.y; index++) {
+    yield index;
+  }
+}
+
 export function* iterateXToY(vector: Vector2d) {
   for (let index = vector.x; index < vector.y; index++) {
     yield index;
   }
-
-  return -Infinity;
 }
 
 export const reverseVectorsIfStartBiggerThanEnd = (
@@ -411,10 +414,6 @@ class Sheet {
     this.col.scrollBar.setYIndex();
     this.row.scrollBar.setYIndex();
 
-    this.col.scrollBar.drawItems();
-    this.row.scrollBar.drawItems();
-    this.cellRenderer.drawCells();
-
     this.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
@@ -541,8 +540,8 @@ class Sheet {
       y: newEnd.x,
     });
 
-    for (const ri of iterateSelection(rowIndexes)) {
-      for (const ci of iterateSelection(colIndexes)) {
+    for (const ri of iterateRowColVector(rowIndexes)) {
+      for (const ci of iterateRowColVector(colIndexes)) {
         const existingCellId = getCellId(ri, ci);
         const mergedCells =
           this.merger.associatedMergedCellIdMap.get(existingCellId);
@@ -569,8 +568,8 @@ class Sheet {
       }
     }
 
-    const rows = this.row.getRowColsBetweenIndexes(rowIndexes);
-    const cols = this.col.getRowColsBetweenIndexes(colIndexes);
+    const rows = this.row.convertFromRangeToRowCols(rowIndexes);
+    const cols = this.col.convertFromRangeToRowCols(colIndexes);
 
     return {
       rows,
@@ -651,6 +650,9 @@ class Sheet {
 
   updateViewport() {
     this.updateSheetDimensions();
+
+    this.col.scrollBar.drawItems();
+    this.row.scrollBar.drawItems();
     this.row.updateViewport();
     this.col.updateViewport();
     this.cellRenderer.updateViewport();

@@ -73,7 +73,7 @@ class Export {
 
     for (const [cellId, { row, col }] of sheet.merger
       .associatedMergedCellIdMap) {
-      const isTopLeftCell = sheet.merger.getIsTopLeftCell(cellId);
+      const isTopLeftCell = sheet.merger.getIsCellTopLeftMergedCell(cellId);
 
       if (isTopLeftCell) {
         if (!worksheet['!merges']) {

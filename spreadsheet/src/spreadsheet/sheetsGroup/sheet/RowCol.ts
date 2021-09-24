@@ -309,6 +309,11 @@ class RowCol {
 
         this.sheet.cellRenderer.deleteCellData(cellId);
       });
+
+      this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+        rowNumber,
+        1,
+      ]);
     }
 
     this.sheet.setData({

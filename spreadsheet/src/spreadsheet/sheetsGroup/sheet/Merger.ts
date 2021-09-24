@@ -1,5 +1,5 @@
 import Sheet, { iterateRowColVector } from './Sheet';
-import { CellId, convertFromCellIdToRowColId, getCellId } from './CellRenderer';
+import { CellId, getCellId } from './CellRenderer';
 import { Vector2d } from 'konva/lib/types';
 
 export type AssociatedMergedCellId = CellId;
@@ -67,7 +67,7 @@ class Merger {
   }
 
   removeMergedCells(mergedCell: IMergedCell) {
-    const { mergedCells, row } = this.sheet.getData();
+    const { mergedCells } = this.sheet.getData();
     const topLeftMergedCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
 
     this.sheet.cellRenderer.cellsMap.forEach((cell, cellId) => {

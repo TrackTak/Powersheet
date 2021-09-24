@@ -53,8 +53,8 @@ FrozenCells.args = {
       {
         sheetName: 'Frozen Cells',
         frozenCells: {
-          row: 3,
-          col: 2,
+          row: 0,
+          col: 3,
         },
       },
     ],
@@ -70,10 +70,10 @@ MergedCells.args = {
       {
         sheetName: 'Merged Cells',
         cellsData: {
-          '1_0': {
+          '4_0': {
             value: 'Merged Cells Sheet',
           },
-          '1_1': {
+          '10_1': {
             value: 'Another value',
           },
         },
@@ -81,44 +81,11 @@ MergedCells.args = {
           '3_1': {
             row: {
               x: 3,
-              y: 4,
+              y: 5,
             },
             col: {
               x: 1,
               y: 1,
-            },
-          },
-        },
-        row: {
-          cellsDataIdMap: {
-            1: {
-              '1_0': '1_0',
-              '1_1': '1_1',
-            },
-          },
-          mergedCellsIdMap: {
-            3: {
-              '3_1': '3_1',
-            },
-            4: {
-              '3_1': '3_1',
-            },
-          },
-        },
-        col: {
-          cellsDataIdMap: {
-            0: {
-              '1_0': '1_0',
-              '1_1': '1_1',
-            },
-            1: {
-              '1_0': '1_0',
-              '1_1': '1_1',
-            },
-          },
-          mergedCellsIdMap: {
-            1: {
-              '3_1': '3_1',
             },
           },
         },

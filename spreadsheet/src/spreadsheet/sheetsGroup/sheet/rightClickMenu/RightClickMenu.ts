@@ -77,6 +77,7 @@ class RightClickMenu {
 
     buttons.comment.addEventListener('click', this.commentOnClick);
     buttons.deleteRow.addEventListener('click', this.deleteRowOnClick);
+    buttons.deleteColumn.addEventListener('click', this.deleteColOnClick);
 
     this.dropdown = tippy(this.sheet.sheetEl, {
       placement: 'auto',
@@ -123,7 +124,14 @@ class RightClickMenu {
     const cellId = this.sheet.selector.selectedFirstCell!.id();
     const { row } = convertFromCellIdToRowColId(cellId);
 
-    this.sheet.row.delete(row);
+    this.sheet.row.delete(row, 1);
+  };
+
+  deleteColOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { col } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.col.delete(col, 1);
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {

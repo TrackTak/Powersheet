@@ -18,14 +18,9 @@ import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer, {
-  Cell,
-  CellId,
-  convertFromCellIdToRowColId,
-  getCellId,
-} from './CellRenderer';
+import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 
 export interface IDimensions {
@@ -47,8 +42,8 @@ interface IShapes {
 export type SheetId = number;
 
 export interface IFrozenCells {
-  row?: number | null;
-  col?: number | null;
+  row?: number;
+  col?: number;
 }
 
 export interface IMergedCells {
@@ -518,13 +513,49 @@ class Sheet {
   setData(value: Partial<IData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
 
+    if (value.frozenCells) {
+      const frozenCells = updatedData.frozenCells!;
+
+      if (!isNil(frozenCells.row)) {
+        if (frozenCells.row < 0) {
+          delete frozenCells.row;
+        }
+      }
+
+      if (!isNil(frozenCells.col)) {
+        if (frozenCells.col < 0) {
+          delete frozenCells.col;
+        }
+      }
+
+      if (isNil(frozenCells.row) && isNil(frozenCells.col)) {
+        delete updatedData.frozenCells;
+      }
+    }
+
     if (value.mergedCells) {
       Object.keys(value.mergedCells).forEach((topLeftCellId) => {
-        const { row, col } = value.mergedCells![topLeftCellId];
-        const cellId = getCellId(row.x, col.x);
+        const mergedCell = value.mergedCells![topLeftCellId];
 
-        if (col.x === col.y && row.x === row.y) {
-          delete updatedData.mergedCells![cellId];
+        if (mergedCell.col.x < 0) {
+          mergedCell.col.x = 0;
+        }
+
+        if (mergedCell.row.x < 0) {
+          mergedCell.row.x = 0;
+        }
+
+        const newTopLeftCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
+
+        delete updatedData.mergedCells![topLeftCellId];
+
+        updatedData.mergedCells![newTopLeftCellId] = mergedCell;
+
+        if (
+          mergedCell.col.x >= mergedCell.col.y &&
+          mergedCell.row.x >= mergedCell.row.y
+        ) {
+          delete updatedData.mergedCells![newTopLeftCellId];
         }
       });
     }

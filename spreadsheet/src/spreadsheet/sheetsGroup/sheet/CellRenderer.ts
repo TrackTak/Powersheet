@@ -74,26 +74,6 @@ class CellRenderer {
     }
   }
 
-  cleanCellData(cellId: CellId) {
-    const cellData = this.getCellData(cellId);
-
-    if (cellData) {
-      if (cellData.style) {
-        const cellDataStyleArray = Object.keys(cellData.style);
-
-        if (cellDataStyleArray.length === 0) {
-          delete cellData.style;
-        }
-      }
-
-      const cellDataArray = Object.keys(cellData);
-
-      if (cellDataArray.length === 0) {
-        this.deleteCellData(cellId);
-      }
-    }
-  }
-
   deleteCellData(cellId: CellId) {
     delete this.sheet.getData().cellsData?.[cellId];
   }
@@ -190,8 +170,6 @@ class CellRenderer {
   }
 
   drawCell(cellId: CellId) {
-    this.cleanCellData(cellId);
-
     const cellData = this.getCellData(cellId);
     const shouldDrawCell =
       cellData || this.sheet.merger.getIsCellTopLeftMergedCell(cellId);

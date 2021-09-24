@@ -274,10 +274,32 @@ class RowCol {
   }
 
   delete(index: number, amount: number) {
-    const { frozenCells, mergedCells, cellsData } = this.sheet.getData();
+    const data = this.sheet.getData();
+    const { frozenCells, mergedCells, cellsData } = data;
 
     if (this.getIsFrozen(index)) {
       frozenCells![this.type]! -= amount;
+    }
+
+    if (data[this.type]?.sizes) {
+      const sizes = data[this.type]?.sizes!;
+
+      Object.keys(sizes).forEach((key) => {
+        const sizeIndex = parseInt(key, 10);
+        const size = sizes[sizeIndex];
+
+        if (sizeIndex === index) {
+          delete sizes[sizeIndex];
+        }
+
+        if (sizeIndex > index) {
+          const newIndex = sizeIndex - amount;
+
+          sizes[newIndex] = size;
+
+          delete sizes[sizeIndex];
+        }
+      });
     }
 
     if (mergedCells) {
@@ -304,13 +326,14 @@ class RowCol {
 
         if (rowCol[this.type] > index) {
           const params: [number, number] = this.isCol
-            ? [rowCol.row, rowCol.col - 1]
-            : [rowCol.row - 1, rowCol.col];
-          const newCellId = rowCol[this.type] > 0 ? getCellId(...params) : null;
+            ? [rowCol.row, rowCol.col - amount]
+            : [rowCol.row - amount, rowCol.col];
 
-          if (newCellId) {
-            cellsData[newCellId] = cellsData[cellId];
-          }
+          const newCellId = getCellId(...params);
+
+          cellsData[newCellId] = cellsData[cellId];
+
+          this.sheet.cellRenderer.deleteCellData(cellId);
         }
       });
 

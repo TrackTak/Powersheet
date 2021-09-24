@@ -50,26 +50,12 @@ export interface IMergedCells {
   [index: TopLeftMergedCellId]: IMergedCell;
 }
 
-export interface IRowColMergedCellsIdMap {
-  [index: number]: {
-    [index: TopLeftMergedCellId]: TopLeftMergedCellId;
-  };
-}
-
-export interface ICellsDataIdMap {
-  [index: number]: {
-    [index: CellId]: CellId;
-  };
-}
-
 export interface ISizes {
   [index: number]: number;
 }
 
 export interface IRowColData {
   sizes?: ISizes;
-  mergedCellsIdMap?: IRowColMergedCellsIdMap;
-  cellsDataIdMap?: ICellsDataIdMap;
 }
 
 export type BorderStyle =

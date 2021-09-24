@@ -14,7 +14,12 @@ import Sheet, {
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell, convertFromCellIdToRowColId, getCellId } from './CellRenderer';
+import {
+  Cell,
+  CellId,
+  convertFromCellIdToRowColId,
+  getCellId,
+} from './CellRenderer';
 import { performanceProperties } from '../../styles';
 import { isNil } from 'lodash';
 
@@ -273,90 +278,158 @@ class RowCol {
     });
   }
 
-  delete(index: number, amount: number) {
+  private moveData(
+    index: number,
+    amount: number,
+    hyperformulaColumnFunctionName: 'addColumns' | 'removeColumns',
+    hyperformulaRowFunctionName: 'addRows' | 'removeRows',
+    modifyCallback: (value: number, amount: number) => number,
+    comparer?: (a: string, b: string) => number,
+    cellsDataCallback?: (cellId: CellId) => void,
+    sizesCallback?: (sizeIndex: number) => void
+  ) {
     const data = this.sheet.getData();
     const { frozenCells, mergedCells, cellsData } = data;
+    const sizes = data[this.type]?.sizes!;
 
     if (this.getIsFrozen(index)) {
-      frozenCells![this.type]! -= amount;
+      frozenCells![this.type] = modifyCallback(
+        frozenCells![this.type]!,
+        amount
+      );
     }
 
     if (data[this.type]?.sizes) {
-      const sizes = data[this.type]?.sizes!;
+      Object.keys(sizes)
+        .sort(comparer)
+        .forEach((key) => {
+          const sizeIndex = parseInt(key, 10);
+          const size = sizes[sizeIndex];
 
-      Object.keys(sizes).forEach((key) => {
-        const sizeIndex = parseInt(key, 10);
-        const size = sizes[sizeIndex];
+          if (sizesCallback) {
+            sizesCallback(sizeIndex);
+          }
 
-        if (sizeIndex === index) {
-          delete sizes[sizeIndex];
-        }
+          if (sizeIndex >= index) {
+            const newIndex = modifyCallback(sizeIndex, amount);
 
-        if (sizeIndex > index) {
-          const newIndex = sizeIndex - amount;
+            sizes[newIndex] = size;
 
-          sizes[newIndex] = size;
-
-          delete sizes[sizeIndex];
-        }
-      });
+            delete sizes[sizeIndex];
+          }
+        });
     }
 
     if (mergedCells) {
-      Object.keys(mergedCells).forEach((topLeftCellId) => {
-        const mergedCell = mergedCells[topLeftCellId];
+      Object.keys(mergedCells)
+        .sort(comparer)
+        .forEach((topLeftCellId) => {
+          const mergedCell = mergedCells[topLeftCellId];
 
-        if (mergedCell[this.type].x > index) {
-          mergedCell[this.type].x -= amount;
-        }
+          if (mergedCell[this.type].x > index) {
+            mergedCell[this.type].x = modifyCallback(
+              mergedCell[this.type].x,
+              amount
+            );
+          }
 
-        if (mergedCell[this.type].y >= index) {
-          mergedCell[this.type].y -= amount;
-        }
-      });
+          if (mergedCell[this.type].y >= index) {
+            mergedCell[this.type].y = modifyCallback(
+              mergedCell[this.type].y,
+              amount
+            );
+          }
+        });
     }
 
     if (cellsData) {
-      Object.keys(cellsData).forEach((cellId) => {
-        const rowCol = convertFromCellIdToRowColId(cellId);
+      Object.keys(cellsData)
+        .sort(comparer)
+        .forEach((cellId) => {
+          const rowCol = convertFromCellIdToRowColId(cellId);
 
-        if (rowCol[this.type] === index) {
-          this.sheet.cellRenderer.deleteCellData(cellId);
-        }
+          if (cellsDataCallback) {
+            cellsDataCallback(cellId);
+          }
 
-        if (rowCol[this.type] > index) {
-          const params: [number, number] = this.isCol
-            ? [rowCol.row, rowCol.col - amount]
-            : [rowCol.row - amount, rowCol.col];
+          if (rowCol[this.type] >= index) {
+            const params: [number, number] = this.isCol
+              ? [rowCol.row, modifyCallback(rowCol.col, amount)]
+              : [modifyCallback(rowCol.row, amount), rowCol.col];
 
-          const newCellId = getCellId(...params);
+            const newCellId = getCellId(...params);
 
-          cellsData[newCellId] = cellsData[cellId];
+            cellsData[newCellId] = cellsData[cellId];
 
-          this.sheet.cellRenderer.deleteCellData(cellId);
-        }
-      });
+            this.sheet.cellRenderer.deleteCellData(cellId);
+          }
+        });
+    }
 
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
-          index,
-          amount,
-        ]);
-      } else {
-        this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
-          index,
-          amount,
-        ]);
-      }
+    if (this.isCol) {
+      this.spreadsheet.hyperformula[hyperformulaColumnFunctionName](
+        this.sheet.sheetId,
+        [index, amount]
+      );
+    } else {
+      this.spreadsheet.hyperformula[hyperformulaRowFunctionName](
+        this.sheet.sheetId,
+        [index, amount]
+      );
     }
 
     this.sheet.setData({
+      [this.type]: {
+        sizes,
+      },
       frozenCells,
       mergedCells,
       cellsData,
     });
 
     this.sheet.updateViewport();
+  }
+
+  insert(index: number, amount: number) {
+    this.moveData(
+      index,
+      amount,
+      'addColumns',
+      'addRows',
+      (value, amount) => {
+        return value + amount;
+      },
+      (a, b) => {
+        return b.localeCompare(a);
+      }
+    );
+  }
+
+  delete(index: number, amount: number) {
+    const data = this.sheet.getData();
+
+    this.moveData(
+      index,
+      amount,
+      'removeColumns',
+      'removeRows',
+      (value, amount) => {
+        return value - amount;
+      },
+      undefined,
+      (cellId) => {
+        const rowCol = convertFromCellIdToRowColId(cellId);
+
+        if (rowCol[this.type] === index) {
+          this.sheet.cellRenderer.deleteCellData(cellId);
+        }
+      },
+      (sizeIndex) => {
+        const sizes = data[this.type]?.sizes!;
+
+        return delete sizes[sizeIndex];
+      }
+    );
   }
 
   getSize(index: number) {

@@ -78,6 +78,8 @@ class RightClickMenu {
     buttons.comment.addEventListener('click', this.commentOnClick);
     buttons.deleteRow.addEventListener('click', this.deleteRowOnClick);
     buttons.deleteColumn.addEventListener('click', this.deleteColOnClick);
+    buttons.insertRow.addEventListener('click', this.insertRowOnClick);
+    buttons.insertColumn.addEventListener('click', this.insertColOnClick);
 
     this.dropdown = tippy(this.sheet.sheetEl, {
       placement: 'auto',
@@ -118,6 +120,20 @@ class RightClickMenu {
     const id = this.sheet.selector.selectedFirstCell!.id();
 
     this.sheet.comment?.show(id);
+  };
+
+  insertRowOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { row } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.row.insert(row, 1);
+  };
+
+  insertColOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { col } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.col.insert(col, 1);
   };
 
   deleteRowOnClick = () => {

@@ -2,23 +2,20 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
-import Sheet, { ICustomSizePosition } from '../Sheet';
+import Sheet, { ISheetViewportPosition, iterateXToY } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
-export interface IScrollOffset {
-  index: number;
-  size: number;
-}
-
 class ScrollBar {
   scrollBarEl: HTMLDivElement;
   scrollEl: HTMLDivElement;
-  customSizePositions: ICustomSizePosition[];
-  scrollOffset: IScrollOffset;
+  scroll = 0;
+  totalPreviousCustomSizeDifferences = 0;
+  sheetViewportPosition: ISheetViewportPosition;
+  previousSheetViewportPosition: ISheetViewportPosition;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -35,10 +32,13 @@ class ScrollBar {
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;
-    this.customSizePositions = [];
-    this.scrollOffset = {
-      size: 0,
-      index: 0,
+    this.sheetViewportPosition = {
+      x: 0,
+      y: 0,
+    };
+    this.previousSheetViewportPosition = {
+      x: 0,
+      y: 0,
     };
 
     this.scrollBarEl = document.createElement('div');
@@ -65,33 +65,61 @@ class ScrollBar {
     this.sheet.stage.on('wheel', this.onWheel);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
+
+    this.setScrollSize();
   }
 
-  updateCustomSizePositions() {
-    let customSizeDifference = 0;
-    const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
-
-    Object.keys(sizes).forEach((key) => {
-      const index = parseInt(key, 10);
-      const size = sizes[index];
-      const axis =
-        index * this.spreadsheet.options[this.type].defaultSize +
-        customSizeDifference;
-
-      customSizeDifference +=
-        size - this.spreadsheet.options[this.type].defaultSize;
-
-      this.customSizePositions[index] = {
-        axis,
-        size,
-      };
-    });
-
-    const scrollSize =
-      this.sheet.sheetDimensions[this.functions.size] +
-      this.sheet.getViewportVector()[this.functions.axis];
+  setScrollSize() {
+    const scrollSize = this.sheet.sheetDimensions[this.functions.size];
+    //   this.sheet.getViewportVector()[this.functions.axis];
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
+  }
+
+  private getNewScrollAmount(start: number, end: number) {
+    const data = this.sheet.getData();
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+
+    let newScrollAmount = 0;
+    let totalCustomSizeDifferencs = 0;
+
+    for (let i = start; i < end; i++) {
+      const size = data[this.type]?.sizes[i];
+
+      if (size) {
+        totalCustomSizeDifferencs += size - defaultSize;
+        newScrollAmount += size;
+      } else {
+        newScrollAmount += defaultSize;
+      }
+    }
+
+    return {
+      newScrollAmount,
+      totalCustomSizeDifferencs,
+    };
+  }
+
+  private getYIndex() {
+    const xIndex = this.sheetViewportPosition.x;
+    const stageSize = this.sheet.stage[this.functions.size]();
+
+    const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
+      stageSize,
+      xIndex
+    );
+
+    // Add 1 to make it inclusive
+    return yIndex + 1;
+  }
+
+  setYIndex() {
+    this.sheetViewportPosition.y = this.getYIndex();
+  }
+
+  drawItems() {
+    this.destroyOutOfViewportItems();
+    this.drawViewportItems();
   }
 
   onScroll = (e: Event) => {
@@ -99,74 +127,100 @@ class ScrollBar {
 
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
+    const scrollHeight = event.scrollHeight;
 
-    // TODO: Remove when we have scrollbar snapping
-    const customSizeChanges = this.customSizePositions.map(({ axis, size }) => {
-      let sizeChange = 0;
+    const scrollPercent = scroll / scrollHeight;
 
-      if (axis < scroll) {
-        const change = Math.min(scroll - axis, size);
-
-        sizeChange = change;
-      }
-      return {
-        axis,
-        size: sizeChange,
-      };
-    });
-
-    const totalSizeDifference = customSizeChanges.reduce(
-      (totalSize, { axis, size }) => {
-        let newSize = size;
-
-        if (axis < scroll) {
-          newSize -= this.spreadsheet.options[this.type].defaultSize;
-        }
-
-        return totalSize + newSize;
-      },
-      0
-    );
-
-    const scrollAmount = scroll * -1;
-    const scrollPercent =
-      (scroll - totalSizeDifference) /
-      (this.sheet.sheetDimensions[this.functions.size] - totalSizeDifference);
-    const index = Math.trunc(
+    this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
 
-    this.sheet[this.type].sheetViewportPosition.x = index;
-    this.sheet[this.type].sheetViewportPosition.y = this.sheet[
-      this.type
-    ].calculateSheetViewportEndPosition(
-      this.sheet.stage[this.functions.size](),
-      this.sheet[this.type].sheetViewportPosition.x,
-      customSizeChanges
+    let newScroll = Math.abs(this.scroll);
+
+    const scrollAmount = this.getNewScrollAmount(
+      this.previousSheetViewportPosition.x,
+      this.sheetViewportPosition.x
     );
 
+    const scrollReverseAmount = this.getNewScrollAmount(
+      this.sheetViewportPosition.x,
+      this.previousSheetViewportPosition.x
+    );
+
+    scrollReverseAmount.newScrollAmount *= -1;
+    scrollReverseAmount.totalCustomSizeDifferencs *= -1;
+
+    const totalPreviousCustomSizeDifferences =
+      this.totalPreviousCustomSizeDifferences +
+      scrollAmount.totalCustomSizeDifferencs +
+      scrollReverseAmount.totalCustomSizeDifferencs;
+
+    newScroll +=
+      scrollAmount.newScrollAmount + scrollReverseAmount.newScrollAmount;
+
+    newScroll *= -1;
+
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(scrollAmount);
+      this.sheet.scrollGroups.ySticky.x(newScroll);
     } else {
-      this.sheet.scrollGroups.xSticky.y(scrollAmount);
+      this.sheet.scrollGroups.xSticky.y(newScroll);
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](scrollAmount);
+    this.sheet.scrollGroups.main[this.functions.axis](newScroll);
 
-    this.sheet.drawNextItems();
+    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
+    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
+    this.scroll = newScroll;
+    this.totalPreviousCustomSizeDifferences =
+      totalPreviousCustomSizeDifferences;
 
-    const item = this.sheet[this.type].headerGroupMap.get(index)!;
+    this.setYIndex();
+    this.drawItems();
+    this.sheet.cellRenderer.updateViewport();
 
-    this.scrollOffset = {
-      index,
-      size:
-        scroll +
-        this.sheet.getViewportVector()[this.functions.axis] -
-        item[this.functions.axis](),
-    };
+    if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
+      this.sheet.cellEditor.showCellTooltip();
+    } else {
+      this.sheet.cellEditor.hideCellTooltip();
+    }
 
-    this.sheet.emit(events.scroll[this.scrollType], e, scrollAmount);
+    this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
+
+  private drawItem(index: number) {
+    if (
+      !this.sheet[this.type].headerGroupMap.get(index) ||
+      !this.sheet[this.type].rowColMap.get(index)
+    ) {
+      this.sheet[this.type].draw(index);
+    }
+  }
+
+  private drawViewportItems() {
+    for (const index of iterateXToY(
+      this.sheet[this.type].scrollBar.sheetViewportPosition
+    )) {
+      this.drawItem(index);
+    }
+  }
+
+  private destroyOutOfViewportItems() {
+    for (const [key, rowCol] of this.sheet[this.type].rowColMap) {
+      if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
+        rowCol.destroy();
+
+        this.sheet[this.type].rowColMap.delete(key);
+      }
+    }
+
+    for (const [key, header] of this.sheet[this.type].headerGroupMap) {
+      if (this.sheet.isShapeOutsideOfViewport(header)) {
+        header.destroy();
+
+        this.sheet[this.type].headerGroupMap.delete(key);
+      }
+    }
+  }
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();

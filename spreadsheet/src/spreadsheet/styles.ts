@@ -21,6 +21,7 @@ export interface IColHeaderConfig {
 }
 
 export interface ICellConfig {
+  rect: RectConfig;
   text: TextConfig;
 }
 
@@ -28,7 +29,7 @@ export interface IStyles {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   gridLine: LineConfig;
-  frozenGridLine: LineConfig;
+  frozenLine: LineConfig;
   rowResizeMarker: RectConfig;
   colResizeMarker: RectConfig;
   rowHeader: IRowHeaderConfig;
@@ -79,7 +80,7 @@ const sharedStyles = {
 };
 
 export const defaultStyles: IStyles = {
-  frozenGridLine: {
+  frozenLine: {
     ...sharedStyles.gridLine,
     stroke: 'blue',
   },
@@ -137,6 +138,7 @@ export const defaultStyles: IStyles = {
   selectionFirstCell: {
     ...sharedStyles.selection,
     strokeWidth: 2,
+    fill: 'transparent',
   },
   selection: {
     ...sharedStyles.selection,
@@ -155,6 +157,12 @@ export const defaultStyles: IStyles = {
     closed: true,
   },
   cell: {
+    rect: {
+      type: 'cellRect',
+      fill: 'white',
+      stroke: sharedStyles.gridLine.stroke,
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
+    },
     text: {
       ...sharedStyles.headerText,
       type: 'cellText',

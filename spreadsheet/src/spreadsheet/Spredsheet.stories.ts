@@ -4,22 +4,27 @@ import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet from './Spreadsheet';
 import { IData } from './sheetsGroup/sheet/Sheet';
+import { defaultStyles, IStyles } from './styles';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
 
+// TODO: Fix to be optional styles + options
 interface IArgs {
   options: IOptions;
+  styles: IStyles;
   data?: IData[][];
 }
 
 const buildSpreadsheet = (args: IArgs) => {
   const options = args.options;
+  const styles = args.styles;
   const data = args.data;
 
   const spreadsheet = new Spreadsheet({
     options,
+    styles,
     data,
   });
 
@@ -31,10 +36,8 @@ const Template: Story<IArgs> = (args) => {
 };
 
 const defaultStoryArgs: IArgs = {
-  options: {
-    ...defaultOptions,
-    devMode: true,
-  },
+  options: defaultOptions,
+  styles: defaultStyles,
 };
 
 export const Default = Template.bind({});
@@ -50,8 +53,8 @@ FrozenCells.args = {
       {
         sheetName: 'Frozen Cells',
         frozenCells: {
-          row: 0,
-          col: 0,
+          row: 3,
+          col: 2,
         },
       },
     ],
@@ -66,8 +69,8 @@ MergedCells.args = {
     [
       {
         sheetName: 'Merged Cells',
-        mergedCells: [
-          {
+        mergedCells: {
+          '5_1': {
             row: {
               x: 5,
               y: 5,
@@ -77,7 +80,7 @@ MergedCells.args = {
               y: 3,
             },
           },
-        ],
+        },
       },
     ],
   ],
@@ -107,6 +110,52 @@ DifferentSizeCells.args = {
   ],
 };
 
+export const MillionRows = Template.bind({});
+
+MillionRows.args = {
+  ...defaultStoryArgs,
+  styles: {
+    ...defaultStyles,
+    rowHeader: {
+      ...defaultStyles.rowHeader,
+      rect: {
+        width: 50,
+      },
+    },
+  },
+  options: {
+    ...defaultOptions,
+    row: {
+      ...defaultOptions.row,
+      amount: 1000000,
+    },
+  },
+  data: [
+    [
+      {
+        sheetName: 'Million Rows',
+      },
+    ],
+  ],
+};
+
+export const CustomStyles = Template.bind({});
+
+CustomStyles.args = {
+  ...defaultStoryArgs,
+  styles: {
+    ...defaultStyles,
+    gridLine: {
+      ...defaultStyles.gridLine,
+      stroke: '#add8e6',
+    },
+    selection: {
+      ...defaultStyles.cell,
+      fill: 'orange',
+    },
+  },
+};
+
 export const CellsData = Template.bind({});
 
 CellsData.args = {
@@ -127,11 +176,11 @@ CellsData.args = {
           },
           '1_1': {
             style: {
-              textWrap: 'wrap',
               horizontalTextAlign: 'center',
               verticalTextAlign: 'middle',
               bold: true,
               italic: true,
+              textWrap: 'wrap',
             },
             comment: 'Powersheet is the best',
             value:
@@ -152,7 +201,7 @@ CellsData.args = {
             style: {
               underline: true,
               strikeThrough: true,
-              fontSize: 36,
+              fontSize: 14,
               borders: ['borderBottom'],
             },
             value: 'Some value',
@@ -162,6 +211,9 @@ CellsData.args = {
               textFormatPattern: '0.00%',
             },
             value: '0.05',
+          },
+          '40_4': {
+            value: 'Cell Value',
           },
         },
       },

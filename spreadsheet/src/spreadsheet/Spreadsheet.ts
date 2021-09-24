@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import { cloneDeep, merge } from 'lodash';
 import events from './events';
-import { IOptions } from './options';
+import { defaultOptions, IOptions } from './options';
 import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import SheetsGroup from './sheetsGroup/SheetsGroup';
@@ -38,8 +38,8 @@ class Spreadsheet {
   sheetIndex = 0;
 
   constructor(params: IConstructor) {
-    this.options = params.options;
     this.data = params.data ?? [];
+    this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.eventEmitter = new EventEmitter();
     this.spreadsheetEl = document.createElement('div');

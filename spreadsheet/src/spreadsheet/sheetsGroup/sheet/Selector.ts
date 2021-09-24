@@ -16,12 +16,6 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
-export function* iterateSelection(selection: Vector2d) {
-  for (let index = selection.x; index <= selection.y; index++) {
-    yield index;
-  }
-}
-
 class Selector {
   isInSelectionMode: boolean;
   selectedCells: Cell[];
@@ -62,8 +56,8 @@ class Selector {
     const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
     const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    const rows = this.sheet.row.convertFromRangeToGroups(row);
-    const cols = this.sheet.col.convertFromRangeToGroups(col);
+    const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    const cols = this.sheet.col.convertFromRangeToRowCols(col);
 
     const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
@@ -219,9 +213,8 @@ class Selector {
   selectCells(cells: Cell[]) {
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
-      this.sheet.cellRenderer.updateCellClientRect(cell);
 
-      this.sheet.cellRenderer.drawCell(cell);
+      this.sheet.cellRenderer.addCell(cell);
     });
   }
 
@@ -260,8 +253,8 @@ class Selector {
     // const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
     // const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    // const rows = this.sheet.row.convertFromRangeToGroups(row);
-    // const cols = this.sheet.col.convertFromRangeToGroups(col);
+    // const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    // const cols = this.sheet.col.convertFromRangeToRowCols(col);
 
     // const width = cols.reduce((prev, curr) => {
     //   return (prev += curr.width());

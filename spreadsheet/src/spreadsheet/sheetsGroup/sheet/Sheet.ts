@@ -5,8 +5,8 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
-import Selector, { iterateSelection } from './Selector';
-import Merger from './Merger';
+import Selector from './Selector';
+import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
@@ -21,6 +21,7 @@ import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { merge } from 'lodash';
+import { Shape } from 'konva/lib/Shape';
 
 export interface IDimensions {
   width: number;
@@ -34,13 +35,8 @@ export interface ISheetViewportPosition {
 
 interface IShapes {
   sheet: Rect;
-  frozenGridLine: Line;
+  frozenLine: Line;
   topLeftRect: Rect;
-}
-
-export interface ICustomSizePosition {
-  axis: number;
-  size: number;
 }
 
 export type SheetId = number;
@@ -51,8 +47,7 @@ export interface IFrozenCells {
 }
 
 export interface IMergedCells {
-  row: Vector2d;
-  col: Vector2d;
+  [index: TopLeftMergedCellId]: IMergedCell;
 }
 
 export interface ISizes {
@@ -99,7 +94,7 @@ export interface ICellData {
 export interface IData {
   sheetName: string;
   frozenCells?: IFrozenCells;
-  mergedCells?: IMergedCells[];
+  mergedCells?: IMergedCells;
   cellsData?: ICellsData;
   row?: IRowColData;
   col?: IRowColData;
@@ -172,6 +167,14 @@ export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
   return cellGroup;
 };
 
+export const getFrozenBackgroundFromScrollGroup = (scrollGroup: Group) => {
+  const frozenBackground = getSheetGroupFromScrollGroup(
+    scrollGroup
+  ).children?.find((x) => x.attrs.type === 'frozenBackground') as Group;
+
+  return frozenBackground;
+};
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -193,52 +196,16 @@ export const getIsFrozenRow = (ri: number, data: IData) => {
   return data.frozenCells ? ri <= data.frozenCells.row : false;
 };
 
+export function* iterateRowColVector(vector: Vector2d) {
+  for (let index = vector.x; index <= vector.y; index++) {
+    yield index;
+  }
+}
+
 export function* iterateXToY(vector: Vector2d) {
   for (let index = vector.x; index < vector.y; index++) {
     yield index;
   }
-
-  return -Infinity;
-}
-
-export function* iteratePreviousUpToCurrent(
-  previousSheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y'],
-  sheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y']
-) {
-  for (
-    let index = previousSheetViewportPosition;
-    index < sheetViewportPosition;
-    index++
-  ) {
-    yield index;
-  }
-
-  return -Infinity;
-}
-
-export function* iteratePreviousDownToCurrent(
-  previousSheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y'],
-  sheetViewportPosition:
-    | ISheetViewportPosition['x']
-    | ISheetViewportPosition['y']
-) {
-  if (previousSheetViewportPosition === sheetViewportPosition) return -Infinity;
-
-  for (
-    let index = previousSheetViewportPosition;
-    index >= sheetViewportPosition;
-    index--
-  ) {
-    yield index;
-  }
-
-  return -Infinity;
 }
 
 export const reverseVectorsIfStartBiggerThanEnd = (
@@ -314,7 +281,10 @@ class Sheet {
       xySticky: new Group(),
     };
 
-    Object.values(this.scrollGroups).forEach((scrollGroup: Group) => {
+    Object.keys(this.scrollGroups).forEach((key) => {
+      const scrollGroup =
+        this.scrollGroups[key as keyof typeof this.scrollGroups];
+
       const sheetGroup = new Group({
         ...performanceProperties,
         ...this.getViewportVector(),
@@ -338,6 +308,17 @@ class Sheet {
         type: 'header',
       });
 
+      const frozenBackground = new Rect({
+        ...performanceProperties,
+        type: 'frozenBackground',
+        fill: 'white',
+        visible: false,
+      });
+
+      if (key !== 'main') {
+        sheetGroup.add(frozenBackground);
+      }
+
       // The order added here matters as it determines the zIndex for konva
       sheetGroup.add(rowColGroup, cellGroup);
       scrollGroup.add(sheetGroup, headerGroup);
@@ -350,8 +331,8 @@ class Sheet {
         listening: true,
         opacity: 0,
       }),
-      frozenGridLine: new Line({
-        ...this.spreadsheet.styles.frozenGridLine,
+      frozenLine: new Line({
+        ...this.spreadsheet.styles.frozenLine,
       }),
       topLeftRect: new Rect({
         ...this.spreadsheet.styles.topLeftRect,
@@ -369,7 +350,7 @@ class Sheet {
     this.stage.add(this.layer);
     this.layer.add(this.shapes.sheet);
 
-    this.shapes.frozenGridLine.cache();
+    this.shapes.frozenLine.cache();
 
     Object.values(this.scrollGroups).forEach((group) => {
       this.layer.add(group);
@@ -405,8 +386,27 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    this.drawNextItems();
+
+    const width = this.col.totalSize + this.getViewportVector().x;
+    const height = this.row.totalSize + this.getViewportVector().y;
+
+    this.stage.width(width);
+    this.stage.height(height);
+
+    const context = this.layer.canvas.getContext();
+
+    context.translate(0.5, 0.5);
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
+
+    this.col.scrollBar.setYIndex();
+    this.row.scrollBar.setYIndex();
+
     this.updateViewport();
+
+    // TODO: use scrollBar size instead of hardcoded value
+    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
     this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
 
@@ -493,25 +493,11 @@ class Sheet {
     this.spreadsheet.eventEmitter.emit(event, ...args);
   }
 
-  setSize() {
-    this.col.scrollBar.updateCustomSizePositions();
-    this.row.scrollBar.updateCustomSizePositions();
-
-    const width = this.col.totalSize + this.getViewportVector().x;
-    const height = this.row.totalSize + this.getViewportVector().y;
-
-    this.stage.width(width);
-    this.stage.height(height);
-
-    const context = this.layer.canvas.getContext();
-
-    context.translate(0.5, 0.5);
-
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
-
-    // TODO: use scrollBar size instead of hardcoded value
-    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
+  isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {
+    return !shape.isClientRectOnScreen({
+      x: -(this.getViewportVector().x + (margin?.x ?? 0)),
+      y: -(this.getViewportVector().y + (margin?.y ?? 0)),
+    });
   }
 
   setData(value: Partial<IData>, addToHistory: boolean = true) {
@@ -557,8 +543,8 @@ class Sheet {
       y: newEnd.x,
     });
 
-    for (const ri of iterateSelection(rowIndexes)) {
-      for (const ci of iterateSelection(colIndexes)) {
+    for (const ri of iterateRowColVector(rowIndexes)) {
+      for (const ci of iterateRowColVector(colIndexes)) {
         const existingCellId = getCellId(ri, ci);
         const mergedCells =
           this.merger.associatedMergedCellIdMap.get(existingCellId);
@@ -585,8 +571,8 @@ class Sheet {
       }
     }
 
-    const rows = this.row.getItemsBetweenIndexes(rowIndexes);
-    const cols = this.col.getItemsBetweenIndexes(colIndexes);
+    const rows = this.row.convertFromRangeToRowCols(rowIndexes);
+    const cols = this.col.convertFromRangeToRowCols(colIndexes);
 
     return {
       rows,
@@ -621,30 +607,61 @@ class Sheet {
     this.shapes.topLeftRect.moveToTop();
   }
 
+  updateFrozenBackgrounds() {
+    const frozenCells = this.getData().frozenCells;
+    const xStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.xSticky
+    );
+    const yStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.ySticky
+    );
+    const xyStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
+      this.scrollGroups.xySticky
+    );
+
+    if (frozenCells && this.row.frozenLine && this.col.frozenLine) {
+      const colClientRect = this.col.frozenLine.getClientRect({
+        skipStroke: true,
+      });
+      const rowClientRect = this.row.frozenLine.getClientRect({
+        skipStroke: true,
+      });
+
+      colClientRect.x -= this.getViewportVector().x;
+      rowClientRect.y -= this.getViewportVector().y;
+
+      xStickyFrozenBackground.width(colClientRect.x);
+      xStickyFrozenBackground.height(this.stage.height());
+      xStickyFrozenBackground.y(rowClientRect.y);
+
+      yStickyFrozenBackground.width(this.stage.width());
+      yStickyFrozenBackground.height(rowClientRect.y);
+      yStickyFrozenBackground.x(colClientRect.x);
+
+      xyStickyFrozenBackground.width(colClientRect.x);
+      xyStickyFrozenBackground.height(rowClientRect.y);
+
+      xStickyFrozenBackground.show();
+      yStickyFrozenBackground.show();
+      xyStickyFrozenBackground.show();
+    } else {
+      xStickyFrozenBackground.hide();
+      yStickyFrozenBackground.hide();
+      xyStickyFrozenBackground.hide();
+    }
+  }
+
   updateViewport() {
     this.updateSheetDimensions();
-    this.cellRenderer.updateCells();
     this.row.updateViewport();
     this.col.updateViewport();
-    this.cellRenderer.updateCellsStyles();
+    this.cellRenderer.updateViewport();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
       this.selector.selectedFirstCell?.id() ?? ''
     );
-  }
-
-  drawNextItems() {
-    const colGenerator = this.col.drawNextItems();
-    const rowGenerator = this.row.drawNextItems();
-
-    let colIteratorResult;
-    let rowIteratorResult;
-
-    do {
-      colIteratorResult = colGenerator.next();
-      rowIteratorResult = rowGenerator.next();
-    } while (!colIteratorResult.done || !rowIteratorResult.done);
+    this.updateFrozenBackgrounds();
   }
 }
 

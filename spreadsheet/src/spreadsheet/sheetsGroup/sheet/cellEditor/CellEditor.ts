@@ -9,6 +9,11 @@ import FormulaHelper from '../../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../../Spreadsheet';
 import { Cell } from '../CellRenderer';
 
+export interface ICurrentScroll {
+  row: number;
+  col: number;
+}
+
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement;
   cellEditorEl: HTMLDivElement;
@@ -16,6 +21,7 @@ class CellEditor {
   formulaHelper: FormulaHelper;
   spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
+  currentScroll: ICurrentScroll | null = null;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -30,17 +36,13 @@ class CellEditor {
     this.cellTooltip = delegate(this.cellEditorEl, {
       target: styles.cellEditor,
       arrow: false,
+      trigger: 'manual',
+      hideOnClick: false,
       placement: 'top-start',
       theme: 'cell',
       offset: [0, 5],
     });
     this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
-
-    this.spreadsheet.eventEmitter.on(
-      events.scroll.horizontal,
-      this.handleScroll
-    );
-    this.spreadsheet.eventEmitter.on(events.scroll.vertical, this.handleScroll);
 
     this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
 
@@ -109,6 +111,10 @@ class CellEditor {
 
   show(cell: Cell) {
     this.currentCell = cell;
+    this.currentScroll = {
+      row: this.sheet.row.scrollBar.scroll,
+      col: this.sheet.col.scrollBar.scroll,
+    };
 
     const id = cell.id();
 
@@ -122,6 +128,7 @@ class CellEditor {
         skipStroke: true,
       })
     );
+
     this.cellEditorEl.focus();
   }
 
@@ -129,6 +136,8 @@ class CellEditor {
     this.saveContentToCell();
 
     this.currentCell = null;
+    this.currentScroll = null;
+    this.cellTooltip.hide();
 
     this.cellEditorContainerEl.style.display = 'none';
 
@@ -148,24 +157,12 @@ class CellEditor {
 
   showCellTooltip = () => {
     if (this.currentCell) {
-      const row = this.currentCell.attrs.row;
-      const col = this.currentCell.attrs.col;
+      const { row, col } = this.currentCell.attrs;
       const rowText = this.sheet.row.getHeaderText(row.x);
       const colText = this.sheet.col.getHeaderText(col.x);
 
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();
-    }
-  };
-
-  handleScroll = () => {
-    const rowScrollOffset = this.sheet.row.scrollBar.scrollOffset;
-    const colScrollOffset = this.sheet.col.scrollBar.scrollOffset;
-
-    if (rowScrollOffset.index || colScrollOffset.index) {
-      this.showCellTooltip();
-    } else {
-      this.hideCellTooltip();
     }
   };
 }

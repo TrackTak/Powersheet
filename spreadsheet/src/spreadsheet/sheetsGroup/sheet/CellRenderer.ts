@@ -74,9 +74,8 @@ class CellRenderer {
     }
   }
 
-  // TODO: Call this function later on every data change
-  cleanCellData(id: CellId) {
-    const cellData = this.getCellData(id);
+  cleanCellData(cellId: CellId) {
+    const cellData = this.getCellData(cellId);
 
     if (cellData) {
       if (cellData.style) {
@@ -90,14 +89,13 @@ class CellRenderer {
       const cellDataArray = Object.keys(cellData);
 
       if (cellDataArray.length === 0) {
-        delete this.sheet.getData().cellsData?.[id];
+        this.deleteCellData(cellId);
       }
     }
   }
 
-  deleteCellData(id: CellId) {
-    this.spreadsheet.addToHistory();
-    delete this.sheet.getData().cellsData?.[id];
+  deleteCellData(cellId: CellId) {
+    delete this.sheet.getData().cellsData?.[cellId];
   }
 
   setHyperformulaCellData(id: CellId, value: string | undefined) {

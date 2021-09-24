@@ -18,7 +18,12 @@ import { prefix } from '../../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
+import CellRenderer, {
+  Cell,
+  CellId,
+  convertFromCellIdToRowColId,
+  getCellId,
+} from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { merge } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
@@ -42,12 +47,24 @@ interface IShapes {
 export type SheetId = number;
 
 export interface IFrozenCells {
-  row: number;
-  col: number;
+  row?: number | null;
+  col?: number | null;
 }
 
 export interface IMergedCells {
   [index: TopLeftMergedCellId]: IMergedCell;
+}
+
+export interface IRowColMergedCellsIdMap {
+  [index: number]: {
+    [index: TopLeftMergedCellId]: TopLeftMergedCellId;
+  };
+}
+
+export interface ICellsDataIdMap {
+  [index: number]: {
+    [index: CellId]: CellId;
+  };
 }
 
 export interface ISizes {
@@ -55,7 +72,9 @@ export interface ISizes {
 }
 
 export interface IRowColData {
-  sizes: ISizes;
+  sizes?: ISizes;
+  mergedCellsIdMap?: IRowColMergedCellsIdMap;
+  cellsDataIdMap?: ICellsDataIdMap;
 }
 
 export type BorderStyle =
@@ -190,10 +209,6 @@ export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
     x: rectOneMidPoint.x - rectTwoMidPoint.x,
     y: rectOneMidPoint.y - rectTwoMidPoint.y,
   };
-};
-
-export const getIsFrozenRow = (ri: number, data: IData) => {
-  return data.frozenCells ? ri <= data.frozenCells.row : false;
 };
 
 export function* iterateRowColVector(vector: Vector2d) {
@@ -429,7 +444,7 @@ class Sheet {
       }
 
       if (this.cellRenderer.getCellData(id)?.comment) {
-        this.comment.show();
+        this.comment.show(id);
       }
     }
   };
@@ -502,6 +517,17 @@ class Sheet {
 
   setData(value: Partial<IData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
+
+    if (value.mergedCells) {
+      Object.keys(value.mergedCells).forEach((topLeftCellId) => {
+        const { row, col } = value.mergedCells![topLeftCellId];
+        const cellId = getCellId(row.x, col.x);
+
+        if (col.x === col.y && row.x === row.y) {
+          delete updatedData.mergedCells![cellId];
+        }
+      });
+    }
 
     if (addToHistory) {
       this.spreadsheet.addToHistory();

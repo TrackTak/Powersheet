@@ -8,15 +8,15 @@ import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
-  IFrozenCells,
   iterateRowColVector,
   iterateXToY,
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell } from './CellRenderer';
+import { Cell, convertFromCellIdToRowColId, getCellId } from './CellRenderer';
 import { performanceProperties } from '../../styles';
+import { isNil } from 'lodash';
 
 interface IShapes {
   headerGroup: Group;
@@ -64,7 +64,6 @@ class RowCol {
   shapes: IShapes;
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
-  frozenLine?: Line;
   private getLinePoints: (size: number) => number[];
   private functions: IRowColFunctions;
   private oppositeType: RowColType;
@@ -273,15 +272,85 @@ class RowCol {
     });
   }
 
+  delete(rowNumber: number) {
+    const { frozenCells, mergedCells, row, cellsData } = this.sheet.getData();
+
+    if (this.getIsFrozen(rowNumber)) {
+      if (frozenCells!.row === 0) {
+        frozenCells!.row = null;
+      } else {
+        frozenCells!.row! -= 1;
+      }
+    }
+
+    if (mergedCells) {
+      const topLeftMergedCellIds = row!.mergedCellsIdMap![rowNumber];
+
+      Object.values(topLeftMergedCellIds ?? {}).forEach(
+        (topLeftMergedCellId) => {
+          const mergedCell = mergedCells[topLeftMergedCellId];
+
+          mergedCell.row.y -= 1;
+        }
+      );
+    }
+
+    if (cellsData) {
+      const cellsDataIds = row!.cellsDataIdMap![rowNumber];
+
+      Object.values(cellsDataIds ?? {}).forEach((cellId) => {
+        const rowCol = convertFromCellIdToRowColId(cellId);
+        const newCellId =
+          rowCol.row > 0 ? getCellId(rowCol.row - 1, rowCol.col) : null;
+
+        if (newCellId) {
+          cellsData[newCellId] = cellsData[cellId];
+        }
+
+        this.sheet.cellRenderer.deleteCellData(cellId);
+      });
+    }
+
+    this.sheet.setData({
+      frozenCells,
+      mergedCells,
+      cellsData,
+    });
+
+    this.sheet.updateViewport();
+  }
+
   getSize(index: number) {
     let size =
-      this.sheet.getData()[this.type]?.sizes[index] ??
+      this.sheet.getData()[this.type]?.sizes?.[index] ??
       this.spreadsheet.options[this.type].defaultSize;
 
     return size;
   }
 
   updateViewport() {
+    const frozenRowColGroupMaps = [
+      this.xFrozenRowColMap,
+      this.yFrozenRowColMap,
+      this.xyFrozenRowColMap,
+    ];
+
+    frozenRowColGroupMaps.forEach((frozenRowColGroupMap) => {
+      frozenRowColGroupMap.forEach((frozenRowColGroup) => {
+        frozenRowColGroup.destroy();
+      });
+      frozenRowColGroupMap.clear();
+    });
+
+    this.headerGroupMap.forEach((headerGroup) => {
+      headerGroup.destroy();
+    });
+    this.rowColMap.forEach((rowCol) => {
+      rowCol.destroy();
+    });
+    this.headerGroupMap.clear();
+    this.rowColMap.clear();
+
     for (const index of iterateXToY(
       this.sheet[this.type].scrollBar.sheetViewportPosition
     )) {
@@ -292,12 +361,13 @@ class RowCol {
 
   *getSizeForFrozenCell(type: RowColType) {
     const { frozenCells } = this.sheet.getData();
+    const frozenCell = frozenCells?.[type];
 
-    if (!frozenCells) return null;
+    if (isNil(frozenCell)) return null;
 
     let size = 0;
 
-    for (let index = 0; index <= frozenCells[type]; index++) {
+    for (let index = 0; index <= frozenCell; index++) {
       size += this.getSize(index);
 
       yield { size, index };
@@ -346,8 +416,9 @@ class RowCol {
 
   getIsFrozen(index: number) {
     const data = this.sheet.getData();
+    const frozenCell = data.frozenCells?.[this.type];
 
-    return data.frozenCells ? index <= data.frozenCells[this.type] : false;
+    return isNil(frozenCell) ? false : index <= frozenCell;
   }
 
   getIsLastFrozen(index: number) {
@@ -369,7 +440,7 @@ class RowCol {
       this.scrollBar.totalPreviousCustomSizeDifferences;
 
     for (let i = this.scrollBar.sheetViewportPosition.x; i < index; i++) {
-      const size = data[this.type]?.sizes[i];
+      const size = data[this.type]?.sizes?.[i];
 
       if (size) {
         totalPreviousCustomSizeDifferences += size - defaultSize;
@@ -458,7 +529,6 @@ class RowCol {
     line = this.shapes.gridLine
   ) {
     const headerGroup = this.headerGroupMap.get(index)!;
-
     const mergedLineConfig: LineConfig = {
       index,
       [this.functions.axis]:
@@ -499,8 +569,8 @@ class RowCol {
     map.set(index, line);
   }
 
-  private drawXRowFrozenGridLine(index: number, frozenCells: IFrozenCells) {
-    if (!this.isCol && index > frozenCells[this.type]) {
+  private drawXRowFrozenGridLine(index: number, frozenCell: number) {
+    if (!this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
         this.sheet.scrollGroups.xSticky,
@@ -513,8 +583,8 @@ class RowCol {
     }
   }
 
-  private drawXColFrozenGridLine(index: number, frozenCells: IFrozenCells) {
-    if (this.isCol && index < frozenCells[this.type]) {
+  private drawXColFrozenGridLine(index: number, frozenCell: number) {
+    if (this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
         this.sheet.scrollGroups.xSticky,
@@ -528,8 +598,8 @@ class RowCol {
     }
   }
 
-  private drawYRowFrozenGridLine(index: number, frozenCells: IFrozenCells) {
-    if (!this.isCol && index < frozenCells[this.type]) {
+  private drawYRowFrozenGridLine(index: number, frozenCell: number) {
+    if (!this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
         this.sheet.scrollGroups.ySticky,
@@ -543,8 +613,8 @@ class RowCol {
     }
   }
 
-  private drawYColFrozenGridLine(index: number, frozenCells: IFrozenCells) {
-    if (this.isCol && index > frozenCells[this.type]) {
+  private drawYColFrozenGridLine(index: number, frozenCell: number) {
+    if (this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
         this.sheet.scrollGroups.ySticky,
@@ -557,8 +627,8 @@ class RowCol {
     }
   }
 
-  private drawXYFrozenGridLine(index: number, frozenCells: IFrozenCells) {
-    if (index < frozenCells[this.type]) {
+  private drawXYFrozenGridLine(index: number, frozenCell: number) {
+    if (index < frozenCell) {
       this.getFrozenGridLine(
         index,
         this.sheet.scrollGroups.xySticky,
@@ -573,26 +643,23 @@ class RowCol {
 
   private drawFrozenGridLine(index: number) {
     const { frozenCells } = this.sheet.getData();
+    const frozenRow = frozenCells?.row;
+    const frozenCol = frozenCells?.col;
 
-    if (frozenCells) {
-      this.drawXYFrozenGridLine(index, frozenCells);
-      this.drawXRowFrozenGridLine(index, frozenCells);
-      this.drawXColFrozenGridLine(index, frozenCells);
-      this.drawYRowFrozenGridLine(index, frozenCells);
-      this.drawYColFrozenGridLine(index, frozenCells);
-    } else {
-      const frozenRowColGroupMaps = [
-        this.xFrozenRowColMap,
-        this.yFrozenRowColMap,
-        this.xyFrozenRowColMap,
-      ];
+    if (!isNil(frozenRow)) {
+      this.drawXRowFrozenGridLine(index, frozenRow);
+      this.drawYRowFrozenGridLine(index, frozenRow);
+    }
 
-      frozenRowColGroupMaps.forEach((frozenRowColGroupMap) => {
-        frozenRowColGroupMap.forEach((group) => {
-          group.destroy();
-        });
-        frozenRowColGroupMap.clear();
-      });
+    if (!isNil(frozenCol)) {
+      this.drawXColFrozenGridLine(index, frozenCol);
+      this.drawYColFrozenGridLine(index, frozenCol);
+    }
+
+    if (!isNil(!frozenRow) && !isNil(!frozenCol)) {
+      const frozenCell = frozenCells?.[this.type];
+
+      this.drawXYFrozenGridLine(index, frozenCell!);
     }
   }
 
@@ -618,8 +685,6 @@ class RowCol {
     this.rowColMap.set(index, line);
 
     if (isLastFrozen) {
-      this.frozenLine = line;
-
       const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );

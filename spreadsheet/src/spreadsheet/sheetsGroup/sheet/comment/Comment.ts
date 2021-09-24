@@ -7,6 +7,7 @@ import {
   createSuccessButton,
   createTextarea,
 } from './commentHtmlHelpers';
+import { CellId } from '../CellRenderer';
 
 class Comment {
   textarea: HTMLTextAreaElement;
@@ -77,13 +78,12 @@ class Comment {
     this.textarea.value = '';
   }
 
-  show() {
+  show(cellId: CellId) {
     // unmount forces position to update
     this.container.unmount();
     this.container.show();
 
-    const id = this.sheet.selector.selectedFirstCell!.id();
-    const comment = this.sheet.cellRenderer.getCellData(id)?.comment;
+    const comment = this.sheet.cellRenderer.getCellData(cellId)?.comment;
 
     if (comment) {
       this.textarea.value = comment;

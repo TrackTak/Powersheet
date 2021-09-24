@@ -1,5 +1,5 @@
 import Sheet, { iterateRowColVector } from './Sheet';
-import { CellId, getCellId } from './CellRenderer';
+import { CellId, convertFromCellIdToRowColId, getCellId } from './CellRenderer';
 import { Vector2d } from 'konva/lib/types';
 
 export type AssociatedMergedCellId = CellId;
@@ -50,10 +50,10 @@ class Merger {
 
     for (const ri of iterateRowColVector(mergedCell.row)) {
       for (const ci of iterateRowColVector(mergedCell.col)) {
-        const id = getCellId(ri, ci);
+        const cellId = getCellId(ri, ci);
 
-        if (id !== topLeftMergedCellId && cellsData?.[id]) {
-          delete cellsData[id];
+        if (cellId !== topLeftMergedCellId && cellsData?.[cellId]) {
+          this.sheet.cellRenderer.deleteCellData(cellId);
         }
       }
     }
@@ -67,7 +67,7 @@ class Merger {
   }
 
   removeMergedCells(mergedCell: IMergedCell) {
-    const { mergedCells } = this.sheet.getData();
+    const { mergedCells, row } = this.sheet.getData();
     const topLeftMergedCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
 
     this.sheet.cellRenderer.cellsMap.forEach((cell, cellId) => {
@@ -81,7 +81,13 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
+          // const rowCol = convertFromCellIdToRowColId(cellId);
+
           delete mergedCells[cellId];
+
+          // if (row?.mergedCellsIdMap?.[rowCol.row]) {
+          //   delete row.mergedCellsIdMap[rowCol.row][cellId];
+          // }
         }
       }
     });

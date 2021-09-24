@@ -69,15 +69,56 @@ MergedCells.args = {
     [
       {
         sheetName: 'Merged Cells',
+        cellsData: {
+          '1_0': {
+            value: 'Merged Cells Sheet',
+          },
+          '1_1': {
+            value: 'Another value',
+          },
+        },
         mergedCells: {
-          '5_1': {
+          '3_1': {
             row: {
-              x: 5,
-              y: 5,
+              x: 3,
+              y: 4,
             },
             col: {
               x: 1,
-              y: 3,
+              y: 1,
+            },
+          },
+        },
+        row: {
+          cellsDataIdMap: {
+            1: {
+              '1_0': '1_0',
+              '1_1': '1_1',
+            },
+          },
+          mergedCellsIdMap: {
+            3: {
+              '3_1': '3_1',
+            },
+            4: {
+              '3_1': '3_1',
+            },
+          },
+        },
+        col: {
+          cellsDataIdMap: {
+            0: {
+              '1_0': '1_0',
+              '1_1': '1_1',
+            },
+            1: {
+              '1_0': '1_0',
+              '1_1': '1_1',
+            },
+          },
+          mergedCellsIdMap: {
+            1: {
+              '3_1': '3_1',
             },
           },
         },

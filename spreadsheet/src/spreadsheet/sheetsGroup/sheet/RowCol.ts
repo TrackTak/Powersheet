@@ -62,6 +62,7 @@ class RowCol {
   xyFrozenRowColMap = new Map<RowColGroupId, Line>();
   totalSize: number;
   shapes: IShapes;
+  frozenLine?: Line;
   getHeaderText: (index: number) => string;
   getAvailableSize!: () => number;
   private getLinePoints: (size: number) => number[];
@@ -272,48 +273,58 @@ class RowCol {
     });
   }
 
-  delete(rowNumber: number) {
-    const { frozenCells, mergedCells, row, cellsData } = this.sheet.getData();
+  delete(index: number, amount: number) {
+    const { frozenCells, mergedCells, cellsData } = this.sheet.getData();
 
-    if (this.getIsFrozen(rowNumber)) {
-      if (frozenCells!.row === 0) {
-        frozenCells!.row = null;
-      } else {
-        frozenCells!.row! -= 1;
-      }
+    if (this.getIsFrozen(index)) {
+      frozenCells![this.type]! -= amount;
     }
 
     if (mergedCells) {
-      const topLeftMergedCellIds = row!.mergedCellsIdMap![rowNumber];
+      Object.keys(mergedCells).forEach((topLeftCellId) => {
+        const mergedCell = mergedCells[topLeftCellId];
 
-      Object.values(topLeftMergedCellIds ?? {}).forEach(
-        (topLeftMergedCellId) => {
-          const mergedCell = mergedCells[topLeftMergedCellId];
-
-          mergedCell.row.y -= 1;
+        if (mergedCell[this.type].x > index) {
+          mergedCell[this.type].x -= amount;
         }
-      );
+
+        if (mergedCell[this.type].y >= index) {
+          mergedCell[this.type].y -= amount;
+        }
+      });
     }
 
     if (cellsData) {
-      const cellsDataIds = row!.cellsDataIdMap![rowNumber];
-
-      Object.values(cellsDataIds ?? {}).forEach((cellId) => {
+      Object.keys(cellsData).forEach((cellId) => {
         const rowCol = convertFromCellIdToRowColId(cellId);
-        const newCellId =
-          rowCol.row > 0 ? getCellId(rowCol.row - 1, rowCol.col) : null;
 
-        if (newCellId) {
-          cellsData[newCellId] = cellsData[cellId];
+        if (rowCol[this.type] === index) {
+          this.sheet.cellRenderer.deleteCellData(cellId);
         }
 
-        this.sheet.cellRenderer.deleteCellData(cellId);
+        if (rowCol[this.type] > index) {
+          const params: [number, number] = this.isCol
+            ? [rowCol.row, rowCol.col - 1]
+            : [rowCol.row - 1, rowCol.col];
+          const newCellId = rowCol[this.type] > 0 ? getCellId(...params) : null;
+
+          if (newCellId) {
+            cellsData[newCellId] = cellsData[cellId];
+          }
+        }
       });
 
-      this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
-        rowNumber,
-        1,
-      ]);
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
+          index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+          index,
+          amount,
+        ]);
+      }
     }
 
     this.sheet.setData({
@@ -690,6 +701,8 @@ class RowCol {
     this.rowColMap.set(index, line);
 
     if (isLastFrozen) {
+      this.frozenLine = line;
+
       const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky
       );

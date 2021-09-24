@@ -53,7 +53,7 @@ FrozenCells.args = {
       {
         sheetName: 'Frozen Cells',
         frozenCells: {
-          row: 0,
+          row: 3,
           col: 3,
         },
       },

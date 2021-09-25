@@ -19,7 +19,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../../events';
 
@@ -42,8 +42,8 @@ interface IShapes {
 export type SheetId = number;
 
 export interface IFrozenCells {
-  row: number;
-  col: number;
+  row?: number;
+  col?: number;
 }
 
 export interface IMergedCells {
@@ -55,7 +55,7 @@ export interface ISizes {
 }
 
 export interface IRowColData {
-  sizes: ISizes;
+  sizes?: ISizes;
 }
 
 export type BorderStyle =
@@ -190,10 +190,6 @@ export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
     x: rectOneMidPoint.x - rectTwoMidPoint.x,
     y: rectOneMidPoint.y - rectTwoMidPoint.y,
   };
-};
-
-export const getIsFrozenRow = (ri: number, data: IData) => {
-  return data.frozenCells ? ri <= data.frozenCells.row : false;
 };
 
 export function* iterateRowColVector(vector: Vector2d) {
@@ -430,7 +426,7 @@ class Sheet {
       }
 
       if (this.cellRenderer.getCellData(id)?.comment) {
-        this.comment.show();
+        this.comment.show(id);
       }
     }
   };
@@ -492,6 +488,53 @@ class Sheet {
 
   setData(value: Partial<IData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
+
+    if (value.frozenCells) {
+      const frozenCells = updatedData.frozenCells!;
+
+      if (!isNil(frozenCells.row)) {
+        if (frozenCells.row < 0) {
+          delete frozenCells.row;
+        }
+      }
+
+      if (!isNil(frozenCells.col)) {
+        if (frozenCells.col < 0) {
+          delete frozenCells.col;
+        }
+      }
+
+      if (isNil(frozenCells.row) && isNil(frozenCells.col)) {
+        delete updatedData.frozenCells;
+      }
+    }
+
+    if (value.mergedCells) {
+      Object.keys(value.mergedCells).forEach((topLeftCellId) => {
+        const mergedCell = value.mergedCells![topLeftCellId];
+
+        if (mergedCell.col.x < 0) {
+          mergedCell.col.x = 0;
+        }
+
+        if (mergedCell.row.x < 0) {
+          mergedCell.row.x = 0;
+        }
+
+        const newTopLeftCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
+
+        delete updatedData.mergedCells![topLeftCellId];
+
+        updatedData.mergedCells![newTopLeftCellId] = mergedCell;
+
+        if (
+          mergedCell.col.x >= mergedCell.col.y &&
+          mergedCell.row.x >= mergedCell.row.y
+        ) {
+          delete updatedData.mergedCells![newTopLeftCellId];
+        }
+      });
+    }
 
     if (addToHistory) {
       this.spreadsheet.addToHistory();

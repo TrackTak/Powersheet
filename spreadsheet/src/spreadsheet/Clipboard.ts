@@ -77,6 +77,8 @@ class Clipboard {
           const sourceCellData = sheetData?.cellsData?.[sourceCellId] ?? {};
 
           if (this.isCut) {
+            this.spreadsheet.addToHistory();
+
             this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
               sourceCellId
             );

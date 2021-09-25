@@ -4,9 +4,10 @@ import styles from './RightClickMenu.module.scss';
 import Sheet from '../Sheet';
 import { createGroup } from '../../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
-import { KonvaEventListener } from 'konva/lib/Node';
-import { Stage } from 'konva/lib/Stage';
+import { KonvaEventObject } from 'konva/lib/Node';
+import { convertFromCellIdToRowColId } from '../CellRenderer';
 import Spreadsheet from '../../../Spreadsheet';
+
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
 export interface IRightClickMenuActionGroups {
@@ -19,7 +20,6 @@ class RightClickMenu {
   dropdown: Instance<Props>;
   buttonMap: Record<ButtonName, HTMLElement>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
-  buttonRightOnClickMenu: KonvaEventListener<Stage, MouseEvent>;
   private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
@@ -78,9 +78,11 @@ class RightClickMenu {
       });
     });
 
-    buttons.comment.addEventListener('click', () => {
-      this.sheet.comment?.show();
-    });
+    buttons.comment.addEventListener('click', this.commentOnClick);
+    buttons.deleteRow.addEventListener('click', this.deleteRowOnClick);
+    buttons.deleteColumn.addEventListener('click', this.deleteColOnClick);
+    buttons.insertRow.addEventListener('click', this.insertRowOnClick);
+    buttons.insertColumn.addEventListener('click', this.insertColOnClick);
 
     buttons.cut.addEventListener('click', () => {
       this.spreadsheet.clipboard.cut();
@@ -108,33 +110,9 @@ class RightClickMenu {
       hideOnClick: true,
     });
 
-    const hideDropdown = () => {
-      this.dropdown.disable();
-      this.dropdown.hide();
-    };
+    this.hide();
 
-    const showDropdown = () => {
-      this.dropdown.enable();
-      this.dropdown.show();
-    };
-
-    hideDropdown();
-
-    this.buttonRightOnClickMenu = (e) => {
-      if (e.evt.button === 0) {
-        hideDropdown();
-      }
-
-      if (e.evt.button === 2) {
-        if (this.dropdown.state.isShown) {
-          hideDropdown();
-        } else {
-          showDropdown();
-        }
-      }
-    };
-
-    this.sheet.stage.on('click', this.buttonRightOnClickMenu);
+    this.sheet.stage.on('click', this.sheetOnClick);
 
     this.sheet.stage.on('contextmenu', (e) => {
       e.evt.preventDefault();
@@ -142,8 +120,67 @@ class RightClickMenu {
 
     this.rightClickMenuEl.appendChild(this.menuItem);
   }
+
+  hide() {
+    this.dropdown.disable();
+    this.dropdown.hide();
+  }
+
+  show() {
+    this.dropdown.enable();
+    this.dropdown.show();
+  }
+
+  commentOnClick = () => {
+    const id = this.sheet.selector.selectedFirstCell!.id();
+
+    this.sheet.comment?.show(id);
+  };
+
+  insertRowOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { row } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.row.insert(row, 1);
+  };
+
+  insertColOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { col } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.col.insert(col, 1);
+  };
+
+  deleteRowOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { row } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.row.delete(row, 1);
+  };
+
+  deleteColOnClick = () => {
+    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const { col } = convertFromCellIdToRowColId(cellId);
+
+    this.sheet.col.delete(col, 1);
+  };
+
+  sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button === 0) {
+      this.hide();
+    }
+
+    if (e.evt.button === 2) {
+      if (this.dropdown.state.isShown) {
+        this.hide();
+      } else {
+        this.show();
+      }
+    }
+  };
+
   destory() {
-    this.sheet.stage.off('click', this.buttonRightOnClickMenu);
+    this.sheet.stage.off('click', this.sheetOnClick);
   }
 }
 

@@ -71,7 +71,7 @@ FrozenCells.args = {
         sheetName: 'Frozen Cells',
         frozenCells: {
           row: 3,
-          col: 2,
+          col: 3,
         },
       },
     ],
@@ -86,15 +86,23 @@ MergedCells.args = {
     [
       {
         sheetName: 'Merged Cells',
+        cellsData: {
+          '4_0': {
+            value: 'Merged Cells Sheet',
+          },
+          '10_1': {
+            value: 'Another value',
+          },
+        },
         mergedCells: {
-          '5_1': {
+          '3_1': {
             row: {
-              x: 5,
+              x: 3,
               y: 5,
             },
             col: {
               x: 1,
-              y: 3,
+              y: 1,
             },
           },
         },

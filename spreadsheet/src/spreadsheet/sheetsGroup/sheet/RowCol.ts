@@ -284,9 +284,9 @@ class RowCol {
     hyperformulaColumnFunctionName: 'addColumns' | 'removeColumns',
     hyperformulaRowFunctionName: 'addRows' | 'removeRows',
     modifyCallback: (value: number, amount: number) => number,
-    comparer?: (a: string, b: string) => number,
-    cellsDataCallback?: (cellId: CellId) => void,
-    sizesCallback?: (sizeIndex: number) => void
+    sizesCallback: (sizeIndex: number) => void,
+    cellsDataCallback: (cellId: CellId) => void,
+    comparer?: (a: string, b: string) => number
   ) {
     const data = this.sheet.getData();
     const { frozenCells, mergedCells, cellsData } = data;
@@ -304,19 +304,8 @@ class RowCol {
         .sort(comparer)
         .forEach((key) => {
           const sizeIndex = parseInt(key, 10);
-          const size = sizes[sizeIndex];
 
-          if (sizesCallback) {
-            sizesCallback(sizeIndex);
-          }
-
-          if (sizeIndex >= index) {
-            const newIndex = modifyCallback(sizeIndex, amount);
-
-            sizes[newIndex] = size;
-
-            delete sizes[sizeIndex];
-          }
+          sizesCallback(sizeIndex);
         });
     }
 
@@ -346,23 +335,7 @@ class RowCol {
       Object.keys(cellsData)
         .sort(comparer)
         .forEach((cellId) => {
-          const rowCol = convertFromCellIdToRowColId(cellId);
-
-          if (cellsDataCallback) {
-            cellsDataCallback(cellId);
-          }
-
-          if (rowCol[this.type] >= index) {
-            const params: [number, number] = this.isCol
-              ? [rowCol.row, modifyCallback(rowCol.col, amount)]
-              : [modifyCallback(rowCol.row, amount), rowCol.col];
-
-            const newCellId = getCellId(...params);
-
-            cellsData[newCellId] = cellsData[cellId];
-
-            this.sheet.cellRenderer.deleteCellData(cellId);
-          }
+          cellsDataCallback(cellId);
         });
     }
 
@@ -391,13 +364,43 @@ class RowCol {
   }
 
   insert(index: number, amount: number) {
+    const { cellsData, ...data } = this.sheet.getData();
+    const modifyCallback = (value: number, amount: number) => {
+      return value + amount;
+    };
+
     this.moveData(
       index,
       amount,
       'addColumns',
       'addRows',
-      (value, amount) => {
-        return value + amount;
+      modifyCallback,
+      (sizeIndex) => {
+        const sizes = data[this.type]?.sizes!;
+        const size = sizes[sizeIndex];
+
+        if (sizeIndex >= index) {
+          const newIndex = modifyCallback(sizeIndex, amount);
+
+          sizes[newIndex] = size;
+
+          delete sizes[sizeIndex];
+        }
+      },
+      (cellId) => {
+        const rowCol = convertFromCellIdToRowColId(cellId);
+
+        if (rowCol[this.type] >= index) {
+          const params: [number, number] = this.isCol
+            ? [rowCol.row, modifyCallback(rowCol.col, amount)]
+            : [modifyCallback(rowCol.row, amount), rowCol.col];
+
+          const newCellId = getCellId(...params);
+
+          cellsData![newCellId] = cellsData![cellId];
+
+          this.sheet.cellRenderer.deleteCellData(cellId);
+        }
       },
       (a, b) => {
         return b.localeCompare(a);
@@ -406,28 +409,47 @@ class RowCol {
   }
 
   delete(index: number, amount: number) {
-    const data = this.sheet.getData();
+    const { cellsData, ...data } = this.sheet.getData();
+    const modifyCallback = (value: number, amount: number) => {
+      return value - amount;
+    };
 
     this.moveData(
       index,
       amount,
       'removeColumns',
       'removeRows',
-      (value, amount) => {
-        return value - amount;
+      modifyCallback,
+      (sizeIndex) => {
+        const sizes = data[this.type]?.sizes!;
+        const size = sizes[sizeIndex];
+
+        if (sizeIndex < index) return;
+
+        if (sizeIndex > index) {
+          const newIndex = modifyCallback(sizeIndex, amount);
+
+          sizes[newIndex] = size;
+        }
+
+        delete sizes[sizeIndex];
       },
-      undefined,
       (cellId) => {
         const rowCol = convertFromCellIdToRowColId(cellId);
 
-        if (rowCol[this.type] === index) {
-          this.sheet.cellRenderer.deleteCellData(cellId);
-        }
-      },
-      (sizeIndex) => {
-        const sizes = data[this.type]?.sizes!;
+        if (rowCol[this.type] < index) return;
 
-        return delete sizes[sizeIndex];
+        if (rowCol[this.type] > index) {
+          const params: [number, number] = this.isCol
+            ? [rowCol.row, modifyCallback(rowCol.col, amount)]
+            : [modifyCallback(rowCol.row, amount), rowCol.col];
+
+          const newCellId = getCellId(...params);
+
+          cellsData![newCellId] = cellsData![cellId];
+        }
+
+        this.sheet.cellRenderer.deleteCellData(cellId);
       }
     );
   }

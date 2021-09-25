@@ -38,12 +38,12 @@ export type DropdownIconName =
 
 export const createGroup = (
   elements: HTMLElement[],
-  className: string,
+  classNames: string,
   classNamePrefix: string
 ) => {
   const group = document.createElement('div');
 
-  group.classList.add(className, `${classNamePrefix}-group`);
+  group.classList.add(classNames, `${classNamePrefix}-group`);
 
   elements.forEach((element) => {
     group.appendChild(element);

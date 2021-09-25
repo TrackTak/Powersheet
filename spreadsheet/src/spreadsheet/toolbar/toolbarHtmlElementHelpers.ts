@@ -3,6 +3,7 @@ import { sentenceCase } from 'sentence-case';
 import {
   createDropdownContent,
   createIconButton,
+  createTooltip,
   DropdownIconName,
 } from '../htmlElementHelpers';
 import { prefix } from '../utils';
@@ -83,7 +84,8 @@ export const fontSizeArray = <const>[6, 7, 8, 9, 10, 11, 12, 14, 18, 24, 36];
 export type IconElementsName =
   | DropdownIconName
   | InnerDropdownIconName
-  | typeof toggleIconNames[number];
+  | typeof toggleIconNames[number]
+  | 'autosave';
 
 export type FontSizes = {
   [index in typeof fontSizeArray[number]]: HTMLButtonElement;
@@ -125,6 +127,25 @@ export const createColorBar = (picker: ACPController) => {
   });
 
   return colorBar;
+};
+
+export const createAutosave = () => {
+  const name = 'autosave';
+  const iconButton = createIconButton(name, toolbarPrefix);
+
+  const autosave = {
+    ...iconButton,
+    tooltip: createTooltip(name, toolbarPrefix),
+  };
+
+  const text = document.createElement('div');
+
+  text.classList.add(styles.autosaveText, `${toolbarPrefix}-autosave-text`);
+
+  autosave.button.appendChild(text);
+  autosave.button.appendChild(autosave.tooltip);
+
+  return { autosave, text };
 };
 
 export const createBordersContent = () => {

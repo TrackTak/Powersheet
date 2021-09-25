@@ -37,6 +37,9 @@ const events = {
     moveSelection: 's-moveSelection',
     endSelection: 's-endSelection',
   },
+  sheet: {
+    setData: 's-setData',
+  },
 };
 
 export default events;

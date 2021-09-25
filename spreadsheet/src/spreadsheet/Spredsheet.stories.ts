@@ -9,6 +9,9 @@ import events from './events';
 import { HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
+import Toolbar from './toolbar/Toolbar';
+import FormulaBar from './formulaBar/FormulaBar';
+import Exporter from './Exporter';
 
 export default {
   title: 'Spreadsheet',
@@ -30,11 +33,18 @@ const buildSpreadsheet = (args: IArgs) => {
   const styles = args.styles;
   const data = args.data;
 
+  const toolbar = new Toolbar();
+  const formulaBar = new FormulaBar();
+  const exporter = new Exporter();
+
   const spreadsheet = new Spreadsheet({
     hyperformula,
     options,
     styles,
     data,
+    toolbar,
+    formulaBar,
+    exporter,
   });
 
   spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
@@ -183,6 +193,23 @@ CustomStyles.args = {
     },
   },
 };
+
+const PlainSheetsTemplate: Story<IArgs> = (args) => {
+  const options = args.options;
+  const styles = args.styles;
+  const data = args.data;
+
+  const spreadsheet = new Spreadsheet({
+    hyperformula,
+    options,
+    styles,
+    data,
+  });
+
+  return spreadsheet.spreadsheetEl;
+};
+
+export const PlainSheet = PlainSheetsTemplate.bind({});
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
   hyperformula.updateConfig({

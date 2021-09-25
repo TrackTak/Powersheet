@@ -12,13 +12,16 @@ import styles from './Spreadsheet.module.scss';
 import { HyperFormula } from 'hyperformula';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
-import Export from './Export';
+import Exporter from './Exporter';
 
 interface IConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: IData[][];
   hyperformula: HyperFormula;
+  toolbar?: Toolbar;
+  formulaBar?: FormulaBar;
+  exporter?: Exporter;
 }
 
 class Spreadsheet {
@@ -31,7 +34,7 @@ class Spreadsheet {
   data: IData[][];
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
-  export?: Export;
+  exporter?: Exporter;
   hyperformula?: HyperFormula;
   clipboard: Clipboard;
   history: any;
@@ -42,6 +45,9 @@ class Spreadsheet {
     this.hyperformula = params.hyperformula;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
+    this.toolbar = params.toolbar;
+    this.formulaBar = params.formulaBar;
+    this.exporter = params.exporter;
     this.eventEmitter = new EventEmitter();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
@@ -51,9 +57,9 @@ class Spreadsheet {
     this.focusedSheet = null;
     this.sheetsGroups = [];
 
-    this.toolbar = new Toolbar(this);
-    this.formulaBar = new FormulaBar(this);
-    this.export = new Export(this);
+    this.toolbar?.initialize(this);
+    this.formulaBar?.initialize(this);
+    this.exporter?.initialize(this);
     this.clipboard = new Clipboard(this);
 
     this.history = new Manager((data: IData[][]) => {

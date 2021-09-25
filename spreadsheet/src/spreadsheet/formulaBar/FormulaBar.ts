@@ -7,12 +7,13 @@ import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
 export const formulaBarPrefix = `${prefix}-formula-bar`;
 
 class FormulaBar {
-  formulaBarEl: HTMLDivElement;
-  editorArea: HTMLDivElement;
-  editableContentContainer: HTMLDivElement;
-  editableContent: HTMLDivElement;
+  formulaBarEl!: HTMLDivElement;
+  editorArea!: HTMLDivElement;
+  editableContentContainer!: HTMLDivElement;
+  editableContent!: HTMLDivElement;
+  spreadsheet!: Spreadsheet;
 
-  constructor(private spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
 
     this.formulaBarEl = document.createElement('div');

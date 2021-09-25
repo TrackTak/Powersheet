@@ -88,22 +88,23 @@ export interface ITextFormatMap {
 }
 
 class Toolbar {
-  toolbarEl: HTMLDivElement;
-  iconElementsMap: Record<IconElementsName, IIconElements>;
-  buttonElementsMap: Record<DropdownButtonName, IButtonElements>;
-  dropdownMap: Record<DropdownName, IDropdownElements>;
-  colorPickerElementsMap: Record<ColorPickerIconName, IColorPickerElements>;
-  borderElements: IBorderElements;
-  fontSizeElements: IFontSizeElements;
-  textFormatElements: ITextFormatElements;
-  textFormatMap: ITextFormatMap;
-  functionElements: IFunctionElements;
-  autosaveElement: IAutosaveElement;
-  toolbarActionGroups: IToolbarActionGroups[];
-  tooltip: DelegateInstance;
-  dropdown: DelegateInstance;
+  toolbarEl!: HTMLDivElement;
+  iconElementsMap!: Record<IconElementsName, IIconElements>;
+  buttonElementsMap!: Record<DropdownButtonName, IButtonElements>;
+  dropdownMap!: Record<DropdownName, IDropdownElements>;
+  colorPickerElementsMap!: Record<ColorPickerIconName, IColorPickerElements>;
+  borderElements!: IBorderElements;
+  fontSizeElements!: IFontSizeElements;
+  textFormatElements!: ITextFormatElements;
+  textFormatMap!: ITextFormatMap;
+  functionElements!: IFunctionElements;
+  autosaveElement!: IAutosaveElement;
+  toolbarActionGroups!: IToolbarActionGroups[];
+  tooltip!: DelegateInstance;
+  dropdown!: DelegateInstance;
+  spreadsheet!: Spreadsheet;
 
-  constructor(private spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
     this.toolbarEl = document.createElement('div');
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
@@ -734,7 +735,7 @@ class Toolbar {
         break;
       }
       case 'export': {
-        this.spreadsheet.export?.exportWorkbook();
+        this.spreadsheet.exporter?.exportWorkbook();
         break;
       }
       case 'borderBottom': {

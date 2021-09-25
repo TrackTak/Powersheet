@@ -17,7 +17,6 @@ import Sheet, {
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
-import numfmt from 'numfmt';
 import { merge } from 'lodash';
 
 export type CellId = string;
@@ -460,17 +459,18 @@ class CellRenderer {
     }
   }
 
-  setTextFormat(cell: Cell, textFormatPattern: string) {
+  async setTextFormat(cell: Cell, textFormatPattern: string) {
     const cellText = getCellTextFromCell(cell);
 
     if (cellText) {
       const text = cellText.text();
       const num = parseFloat(text);
 
-      const formattedText = numfmt.format(
-        textFormatPattern,
-        isFinite(num) ? num : text
-      );
+      const numfmt = await import('numfmt');
+
+      // TODO: Change to same as exporter?
+      const formattedText =
+        numfmt.format(textFormatPattern, isFinite(num) ? num : text) ?? text;
 
       cellText.text(formattedText);
     }

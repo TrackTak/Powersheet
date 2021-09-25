@@ -5,11 +5,13 @@ import {
 } from './sheetsGroup/sheet/CellRenderer';
 import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
 import Spreadsheet from './Spreadsheet';
-import numfmt from 'numfmt';
 import { isNil } from 'lodash';
+import { isText, isDate } from 'numfmt';
 
 class Export {
-  constructor(private spreadsheet: Spreadsheet) {
+  spreadsheet!: Spreadsheet;
+
+  initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
   }
 
@@ -18,14 +20,17 @@ class Export {
     const cellsData = data.cellsData ?? {};
     const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
-    let startRowColAddress: IRowColAddress | null = null;
+    let startRowColAddress: Partial<IRowColAddress> = {
+      row: 0,
+      col: 0,
+    };
 
     const endRowColAddress: IRowColAddress = {
       row: 0,
       col: 0,
     };
 
-    Object.keys(cellsData).forEach((key) => {
+    for (const key in cellsData) {
       const cell = cellsData[key];
       const { row, col } = convertFromCellIdToRowColId(key);
       const address = {
@@ -39,8 +44,8 @@ class Export {
       )!;
 
       startRowColAddress = {
-        row: Math.min(row, startRowColAddress?.row ?? Infinity),
-        col: Math.min(col, startRowColAddress?.col ?? Infinity),
+        row: Math.min(row, startRowColAddress.row ?? Infinity),
+        col: Math.min(col, startRowColAddress.col ?? Infinity),
       };
 
       endRowColAddress.row = Math.max(row, endRowColAddress.row);
@@ -52,9 +57,9 @@ class Export {
 
       if (isNil(cell.value) && isNil(textFormatPattern)) {
         type = 'z';
-      } else if (numfmt.isText(textFormatPattern) || isNil(textFormatPattern)) {
+      } else if (isText(textFormatPattern) || isNil(textFormatPattern)) {
         type = 's';
-      } else if (numfmt.isDate(textFormatPattern)) {
+      } else if (isDate(textFormatPattern)) {
         type = 'd';
       } else {
         type = 'n';
@@ -69,7 +74,7 @@ class Export {
       if (this.spreadsheet.hyperformula?.doesCellHaveFormula(address)) {
         worksheet[cellId].f = cell.value!.slice(1);
       }
-    });
+    }
 
     for (const [cellId, { row, col }] of sheet.merger
       .associatedMergedCellIdMap) {
@@ -96,10 +101,8 @@ class Export {
     const startCellAddress =
       this.spreadsheet.hyperformula?.simpleCellAddressToString(
         {
-          ...(startRowColAddress ?? {
-            row: 0,
-            col: 0,
-          }),
+          row: startRowColAddress.row ?? 0,
+          col: startRowColAddress.col ?? 0,
           sheet: sheetId,
         },
         sheetId

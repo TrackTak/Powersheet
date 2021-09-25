@@ -84,7 +84,7 @@ class ScrollBar {
     let totalCustomSizeDifferencs = 0;
 
     for (let i = start; i < end; i++) {
-      const size = data[this.type]?.sizes[i];
+      const size = data[this.type]?.sizes?.[i];
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize;

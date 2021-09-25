@@ -50,10 +50,10 @@ class Merger {
 
     for (const ri of iterateRowColVector(mergedCell.row)) {
       for (const ci of iterateRowColVector(mergedCell.col)) {
-        const id = getCellId(ri, ci);
+        const cellId = getCellId(ri, ci);
 
-        if (id !== topLeftMergedCellId && cellsData?.[id]) {
-          delete cellsData[id];
+        if (cellId !== topLeftMergedCellId && cellsData?.[cellId]) {
+          this.sheet.cellRenderer.deleteCellData(cellId);
         }
       }
     }

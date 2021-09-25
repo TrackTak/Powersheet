@@ -5,6 +5,7 @@ import './tippy.scss';
 import Spreadsheet from './Spreadsheet';
 import { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
+import events from './events';
 
 export default {
   title: 'Spreadsheet',
@@ -26,6 +27,14 @@ const buildSpreadsheet = (args: IArgs) => {
     options,
     styles,
     data,
+  });
+
+  spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
+    // Simulating an async API call that saves the sheet data to
+    // a DB
+    setTimeout(() => {
+      done();
+    }, 500);
   });
 
   return spreadsheet.spreadsheetEl;

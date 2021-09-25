@@ -10,6 +10,7 @@ import {
 } from '../sheetsGroup/sheet/Sheet';
 import {
   ColorPickerIconName,
+  createAutosave,
   createBordersContent,
   createColorBar,
   createColorPickerContent,
@@ -45,6 +46,7 @@ import { HyperFormula } from 'hyperformula';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
+  className?: string;
 }
 
 interface IDropdownElements {
@@ -75,6 +77,10 @@ interface ITextFormatElements {
   textFormats: Record<string, HTMLButtonElement>;
 }
 
+interface IAutosaveElement {
+  text: HTMLDivElement;
+}
+
 export interface ITextFormatMap {
   plainText: string;
   number: string;
@@ -92,6 +98,7 @@ class Toolbar {
   textFormatElements: ITextFormatElements;
   textFormatMap: ITextFormatMap;
   functionElements: IFunctionElements;
+  autosaveElement: IAutosaveElement;
   toolbarActionGroups: IToolbarActionGroups[];
   tooltip: DelegateInstance;
   dropdown: DelegateInstance;
@@ -129,6 +136,12 @@ class Toolbar {
       true
     );
 
+    const { text, autosave } = createAutosave();
+
+    this.iconElementsMap.autosave = autosave;
+    this.autosaveElement = {
+      text,
+    };
     this.fontSizeElements = {
       fontSizes,
     };
@@ -339,6 +352,9 @@ class Toolbar {
       },
       {
         elements: [icons.export.buttonContainer],
+      },
+      {
+        elements: [icons.autosave.buttonContainer],
       },
     ];
 
@@ -816,6 +832,7 @@ class Toolbar {
     this.setActiveTextFormat(selectedFirstCellId);
     this.setActiveMergedCells(selectedCells);
     this.setActiveHistoryIcons(this.spreadsheet.history);
+    this.setActiveSaveState();
   };
 
   destroy() {
@@ -914,6 +931,14 @@ class Toolbar {
     }
 
     this.setActive(this.iconElementsMap.merge, isActive);
+  }
+
+  setActiveSaveState() {
+    if (this.spreadsheet.focusedSheet!.isSaving) {
+      this.autosaveElement.text.textContent = 'Saving...';
+    } else {
+      this.autosaveElement.text.textContent = 'Saved';
+    }
   }
 
   setActiveHorizontalIcon(cellId: CellId) {

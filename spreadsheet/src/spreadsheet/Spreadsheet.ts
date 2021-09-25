@@ -14,7 +14,7 @@ import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 
-interface IConstructor {
+export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: IData[][];
@@ -38,9 +38,9 @@ class Spreadsheet {
   hyperformula?: HyperFormula;
   clipboard: Clipboard;
   history: any;
-  sheetIndex = 0;
+  totalSheetIndex = 0;
 
-  constructor(params: IConstructor) {
+  constructor(params: ISpreadsheetConstructor) {
     this.data = params.data ?? [];
     this.hyperformula = params.hyperformula;
     this.options = merge({}, defaultOptions, params.options);

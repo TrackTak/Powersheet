@@ -35,8 +35,6 @@ class FormulaBar {
 
     this.editableContent.addEventListener('input', this.onInput);
     this.editableContent.addEventListener('keydown', this.onKeyDown);
-
-    this.spreadsheet.spreadsheetEl.appendChild(this.formulaBarEl);
   }
 
   onInput = (e: Event) => {

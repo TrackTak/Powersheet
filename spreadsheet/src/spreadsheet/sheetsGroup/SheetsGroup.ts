@@ -9,7 +9,7 @@ class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
-  bottomBar: BottomBar;
+  bottomBar?: BottomBar;
 
   constructor(public spreadsheet: Spreadsheet, public sheetsGroupId: number) {
     this.spreadsheet = spreadsheet;
@@ -22,12 +22,13 @@ class SheetsGroup {
     this.sheetsEl = document.createElement('div');
     this.sheetsEl.classList.add(`${prefix}-sheets`);
 
-    this.bottomBar = new BottomBar(this);
-
     this.sheetsGroupEl.prepend(this.sheetsEl);
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetsGroupEl);
 
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+  }
+
+  setBottomBar(bottomBar: BottomBar) {
+    this.bottomBar = bottomBar;
   }
 
   destroy() {
@@ -65,7 +66,7 @@ class SheetsGroup {
   }
 
   getSheetName() {
-    return `Sheet${this.spreadsheet.sheetIndex + 1}`;
+    return `Sheet${this.spreadsheet.totalSheetIndex + 1}`;
   }
 
   getActiveSheetId() {
@@ -73,7 +74,7 @@ class SheetsGroup {
   }
 
   update() {
-    this.bottomBar.updateSheetTabs();
+    this.bottomBar?.updateSheetTabs();
 
     this.sheets.forEach((sheet) => {
       const activeSheetId = this.getActiveSheetId();
@@ -142,7 +143,7 @@ class SheetsGroup {
 
     this.sheets.set(sheetId, sheet);
 
-    this.spreadsheet.sheetIndex++;
+    this.spreadsheet.totalSheetIndex++;
 
     this.update();
   }

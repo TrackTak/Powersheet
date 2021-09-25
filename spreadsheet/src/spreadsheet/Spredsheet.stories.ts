@@ -2,7 +2,7 @@ import { Story, Meta } from '@storybook/html';
 import { defaultOptions, IOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
-import Spreadsheet from './Spreadsheet';
+import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
 import { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import events from './events';
@@ -12,12 +12,15 @@ import { currencySymbolMap } from 'currency-symbol-map';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import Exporter from './Exporter';
+import getHyperformulaConfig from './getHyperformulaConfig';
+import BottomBar from './bottomBar/BottomBar';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
 
 const hyperformula = HyperFormula.buildEmpty({
+  ...getHyperformulaConfig(),
   licenseKey: 'gpl-v3',
 });
 
@@ -28,23 +31,38 @@ interface IArgs {
   data?: IData[][];
 }
 
-const buildSpreadsheet = (args: IArgs) => {
+const getSpreadsheet = (params: ISpreadsheetConstructor) => {
+  const spreadsheet = new Spreadsheet(params);
+
+  spreadsheet.sheetsGroups.forEach((sheetGroup) => {
+    spreadsheet.spreadsheetEl.appendChild(sheetGroup.sheetsGroupEl);
+  });
+
+  spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
+    // Simulating an async API call that saves the sheet data to
+    // a DB
+    setTimeout(() => {
+      done();
+    }, 500);
+  });
+
+  return spreadsheet;
+};
+
+const buildOnlySpreadsheet = (args: IArgs) => {
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
 
-  const toolbar = new Toolbar();
-  const formulaBar = new FormulaBar();
-  const exporter = new Exporter();
-
-  const spreadsheet = new Spreadsheet({
+  const spreadsheet = getSpreadsheet({
     hyperformula,
     options,
     styles,
     data,
-    toolbar,
-    formulaBar,
-    exporter,
+  });
+
+  spreadsheet.sheetsGroups.forEach((sheetGroup) => {
+    spreadsheet.spreadsheetEl.appendChild(sheetGroup.sheetsGroupEl);
   });
 
   spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
@@ -58,8 +76,41 @@ const buildSpreadsheet = (args: IArgs) => {
   return spreadsheet.spreadsheetEl;
 };
 
+const buildSpreadsheetWithEverything = (args: IArgs) => {
+  const options = args.options;
+  const styles = args.styles;
+  const data = args.data;
+
+  const toolbar = new Toolbar();
+  const formulaBar = new FormulaBar();
+  const exporter = new Exporter();
+
+  const spreadsheet = getSpreadsheet({
+    hyperformula,
+    options,
+    styles,
+    data,
+    toolbar,
+    formulaBar,
+    exporter,
+  });
+
+  spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
+  spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
+
+  spreadsheet.sheetsGroups.forEach((sheetGroup) => {
+    const bottomBar = new BottomBar(sheetGroup);
+
+    sheetGroup.setBottomBar(bottomBar);
+
+    sheetGroup.sheetsGroupEl.appendChild(bottomBar.bottomBarEl);
+  });
+
+  return spreadsheet.spreadsheetEl;
+};
+
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheet(args);
+  return buildSpreadsheetWithEverything(args);
 };
 
 const defaultStoryArgs: IArgs = {
@@ -152,7 +203,7 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     maxRows: args.options.row.amount,
   });
 
-  return buildSpreadsheet(args);
+  return buildSpreadsheetWithEverything(args);
 };
 
 export const MillionRows = MillionRowsTemplate.bind({});
@@ -194,29 +245,36 @@ CustomStyles.args = {
   },
 };
 
-const PlainSheetsTemplate: Story<IArgs> = (args) => {
-  const options = args.options;
-  const styles = args.styles;
-  const data = args.data;
-
-  const spreadsheet = new Spreadsheet({
-    hyperformula,
-    options,
-    styles,
-    data,
-  });
-
-  return spreadsheet.spreadsheetEl;
+const OnlySpreadsheetTemplate: Story<IArgs> = (args) => {
+  return buildOnlySpreadsheet(args);
 };
 
-export const PlainSheet = PlainSheetsTemplate.bind({});
+export const OnlySpreadsheet = OnlySpreadsheetTemplate.bind({});
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
   hyperformula.updateConfig({
     currencySymbol: Object.values(currencySymbolMap),
   });
 
-  return buildSpreadsheet(args);
+  return buildSpreadsheetWithEverything(args);
+};
+
+export const MultipleSheetsGroups = Template.bind({});
+
+MultipleSheetsGroups.args = {
+  ...defaultStoryArgs,
+  data: [
+    [
+      {
+        sheetName: 'Top Sheets',
+      },
+    ],
+    [
+      {
+        sheetName: 'Main Sheets',
+      },
+    ],
+  ],
 };
 
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});

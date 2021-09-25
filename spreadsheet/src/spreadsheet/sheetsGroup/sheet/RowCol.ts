@@ -150,7 +150,7 @@ class RowCol {
       };
       this.getAvailableSize = () => {
         const bottomBarHeight =
-          this.sheet.sheetsGroup.bottomBar?.bottomBar.getBoundingClientRect()
+          this.sheet.sheetsGroup.bottomBar?.bottomBarEl.getBoundingClientRect()
             .height ?? 0;
 
         const toolbarHeight =
@@ -340,12 +340,12 @@ class RowCol {
     }
 
     if (this.isCol) {
-      this.spreadsheet.hyperformula[hyperformulaColumnFunctionName](
+      this.spreadsheet.hyperformula?.[hyperformulaColumnFunctionName](
         this.sheet.sheetId,
         [index, amount]
       );
     } else {
-      this.spreadsheet.hyperformula[hyperformulaRowFunctionName](
+      this.spreadsheet.hyperformula?.[hyperformulaRowFunctionName](
         this.sheet.sheetId,
         [index, amount]
       );

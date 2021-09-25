@@ -404,8 +404,6 @@ class Toolbar {
         }
       }
     );
-
-    this.spreadsheet.spreadsheetEl.appendChild(this.toolbarEl);
   }
 
   setFunction(functionName: string) {

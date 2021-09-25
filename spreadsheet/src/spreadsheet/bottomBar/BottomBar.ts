@@ -22,7 +22,7 @@ interface ISheetTabElements {
 }
 
 class BottomBar {
-  bottomBar: HTMLDivElement;
+  bottomBarEl: HTMLDivElement;
   content: HTMLDivElement;
   sheetSelectionButtonContainer: HTMLDivElement;
   sheetSelectionButton: IIconElements;
@@ -56,8 +56,8 @@ class BottomBar {
       this.sheetSelectionOnClick
     );
 
-    this.bottomBar = document.createElement('div');
-    this.bottomBar.classList.add(styles.bottomBar, `${bottomBarPrefix}`);
+    this.bottomBarEl = document.createElement('div');
+    this.bottomBarEl.classList.add(styles.bottomBar, `${bottomBarPrefix}`);
 
     this.content = document.createElement('div');
     this.content.classList.add(styles.content, `${bottomBarPrefix}-content`);
@@ -96,9 +96,8 @@ class BottomBar {
     this.tabContainer.appendChild(this.scrollSliderContainer);
     this.content.appendChild(this.createNewSheetButtonElements.buttonContainer);
     this.content.appendChild(this.sheetSelectionButtonContainer);
-    this.bottomBar.appendChild(this.content);
-    this.bottomBar.appendChild(this.tabContainer);
-    this.sheetsGroup.sheetsGroupEl.appendChild(this.bottomBar);
+    this.bottomBarEl.appendChild(this.content);
+    this.bottomBarEl.appendChild(this.tabContainer);
   }
 
   setSheetTabElements(sheetId: SheetId) {

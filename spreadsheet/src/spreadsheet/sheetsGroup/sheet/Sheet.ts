@@ -413,6 +413,7 @@ class Sheet {
 
   stageOnClick = () => {
     if (!this.cellEditor.getIsHidden()) {
+      this.cellEditor.saveContentToCell();
       this.cellEditor.hide();
     }
   };
@@ -448,9 +449,7 @@ class Sheet {
     e.stopPropagation();
 
     switch (e.key) {
-      case 'Enter':
       case 'Escape': {
-        this.cellEditor.hide();
         break;
       }
       case e.ctrlKey && 'z': {

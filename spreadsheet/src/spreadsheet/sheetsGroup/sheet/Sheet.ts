@@ -91,7 +91,7 @@ export interface ICellData {
   comment?: string;
 }
 
-export interface IData {
+export interface ISheetData {
   sheetName: string;
   frozenCells?: IFrozenCells;
   mergedCells?: IMergedCells;
@@ -485,7 +485,7 @@ class Sheet {
     });
   }
 
-  setData(value: Partial<IData>, addToHistory: boolean = true) {
+  setData(value: Partial<ISheetData>, addToHistory: boolean = true) {
     const updatedData = merge({}, this.getData(), value);
 
     if (value.frozenCells) {
@@ -539,8 +539,9 @@ class Sheet {
       this.spreadsheet.addToHistory();
     }
 
-    this.spreadsheet.data[this.sheetsGroup.sheetsGroupId][this.sheetId] =
-      updatedData;
+    this.spreadsheet.data[this.sheetsGroup.sheetsGroupId].sheetData[
+      this.sheetId
+    ] = updatedData;
 
     const done = () => {
       this.isSaving = false;
@@ -557,8 +558,8 @@ class Sheet {
     );
   }
 
-  getData(): IData {
-    return this.sheetsGroup.getData()[this.sheetId];
+  getData(): ISheetData {
+    return this.sheetsGroup.getData().sheetData[this.sheetId];
   }
 
   updateSheetDimensions() {

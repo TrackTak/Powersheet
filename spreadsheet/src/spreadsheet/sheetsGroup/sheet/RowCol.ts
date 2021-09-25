@@ -122,7 +122,7 @@ class RowCol {
       };
       this.getAvailableSize = () => {
         return (
-          this.spreadsheet.options.width -
+          this.sheet.sheetsGroup.getData().width! -
           this.sheet.getViewportVector().x -
           this.sheet.row.scrollBar.scrollEl.getBoundingClientRect().width
         );
@@ -162,7 +162,7 @@ class RowCol {
             .height ?? 0;
 
         return (
-          this.spreadsheet.options.height -
+          this.sheet.sheetsGroup.getData().height! -
           bottomBarHeight -
           toolbarHeight -
           formulaBarHeight -

@@ -1,9 +1,15 @@
 import BottomBar from '../bottomBar/BottomBar';
-import Sheet, { IData, SheetId } from './sheet/Sheet';
+import Sheet, { ISheetData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 
 export type SheetsGroupId = number;
+
+export interface ISheetsGroupData {
+  height?: number;
+  width?: number;
+  sheetData: ISheetData[];
+}
 
 class SheetsGroup {
   sheetsGroupEl: HTMLDivElement;
@@ -38,8 +44,8 @@ class SheetsGroup {
   onDOMContentLoaded = () => {
     const data = this.getData();
 
-    if (data.length) {
-      data.forEach((data) => {
+    if (data.sheetData) {
+      data.sheetData.forEach((data) => {
         this.createNewSheet(data);
       });
     } else {
@@ -70,7 +76,7 @@ class SheetsGroup {
   }
 
   getActiveSheetId() {
-    return this.spreadsheet.focusedSheet!.sheetId;
+    return this.spreadsheet.focusedSheet?.sheetId;
   }
 
   update() {
@@ -106,7 +112,7 @@ class SheetsGroup {
 
     this.sheets.delete(sheetId);
 
-    delete this.getData()[sheetId];
+    delete this.getData().sheetData[sheetId];
 
     this.update();
   }
@@ -125,19 +131,19 @@ class SheetsGroup {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.getData()[sheetId].sheetName = sheetName;
+    this.getData().sheetData[sheetId].sheetName = sheetName;
 
     this.spreadsheet.hyperformula?.renameSheet(sheetId, sheetName);
 
     this.update();
   }
 
-  createNewSheet(data: IData) {
+  createNewSheet(data: ISheetData) {
     this.spreadsheet.hyperformula?.addSheet(data.sheetName);
 
     const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
-    this.spreadsheet.data[this.sheetsGroupId][sheetId] = data;
+    this.spreadsheet.data[this.sheetsGroupId].sheetData[sheetId] = data;
 
     const sheet = new Sheet(this, sheetId);
 

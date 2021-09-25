@@ -3,7 +3,7 @@ import {
   convertFromCellIdToRowColId,
   IRowColAddress,
 } from './sheetsGroup/sheet/CellRenderer';
-import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
+import Sheet, { ISheetData } from './sheetsGroup/sheet/Sheet';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
@@ -15,7 +15,7 @@ class Export {
     this.spreadsheet = spreadsheet;
   }
 
-  private getWorksheet(sheet: Sheet, data: IData) {
+  private getWorksheet(sheet: Sheet, data: ISheetData) {
     const worksheet: WorkSheet = {};
     const cellsData = data.cellsData ?? {};
     const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;

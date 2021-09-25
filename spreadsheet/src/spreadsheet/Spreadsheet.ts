@@ -2,9 +2,9 @@ import EventEmitter from 'eventemitter3';
 import { cloneDeep, merge } from 'lodash';
 import events from './events';
 import { defaultOptions, IOptions } from './options';
-import Sheet, { IData } from './sheetsGroup/sheet/Sheet';
+import Sheet from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
-import SheetsGroup from './sheetsGroup/SheetsGroup';
+import SheetsGroup, { ISheetsGroupData } from './sheetsGroup/SheetsGroup';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
@@ -17,7 +17,7 @@ import Exporter from './Exporter';
 export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
-  data?: IData[][];
+  data?: ISheetsGroupData[];
   hyperformula: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
@@ -31,7 +31,7 @@ class Spreadsheet {
   eventEmitter: EventEmitter;
   focusedSheet: Sheet | null;
   options: IOptions;
-  data: IData[][];
+  data: ISheetsGroupData[];
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -62,16 +62,20 @@ class Spreadsheet {
     this.exporter?.initialize(this);
     this.clipboard = new Clipboard(this);
 
-    this.history = new Manager((data: IData[][]) => {
+    this.history = new Manager((data: ISheetsGroupData[]) => {
       const currentData = this.data;
 
       this.data = data;
 
       return currentData;
-    }, this.options.undoRedoHistorySize);
+    }, this.hyperformula.getConfig().undoLimit);
 
     if (!this.data.length) {
-      this.data.push([]);
+      this.data.push({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        sheetData: [],
+      });
     }
 
     this.data.forEach((_, i) => {
@@ -97,10 +101,6 @@ class Spreadsheet {
   }
 
   createNewSheetsGroup(sheetsGroupId: number) {
-    if (!this.data[sheetsGroupId]) {
-      this.data[sheetsGroupId] = [];
-    }
-
     const sheetsGroup = new SheetsGroup(this, sheetsGroupId);
 
     this.sheetsGroups.push(sheetsGroup);

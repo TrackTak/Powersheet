@@ -3,7 +3,6 @@ import { defaultOptions, IOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
-import { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import events from './events';
 import { HyperFormula } from 'hyperformula';
@@ -14,6 +13,7 @@ import FormulaBar from './formulaBar/FormulaBar';
 import Exporter from './Exporter';
 import getHyperformulaConfig from './getHyperformulaConfig';
 import BottomBar from './bottomBar/BottomBar';
+import { ISheetsGroupData } from './sheetsGroup/SheetsGroup';
 
 export default {
   title: 'Spreadsheet',
@@ -28,7 +28,7 @@ const hyperformula = HyperFormula.buildEmpty({
 interface IArgs {
   options: IOptions;
   styles: IStyles;
-  data?: IData[][];
+  data?: ISheetsGroupData[];
 }
 
 const getSpreadsheet = (params: ISpreadsheetConstructor) => {
@@ -97,7 +97,7 @@ const buildSpreadsheetWithEverything = (args: IArgs) => {
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
-
+  debugger;
   spreadsheet.sheetsGroups.forEach((sheetGroup) => {
     const bottomBar = new BottomBar(sheetGroup);
 
@@ -127,15 +127,17 @@ export const FrozenCells = Template.bind({});
 FrozenCells.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Frozen Cells',
-        frozenCells: {
-          row: 3,
-          col: 3,
+    {
+      sheetData: [
+        {
+          sheetName: 'Frozen Cells',
+          frozenCells: {
+            row: 3,
+            col: 3,
+          },
         },
-      },
-    ],
+      ],
+    },
   ],
 };
 
@@ -144,31 +146,33 @@ export const MergedCells = Template.bind({});
 MergedCells.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Merged Cells',
-        cellsData: {
-          '4_0': {
-            value: 'Merged Cells Sheet',
-          },
-          '10_1': {
-            value: 'Another value',
-          },
-        },
-        mergedCells: {
-          '3_1': {
-            row: {
-              x: 3,
-              y: 5,
+    {
+      sheetData: [
+        {
+          sheetName: 'Merged Cells',
+          cellsData: {
+            '4_0': {
+              value: 'Merged Cells Sheet',
             },
-            col: {
-              x: 1,
-              y: 1,
+            '10_1': {
+              value: 'Another value',
             },
           },
+          mergedCells: {
+            '3_1': {
+              row: {
+                x: 3,
+                y: 5,
+              },
+              col: {
+                x: 1,
+                y: 1,
+              },
+            },
+          },
         },
-      },
-    ],
+      ],
+    },
   ],
 };
 
@@ -177,22 +181,24 @@ export const DifferentSizeCells = Template.bind({});
 DifferentSizeCells.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Different Size Cells',
-        col: {
-          sizes: {
-            3: 70,
+    {
+      sheetData: [
+        {
+          sheetName: 'Different Size Cells',
+          col: {
+            sizes: {
+              3: 70,
+            },
+          },
+          row: {
+            sizes: {
+              1: 250,
+              5: 100,
+            },
           },
         },
-        row: {
-          sizes: {
-            1: 250,
-            5: 100,
-          },
-        },
-      },
-    ],
+      ],
+    },
   ],
 };
 
@@ -220,11 +226,13 @@ MillionRows.args = {
     },
   },
   data: [
-    [
-      {
-        sheetName: 'One Million Rows',
-      },
-    ],
+    {
+      sheetData: [
+        {
+          sheetName: 'One Million Rows',
+        },
+      ],
+    },
   ],
 };
 
@@ -264,16 +272,22 @@ export const MultipleSheetsGroups = Template.bind({});
 MultipleSheetsGroups.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Top Sheets',
-      },
-    ],
-    [
-      {
-        sheetName: 'Main Sheets',
-      },
-    ],
+    {
+      width: window.innerWidth,
+      height: 300,
+      sheetData: [
+        {
+          sheetName: 'Top Sheet',
+        },
+      ],
+    },
+    {
+      sheetData: [
+        {
+          sheetName: 'Main Sheet',
+        },
+      ],
+    },
   ],
 };
 
@@ -282,25 +296,27 @@ export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
 AllCurrencySymbols.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Currency Symbols',
-        cellsData: {
-          '1_0': {
-            value: '$33334.33',
-          },
-          '1_1': {
-            value: '₪22.2',
-          },
-          '3_3': {
-            value: '£33.3',
-          },
-          '4_1': {
-            value: '=A2+B2+D4',
+    {
+      sheetData: [
+        {
+          sheetName: 'Currency Symbols',
+          cellsData: {
+            '1_0': {
+              value: '$33334.33',
+            },
+            '1_1': {
+              value: '₪22.2',
+            },
+            '3_3': {
+              value: '£33.3',
+            },
+            '4_1': {
+              value: '=A2+B2+D4',
+            },
           },
         },
-      },
-    ],
+      ],
+    },
   ],
 };
 
@@ -309,63 +325,65 @@ export const CellsData = Template.bind({});
 CellsData.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Cells Data',
-        cellsData: {
-          '1_0': {
-            style: {
-              horizontalTextAlign: 'right',
-              verticalTextAlign: 'bottom',
-              backgroundColor: 'red',
-              fontColor: '#ffeb3b',
+    {
+      sheetData: [
+        {
+          sheetName: 'Cells Data',
+          cellsData: {
+            '1_0': {
+              style: {
+                horizontalTextAlign: 'right',
+                verticalTextAlign: 'bottom',
+                backgroundColor: 'red',
+                fontColor: '#ffeb3b',
+              },
+              value: 'HI!',
             },
-            value: 'HI!',
-          },
-          '1_1': {
-            style: {
-              horizontalTextAlign: 'center',
-              verticalTextAlign: 'middle',
-              bold: true,
-              italic: true,
-              textWrap: 'wrap',
+            '1_1': {
+              style: {
+                horizontalTextAlign: 'center',
+                verticalTextAlign: 'middle',
+                bold: true,
+                italic: true,
+                textWrap: 'wrap',
+              },
+              comment: 'Powersheet is the best',
+              value:
+                'A very long piece of text that should wrap to the next line on the word.',
             },
-            comment: 'Powersheet is the best',
-            value:
-              'A very long piece of text that should wrap to the next line on the word.',
-          },
-          '3_3': {
-            style: {
-              borders: [
-                'borderBottom',
-                'borderRight',
-                'borderTop',
-                'borderLeft',
-              ],
-              backgroundColor: 'yellow',
+            '3_3': {
+              style: {
+                borders: [
+                  'borderBottom',
+                  'borderRight',
+                  'borderTop',
+                  'borderLeft',
+                ],
+                backgroundColor: 'yellow',
+              },
             },
-          },
-          '4_1': {
-            style: {
-              underline: true,
-              strikeThrough: true,
-              fontSize: 14,
-              borders: ['borderBottom'],
+            '4_1': {
+              style: {
+                underline: true,
+                strikeThrough: true,
+                fontSize: 14,
+                borders: ['borderBottom'],
+              },
+              value: 'Some value',
             },
-            value: 'Some value',
-          },
-          '4_4': {
-            style: {
-              textFormatPattern: '0.00%',
+            '4_4': {
+              style: {
+                textFormatPattern: '0.00%',
+              },
+              value: '0.05',
             },
-            value: '0.05',
-          },
-          '40_4': {
-            value: 'Cell Value',
+            '40_4': {
+              value: 'Cell Value',
+            },
           },
         },
-      },
-    ],
+      ],
+    },
   ],
 };
 
@@ -374,53 +392,55 @@ export const Formulas = Template.bind({});
 Formulas.args = {
   ...defaultStoryArgs,
   data: [
-    [
-      {
-        sheetName: 'Formulas',
-        cellsData: {
-          '0_1': {
-            value: '5',
-            style: {
-              textFormatPattern: '#,##0.00',
+    {
+      sheetData: [
+        {
+          sheetName: 'Formulas',
+          cellsData: {
+            '0_1': {
+              value: '5',
+              style: {
+                textFormatPattern: '#,##0.00',
+              },
             },
-          },
-          '1_1': {
-            value: '2',
-            style: {
-              textFormatPattern: '#,##0.00',
+            '1_1': {
+              value: '2',
+              style: {
+                textFormatPattern: '#,##0.00',
+              },
             },
-          },
-          '2_1': {
-            value: '=SUM(B1, B2)',
-            style: {
-              textFormatPattern: '#,##0.00',
+            '2_1': {
+              value: '=SUM(B1, B2)',
+              style: {
+                textFormatPattern: '#,##0.00',
+              },
             },
-          },
-          '2_0': {
-            value: 'SUM',
-          },
-          '4_0': {
-            value: 'Cross Sheet Reference',
-          },
-          '4_1': {
-            value: "='Other'!A1 * 30",
-            style: {
-              textFormatPattern: '#,##0.00',
+            '2_0': {
+              value: 'SUM',
             },
-          },
-        },
-      },
-      {
-        sheetName: 'Other',
-        cellsData: {
-          '0_0': {
-            value: '100',
-            style: {
-              textFormatPattern: '#,##0.00',
+            '4_0': {
+              value: 'Cross Sheet Reference',
+            },
+            '4_1': {
+              value: "='Other'!A1 * 30",
+              style: {
+                textFormatPattern: '#,##0.00',
+              },
             },
           },
         },
-      },
-    ],
+        {
+          sheetName: 'Other',
+          cellsData: {
+            '0_0': {
+              value: '100',
+              style: {
+                textFormatPattern: '#,##0.00',
+              },
+            },
+          },
+        },
+      ],
+    },
   ],
 };

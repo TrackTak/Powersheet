@@ -17,7 +17,7 @@ class Clipboard {
       return;
     }
     this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula.cut(cellRange);
+    this.spreadsheet.hyperformula?.cut(cellRange);
     this.isCut = true;
   }
 
@@ -27,7 +27,7 @@ class Clipboard {
       return;
     }
     this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula.copy(cellRange);
+    this.spreadsheet.hyperformula?.copy(cellRange);
   }
 
   paste() {
@@ -36,12 +36,12 @@ class Clipboard {
       return;
     }
 
-    const pastedData = this.spreadsheet.hyperformula.getFillRangeData(
+    const pastedData = this.spreadsheet.hyperformula?.getFillRangeData(
       this.sourceRange,
       targetRange,
       true
     );
-    this.spreadsheet.hyperformula.setCellContents(
+    this.spreadsheet.hyperformula?.setCellContents(
       targetRange.start,
       pastedData
     );

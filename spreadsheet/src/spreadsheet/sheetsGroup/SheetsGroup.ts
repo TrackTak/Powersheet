@@ -126,15 +126,15 @@ class SheetsGroup {
   renameSheet(sheetId: SheetId, sheetName: string) {
     this.getData()[sheetId].sheetName = sheetName;
 
-    this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName);
+    this.spreadsheet.hyperformula?.renameSheet(sheetId, sheetName);
 
     this.update();
   }
 
   createNewSheet(data: IData) {
-    this.spreadsheet.hyperformula.addSheet(data.sheetName);
+    this.spreadsheet.hyperformula?.addSheet(data.sheetName);
 
-    const sheetId = this.spreadsheet.hyperformula.getSheetId(data.sheetName)!;
+    const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
     this.spreadsheet.data[this.sheetsGroupId][sheetId] = data;
 

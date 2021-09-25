@@ -86,7 +86,7 @@ class Selector {
     this.spreadsheet.setFocusedSheet(this.sheet);
     this.sheet.updateViewport();
 
-    this.sheet.emit(
+    this.spreadsheet.emit(
       events.selector.startSelection,
       this.sheet,
       selectedFirstCell
@@ -178,7 +178,7 @@ class Selector {
         this.selectCells(cells);
         this.spreadsheet.toolbar?.updateActiveStates();
 
-        this.sheet.emit(events.selector.moveSelection, cells);
+        this.spreadsheet.emit(events.selector.moveSelection, cells);
       }
     }
   };
@@ -188,7 +188,7 @@ class Selector {
 
     this.setSelectionBorder();
 
-    this.sheet.emit(events.selector.endSelection);
+    this.spreadsheet.emit(events.selector.endSelection);
   };
 
   removeSelectedCells(destroySelectedFirstCell: boolean = true) {

@@ -104,7 +104,7 @@ class CellRenderer {
     const cellAddress = this.getCellHyperformulaAddress(id);
 
     try {
-      this.spreadsheet.hyperformula.setCellContents(cellAddress, value);
+      this.spreadsheet.hyperformula?.setCellContents(cellAddress, value);
     } catch (e) {
       console.error(e);
     }
@@ -206,8 +206,8 @@ class CellRenderer {
     const style = cellData?.style;
     const address = this.getCellHyperformulaAddress(cellId);
     const hyperformulaValue = this.spreadsheet.options.showFormulas
-      ? this.spreadsheet.hyperformula.getCellSerialized(address)
-      : this.spreadsheet.hyperformula.getCellValue(address);
+      ? this.spreadsheet.hyperformula?.getCellSerialized(address)
+      : this.spreadsheet.hyperformula?.getCellValue(address);
 
     if (hyperformulaValue) {
       this.setCellTextValue(cell, hyperformulaValue?.toString());

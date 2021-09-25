@@ -184,7 +184,7 @@ class ScrollBar {
       this.sheet.cellEditor.hideCellTooltip();
     }
 
-    this.sheet.emit(events.scroll[this.scrollType], e, newScroll);
+    this.spreadsheet.emit(events.scroll[this.scrollType], e, newScroll);
   };
 
   private drawItem(index: number) {
@@ -231,7 +231,7 @@ class ScrollBar {
       this.scrollBarEl.scrollBy(0, e.evt.deltaY);
     }
 
-    this.sheet.emit(events.scrollWheel[this.scrollType], e);
+    this.spreadsheet.emit(events.scrollWheel[this.scrollType], e);
   };
 
   destroy() {

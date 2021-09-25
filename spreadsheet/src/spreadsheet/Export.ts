@@ -16,7 +16,7 @@ class Export {
   private getWorksheet(sheet: Sheet, data: IData) {
     const worksheet: WorkSheet = {};
     const cellsData = data.cellsData ?? {};
-    const sheetId = this.spreadsheet.hyperformula.getSheetId(data.sheetName)!;
+    const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
     let startRowColAddress: IRowColAddress | null = null;
 
@@ -33,7 +33,7 @@ class Export {
         row,
         col,
       };
-      const cellId = this.spreadsheet.hyperformula.simpleCellAddressToString(
+      const cellId = this.spreadsheet.hyperformula?.simpleCellAddressToString(
         address,
         address.sheet
       )!;
@@ -66,7 +66,7 @@ class Export {
         t: type,
       };
 
-      if (this.spreadsheet.hyperformula.doesCellHaveFormula(address)) {
+      if (this.spreadsheet.hyperformula?.doesCellHaveFormula(address)) {
         worksheet[cellId].f = cell.value!.slice(1);
       }
     });
@@ -94,7 +94,7 @@ class Export {
     }
 
     const startCellAddress =
-      this.spreadsheet.hyperformula.simpleCellAddressToString(
+      this.spreadsheet.hyperformula?.simpleCellAddressToString(
         {
           ...(startRowColAddress ?? {
             row: 0,
@@ -106,7 +106,7 @@ class Export {
       )!;
 
     const endCellAddress =
-      this.spreadsheet.hyperformula.simpleCellAddressToString(
+      this.spreadsheet.hyperformula?.simpleCellAddressToString(
         {
           ...endRowColAddress,
           sheet: sheetId,

@@ -81,13 +81,7 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
-          // const rowCol = convertFromCellIdToRowColId(cellId);
-
           delete mergedCells[cellId];
-
-          // if (row?.mergedCellsIdMap?.[rowCol.row]) {
-          //   delete row.mergedCellsIdMap[rowCol.row][cellId];
-          // }
         }
       }
     });

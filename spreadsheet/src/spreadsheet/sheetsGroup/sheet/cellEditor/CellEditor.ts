@@ -44,7 +44,8 @@ class CellEditor {
     });
     this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
 
-    this.cellEditorEl.addEventListener('input', (e) => this.handleInput(e));
+    this.cellEditorEl.addEventListener('input', this.onInput);
+    this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
 
     const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
 
@@ -71,7 +72,8 @@ class CellEditor {
   destroy() {
     this.cellTooltip.destroy();
     this.cellEditorContainerEl.remove();
-    this.cellEditorEl.removeEventListener('input', this.handleInput);
+    this.cellEditorEl.removeEventListener('input', this.onInput);
+    this.cellEditorEl.removeEventListener('keydown', this.onKeyDown);
     this.formulaHelper.destroy();
   }
 
@@ -83,22 +85,39 @@ class CellEditor {
     const value = `=${suggestion}()`;
 
     this.setTextContent(value);
+    this.cellEditorEl.focus();
     this.formulaHelper.hide();
   };
 
-  setTextContent(value: string | undefined | null) {
-    const textContent = value || '';
+  setTextContent(value: string | null) {
+    const textContent = value ?? null;
 
     this.cellEditorEl.textContent = textContent;
     this.spreadsheet.formulaBar?.setTextContent(textContent);
     this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
   }
 
-  handleInput(e: Event) {
+  onKeyDown = (e: KeyboardEvent) => {
+    e.stopPropagation();
+
+    switch (e.key) {
+      case 'Escape': {
+        this.hide();
+        break;
+      }
+      case 'Enter': {
+        this.saveContentToCell();
+        this.hide();
+        break;
+      }
+    }
+  };
+
+  onInput = (e: Event) => {
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
-    this.setTextContent(textContent);
+    this.setTextContent(textContent ?? null);
 
     const isFormulaInput = textContent?.startsWith('=');
 
@@ -107,9 +126,9 @@ class CellEditor {
     } else {
       this.formulaHelper.hide();
     }
-  }
+  };
 
-  show(cell: Cell) {
+  show(cell: Cell, setTextContent = true) {
     this.currentCell = cell;
     this.currentScroll = {
       row: this.sheet.row.scrollBar.scroll,
@@ -118,10 +137,8 @@ class CellEditor {
 
     const id = cell.id();
 
-    this.cellEditorEl.textContent = '';
+    this.clear();
     this.cellEditorContainerEl.style.display = 'block';
-
-    this.setTextContent(this.sheet.cellRenderer.getCellData(id)?.value);
 
     this.setCellEditorElPosition(
       cell.getClientRect({
@@ -129,17 +146,25 @@ class CellEditor {
       })
     );
 
-    this.cellEditorEl.focus();
+    if (setTextContent) {
+      this.setTextContent(
+        this.sheet.cellRenderer.getCellData(id)?.value ?? null
+      );
+      this.cellEditorEl.focus();
+    }
+  }
+
+  clear() {
+    this.cellEditorEl.textContent = null;
   }
 
   hide() {
-    this.saveContentToCell();
-
     this.currentCell = null;
     this.currentScroll = null;
     this.cellTooltip.hide();
 
     this.cellEditorContainerEl.style.display = 'none';
+    this.clear();
 
     this.sheet.updateViewport();
   }

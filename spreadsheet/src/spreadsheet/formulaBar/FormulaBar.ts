@@ -32,18 +32,60 @@ class FormulaBar {
     this.editableContentContainer = editableContentContainer;
     this.editableContent = editableContent;
 
+    this.editableContent.addEventListener('input', this.onInput);
+    this.editableContent.addEventListener('keydown', this.onKeyDown);
+
     this.spreadsheet.spreadsheetEl.appendChild(this.formulaBarEl);
   }
+
+  onInput = (e: Event) => {
+    const sheet = this.spreadsheet.focusedSheet;
+    const target = e.target as HTMLDivElement;
+    const textContent = target.firstChild?.textContent;
+
+    if (sheet?.cellEditor.getIsHidden()) {
+      sheet.cellEditor.show(sheet.selector.selectedFirstCell!, false);
+    }
+    sheet?.cellEditor.setTextContent(textContent ?? null);
+  };
 
   updateValue(cellId: CellId) {
     const sheet = this.spreadsheet.focusedSheet;
     const cell = sheet?.cellRenderer.getCellData(cellId);
+    const cellEditorTextContent =
+      sheet?.cellEditor?.cellEditorEl.textContent ?? null;
 
-    this.setTextContent(cell?.value ?? '');
+    this.setTextContent(cell?.value ?? cellEditorTextContent);
   }
 
-  setTextContent(textContent: string) {
+  setTextContent(textContent: string | null) {
     this.editableContent.textContent = textContent;
+  }
+
+  onKeyDown = (e: KeyboardEvent) => {
+    e.stopPropagation();
+
+    const sheet = this.spreadsheet.focusedSheet;
+
+    switch (e.key) {
+      case 'Escape': {
+        sheet?.cellEditor.hide();
+        this.editableContent.blur();
+        break;
+      }
+      case 'Enter': {
+        sheet?.cellEditor.saveContentToCell();
+        sheet?.cellEditor.hide();
+        this.editableContent.blur();
+
+        break;
+      }
+    }
+  };
+
+  destroy() {
+    this.editableContent.removeEventListener('input', this.onInput);
+    this.editableContent.removeEventListener('keydown', this.onKeyDown);
   }
 }
 

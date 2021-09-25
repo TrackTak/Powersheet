@@ -22,6 +22,7 @@ import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { isNil, merge } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
+import events from '../../events';
 
 export interface IDimensions {
   width: number;
@@ -253,6 +254,7 @@ class Sheet {
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
+  isSaving = false;
   private spreadsheet: Spreadsheet;
 
   constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
@@ -361,7 +363,7 @@ class Sheet {
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
-    this.rightClickMenu = new RightClickMenu(this);
+    this.rightClickMenu = new RightClickMenu(this, this.spreadsheet.clipboard);
     this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
@@ -552,6 +554,20 @@ class Sheet {
 
     this.spreadsheet.data[this.sheetsGroup.sheetsGroupId][this.sheetId] =
       updatedData;
+
+    const done = () => {
+      this.isSaving = false;
+      this.updateViewport();
+    };
+
+    this.isSaving = true;
+
+    this.spreadsheet.eventEmitter.emit(
+      events.sheet.setData,
+      this,
+      updatedData,
+      done
+    );
   }
 
   getData(): IData {

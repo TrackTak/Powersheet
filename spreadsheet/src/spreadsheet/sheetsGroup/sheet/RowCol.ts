@@ -282,11 +282,22 @@ class RowCol {
   }
 
   updateViewport() {
+    const data = this.sheet.getData();
+
+    if (data.frozenCells) {
+      const frozenCell = data.frozenCells[this.type];
+
+      for (let index = 0; index <= frozenCell; index++) {
+        this.sheet[this.type].draw(index);
+      }
+    }
+
     for (const index of iterateXToY(
       this.sheet[this.type].scrollBar.sheetViewportPosition
     )) {
       this.sheet[this.type].draw(index);
     }
+
     this.scrollBar.setScrollSize();
   }
 

@@ -366,7 +366,7 @@ class Sheet {
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
-    this.rightClickMenu = new RightClickMenu(this, this.spreadsheet.clipboard);
+    this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
@@ -635,10 +635,10 @@ class Sheet {
       rowClientRect.y -= this.getViewportVector().y;
 
       xStickyFrozenBackground.width(colClientRect.x);
-      xStickyFrozenBackground.height(this.stage.height());
+      xStickyFrozenBackground.height(this.sheetDimensions.height);
       xStickyFrozenBackground.y(rowClientRect.y);
 
-      yStickyFrozenBackground.width(this.stage.width());
+      yStickyFrozenBackground.width(this.sheetDimensions.width);
       yStickyFrozenBackground.height(rowClientRect.y);
       yStickyFrozenBackground.x(colClientRect.x);
 

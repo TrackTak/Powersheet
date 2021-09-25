@@ -31,5 +31,5 @@ export const defaultOptions: IOptions = {
   showFormulas: false,
   undoRedoHistorySize: 20,
   exportSpreadsheetName: 'Powersheet.xlsx',
-  devMode: true,
+  devMode: false,
 };

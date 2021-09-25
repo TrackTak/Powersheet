@@ -6,7 +6,7 @@ import { createGroup } from '../../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
 import { KonvaEventListener } from 'konva/lib/Node';
 import { Stage } from 'konva/lib/Stage';
-import Clipboard from '../../../Clipboard';
+import Spreadsheet from '../../../Spreadsheet';
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
 export interface IRightClickMenuActionGroups {
@@ -20,10 +20,11 @@ class RightClickMenu {
   buttonMap: Record<ButtonName, HTMLElement>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
   buttonRightOnClickMenu: KonvaEventListener<Stage, MouseEvent>;
+  private spreadsheet: Spreadsheet;
 
-  constructor(private sheet: Sheet, private clipboard: Clipboard) {
+  constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.clipboard = clipboard;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.buttonMap = {
       comment: createButtonContent('Comment', 'comment'),
       copy: createButtonContent('Copy', 'copy'),
@@ -82,15 +83,15 @@ class RightClickMenu {
     });
 
     buttons.cut.addEventListener('click', () => {
-      this.clipboard.cut();
+      this.spreadsheet.clipboard.cut();
     });
 
     buttons.copy.addEventListener('click', () => {
-      this.clipboard.copy();
+      this.spreadsheet.clipboard.copy();
     });
 
     buttons.paste.addEventListener('click', () => {
-      this.clipboard.paste();
+      this.spreadsheet.clipboard.paste();
     });
 
     this.dropdown = tippy(this.sheet.sheetEl, {

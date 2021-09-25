@@ -434,12 +434,12 @@ class Toolbar {
       const yAddress = sheet.cellRenderer.getCellHyperformulaAddress(yCellId);
 
       const xCellAddress =
-        this.spreadsheet.hyperformula.simpleCellAddressToString(
+        this.spreadsheet.hyperformula?.simpleCellAddressToString(
           xAddress,
           xAddress.sheet
         );
       const yCellAddress =
-        this.spreadsheet.hyperformula.simpleCellAddressToString(
+        this.spreadsheet.hyperformula?.simpleCellAddressToString(
           yAddress,
           yAddress.sheet
         );

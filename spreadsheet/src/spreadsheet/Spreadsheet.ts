@@ -10,7 +10,6 @@ import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
 import { HyperFormula } from 'hyperformula';
-import hyperformulaConfig from './hyperformulaConfig';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Export from './Export';
@@ -19,6 +18,7 @@ interface IConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: IData[][];
+  hyperformula: HyperFormula;
 }
 
 class Spreadsheet {
@@ -32,13 +32,14 @@ class Spreadsheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   export?: Export;
-  hyperformula: HyperFormula;
+  hyperformula?: HyperFormula;
   clipboard: Clipboard;
   history: any;
   sheetIndex = 0;
 
   constructor(params: IConstructor) {
     this.data = params.data ?? [];
+    this.hyperformula = params.hyperformula;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.eventEmitter = new EventEmitter();
@@ -55,7 +56,6 @@ class Spreadsheet {
     this.export = new Export(this);
     this.clipboard = new Clipboard(this);
 
-    this.hyperformula = HyperFormula.buildEmpty(hyperformulaConfig);
     this.history = new Manager((data: IData[][]) => {
       const currentData = this.data;
 
@@ -73,10 +73,21 @@ class Spreadsheet {
     });
   }
 
+  emit<T extends EventEmitter.EventNames<string | symbol>>(
+    event: T,
+    ...args: any[]
+  ) {
+    if (this.options.devMode) {
+      console.log(event, ...args);
+    }
+
+    this.eventEmitter.emit(event, ...args);
+  }
+
   setFocusedSheet(sheet: Sheet) {
     this.focusedSheet = sheet;
 
-    this.eventEmitter.emit(events.spreadsheet.focusedSheetChange, sheet);
+    this.emit(events.spreadsheet.focusedSheetChange, sheet);
   }
 
   createNewSheetsGroup(sheetsGroupId: number) {

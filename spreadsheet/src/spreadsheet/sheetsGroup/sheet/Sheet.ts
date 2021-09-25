@@ -1,6 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import EventEmitter from 'eventemitter3';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
@@ -363,7 +362,7 @@ class Sheet {
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
-    this.rightClickMenu = new RightClickMenu(this, this.spreadsheet.clipboard);
+    this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
     this.shapes.sheet.on('click', this.sheetOnClick);
@@ -478,17 +477,6 @@ class Sheet {
         }
     }
   };
-
-  emit<T extends EventEmitter.EventNames<string | symbol>>(
-    event: T,
-    ...args: any[]
-  ) {
-    if (this.spreadsheet.options.devMode) {
-      console.log(event);
-    }
-
-    this.spreadsheet.eventEmitter.emit(event, ...args);
-  }
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {
     return !shape.isClientRectOnScreen({
@@ -656,7 +644,7 @@ class Sheet {
 
     this.cellEditor?.destroy();
 
-    this.spreadsheet.hyperformula.removeSheet(this.sheetId);
+    this.spreadsheet.hyperformula?.removeSheet(this.sheetId);
   }
 
   drawTopLeftOffsetRect() {
@@ -689,10 +677,10 @@ class Sheet {
       rowClientRect.y -= this.getViewportVector().y;
 
       xStickyFrozenBackground.width(colClientRect.x);
-      xStickyFrozenBackground.height(this.stage.height());
+      xStickyFrozenBackground.height(this.sheetDimensions.height);
       xStickyFrozenBackground.y(rowClientRect.y);
 
-      yStickyFrozenBackground.width(this.stage.width());
+      yStickyFrozenBackground.width(this.sheetDimensions.width);
       yStickyFrozenBackground.height(rowClientRect.y);
       yStickyFrozenBackground.x(colClientRect.x);
 

@@ -462,7 +462,7 @@ class RowCol {
     return size;
   }
 
-  updateViewport() {
+  private clearAll() {
     const frozenRowColGroupMaps = [
       this.xFrozenRowColMap,
       this.yFrozenRowColMap,
@@ -484,12 +484,29 @@ class RowCol {
     });
     this.headerGroupMap.clear();
     this.rowColMap.clear();
+  }
+
+  updateViewport() {
+    this.clearAll();
+
+    const data = this.sheet.getData();
+
+    if (data.frozenCells) {
+      const frozenCell = data.frozenCells[this.type];
+
+      if (frozenCell) {
+        for (let index = 0; index <= frozenCell; index++) {
+          this.sheet[this.type].draw(index);
+        }
+      }
+    }
 
     for (const index of iterateXToY(
       this.sheet[this.type].scrollBar.sheetViewportPosition
     )) {
       this.sheet[this.type].draw(index);
     }
+
     this.scrollBar.setScrollSize();
   }
 

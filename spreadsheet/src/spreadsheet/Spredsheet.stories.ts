@@ -6,10 +6,17 @@ import Spreadsheet from './Spreadsheet';
 import { IData } from './sheetsGroup/sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import events from './events';
+import { HyperFormula } from 'hyperformula';
+// @ts-ignore
+import { currencySymbolMap } from 'currency-symbol-map';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
+
+const hyperformula = HyperFormula.buildEmpty({
+  licenseKey: 'gpl-v3',
+});
 
 // TODO: Fix to be optional styles + options
 interface IArgs {
@@ -24,6 +31,7 @@ const buildSpreadsheet = (args: IArgs) => {
   const data = args.data;
 
   const spreadsheet = new Spreadsheet({
+    hyperformula,
     options,
     styles,
     data,
@@ -127,7 +135,17 @@ DifferentSizeCells.args = {
   ],
 };
 
-export const MillionRows = Template.bind({});
+const MillionRowsTemplate: Story<IArgs> = (args) => {
+  args.options.row.amount = 1_000_000;
+
+  hyperformula.updateConfig({
+    maxRows: args.options.row.amount,
+  });
+
+  return buildSpreadsheet(args);
+};
+
+export const MillionRows = MillionRowsTemplate.bind({});
 
 MillionRows.args = {
   ...defaultStoryArgs,
@@ -140,17 +158,10 @@ MillionRows.args = {
       },
     },
   },
-  options: {
-    ...defaultOptions,
-    row: {
-      ...defaultOptions.row,
-      amount: 1000000,
-    },
-  },
   data: [
     [
       {
-        sheetName: 'Million Rows',
+        sheetName: 'One Million Rows',
       },
     ],
   ],
@@ -171,6 +182,41 @@ CustomStyles.args = {
       fill: 'orange',
     },
   },
+};
+
+const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
+  hyperformula.updateConfig({
+    currencySymbol: Object.values(currencySymbolMap),
+  });
+
+  return buildSpreadsheet(args);
+};
+
+export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
+
+AllCurrencySymbols.args = {
+  ...defaultStoryArgs,
+  data: [
+    [
+      {
+        sheetName: 'Currency Symbols',
+        cellsData: {
+          '1_0': {
+            value: '$33334.33',
+          },
+          '1_1': {
+            value: '₪22.2',
+          },
+          '3_3': {
+            value: '£33.3',
+          },
+          '4_1': {
+            value: '=A2+B2+D4',
+          },
+        },
+      },
+    ],
+  ],
 };
 
 export const CellsData = Template.bind({});

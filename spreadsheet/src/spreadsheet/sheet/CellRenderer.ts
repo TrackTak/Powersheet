@@ -299,6 +299,7 @@ class CellRenderer {
         this.sheet.updateViewport();
       }
     }
+    this.setCellTextHeight(cell);
   }
 
   private setBorder(cell: Cell, type: BorderStyle) {
@@ -489,6 +490,15 @@ class CellRenderer {
     cell.add(commentMarker);
 
     rotateAroundCenter(commentMarker, 180);
+  }
+
+  setCellTextHeight(cell: Cell) {
+    const { height } = cell.getClientRect({ skipStroke: true });
+    const text = getCellTextFromCell(cell);
+
+    if (text && text.wrap() !== 'wrap') {
+      text.height(height);
+    }
   }
 
   setCellTextValue(cell: Cell, value: string) {

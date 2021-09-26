@@ -102,7 +102,7 @@ class Clipboard {
     }, {});
 
     this.spreadsheet.focusedSheet?.cellRenderer.setCellDataBatch(cellData);
-    this.spreadsheet.focusedSheet?.updateViewport();
+    this.spreadsheet.updateViewport();
     this.isCut = false;
   }
 

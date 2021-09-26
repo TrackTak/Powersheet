@@ -292,7 +292,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
 
-        this.spreadsheet.focusedSheet?.updateViewport();
+        this.spreadsheet.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -786,7 +786,7 @@ class Toolbar {
       }
     }
 
-    sheet.updateViewport();
+    this.spreadsheet.updateViewport();
   };
 
   updateActiveStates = () => {

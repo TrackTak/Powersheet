@@ -166,7 +166,7 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none';
     this.clear();
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   setCellEditorElPosition = (position: IRect) => {

@@ -84,7 +84,7 @@ class Selector {
     this.selectCells(cells);
 
     this.spreadsheet.setFocusedSheet(this.sheet);
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
 
     this.spreadsheet.emit(
       events.selector.startSelection,

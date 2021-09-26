@@ -7,7 +7,7 @@ import {
   ICellStyle,
   TextWrap,
   VerticalTextAlign,
-} from '../sheetsGroup/sheet/Sheet';
+} from '../sheet/Sheet';
 import {
   ColorPickerIconName,
   createAutosave,
@@ -40,7 +40,7 @@ import {
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
-import { Cell, CellId, getCellId } from '../sheetsGroup/sheet/CellRenderer';
+import { Cell, CellId, getCellId } from '../sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
 import { HyperFormula } from 'hyperformula';
 
@@ -292,7 +292,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
 
-        this.spreadsheet.focusedSheet?.updateViewport();
+        this.spreadsheet.getActiveSheet()?.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -407,7 +407,7 @@ class Toolbar {
   }
 
   setFunction(functionName: string) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     if (sheet.selector.selectedCells.length > 1) {
       const rowRange = sheet.row.convertFromCellsToRange(
@@ -463,7 +463,7 @@ class Toolbar {
     cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
     borderType: BorderStyle
   ) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const borderCells = cells.filter(cellsFilter);
 
     borderCells.forEach((cell) => {
@@ -474,7 +474,7 @@ class Toolbar {
   }
 
   setBottomBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const row = sheet.row.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -485,7 +485,7 @@ class Toolbar {
   }
 
   setRightBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const col = sheet.col.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -496,7 +496,7 @@ class Toolbar {
   }
 
   setTopBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const row = sheet.row.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -507,7 +507,7 @@ class Toolbar {
   }
 
   setLeftBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const col = sheet.col.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -518,7 +518,7 @@ class Toolbar {
   }
 
   setVerticalBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const col = sheet.col.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -529,7 +529,7 @@ class Toolbar {
   }
 
   setHorizontalBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const row = sheet.row.convertFromCellsToRange(cells);
 
     this.setBorderStyles(
@@ -557,7 +557,7 @@ class Toolbar {
   }
 
   clearBorders(ids: CellId[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     ids.forEach((id) => {
       sheet.cellRenderer.deleteCellStyle(id, 'borders');
@@ -565,7 +565,7 @@ class Toolbar {
   }
 
   private deleteStyleForSelectedCells(key: keyof ICellStyle) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     sheet.selector.selectedCells.forEach((cell) => {
       const id = cell.id();
@@ -575,7 +575,7 @@ class Toolbar {
   }
 
   private setStyleForSelectedCells<T>(key: keyof ICellStyle, value: T) {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     sheet.selector.selectedCells.forEach((cell) => {
       const id = cell.id();
@@ -587,7 +587,7 @@ class Toolbar {
   }
 
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     switch (name) {
       case 'functions': {
@@ -790,7 +790,7 @@ class Toolbar {
   };
 
   updateActiveStates = () => {
-    const sheet = this.spreadsheet.focusedSheet!;
+    const sheet = this.spreadsheet.getActiveSheet()!;
 
     if (!sheet) return;
 
@@ -903,12 +903,12 @@ class Toolbar {
 
     if (colorPickerIconName === 'backgroundColor') {
       fill =
-        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-          ?.backgroundColor ?? '';
+        this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
+          ?.style?.backgroundColor ?? '';
     } else {
       fill =
-        this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-          ?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
+        this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
+          ?.style?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
     }
 
     this.colorPickerElementsMap[
@@ -918,9 +918,9 @@ class Toolbar {
 
   setActiveMergedCells(selectedCells: Cell[]) {
     const cell = selectedCells[0];
-    const isMerged = this.spreadsheet.focusedSheet!.merger.getIsCellPartOfMerge(
-      cell.id()
-    );
+    const isMerged = this.spreadsheet
+      .getActiveSheet()!
+      .merger.getIsCellPartOfMerge(cell.id());
     const isActive = selectedCells.length === 1 && isMerged;
 
     if (isActive) {
@@ -933,7 +933,7 @@ class Toolbar {
   }
 
   setActiveSaveState() {
-    if (this.spreadsheet.focusedSheet!.isSaving) {
+    if (this.spreadsheet.getActiveSheet()!.isSaving) {
       this.autosaveElement.text.textContent = 'Saving...';
     } else {
       this.autosaveElement.text.textContent = 'Saved';
@@ -941,9 +941,9 @@ class Toolbar {
   }
 
   setActiveHorizontalIcon(cellId: CellId) {
-    const horizontalTextAlign =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-        ?.horizontalTextAlign;
+    const horizontalTextAlign = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellData(cellId)?.style?.horizontalTextAlign;
     const icon = this.iconElementsMap.horizontalTextAlign.icon;
 
     switch (horizontalTextAlign) {
@@ -960,9 +960,9 @@ class Toolbar {
   }
 
   setActiveVerticalIcon(cellId: CellId) {
-    const verticalTextAlign =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-        ?.verticalTextAlign;
+    const verticalTextAlign = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellData(cellId)?.style?.verticalTextAlign;
     const icon = this.iconElementsMap.verticalTextAlign.icon;
 
     switch (verticalTextAlign) {
@@ -979,9 +979,9 @@ class Toolbar {
   }
 
   setActiveFontSize(cellId: CellId) {
-    const fontSize =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-        ?.fontSize;
+    const fontSize = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellData(cellId)?.style?.fontSize;
 
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
@@ -989,9 +989,9 @@ class Toolbar {
   }
 
   setActiveTextFormat(cellId: CellId) {
-    const textFormatPattern =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)?.style
-        ?.textFormatPattern;
+    const textFormatPattern = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellData(cellId)?.style?.textFormatPattern;
 
     let textFormat = 'plainText';
 
@@ -1013,11 +1013,11 @@ class Toolbar {
   }
 
   isFreezeActive() {
-    return !!this.spreadsheet.focusedSheet?.getData().frozenCells;
+    return !!this.spreadsheet.getActiveSheet()?.getData().frozenCells;
   }
 
   isActive(cellId: CellId, key: keyof ICellStyle) {
-    return !!this.spreadsheet.focusedSheet?.cellRenderer.getCellData(cellId)
+    return !!this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
       ?.style?.[key];
   }
 

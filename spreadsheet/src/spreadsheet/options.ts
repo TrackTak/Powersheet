@@ -5,6 +5,8 @@ export interface IRowColOptions {
 }
 
 export interface IOptions {
+  width: number;
+  height: number;
   row: IRowColOptions;
   col: IRowColOptions;
   devMode: boolean;
@@ -13,6 +15,8 @@ export interface IOptions {
 }
 
 export const defaultOptions: IOptions = {
+  width: window.innerWidth,
+  height: window.innerHeight,
   row: {
     amount: 100,
     minSize: 25,

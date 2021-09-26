@@ -3,17 +3,16 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
-import { performanceProperties } from '../../styles';
+import { performanceProperties } from '../styles';
 import Selector from './Selector';
 import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
-import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
+import { BorderIconName } from '../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
-import SheetsGroup from '../SheetsGroup';
-import Spreadsheet from '../../Spreadsheet';
-import { prefix } from '../../utils';
+import Spreadsheet from '../Spreadsheet';
+import { prefix } from '../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
@@ -21,7 +20,7 @@ import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
 import { isNil, merge } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
-import events from '../../events';
+import events from '../events';
 
 export interface IDimensions {
   width: number;
@@ -254,12 +253,10 @@ class Sheet {
   rightClickMenu: RightClickMenu;
   comment: Comment;
   isSaving = false;
-  private spreadsheet: Spreadsheet;
 
-  constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
-    this.sheetsGroup = sheetsGroup;
+  constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
+    this.spreadsheet = spreadsheet;
     this.sheetId = sheetId;
-    this.spreadsheet = this.sheetsGroup.spreadsheet;
 
     this.sheetDimensions = {
       width: 0,
@@ -269,7 +266,7 @@ class Sheet {
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.sheetsGroup.sheetsEl.appendChild(this.sheetEl);
+    this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
 
     this.scrollGroups = {
       main: new Group(),
@@ -539,9 +536,7 @@ class Sheet {
       this.spreadsheet.addToHistory();
     }
 
-    this.spreadsheet.data[this.sheetsGroup.sheetsGroupId].sheetData[
-      this.sheetId
-    ] = updatedData;
+    this.spreadsheet.data[this.sheetId] = updatedData;
 
     const done = () => {
       this.isSaving = false;
@@ -559,7 +554,7 @@ class Sheet {
   }
 
   getData(): ISheetData {
-    return this.sheetsGroup.getData().sheetData[this.sheetId];
+    return this.spreadsheet.data[this.sheetId];
   }
 
   updateSheetDimensions() {

@@ -1,12 +1,12 @@
 import { IRect } from 'konva/lib/types';
-import events from '../../../events';
+import events from '../../events';
 import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
 import { HyperFormula } from 'hyperformula';
-import FormulaHelper from '../../../formulaHelper/FormulaHelper';
-import Spreadsheet from '../../../Spreadsheet';
+import FormulaHelper from '../../formulaHelper/FormulaHelper';
+import Spreadsheet from '../../Spreadsheet';
 import { Cell } from '../CellRenderer';
 
 export interface ICurrentScroll {
@@ -25,7 +25,7 @@ class CellEditor {
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
 
     this.cellEditorEl = document.createElement('div');
     this.cellEditorEl.setAttribute('contentEditable', 'true');

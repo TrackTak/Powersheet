@@ -1,8 +1,8 @@
 import { Shape } from 'konva/lib/Shape';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { IRect, Vector2d } from 'konva/lib/types';
-import events from '../../events';
-import Spreadsheet from '../../Spreadsheet';
+import events from '../events';
+import Spreadsheet from '../Spreadsheet';
 import { Cell } from './CellRenderer';
 import Sheet, { getCellRectFromCell } from './Sheet';
 
@@ -27,7 +27,7 @@ class Selector {
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -83,7 +83,6 @@ class Selector {
     this.setFirstCell(selectedFirstCell);
     this.selectCells(cells);
 
-    this.spreadsheet.setFocusedSheet(this.sheet);
     this.sheet.updateViewport();
 
     this.spreadsheet.emit(

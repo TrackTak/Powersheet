@@ -1,5 +1,5 @@
 import styles from './Comment.module.scss';
-import { prefix } from '../../../utils';
+import { prefix } from '../../utils';
 
 export const commentPrefix = `${prefix}-comment`;
 

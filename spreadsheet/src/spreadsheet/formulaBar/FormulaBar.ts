@@ -1,4 +1,4 @@
-import { CellId } from '../sheetsGroup/sheet/CellRenderer';
+import { CellId } from '../sheet/CellRenderer';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from './../utils';
 import styles from './FormulaBar.module.scss';
@@ -38,7 +38,7 @@ class FormulaBar {
   }
 
   onInput = (e: Event) => {
-    const sheet = this.spreadsheet.focusedSheet;
+    const sheet = this.spreadsheet.getActiveSheet();
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
@@ -49,7 +49,7 @@ class FormulaBar {
   };
 
   updateValue(cellId: CellId) {
-    const sheet = this.spreadsheet.focusedSheet;
+    const sheet = this.spreadsheet.getActiveSheet();
     const cell = sheet?.cellRenderer.getCellData(cellId);
     const cellEditorTextContent =
       sheet?.cellEditor?.cellEditorEl.textContent ?? null;
@@ -64,7 +64,7 @@ class FormulaBar {
   onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
 
-    const sheet = this.spreadsheet.focusedSheet;
+    const sheet = this.spreadsheet.getActiveSheet();
 
     switch (e.key) {
       case 'Escape': {

@@ -2,9 +2,9 @@ import { Group } from 'konva/lib/Group';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import Spreadsheet from '../../Spreadsheet';
-import { performanceProperties } from '../../styles';
-import { rotateAroundCenter } from '../../utils';
+import Spreadsheet from '../Spreadsheet';
+import { performanceProperties } from '../styles';
+import { rotateAroundCenter } from '../utils';
 import Sheet, {
   BorderStyle,
   getCellGroupFromScrollGroup,
@@ -46,7 +46,7 @@ class CellRenderer {
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.commentMarkerConfig = this.spreadsheet.styles.commentMarker;
     this.cellsMap = new Map();
   }

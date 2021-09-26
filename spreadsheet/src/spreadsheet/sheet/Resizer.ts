@@ -2,10 +2,10 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
-import events from '../../events';
+import events from '../events';
 import Sheet from './Sheet';
 import { IRowColFunctions, RowColType } from './RowCol';
-import Spreadsheet from '../../Spreadsheet';
+import Spreadsheet from '../Spreadsheet';
 
 interface IShapes {
   resizeGuideLine: Line;
@@ -26,7 +26,7 @@ class Resizer {
     private functions: IRowColFunctions
   ) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;

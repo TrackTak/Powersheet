@@ -2,8 +2,8 @@ import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import {
   convertFromCellIdToRowColId,
   IRowColAddress,
-} from './sheetsGroup/sheet/CellRenderer';
-import Sheet, { ISheetData } from './sheetsGroup/sheet/Sheet';
+} from './sheet/CellRenderer';
+import Sheet, { ISheetData } from './sheet/Sheet';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
@@ -151,16 +151,14 @@ class Export {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new();
 
-    this.spreadsheet.data.forEach((sheetsGroupData, i) => {
-      sheetsGroupData.forEach((data) => {
-        const sheet = Array.from(
-          this.spreadsheet.sheetsGroups[i].sheets.values()
-        ).find((x) => x.getData().sheetName === data.sheetName)!;
+    this.spreadsheet.data.forEach((data) => {
+      const sheet = Array.from(this.spreadsheet.sheets.values()).find(
+        (x) => x.getData().sheetName === data.sheetName
+      )!;
 
-        const worksheet = this.getWorksheet(sheet, data);
+      const worksheet = this.getWorksheet(sheet, data);
 
-        utils.book_append_sheet(workbook, worksheet, data.sheetName);
-      });
+      utils.book_append_sheet(workbook, worksheet, data.sheetName);
     });
 
     return workbook;

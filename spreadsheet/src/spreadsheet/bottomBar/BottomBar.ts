@@ -1,4 +1,3 @@
-import SheetsGroup from '../sheetsGroup/SheetsGroup';
 import {
   createSheetSelectionDropdownContent,
   createSheetTab,
@@ -9,7 +8,8 @@ import styles from './BottomBar.module.scss';
 import { prefix } from '../utils';
 import tippy, { Instance, Props } from 'tippy.js';
 import { createIconButton, IIconElements } from '../htmlElementHelpers';
-import { SheetId } from '../sheetsGroup/sheet/Sheet';
+import { SheetId } from '../sheet/Sheet';
+import Spreadsheet from '../Spreadsheet';
 
 export const bottomBarPrefix = `${prefix}-bottom-bar`;
 
@@ -22,19 +22,20 @@ interface ISheetTabElements {
 }
 
 class BottomBar {
-  bottomBarEl: HTMLDivElement;
-  content: HTMLDivElement;
-  sheetSelectionButtonContainer: HTMLDivElement;
-  sheetSelectionButton: IIconElements;
-  sheetSelectionDropdown: Instance<Props>;
-  sheetSelectionDropdownContent: HTMLDivElement;
-  createNewSheetButtonElements: IIconElements;
-  tabContainer: HTMLDivElement;
-  scrollSliderContainer: HTMLDivElement;
-  sheetTabElementsMap: Map<SheetId, ISheetTabElements>;
+  bottomBarEl!: HTMLDivElement;
+  content!: HTMLDivElement;
+  sheetSelectionButtonContainer!: HTMLDivElement;
+  sheetSelectionButton!: IIconElements;
+  sheetSelectionDropdown!: Instance<Props>;
+  sheetSelectionDropdownContent!: HTMLDivElement;
+  createNewSheetButtonElements!: IIconElements;
+  tabContainer!: HTMLDivElement;
+  scrollSliderContainer!: HTMLDivElement;
+  sheetTabElementsMap!: Map<SheetId, ISheetTabElements>;
+  private spreadsheet!: Spreadsheet;
 
-  constructor(private sheetsGroup: SheetsGroup) {
-    this.sheetsGroup = sheetsGroup;
+  initialize(spreadsheet: Spreadsheet) {
+    this.spreadsheet = spreadsheet;
 
     this.sheetTabElementsMap = new Map();
 
@@ -103,7 +104,7 @@ class BottomBar {
   setSheetTabElements(sheetId: SheetId) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab();
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton();
-    const isActive = sheetId === this.sheetsGroup.getActiveSheetId();
+    const isActive = sheetId === this.spreadsheet.activeSheetId;
 
     if (isActive) {
       sheetTab.classList.add('active');
@@ -112,10 +113,10 @@ class BottomBar {
     }
 
     sheetSelectionDropdownButton.textContent =
-      this.sheetsGroup.getData()[sheetId].sheetName;
+      this.spreadsheet.data[sheetId].sheetName;
 
     const switchSheet = () => {
-      this.sheetsGroup.switchSheet(sheetId);
+      this.spreadsheet.switchSheet(sheetId);
     };
 
     const setTabToContentEditable = () => {
@@ -126,7 +127,7 @@ class BottomBar {
     const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
       createSheetTabDropdownContent();
 
-    deleteSheetButton.disabled = this.sheetsGroup.sheets.size === 1;
+    deleteSheetButton.disabled = this.spreadsheet.sheets.size === 1;
 
     const sheetTabDropdown = tippy(sheetTab, {
       placement: 'top',
@@ -182,7 +183,7 @@ class BottomBar {
       () => {
         sheetTabDropdown.hide();
 
-        this.sheetsGroup.deleteSheet(sheetId);
+        this.spreadsheet.deleteSheet(sheetId);
       },
       { once: true }
     );
@@ -203,12 +204,12 @@ class BottomBar {
         nameContainer.contentEditable = 'false';
         nameContainer.blur();
 
-        this.sheetsGroup.renameSheet(sheetId, nameContainer.textContent!);
+        this.spreadsheet.renameSheet(sheetId, nameContainer.textContent!);
       },
       { once: true }
     );
 
-    nameContainer.textContent = this.sheetsGroup.getData()[sheetId].sheetName;
+    nameContainer.textContent = this.spreadsheet.data[sheetId].sheetName;
 
     this.scrollSliderContainer.appendChild(sheetTabContainer);
     this.sheetSelectionDropdownContent.appendChild(
@@ -228,7 +229,7 @@ class BottomBar {
     this.scrollSliderContainer.innerHTML = '';
     this.sheetSelectionDropdownContent.innerHTML = '';
 
-    this.sheetsGroup.sheets.forEach((sheet) => {
+    this.spreadsheet.sheets.forEach((sheet) => {
       this.setSheetTabElements(sheet.sheetId);
     });
   }
@@ -238,11 +239,15 @@ class BottomBar {
   };
 
   createNewSheetButtonOnClick = () => {
-    const sheetName = this.sheetsGroup.getSheetName();
+    const sheetName = this.spreadsheet.getSheetName();
 
-    this.sheetsGroup.createNewSheet({
+    this.spreadsheet.createNewSheet({
       sheetName,
     });
+
+    const sheetId = this.spreadsheet.hyperformula!.getSheetId(sheetName)!;
+
+    this.spreadsheet.switchSheet(sheetId);
   };
 
   destroy() {

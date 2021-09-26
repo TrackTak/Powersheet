@@ -11,7 +11,6 @@ export interface IOptions {
   col: IRowColOptions;
   devMode: boolean;
   showFormulas: boolean;
-  undoRedoHistorySize: number;
   exportSpreadsheetName: string;
 }
 
@@ -29,7 +28,6 @@ export const defaultOptions: IOptions = {
     defaultSize: 100,
   },
   showFormulas: false,
-  undoRedoHistorySize: 20,
   exportSpreadsheetName: 'Powersheet.xlsx',
   devMode: false,
 };

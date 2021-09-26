@@ -1,11 +1,11 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
-import events from '../../../events';
-import { prefix } from '../../../utils';
+import events from '../../events';
+import { prefix } from '../../utils';
 import Sheet, { ISheetViewportPosition, iterateXToY } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
-import Spreadsheet from '../../../Spreadsheet';
+import Spreadsheet from '../../Spreadsheet';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -28,7 +28,7 @@ class ScrollBar {
   ) {
     this.sheet = sheet;
     this.type = type;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;

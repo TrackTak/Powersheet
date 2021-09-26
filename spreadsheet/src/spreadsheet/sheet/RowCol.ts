@@ -13,14 +13,14 @@ import Sheet, {
 } from './Sheet';
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
-import Spreadsheet from '../../Spreadsheet';
+import Spreadsheet from '../Spreadsheet';
 import {
   Cell,
   CellId,
   convertFromCellIdToRowColId,
   getCellId,
 } from './CellRenderer';
-import { performanceProperties } from '../../styles';
+import { performanceProperties } from '../styles';
 import { isNil } from 'lodash';
 
 interface IShapes {
@@ -81,7 +81,7 @@ class RowCol {
     this.type = type;
     this.isCol = this.type === 'col';
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.headerGroupMap = new Map();
     this.rowColMap = new Map();
 
@@ -150,7 +150,7 @@ class RowCol {
       };
       this.getAvailableSize = () => {
         const bottomBarHeight =
-          this.sheet.sheetsGroup.bottomBar?.bottomBar.getBoundingClientRect()
+          this.spreadsheet.bottomBar?.bottomBarEl.getBoundingClientRect()
             .height ?? 0;
 
         const toolbarHeight =
@@ -340,12 +340,12 @@ class RowCol {
     }
 
     if (this.isCol) {
-      this.spreadsheet.hyperformula[hyperformulaColumnFunctionName](
+      this.spreadsheet.hyperformula?.[hyperformulaColumnFunctionName](
         this.sheet.sheetId,
         [index, amount]
       );
     } else {
-      this.spreadsheet.hyperformula[hyperformulaRowFunctionName](
+      this.spreadsheet.hyperformula?.[hyperformulaRowFunctionName](
         this.sheet.sheetId,
         [index, amount]
       );

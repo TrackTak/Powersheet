@@ -1,6 +1,6 @@
 import { SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
-import { getCellId } from './sheetsGroup/sheet/CellRenderer';
+import { getCellId } from './sheet/CellRenderer';
 import Spreadsheet from './Spreadsheet';
 
 class Clipboard {
@@ -59,7 +59,7 @@ class Clipboard {
       return result;
     };
 
-    const sheetData = this.spreadsheet.focusedSheet?.getData();
+    const sheetData = this.spreadsheet.getActiveSheet()?.getData();
     const cellData = pastedData.reduce((all, rowData, rowIndex) => {
       const colData = rowData.reduce(
         (allColumnData, currentValue, columnIndex) => {
@@ -79,9 +79,9 @@ class Clipboard {
           if (this.isCut) {
             this.spreadsheet.addToHistory();
 
-            this.spreadsheet.focusedSheet?.cellRenderer.deleteCellData(
-              sourceCellId
-            );
+            this.spreadsheet
+              .getActiveSheet()
+              ?.cellRenderer.deleteCellData(sourceCellId);
           }
 
           return {
@@ -101,15 +101,16 @@ class Clipboard {
       };
     }, {});
 
-    this.spreadsheet.focusedSheet?.cellRenderer.setCellDataBatch(cellData);
-    this.spreadsheet.focusedSheet?.updateViewport();
+    this.spreadsheet.getActiveSheet()?.cellRenderer.setCellDataBatch(cellData);
+    this.spreadsheet.getActiveSheet()?.updateViewport();
     this.isCut = false;
   }
 
   private getCellRangeForSelection(
     expandSelectionForPaste: boolean = false
   ): SimpleCellRange | null {
-    const selectedCells = this.spreadsheet.focusedSheet?.selector.selectedCells;
+    const selectedCells =
+      this.spreadsheet.getActiveSheet()?.selector.selectedCells;
 
     if (
       isEmpty(selectedCells) ||
@@ -118,13 +119,13 @@ class Clipboard {
       return null;
     }
 
-    const startCellAddress =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellHyperformulaAddress(
-        selectedCells![0].attrs.id
-      )!;
+    const startCellAddress = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellHyperformulaAddress(selectedCells![0].attrs.id)!;
 
-    let endCellAddress =
-      this.spreadsheet.focusedSheet?.cellRenderer.getCellHyperformulaAddress(
+    let endCellAddress = this.spreadsheet
+      .getActiveSheet()
+      ?.cellRenderer.getCellHyperformulaAddress(
         selectedCells![selectedCells!.length - 1].attrs.id
       )!;
 

@@ -2,9 +2,9 @@ import { Group } from 'konva/lib/Group';
 import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import Spreadsheet from '../../Spreadsheet';
-import { performanceProperties } from '../../styles';
-import { rotateAroundCenter } from '../../utils';
+import Spreadsheet from '../Spreadsheet';
+import { performanceProperties } from '../styles';
+import { rotateAroundCenter } from '../utils';
 import Sheet, {
   BorderStyle,
   getCellGroupFromScrollGroup,
@@ -17,7 +17,6 @@ import Sheet, {
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
-import numfmt from 'numfmt';
 import { merge } from 'lodash';
 
 export type CellId = string;
@@ -47,7 +46,7 @@ class CellRenderer {
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.commentMarkerConfig = this.spreadsheet.styles.commentMarker;
     this.cellsMap = new Map();
   }
@@ -460,17 +459,18 @@ class CellRenderer {
     }
   }
 
-  setTextFormat(cell: Cell, textFormatPattern: string) {
+  async setTextFormat(cell: Cell, textFormatPattern: string) {
     const cellText = getCellTextFromCell(cell);
 
     if (cellText) {
       const text = cellText.text();
       const num = parseFloat(text);
 
-      const formattedText = numfmt.format(
-        textFormatPattern,
-        isFinite(num) ? num : text
-      );
+      const numfmt = await import('numfmt');
+
+      // TODO: Change to same as exporter?
+      const formattedText =
+        numfmt.format(textFormatPattern, isFinite(num) ? num : text) ?? text;
 
       cellText.text(formattedText);
     }

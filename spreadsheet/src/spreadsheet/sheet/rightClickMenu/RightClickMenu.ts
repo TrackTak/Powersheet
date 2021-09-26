@@ -1,12 +1,12 @@
-import { prefix } from '../../../utils';
+import { prefix } from '../../utils';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from '../Sheet';
-import { createGroup } from '../../../htmlElementHelpers';
+import { createGroup } from '../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { convertFromCellIdToRowColId } from '../CellRenderer';
-import Spreadsheet from '../../../Spreadsheet';
+import Spreadsheet from '../../Spreadsheet';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
@@ -24,7 +24,7 @@ class RightClickMenu {
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.buttonMap = {
       comment: createButtonContent('Comment', 'comment'),
       copy: createButtonContent('Copy', 'copy'),

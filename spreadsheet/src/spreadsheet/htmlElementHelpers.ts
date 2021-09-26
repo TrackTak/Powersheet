@@ -1,4 +1,6 @@
 import {
+  BorderIconFirstRowsName,
+  BorderIconSecondRowsName,
   ColorPickerIconName,
   IconElementsName,
 } from './toolbar/toolbarHtmlElementHelpers';
@@ -35,6 +37,8 @@ export type DropdownIconName =
   | 'verticalTextAlign'
   | 'horizontalTextAlign'
   | 'borders';
+
+export type BorderIconName = BorderIconFirstRowsName | BorderIconSecondRowsName;
 
 export const createGroup = (
   elements: HTMLElement[],

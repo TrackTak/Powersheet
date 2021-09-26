@@ -178,12 +178,10 @@ class ScrollBar {
     this.drawItems();
     this.sheet.cellRenderer.updateViewport();
 
-    if (
-      this.spreadsheet.cellEditor.currentScroll?.[this.type] !== this.scroll
-    ) {
-      this.spreadsheet.cellEditor.showCellTooltip();
+    if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
+      this.sheet.cellEditor.showCellTooltip();
     } else {
-      this.spreadsheet.cellEditor.hideCellTooltip();
+      this.sheet.cellEditor.hideCellTooltip();
     }
 
     this.spreadsheet.emit(events.scroll[this.scrollType], e, newScroll);

@@ -6,6 +6,7 @@ import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
 import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
+import CellEditor from './cellEditor/CellEditor';
 import { BorderIconName } from '../../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
@@ -248,6 +249,7 @@ class Sheet {
   shapes: IShapes;
   sheetDimensions: IDimensions;
   lastClickTime: number = new Date().getTime();
+  cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
   isSaving = false;
@@ -366,6 +368,9 @@ class Sheet {
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
+    this.shapes.sheet.on('click', this.sheetOnClick);
+    this.stage.on('mousedown', this.stageOnClick);
+
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
 
@@ -403,7 +408,8 @@ class Sheet {
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
-    this.shapes.sheet.on('click', this.sheetOnClick);
+    this.cellEditor = new CellEditor(this);
+
     this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
     this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
     this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
@@ -411,11 +417,6 @@ class Sheet {
 
   onSheetMouseDown = () => {
     const { x, y } = this.shapes.sheet.getRelativePointerPosition();
-
-    if (!this.spreadsheet.cellEditor.getIsHidden()) {
-      this.spreadsheet.cellEditor.saveContentToCell();
-      this.spreadsheet.cellEditor.hide();
-    }
 
     this.spreadsheet.setFocusedSheet(this);
     this.spreadsheet.selector.startSelection(x, y);
@@ -429,13 +430,20 @@ class Sheet {
     this.spreadsheet.selector.endSelection();
   };
 
+  stageOnClick = () => {
+    if (!this.cellEditor.getIsHidden()) {
+      this.cellEditor.saveContentToCell();
+      this.cellEditor.hide();
+    }
+  };
+
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
       const selectedFirstcell = this.spreadsheet.selector.selectedFirstCell!;
       const id = selectedFirstcell.id();
 
       if (this.hasDoubleClickedOnCell()) {
-        this.spreadsheet.cellEditor.show(selectedFirstcell);
+        this.cellEditor.show(selectedFirstcell);
       }
 
       if (this.cellRenderer.getCellData(id)?.comment) {
@@ -484,10 +492,8 @@ class Sheet {
         break;
       }
       default:
-        if (this.spreadsheet.cellEditor.getIsHidden() && !e.ctrlKey) {
-          this.spreadsheet.cellEditor.show(
-            this.spreadsheet.selector.selectedFirstCell!
-          );
+        if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
+          this.cellEditor.show(this.spreadsheet.selector.selectedFirstCell!);
         }
     }
   };
@@ -656,7 +662,9 @@ class Sheet {
     this.stage.destroy();
     this.col.destroy();
     this.row.destroy();
-    this.spreadsheet.cellEditor.destroy();
+
+    this.cellEditor?.destroy();
+
     this.spreadsheet.hyperformula?.removeSheet(this.sheetId);
   }
 

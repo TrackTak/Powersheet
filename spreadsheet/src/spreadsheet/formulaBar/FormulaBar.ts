@@ -38,23 +38,24 @@ class FormulaBar {
   }
 
   onInput = (e: Event) => {
+    const sheet = this.spreadsheet.focusedSheet;
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
-    if (this.spreadsheet.cellEditor.getIsHidden()) {
-      this.spreadsheet.cellEditor.show(
+    if (sheet?.cellEditor.getIsHidden()) {
+      sheet.cellEditor.show(
         this.spreadsheet.selector.selectedFirstCell!,
         false
       );
     }
-    this.spreadsheet.cellEditor.setTextContent(textContent ?? null);
+    sheet?.cellEditor.setTextContent(textContent ?? null);
   };
 
   updateValue(cellId: CellId) {
     const sheet = this.spreadsheet.focusedSheet;
     const cell = sheet?.cellRenderer.getCellData(cellId);
     const cellEditorTextContent =
-      this.spreadsheet.cellEditor.cellEditorEl.textContent ?? null;
+      sheet?.cellEditor?.cellEditorEl.textContent ?? null;
 
     this.setTextContent(cell?.value ?? cellEditorTextContent);
   }
@@ -66,15 +67,17 @@ class FormulaBar {
   onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
 
+    const sheet = this.spreadsheet.focusedSheet;
+
     switch (e.key) {
       case 'Escape': {
-        this.spreadsheet.cellEditor.hide();
+        sheet?.cellEditor.hide();
         this.editableContent.blur();
         break;
       }
       case 'Enter': {
-        this.spreadsheet.cellEditor.saveContentToCell();
-        this.spreadsheet.cellEditor.hide();
+        sheet?.cellEditor.saveContentToCell();
+        sheet?.cellEditor.hide();
         this.editableContent.blur();
 
         break;

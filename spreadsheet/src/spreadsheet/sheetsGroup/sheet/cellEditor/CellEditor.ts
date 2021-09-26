@@ -1,5 +1,6 @@
 import { IRect } from 'konva/lib/types';
 import events from '../../../events';
+import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
@@ -18,11 +19,14 @@ class CellEditor {
   cellEditorEl: HTMLDivElement;
   cellTooltip: DelegateInstance;
   formulaHelper: FormulaHelper;
+  spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
 
-  constructor(private spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
+  constructor(private sheet: Sheet) {
+    this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
+
     this.cellEditorEl = document.createElement('div');
     this.cellEditorEl.setAttribute('contentEditable', 'true');
     this.cellEditorEl.classList.add(styles.cellEditor);
@@ -38,7 +42,7 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5],
     });
-    this.spreadsheet.spreadsheetEl.appendChild(this.cellEditorContainerEl);
+    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
 
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
@@ -52,14 +56,12 @@ class CellEditor {
   }
 
   saveContentToCell() {
-    const sheet = this.spreadsheet.focusedSheet!;
-
     if (this.cellEditorEl.textContent) {
-      sheet.cellRenderer.setCellData(this.currentCell!.id(), {
+      this.sheet.cellRenderer.setCellData(this.currentCell!.id(), {
         value: this.cellEditorEl.textContent,
       });
     } else {
-      const cell = sheet.cellRenderer.getCellData(this.currentCell!.id());
+      const cell = this.sheet.cellRenderer.getCellData(this.currentCell!.id());
 
       if (cell) {
         delete cell.value;
@@ -127,12 +129,10 @@ class CellEditor {
   };
 
   show(cell: Cell, setTextContent = true) {
-    const sheet = this.spreadsheet.focusedSheet!;
-
     this.currentCell = cell;
     this.currentScroll = {
-      row: sheet.row.scrollBar.scroll,
-      col: sheet.col.scrollBar.scroll,
+      row: this.sheet.row.scrollBar.scroll,
+      col: this.sheet.col.scrollBar.scroll,
     };
 
     const id = cell.id();
@@ -147,7 +147,9 @@ class CellEditor {
     );
 
     if (setTextContent) {
-      this.setTextContent(sheet.cellRenderer.getCellData(id)?.value ?? null);
+      this.setTextContent(
+        this.sheet.cellRenderer.getCellData(id)?.value ?? null
+      );
       this.cellEditorEl.focus();
     }
   }
@@ -168,11 +170,8 @@ class CellEditor {
   }
 
   setCellEditorElPosition = (position: IRect) => {
-    const sheetRect =
-      this.spreadsheet.focusedSheet!.sheetEl.getBoundingClientRect()!;
-
-    this.cellEditorContainerEl.style.top = `${sheetRect.y + position.y}px`;
-    this.cellEditorContainerEl.style.left = `${sheetRect.x + position.x}px`;
+    this.cellEditorContainerEl.style.top = `${position.y}px`;
+    this.cellEditorContainerEl.style.left = `${position.x}px`;
     this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
     this.cellEditorContainerEl.style.height = `${position.height}px`;
   };
@@ -182,12 +181,10 @@ class CellEditor {
   };
 
   showCellTooltip = () => {
-    const sheet = this.spreadsheet.focusedSheet!;
-
     if (this.currentCell) {
       const { row, col } = this.currentCell.attrs;
-      const rowText = sheet.row.getHeaderText(row.x);
-      const colText = sheet.col.getHeaderText(col.x);
+      const rowText = this.sheet.row.getHeaderText(row.x);
+      const colText = this.sheet.col.getHeaderText(col.x);
 
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();

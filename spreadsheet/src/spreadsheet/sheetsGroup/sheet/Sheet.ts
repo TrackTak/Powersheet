@@ -40,7 +40,6 @@ interface IShapes {
 }
 
 export type SheetId = number;
-export type SheetIndex = number;
 
 export interface IFrozenCells {
   row?: number;
@@ -257,14 +256,9 @@ class Sheet {
   isSaving = false;
   private spreadsheet: Spreadsheet;
 
-  constructor(
-    public sheetsGroup: SheetsGroup,
-    public sheetId: SheetId,
-    public sheetIndex: SheetIndex
-  ) {
+  constructor(public sheetsGroup: SheetsGroup, public sheetId: SheetId) {
     this.sheetsGroup = sheetsGroup;
     this.sheetId = sheetId;
-    this.sheetIndex = sheetIndex;
     this.spreadsheet = this.sheetsGroup.spreadsheet;
 
     this.sheetDimensions = {
@@ -546,7 +540,7 @@ class Sheet {
     }
 
     this.spreadsheet.data[this.sheetsGroup.sheetsGroupId].sheetData[
-      this.sheetIndex
+      this.sheetId
     ] = updatedData;
 
     const done = () => {
@@ -565,7 +559,7 @@ class Sheet {
   }
 
   getData(): ISheetData {
-    return this.sheetsGroup.getData().sheetData[this.sheetIndex];
+    return this.sheetsGroup.getData().sheetData[this.sheetId];
   }
 
   updateSheetDimensions() {

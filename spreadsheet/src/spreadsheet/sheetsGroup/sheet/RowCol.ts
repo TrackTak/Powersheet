@@ -121,12 +121,8 @@ class RowCol {
         return [0, 0, 0, height];
       };
       this.getAvailableSize = () => {
-        const width =
-          this.sheet.sheetsGroup.getData().width ??
-          this.spreadsheet.options.width;
-
         return (
-          width -
+          this.sheet.sheetsGroup.getData().width! -
           this.sheet.getViewportVector().x -
           this.sheet.row.scrollBar.scrollEl.getBoundingClientRect().width
         );
@@ -153,10 +149,6 @@ class RowCol {
         return [0, 0, width, 0];
       };
       this.getAvailableSize = () => {
-        const height =
-          this.sheet.sheetsGroup.getData().height ??
-          this.spreadsheet.options.height;
-
         const bottomBarHeight =
           this.sheet.sheetsGroup.bottomBar?.bottomBarEl.getBoundingClientRect()
             .height ?? 0;
@@ -170,7 +162,7 @@ class RowCol {
             .height ?? 0;
 
         return (
-          height -
+          this.sheet.sheetsGroup.getData().height! -
           bottomBarHeight -
           toolbarHeight -
           formulaBarHeight -

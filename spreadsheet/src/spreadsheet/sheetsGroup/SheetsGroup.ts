@@ -1,5 +1,5 @@
 import BottomBar from '../bottomBar/BottomBar';
-import Sheet, { ISheetData, SheetId, SheetIndex } from './sheet/Sheet';
+import Sheet, { ISheetData, SheetId } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 
@@ -16,7 +16,6 @@ class SheetsGroup {
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   bottomBar?: BottomBar;
-  activeSheetId?: number;
 
   constructor(public spreadsheet: Spreadsheet, public sheetsGroupId: number) {
     this.spreadsheet = spreadsheet;
@@ -42,31 +41,20 @@ class SheetsGroup {
     window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
-  getSheetIndexFromSheetId(sheetId: SheetId) {
-    return this.sheets.get(sheetId)!.sheetIndex;
-  }
-
-  getSheetIdFromSheetIndex(sheetIndex: SheetIndex) {
-    return Array.from(this.sheets.values())[sheetIndex].sheetId;
-  }
-
   onDOMContentLoaded = () => {
     const data = this.getData();
 
-    if (data.sheetData.length) {
-      data.sheetData.forEach((data, i) => {
-        this.createNewSheet(data, i);
+    if (data.sheetData) {
+      data.sheetData.forEach((data) => {
+        this.createNewSheet(data);
       });
     } else {
-      this.createNewSheet(
-        {
-          sheetName: this.getSheetName(),
-        },
-        0
-      );
+      this.createNewSheet({
+        sheetName: this.getSheetName(),
+      });
     }
 
-    this.switchSheet(this.getSheetIdFromSheetIndex(0));
+    this.switchSheet(0);
 
     this.sheets.forEach((sheet) => {
       const data = sheet.getData().cellsData || {};
@@ -87,11 +75,17 @@ class SheetsGroup {
     return `Sheet${this.spreadsheet.totalSheetIndex + 1}`;
   }
 
+  getActiveSheetId() {
+    return this.spreadsheet.focusedSheet?.sheetId;
+  }
+
   update() {
     this.bottomBar?.updateSheetTabs();
 
     this.sheets.forEach((sheet) => {
-      if (sheet.sheetId === this.activeSheetId) {
+      const activeSheetId = this.getActiveSheetId();
+
+      if (sheet.sheetId === activeSheetId) {
         sheet.show();
       } else {
         sheet.hide();
@@ -103,7 +97,7 @@ class SheetsGroup {
   deleteSheet(sheetId: SheetId) {
     const sheet = this.sheets.get(sheetId)!;
 
-    if (this.activeSheetId === sheetId) {
+    if (this.getActiveSheetId() === sheetId) {
       const sheetIds = Array.from(this.sheets.keys());
       const currentIndex = sheetIds.indexOf(sheetId);
 
@@ -118,46 +112,40 @@ class SheetsGroup {
 
     this.sheets.delete(sheetId);
 
-    const sheetIndex = this.getSheetIndexFromSheetId(sheetId);
-
-    delete this.getData().sheetData[sheetIndex];
+    delete this.getData().sheetData[sheetId];
 
     this.update();
   }
 
   switchSheet(sheetId: SheetId) {
-    const activeSheet = this.activeSheetId
-      ? this.sheets.get(this.activeSheetId)
-      : null;
+    const sheet = this.sheets.get(sheetId)!;
+    const activeSheet = this.sheets.get(this.getActiveSheetId());
 
     if (activeSheet) {
       activeSheet.hide();
     }
 
-    this.activeSheetId = sheetId;
+    this.spreadsheet.setFocusedSheet(sheet);
 
     this.update();
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    const sheetIndex = this.getSheetIndexFromSheetId(sheetId);
-
-    this.getData().sheetData[sheetIndex].sheetName = sheetName;
+    this.getData().sheetData[sheetId].sheetName = sheetName;
 
     this.spreadsheet.hyperformula?.renameSheet(sheetId, sheetName);
 
     this.update();
   }
 
-  createNewSheet(data: ISheetData, sheetIndex: SheetIndex) {
+  createNewSheet(data: ISheetData) {
     this.spreadsheet.hyperformula?.addSheet(data.sheetName);
 
     const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
-    // Cannot use Hyperformula sheetId as our data index because we have an array of arrays for sheetsGroups
-    this.spreadsheet.data[this.sheetsGroupId].sheetData[sheetIndex] = data;
+    this.spreadsheet.data[this.sheetsGroupId].sheetData[sheetId] = data;
 
-    const sheet = new Sheet(this, sheetId, sheetIndex);
+    const sheet = new Sheet(this, sheetId);
 
     this.sheets.set(sheetId, sheet);
 

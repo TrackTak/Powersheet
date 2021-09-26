@@ -72,6 +72,8 @@ class Spreadsheet {
 
     if (!this.data.length) {
       this.data.push({
+        width: window.innerWidth,
+        height: window.innerHeight,
         sheetData: [],
       });
     }

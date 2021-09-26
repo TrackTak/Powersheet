@@ -152,7 +152,7 @@ class Export {
     const workbook = utils.book_new();
 
     this.spreadsheet.data.forEach((sheetsGroupData, i) => {
-      sheetsGroupData.sheetData.forEach((data) => {
+      sheetsGroupData.forEach((data) => {
         const sheet = Array.from(
           this.spreadsheet.sheetsGroups[i].sheets.values()
         ).find((x) => x.getData().sheetName === data.sheetName)!;

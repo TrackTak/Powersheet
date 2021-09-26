@@ -40,7 +40,7 @@ class Spreadsheet {
   history: any;
   bottomBar?: BottomBar;
   activeSheetId?: number;
-  totalSheetIndex = 0;
+  totalSheetCount = 0;
 
   constructor(params: ISpreadsheetConstructor) {
     this.data = params.data ?? [];
@@ -141,7 +141,7 @@ class Spreadsheet {
   };
 
   getSheetName() {
-    return `Sheet${this.totalSheetIndex + 1}`;
+    return `Sheet${this.totalSheetCount + 1}`;
   }
 
   getActiveSheet() {
@@ -211,7 +211,7 @@ class Spreadsheet {
 
     this.sheets.set(sheetId, sheet);
 
-    this.totalSheetIndex++;
+    this.totalSheetCount++;
 
     this.updateViewport();
   }

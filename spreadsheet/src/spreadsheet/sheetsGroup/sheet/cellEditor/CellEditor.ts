@@ -171,12 +171,8 @@ class CellEditor {
     const sheetRect =
       this.spreadsheet.focusedSheet!.sheetEl.getBoundingClientRect()!;
 
-    this.cellEditorContainerEl.style.top = `${
-      sheetRect.y + window.scrollY + position.y
-    }px`;
-    this.cellEditorContainerEl.style.left = `${
-      sheetRect.x + window.scrollX + position.x
-    }px`;
+    this.cellEditorContainerEl.style.top = `${sheetRect.y + position.y}px`;
+    this.cellEditorContainerEl.style.left = `${sheetRect.x + position.x}px`;
     this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
     this.cellEditorContainerEl.style.height = `${position.height}px`;
   };

@@ -104,9 +104,9 @@ class Spreadsheet {
     this.sheetsGroups.push(sheetsGroup);
   }
 
-  updateViewport() {
+  update() {
     this.sheetsGroups.forEach((sheetGroup) => {
-      sheetGroup.updateViewport();
+      sheetGroup.update();
     });
   }
 
@@ -120,14 +120,14 @@ class Spreadsheet {
     if (!this.history.canUndo) return;
 
     this.history.undo();
-    this.updateViewport();
+    this.update();
   }
 
   redo() {
     if (!this.history.canRedo) return;
 
     this.history.redo();
-    this.updateViewport();
+    this.update();
   }
 }
 

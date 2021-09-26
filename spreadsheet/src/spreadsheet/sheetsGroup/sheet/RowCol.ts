@@ -368,7 +368,7 @@ class RowCol {
       cellsData,
     });
 
-    this.spreadsheet.updateViewport();
+    this.sheet.updateViewport();
   }
 
   insert(index: number, amount: number) {

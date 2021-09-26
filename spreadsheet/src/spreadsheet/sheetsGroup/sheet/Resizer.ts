@@ -208,7 +208,7 @@ class Resizer {
       this.resize(index, axis);
     }
 
-    this.spreadsheet.updateViewport();
+    this.sheet.updateViewport();
 
     this.spreadsheet.emit(events.resize[this.type].end, e, index, axis);
   };

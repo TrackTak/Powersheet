@@ -8,7 +8,6 @@ import {
   createTextarea,
 } from './commentHtmlHelpers';
 import { CellId } from '../CellRenderer';
-import Spreadsheet from '../../../Spreadsheet';
 
 class Comment {
   textarea: HTMLTextAreaElement;
@@ -17,11 +16,9 @@ class Comment {
   successButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
   container: Instance<Props>;
-  spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
-    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.content = createContent();
     this.textarea = createTextarea();
     this.buttonContainer = createButtonContainer();
@@ -67,7 +64,7 @@ class Comment {
       comment: this.textarea.value,
     });
 
-    this.spreadsheet.updateViewport();
+    this.sheet.updateViewport();
     this.hide();
   };
 

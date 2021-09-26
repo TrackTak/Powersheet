@@ -551,7 +551,7 @@ class Sheet {
 
     const done = () => {
       this.isSaving = false;
-      this.spreadsheet.updateViewport();
+      this.updateViewport();
     };
 
     this.isSaving = true;

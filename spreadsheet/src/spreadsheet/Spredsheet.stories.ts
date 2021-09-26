@@ -5,7 +5,7 @@ import './tippy.scss';
 import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
 import { defaultStyles, IStyles } from './styles';
 import events from './events';
-import { ConfigParams, HyperFormula } from 'hyperformula';
+import { HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import Toolbar from './toolbar/Toolbar';
@@ -18,6 +18,11 @@ import { ISheetsGroupData } from './sheetsGroup/SheetsGroup';
 export default {
   title: 'Spreadsheet',
 } as Meta;
+
+const hyperformula = HyperFormula.buildEmpty({
+  ...getHyperformulaConfig(),
+  licenseKey: 'gpl-v3',
+});
 
 // TODO: Fix to be optional styles + options
 interface IArgs {
@@ -44,16 +49,7 @@ const getSpreadsheet = (params: ISpreadsheetConstructor) => {
   return spreadsheet;
 };
 
-const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
-  return HyperFormula.buildEmpty({
-    ...getHyperformulaConfig(),
-    ...config,
-    licenseKey: 'gpl-v3',
-  });
-};
-
-const buildOnlySpreadsheet = (args: IArgs, config?: Partial<ConfigParams>) => {
-  const hyperformula = getHyperformulaInstance(config);
+const buildOnlySpreadsheet = (args: IArgs) => {
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
@@ -80,11 +76,7 @@ const buildOnlySpreadsheet = (args: IArgs, config?: Partial<ConfigParams>) => {
   return spreadsheet.spreadsheetEl;
 };
 
-const buildSpreadsheetWithEverything = (
-  args: IArgs,
-  config?: Partial<ConfigParams>
-) => {
-  const hyperformula = getHyperformulaInstance(config);
+const buildSpreadsheetWithEverything = (args: IArgs) => {
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
@@ -213,9 +205,11 @@ DifferentSizeCells.args = {
 const MillionRowsTemplate: Story<IArgs> = (args) => {
   args.options.row.amount = 1_000_000;
 
-  return buildSpreadsheetWithEverything(args, {
+  hyperformula.updateConfig({
     maxRows: args.options.row.amount,
   });
+
+  return buildSpreadsheetWithEverything(args);
 };
 
 export const MillionRows = MillionRowsTemplate.bind({});
@@ -265,6 +259,14 @@ const OnlySpreadsheetTemplate: Story<IArgs> = (args) => {
 
 export const OnlySpreadsheet = OnlySpreadsheetTemplate.bind({});
 
+const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
+  hyperformula.updateConfig({
+    currencySymbol: Object.values(currencySymbolMap),
+  });
+
+  return buildSpreadsheetWithEverything(args);
+};
+
 export const MultipleSheetsGroups = Template.bind({});
 
 MultipleSheetsGroups.args = {
@@ -287,55 +289,6 @@ MultipleSheetsGroups.args = {
       ],
     },
   ],
-};
-
-const MultipleSpreadsheetsTemplate: Story = () => {
-  const firstSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
-    data: [
-      {
-        sheetData: [
-          {
-            sheetName: 'First Spreadsheet Sheet',
-          },
-        ],
-      },
-    ],
-  };
-
-  const secondSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
-    data: [
-      {
-        sheetData: [
-          {
-            sheetName: 'Second Spreadsheet Sheet',
-          },
-        ],
-      },
-    ],
-  };
-
-  const firstSpreadsheetEl =
-    buildSpreadsheetWithEverything(firstSpreadsheetArgs);
-  const secondSpreadsheetEl = buildSpreadsheetWithEverything(
-    secondSpreadsheetArgs
-  );
-
-  const containerEl = document.createElement('div');
-
-  containerEl.appendChild(firstSpreadsheetEl);
-  containerEl.appendChild(secondSpreadsheetEl);
-
-  return containerEl;
-};
-
-export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({});
-
-const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args, {
-    currencySymbol: Object.values(currencySymbolMap),
-  });
 };
 
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});

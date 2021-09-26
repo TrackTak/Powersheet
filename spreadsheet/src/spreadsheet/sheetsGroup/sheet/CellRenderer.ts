@@ -296,7 +296,7 @@ class CellRenderer {
             },
           },
         });
-        this.spreadsheet.updateViewport();
+        this.sheet.updateViewport();
       }
     }
   }

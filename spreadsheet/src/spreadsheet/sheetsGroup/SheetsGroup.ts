@@ -76,7 +76,7 @@ class SheetsGroup {
       });
     });
 
-    this.updateViewport();
+    this.update();
   };
 
   getData() {
@@ -87,16 +87,16 @@ class SheetsGroup {
     return `Sheet${this.spreadsheet.totalSheetIndex + 1}`;
   }
 
-  updateViewport() {
+  update() {
     this.bottomBar?.updateSheetTabs();
 
     this.sheets.forEach((sheet) => {
       if (sheet.sheetId === this.activeSheetId) {
         sheet.show();
-        sheet.updateViewport();
       } else {
         sheet.hide();
       }
+      sheet.updateViewport();
     });
   }
 
@@ -122,7 +122,7 @@ class SheetsGroup {
 
     delete this.getData().sheetData[sheetIndex];
 
-    this.updateViewport();
+    this.update();
   }
 
   switchSheet(sheetId: SheetId) {
@@ -136,7 +136,7 @@ class SheetsGroup {
 
     this.activeSheetId = sheetId;
 
-    this.updateViewport();
+    this.update();
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
@@ -146,7 +146,7 @@ class SheetsGroup {
 
     this.spreadsheet.hyperformula?.renameSheet(sheetId, sheetName);
 
-    this.updateViewport();
+    this.update();
   }
 
   createNewSheet(data: ISheetData, sheetIndex: SheetIndex) {
@@ -163,7 +163,7 @@ class SheetsGroup {
 
     this.spreadsheet.totalSheetIndex++;
 
-    this.updateViewport();
+    this.update();
   }
 }
 

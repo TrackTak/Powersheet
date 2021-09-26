@@ -103,7 +103,7 @@ class BottomBar {
   setSheetTabElements(sheetId: SheetId) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab();
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton();
-    const isActive = sheetId === this.sheetsGroup.getActiveSheetId();
+    const isActive = sheetId === this.sheetsGroup.activeSheetId;
 
     if (isActive) {
       sheetTab.classList.add('active');
@@ -111,8 +111,10 @@ class BottomBar {
       sheetTab.classList.remove('active');
     }
 
+    const sheetIndex = this.sheetsGroup.getSheetIndexFromSheetId(sheetId);
+
     sheetSelectionDropdownButton.textContent =
-      this.sheetsGroup.getData()[sheetId].sheetName;
+      this.sheetsGroup.getData().sheetData[sheetIndex].sheetName;
 
     const switchSheet = () => {
       this.sheetsGroup.switchSheet(sheetId);
@@ -208,7 +210,8 @@ class BottomBar {
       { once: true }
     );
 
-    nameContainer.textContent = this.sheetsGroup.getData()[sheetId].sheetName;
+    nameContainer.textContent =
+      this.sheetsGroup.getData().sheetData[sheetIndex].sheetName;
 
     this.scrollSliderContainer.appendChild(sheetTabContainer);
     this.sheetSelectionDropdownContent.appendChild(
@@ -240,9 +243,12 @@ class BottomBar {
   createNewSheetButtonOnClick = () => {
     const sheetName = this.sheetsGroup.getSheetName();
 
-    this.sheetsGroup.createNewSheet({
-      sheetName,
-    });
+    this.sheetsGroup.createNewSheet(
+      {
+        sheetName,
+      },
+      this.sheetsGroup.sheets.size
+    );
   };
 
   destroy() {

@@ -97,7 +97,7 @@ const buildSpreadsheetWithEverything = (args: IArgs) => {
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
-  debugger;
+
   spreadsheet.sheetsGroups.forEach((sheetGroup) => {
     const bottomBar = new BottomBar(sheetGroup);
 
@@ -274,7 +274,7 @@ MultipleSheetsGroups.args = {
   data: [
     {
       width: window.innerWidth,
-      height: 300,
+      height: 250,
       sheetData: [
         {
           sheetName: 'Top Sheet',

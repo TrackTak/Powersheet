@@ -10,9 +10,13 @@ export interface IOptions {
   devMode: boolean;
   showFormulas: boolean;
   exportSpreadsheetName: string;
+  width: number;
+  height: number;
 }
 
 export const defaultOptions: IOptions = {
+  width: window.innerWidth,
+  height: window.innerHeight,
   row: {
     amount: 100,
     minSize: 25,

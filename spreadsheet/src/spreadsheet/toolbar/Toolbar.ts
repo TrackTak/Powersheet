@@ -446,15 +446,15 @@ class Toolbar {
       cell.x(cell.x() + viewportVector.x);
       cell.y(cell.y() + viewportVector.y);
 
-      sheet.cellEditor.show(cell);
-      sheet.cellEditor.setTextContent(
+      this.spreadsheet.cellEditor.show(cell);
+      this.spreadsheet.cellEditor.setTextContent(
         `=${functionName}(${xCellAddress}:${yCellAddress})`
       );
     } else {
       const selectedFirstCell = this.spreadsheet.selector.selectedFirstCell!;
 
-      sheet.cellEditor.show(selectedFirstCell);
-      sheet.cellEditor.setTextContent(`=${functionName}()`);
+      this.spreadsheet.cellEditor.show(selectedFirstCell);
+      this.spreadsheet.cellEditor.setTextContent(`=${functionName}()`);
     }
   }
 

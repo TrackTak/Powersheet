@@ -14,6 +14,7 @@ import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import Selector from './sheetsGroup/sheet/Selector';
+import CellEditor from './sheetsGroup/sheet/cellEditor/CellEditor';
 
 export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
@@ -39,6 +40,7 @@ class Spreadsheet {
   hyperformula?: HyperFormula;
   clipboard: Clipboard;
   selector: Selector;
+  cellEditor: CellEditor;
   history: any;
   totalSheetIndex = 0;
 
@@ -65,6 +67,7 @@ class Spreadsheet {
 
     this.clipboard = new Clipboard(this);
     this.selector = new Selector(this);
+    this.cellEditor = new CellEditor(this);
 
     this.history = new Manager((data: ISheetsGroupData[]) => {
       const currentData = this.data;

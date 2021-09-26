@@ -242,13 +242,17 @@ class BottomBar {
 
   createNewSheetButtonOnClick = () => {
     const sheetName = this.sheetsGroup.getSheetName();
-
+    const sheetIndex = this.sheetsGroup.sheets.size;
     this.sheetsGroup.createNewSheet(
       {
         sheetName,
       },
-      this.sheetsGroup.sheets.size
+      sheetIndex
     );
+
+    const sheetId = this.sheetsGroup.getSheetIdFromSheetIndex(sheetIndex);
+
+    this.sheetsGroup.switchSheet(sheetId);
   };
 
   destroy() {

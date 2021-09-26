@@ -20,7 +20,7 @@ class Export {
     const cellsData = data.cellsData ?? {};
     const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
-    let startRowColAddress: IRowColAddress = {
+    let startRowColAddress: Partial<IRowColAddress> = {
       row: 0,
       col: 0,
     };

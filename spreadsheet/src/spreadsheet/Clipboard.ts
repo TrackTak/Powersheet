@@ -109,7 +109,7 @@ class Clipboard {
   private getCellRangeForSelection(
     expandSelectionForPaste: boolean = false
   ): SimpleCellRange | null {
-    const selectedCells = this.spreadsheet.focusedSheet?.selector.selectedCells;
+    const selectedCells = this.spreadsheet.selector.selectedCells;
 
     if (
       isEmpty(selectedCells) ||

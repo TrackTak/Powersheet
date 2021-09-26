@@ -2,6 +2,7 @@ import BottomBar from '../bottomBar/BottomBar';
 import Sheet, { ISheetData, SheetId, SheetIndex } from './sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
+import { isNil } from 'lodash';
 
 export type SheetsGroupId = number;
 
@@ -40,6 +41,12 @@ class SheetsGroup {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+  }
+
+  getActiveSheet() {
+    return isNil(this.activeSheetId)
+      ? null
+      : this.sheets.get(this.activeSheetId);
   }
 
   getSheetIndexFromSheetId(sheetId: SheetId) {
@@ -135,6 +142,13 @@ class SheetsGroup {
     }
 
     this.activeSheetId = sheetId;
+
+    const sheet = this.sheets.get(sheetId)!;
+
+    this.spreadsheet.setFocusedSheet(sheet);
+
+    this.spreadsheet.selector.startSelection(0, 0);
+    this.spreadsheet.selector.endSelection();
 
     this.updateViewport();
   }

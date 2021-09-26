@@ -132,34 +132,34 @@ class RightClickMenu {
   }
 
   commentOnClick = () => {
-    const id = this.sheet.selector.selectedFirstCell!.id();
+    const id = this.spreadsheet.selector.selectedFirstCell!.id();
 
     this.sheet.comment?.show(id);
   };
 
   insertRowOnClick = () => {
-    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const cellId = this.spreadsheet.selector.selectedFirstCell!.id();
     const { row } = convertFromCellIdToRowColId(cellId);
 
     this.sheet.row.insert(row, 1);
   };
 
   insertColOnClick = () => {
-    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const cellId = this.spreadsheet.selector.selectedFirstCell!.id();
     const { col } = convertFromCellIdToRowColId(cellId);
 
     this.sheet.col.insert(col, 1);
   };
 
   deleteRowOnClick = () => {
-    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const cellId = this.spreadsheet.selector.selectedFirstCell!.id();
     const { row } = convertFromCellIdToRowColId(cellId);
 
     this.sheet.row.delete(row, 1);
   };
 
   deleteColOnClick = () => {
-    const cellId = this.sheet.selector.selectedFirstCell!.id();
+    const cellId = this.spreadsheet.selector.selectedFirstCell!.id();
     const { col } = convertFromCellIdToRowColId(cellId);
 
     this.sheet.col.delete(col, 1);

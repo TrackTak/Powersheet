@@ -11,7 +11,7 @@ class FormulaBar {
   editorArea!: HTMLDivElement;
   editableContentContainer!: HTMLDivElement;
   editableContent!: HTMLDivElement;
-  spreadsheet!: Spreadsheet;
+  private spreadsheet!: Spreadsheet;
 
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
@@ -43,7 +43,10 @@ class FormulaBar {
     const textContent = target.firstChild?.textContent;
 
     if (sheet?.cellEditor.getIsHidden()) {
-      sheet.cellEditor.show(sheet.selector.selectedFirstCell!, false);
+      sheet.cellEditor.show(
+        this.spreadsheet.selector.selectedFirstCell!,
+        false
+      );
     }
     sheet?.cellEditor.setTextContent(textContent ?? null);
   };

@@ -1,6 +1,7 @@
 import Sheet, { iterateRowColVector } from './Sheet';
 import { CellId, getCellId } from './CellRenderer';
 import { Vector2d } from 'konva/lib/types';
+import Spreadsheet from '../../Spreadsheet';
 
 export type AssociatedMergedCellId = CellId;
 export type TopLeftMergedCellId = CellId;
@@ -12,9 +13,11 @@ export interface IMergedCell {
 
 class Merger {
   associatedMergedCellIdMap: Map<AssociatedMergedCellId, IMergedCell>;
+  private spreadsheet!: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.associatedMergedCellIdMap = new Map();
   }
 
@@ -132,7 +135,7 @@ class Merger {
   }
 
   mergeSelectedCells() {
-    const selectedCells = this.sheet.selector.selectedCells;
+    const selectedCells = this.spreadsheet.selector.selectedCells;
 
     if (!selectedCells.length) return;
 
@@ -144,7 +147,7 @@ class Merger {
   }
 
   unMergeSelectedCells() {
-    const selectedCells = this.sheet.selector.selectedCells;
+    const selectedCells = this.spreadsheet.selector.selectedCells;
 
     if (!selectedCells.length) return;
 

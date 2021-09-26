@@ -409,12 +409,12 @@ class Toolbar {
   setFunction(functionName: string) {
     const sheet = this.spreadsheet.focusedSheet!;
 
-    if (this.spreadsheet.selector.selectedCells.length > 1) {
+    if (sheet.selector.selectedCells.length > 1) {
       const rowRange = sheet.row.convertFromCellsToRange(
-        this.spreadsheet.selector.selectedCells
+        sheet.selector.selectedCells
       );
       const colRange = sheet.col.convertFromCellsToRange(
-        this.spreadsheet.selector.selectedCells
+        sheet.selector.selectedCells
       );
 
       const ri = rowRange.y + 1;
@@ -451,7 +451,7 @@ class Toolbar {
         `=${functionName}(${xCellAddress}:${yCellAddress})`
       );
     } else {
-      const selectedFirstCell = this.spreadsheet.selector.selectedFirstCell!;
+      const selectedFirstCell = sheet.selector.selectedFirstCell!;
 
       sheet.cellEditor.show(selectedFirstCell);
       sheet.cellEditor.setTextContent(`=${functionName}()`);
@@ -567,7 +567,7 @@ class Toolbar {
   private deleteStyleForSelectedCells(key: keyof ICellStyle) {
     const sheet = this.spreadsheet.focusedSheet!;
 
-    this.spreadsheet.selector.selectedCells.forEach((cell) => {
+    sheet.selector.selectedCells.forEach((cell) => {
       const id = cell.id();
 
       sheet.cellRenderer.deleteCellStyle(id, key);
@@ -577,7 +577,7 @@ class Toolbar {
   private setStyleForSelectedCells<T>(key: keyof ICellStyle, value: T) {
     const sheet = this.spreadsheet.focusedSheet!;
 
-    this.spreadsheet.selector.selectedCells.forEach((cell) => {
+    sheet.selector.selectedCells.forEach((cell) => {
       const id = cell.id();
 
       sheet.cellRenderer.setCellDataStyle(id, {
@@ -726,8 +726,7 @@ class Toolbar {
         if (this.iconElementsMap.freeze.active) {
           delete sheet.getData().frozenCells;
         } else {
-          const { row, col } =
-            this.spreadsheet.selector.selectedFirstCell?.attrs;
+          const { row, col } = sheet.selector.selectedFirstCell?.attrs;
 
           sheet.setData({ frozenCells: { row: row.x, col: col.x } });
         }
@@ -738,45 +737,43 @@ class Toolbar {
         break;
       }
       case 'borderBottom': {
-        this.setBottomBorders(this.spreadsheet.selector.selectedCells);
+        this.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
-        this.setRightBorders(this.spreadsheet.selector.selectedCells);
+        this.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
-        this.setTopBorders(this.spreadsheet.selector.selectedCells);
+        this.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
-        this.setLeftBorders(this.spreadsheet.selector.selectedCells);
+        this.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
-        this.setVerticalBorders(this.spreadsheet.selector.selectedCells);
+        this.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
-        this.setHorizontalBorders(this.spreadsheet.selector.selectedCells);
+        this.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
-        this.setInsideBorders(this.spreadsheet.selector.selectedCells);
+        this.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderOutside': {
-        this.setOutsideBorders(this.spreadsheet.selector.selectedCells);
+        this.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderAll': {
-        this.setAllBorders(this.spreadsheet.selector.selectedCells);
+        this.setAllBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderNone': {
-        this.clearBorders(
-          this.spreadsheet.selector.selectedCells.map((x) => x.attrs.id)
-        );
+        this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
         break;
       }
       case 'undo': {
@@ -794,11 +791,11 @@ class Toolbar {
 
   updateActiveStates = () => {
     const sheet = this.spreadsheet.focusedSheet!;
-    const selectedFirstCell = this.spreadsheet.selector.selectedFirstCell;
 
-    if (!sheet || !selectedFirstCell) return;
+    if (!sheet) return;
 
-    const selectedCells = this.spreadsheet.selector.selectedCells;
+    const selectedCells = sheet.selector.selectedCells;
+    const selectedFirstCell = sheet.selector.selectedFirstCell;
     const selectedFirstCellId = selectedFirstCell!.id();
 
     this.setActiveColor(selectedFirstCellId, 'backgroundColor');

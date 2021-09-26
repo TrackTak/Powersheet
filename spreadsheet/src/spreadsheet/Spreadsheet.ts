@@ -13,7 +13,6 @@ import { HyperFormula } from 'hyperformula';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
-import Selector from './sheetsGroup/sheet/Selector';
 
 export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
@@ -38,7 +37,6 @@ class Spreadsheet {
   exporter?: Exporter;
   hyperformula?: HyperFormula;
   clipboard: Clipboard;
-  selector: Selector;
   history: any;
   totalSheetIndex = 0;
 
@@ -62,9 +60,7 @@ class Spreadsheet {
     this.toolbar?.initialize(this);
     this.formulaBar?.initialize(this);
     this.exporter?.initialize(this);
-
     this.clipboard = new Clipboard(this);
-    this.selector = new Selector(this);
 
     this.history = new Manager((data: ISheetsGroupData[]) => {
       const currentData = this.data;

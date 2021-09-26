@@ -4,6 +4,7 @@ import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import { performanceProperties } from '../../styles';
+import Selector from './Selector';
 import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
@@ -244,6 +245,7 @@ class Sheet {
   layer: Layer;
   col: RowCol;
   row: RowCol;
+  selector: Selector;
   merger: Merger;
   cellRenderer: CellRenderer;
   shapes: IShapes;
@@ -365,6 +367,7 @@ class Sheet {
     this.row.setup();
 
     this.merger = new Merger(this);
+    this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
@@ -408,27 +411,10 @@ class Sheet {
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
+    this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+
     this.cellEditor = new CellEditor(this);
-
-    this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
-    this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
-    this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
   }
-
-  onSheetMouseDown = () => {
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
-
-    this.spreadsheet.setFocusedSheet(this);
-    this.spreadsheet.selector.startSelection(x, y);
-  };
-
-  onSheetMouseMove = () => {
-    this.spreadsheet.selector.moveSelection();
-  };
-
-  onSheetMouseUp = () => {
-    this.spreadsheet.selector.endSelection();
-  };
 
   stageOnClick = () => {
     if (!this.cellEditor.getIsHidden()) {
@@ -439,7 +425,7 @@ class Sheet {
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
-      const selectedFirstcell = this.spreadsheet.selector.selectedFirstCell!;
+      const selectedFirstcell = this.selector.selectedFirstCell!;
       const id = selectedFirstcell.id();
 
       if (this.hasDoubleClickedOnCell()) {
@@ -459,7 +445,7 @@ class Sheet {
     this.lastClickTime = timeNow;
 
     return (
-      !this.spreadsheet.selector.hasChangedCellSelection() &&
+      !this.selector.hasChangedCellSelection() &&
       timeNow <= this.lastClickTime + delayTime
     );
   }
@@ -493,7 +479,7 @@ class Sheet {
       }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
-          this.cellEditor.show(this.spreadsheet.selector.selectedFirstCell!);
+          this.cellEditor.show(this.selector.selectedFirstCell!);
         }
     }
   };
@@ -723,10 +709,10 @@ class Sheet {
     this.row.updateViewport();
     this.col.updateViewport();
     this.cellRenderer.updateViewport();
-    this.spreadsheet.selector.updateSelectedCells();
+    this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
-      this.spreadsheet.selector.selectedFirstCell?.id() ?? ''
+      this.selector.selectedFirstCell?.id() ?? ''
     );
     this.updateFrozenBackgrounds();
   }

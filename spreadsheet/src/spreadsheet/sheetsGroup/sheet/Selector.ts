@@ -4,7 +4,7 @@ import { IRect, Vector2d } from 'konva/lib/types';
 import events from '../../events';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell } from './CellRenderer';
-import { getCellRectFromCell } from './Sheet';
+import Sheet, { getCellRectFromCell } from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -23,9 +23,11 @@ class Selector {
   selectedFirstCell: Cell | null;
   previousSelectedCellPosition?: IRect;
   private selectionArea: ISelectionArea;
+  private spreadsheet: Spreadsheet;
 
-  constructor(private spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
+  constructor(private sheet: Sheet) {
+    this.sheet = sheet;
+    this.spreadsheet = this.sheet.sheetsGroup.spreadsheet;
     this.isInSelectionMode = false;
     this.selectionArea = {
       start: {
@@ -42,20 +44,22 @@ class Selector {
     this.selectionBorderCell = null;
 
     this.selectedCells = [];
+
+    this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
+    this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
   }
 
   updateSelectedCells() {
     if (!this.selectedCells.length) return;
 
-    const sheet = this.spreadsheet.focusedSheet!;
+    const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
+    const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
 
-    const row = sheet.row.convertFromCellsToRange(this.selectedCells);
-    const col = sheet.col.convertFromCellsToRange(this.selectedCells);
+    const rows = this.sheet.row.convertFromRangeToRowCols(row);
+    const cols = this.sheet.col.convertFromRangeToRowCols(col);
 
-    const rows = sheet.row.convertFromRangeToRowCols(row);
-    const cols = sheet.col.convertFromRangeToRowCols(col);
-
-    const cells = sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
 
     this.setCells(cells);
 
@@ -68,86 +72,25 @@ class Selector {
     this.selectCells(cells);
   }
 
-  startSelection(x: number, y: number) {
-    const sheet = this.spreadsheet.focusedSheet!;
-
-    const start = {
-      x,
-      y,
-    };
-    const end = {
-      x,
-      y,
-    };
-
-    this.selectionArea = {
-      start,
-      end,
-    };
-
+  startSelection(start: Vector2d, end: Vector2d) {
     this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
 
-    const { rows, cols } = sheet.getRowColsBetweenVectors(start, end);
+    const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
 
-    const cells = sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
+    const cells = this.sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
     const selectedFirstCell = cells[0];
 
     this.setFirstCell(selectedFirstCell);
     this.selectCells(cells);
 
+    this.spreadsheet.setFocusedSheet(this.sheet);
     this.spreadsheet.updateViewport();
-
-    this.isInSelectionMode = true;
 
     this.spreadsheet.emit(
       events.selector.startSelection,
-      sheet,
+      this.sheet,
       selectedFirstCell
     );
-  }
-
-  moveSelection() {
-    const sheet = this.spreadsheet.focusedSheet!;
-
-    if (this.isInSelectionMode) {
-      const { x, y } = sheet.shapes.sheet.getRelativePointerPosition();
-
-      const start = {
-        x: this.selectionArea.start.x,
-        y: this.selectionArea.start.y,
-      };
-
-      this.selectionArea.end = {
-        x,
-        y,
-      };
-
-      const { rows, cols } = sheet.getRowColsBetweenVectors(
-        start,
-        this.selectionArea.end
-      );
-
-      const cells = sheet.cellRenderer.convertFromRowColsToCells(rows, cols);
-
-      if (this.selectedCells.length !== cells.length) {
-        this.setCells(cells);
-
-        this.removeSelectedCells(false);
-
-        this.selectCells(cells);
-        this.spreadsheet.toolbar?.updateActiveStates();
-
-        this.spreadsheet.emit(events.selector.moveSelection, cells);
-      }
-    }
-  }
-
-  endSelection() {
-    this.isInSelectionMode = false;
-
-    this.setSelectionBorder();
-
-    this.spreadsheet.emit(events.selector.endSelection);
   }
 
   setFirstCell(cell: Cell) {
@@ -181,8 +124,71 @@ class Selector {
     }
   }
 
+  onSheetMouseDown = () => {
+    const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
+
+    const start = {
+      x,
+      y,
+    };
+    const end = {
+      x,
+      y,
+    };
+
+    this.selectionArea = {
+      start,
+      end,
+    };
+
+    this.startSelection(start, end);
+
+    this.isInSelectionMode = true;
+  };
+
+  onSheetMouseMove = () => {
+    if (this.isInSelectionMode) {
+      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
+
+      const start = {
+        x: this.selectionArea.start.x,
+        y: this.selectionArea.start.y,
+      };
+
+      this.selectionArea.end = {
+        x,
+        y,
+      };
+
+      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
+        start,
+        this.selectionArea.end
+      );
+
+      const cells = this.sheet.cellRenderer.convertFromRowColsToCells(
+        rows,
+        cols
+      );
+
+      if (this.selectedCells.length !== cells.length) {
+        this.setCells(cells);
+
+        this.removeSelectedCells(false);
+
+        this.selectCells(cells);
+        this.spreadsheet.toolbar?.updateActiveStates();
+
+        this.spreadsheet.emit(events.selector.moveSelection, cells);
+      }
+    }
+  };
+
   onSheetMouseUp = () => {
-    this.endSelection();
+    this.isInSelectionMode = false;
+
+    this.setSelectionBorder();
+
+    this.spreadsheet.emit(events.selector.endSelection);
   };
 
   removeSelectedCells(destroySelectedFirstCell: boolean = true) {
@@ -205,19 +211,15 @@ class Selector {
   }
 
   selectCells(cells: Cell[]) {
-    const sheet = this.spreadsheet.focusedSheet!;
-
     cells.forEach((cell) => {
       this.selectedCells.push(cell);
 
-      sheet.cellRenderer.addCell(cell);
+      this.sheet.cellRenderer.addCell(cell);
     });
   }
 
   hasChangedCellSelection() {
-    const sheet = this.spreadsheet.focusedSheet!;
-
-    const viewportVector = sheet.getViewportVector();
+    const viewportVector = this.sheet.getViewportVector();
     const previousSelectedCellPosition = this.previousSelectedCellPosition;
 
     if (!previousSelectedCellPosition) {
@@ -225,8 +227,12 @@ class Selector {
     }
 
     const { x, y } = {
-      x: sheet.shapes.sheet.getRelativePointerPosition().x + viewportVector.x,
-      y: sheet.shapes.sheet.getRelativePointerPosition().y + viewportVector.y,
+      x:
+        this.sheet.shapes.sheet.getRelativePointerPosition().x +
+        viewportVector.x,
+      y:
+        this.sheet.shapes.sheet.getRelativePointerPosition().y +
+        viewportVector.y,
     };
     const hasCellXPosMoved = !(
       x >= previousSelectedCellPosition.x &&

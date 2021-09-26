@@ -1,11 +1,11 @@
-import { KonvaEventObject } from 'konva/lib/Node';
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../events';
 import { prefix } from '../../utils';
-import Sheet, { ISheetViewportPosition, iterateXToY } from '../Sheet';
+import Sheet, { iterateXToY } from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../Spreadsheet';
+import { Vector2d } from 'konva/lib/types';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -14,8 +14,15 @@ class ScrollBar {
   scrollEl: HTMLDivElement;
   scroll = 0;
   totalPreviousCustomSizeDifferences = 0;
-  sheetViewportPosition: ISheetViewportPosition;
-  previousSheetViewportPosition: ISheetViewportPosition;
+  sheetViewportPosition: Vector2d = {
+    x: 0,
+    y: 0,
+  };
+  previousSheetViewportPosition: Vector2d = {
+    x: 0,
+    y: 0,
+  };
+  previousTouchMovePosition: number = 0;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
   private spreadsheet: Spreadsheet;
@@ -32,14 +39,6 @@ class ScrollBar {
     this.isCol = isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = functions;
-    this.sheetViewportPosition = {
-      x: 0,
-      y: 0,
-    };
-    this.previousSheetViewportPosition = {
-      x: 0,
-      y: 0,
-    };
 
     this.scrollBarEl = document.createElement('div');
     this.scrollEl = document.createElement('div');
@@ -61,8 +60,6 @@ class ScrollBar {
     this.throttledScroll = throttle(this.onScroll, 16);
 
     this.scrollBarEl.addEventListener('scroll', this.throttledScroll);
-
-    this.sheet.stage.on('wheel', this.onWheel);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
 
@@ -221,18 +218,6 @@ class ScrollBar {
       }
     }
   }
-
-  onWheel = (e: KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
-
-    if (this.isCol) {
-      this.scrollBarEl.scrollBy(e.evt.deltaX, 0);
-    } else {
-      this.scrollBarEl.scrollBy(0, e.evt.deltaY);
-    }
-
-    this.spreadsheet.emit(events.scrollWheel[this.scrollType], e);
-  };
 
   destroy() {
     this.scrollBarEl.removeEventListener('scroll', this.throttledScroll);

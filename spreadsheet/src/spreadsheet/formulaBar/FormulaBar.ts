@@ -73,8 +73,7 @@ class FormulaBar {
         break;
       }
       case 'Enter': {
-        sheet?.cellEditor.saveContentToCell();
-        sheet?.cellEditor.hide();
+        sheet?.cellEditor.hideAndSave();
         this.editableContent.blur();
 
         break;

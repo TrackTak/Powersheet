@@ -221,6 +221,7 @@ class RowCol {
 
   destroy() {
     this.scrollBar.destroy();
+    this.resizer.destroy();
   }
 
   convertFromCellsToRange(cells: Cell[]) {

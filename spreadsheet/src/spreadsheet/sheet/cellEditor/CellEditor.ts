@@ -106,8 +106,7 @@ class CellEditor {
         break;
       }
       case 'Enter': {
-        this.saveContentToCell();
-        this.hide();
+        this.hideAndSave();
         break;
       }
     }
@@ -156,6 +155,13 @@ class CellEditor {
 
   clear() {
     this.cellEditorEl.textContent = null;
+  }
+
+  hideAndSave() {
+    if (!this.getIsHidden()) {
+      this.saveContentToCell();
+      this.hide();
+    }
   }
 
   hide() {

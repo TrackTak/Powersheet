@@ -12,6 +12,7 @@ export interface IOptions {
   devMode: boolean;
   showFormulas: boolean;
   exportSpreadsheetName: string;
+  touchScrollSpeed: number;
 }
 
 export const defaultOptions: IOptions = {
@@ -30,4 +31,5 @@ export const defaultOptions: IOptions = {
   showFormulas: false,
   exportSpreadsheetName: 'Powersheet.xlsx',
   devMode: false,
+  touchScrollSpeed: 1.2,
 };

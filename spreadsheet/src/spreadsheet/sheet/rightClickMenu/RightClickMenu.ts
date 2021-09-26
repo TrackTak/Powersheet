@@ -4,7 +4,6 @@ import styles from './RightClickMenu.module.scss';
 import Sheet from '../Sheet';
 import { createGroup } from '../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
-import { KonvaEventObject } from 'konva/lib/Node';
 import { convertFromCellIdToRowColId } from '../CellRenderer';
 import Spreadsheet from '../../Spreadsheet';
 
@@ -112,12 +111,6 @@ class RightClickMenu {
 
     this.hide();
 
-    this.sheet.stage.on('click', this.sheetOnClick);
-
-    this.sheet.stage.on('contextmenu', (e) => {
-      e.evt.preventDefault();
-    });
-
     this.rightClickMenuEl.appendChild(this.menuItem);
   }
 
@@ -164,24 +157,6 @@ class RightClickMenu {
 
     this.sheet.col.delete(col, 1);
   };
-
-  sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
-    if (e.evt.button === 0) {
-      this.hide();
-    }
-
-    if (e.evt.button === 2) {
-      if (this.dropdown.state.isShown) {
-        this.hide();
-      } else {
-        this.show();
-      }
-    }
-  };
-
-  destory() {
-    this.sheet.stage.off('click', this.sheetOnClick);
-  }
 }
 
 export default RightClickMenu;

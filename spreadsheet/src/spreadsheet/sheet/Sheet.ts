@@ -27,11 +27,6 @@ export interface IDimensions {
   height: number;
 }
 
-export interface ISheetViewportPosition {
-  x: number;
-  y: number;
-}
-
 interface IShapes {
   sheet: Rect;
   frozenLine: Line;
@@ -362,8 +357,21 @@ class Sheet {
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
+    this.stage.on('contextmenu', this.onContextMenu);
+    this.stage.on('mousedown', this.stageOnMousedown);
+    this.stage.on('click', this.stageOnClick);
+    this.stage.on('wheel', this.onWheel);
     this.shapes.sheet.on('click', this.sheetOnClick);
-    this.stage.on('mousedown', this.stageOnClick);
+    this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
+    this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
+
+    this.stage.on('touchstart', this.stageOnTouchStart);
+    this.stage.on('touchmove', this.stageOnTouchMove);
+    this.shapes.sheet.on('tap', this.sheetOnTap);
+    // this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
+    // this.shapes.sheet.on('touchmove', this.sheetOnTouchMove);
+    // this.shapes.sheet.on('touchend', this.onSheetMouseUp);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
@@ -402,30 +410,118 @@ class Sheet {
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
-    this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+    this.selector.startSelection(0, 0);
+    this.selector.endSelection();
 
     this.cellEditor = new CellEditor(this);
   }
 
-  stageOnClick = () => {
-    if (!this.cellEditor.getIsHidden()) {
-      this.cellEditor.saveContentToCell();
-      this.cellEditor.hide();
+  onWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    this.col.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
+    this.row.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
+
+    this.spreadsheet.emit(events.scrollWheel.scroll, e);
+  };
+
+  stageOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+    const { clientX, clientY } = e.evt.touches[0];
+
+    this.cellEditor.hideAndSave();
+
+    this.col.scrollBar.previousTouchMovePosition = clientX;
+    this.row.scrollBar.previousTouchMovePosition = clientY;
+  };
+
+  stageOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+    const { clientX, clientY } = e.evt.touches[0];
+
+    const deltaX =
+      (this.col.scrollBar.previousTouchMovePosition - clientX) *
+      this.spreadsheet.options.touchScrollSpeed;
+
+    const deltaY =
+      (this.row.scrollBar.previousTouchMovePosition - clientY) *
+      this.spreadsheet.options.touchScrollSpeed;
+
+    this.col.scrollBar.scrollBarEl.scrollBy(deltaX, 0);
+    this.row.scrollBar.scrollBarEl.scrollBy(0, deltaY);
+
+    this.col.scrollBar.previousTouchMovePosition = clientX;
+    this.row.scrollBar.previousTouchMovePosition = clientY;
+  };
+
+  onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
+    e.evt.preventDefault();
+  };
+
+  sheetOnTouchStart = () => {
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+
+    this.selector.startSelection(x, y);
+  };
+
+  sheetOnTouchMove = () => {
+    this.selector.moveSelection();
+  };
+
+  sheetOnTouchEnd = () => {
+    this.selector.endSelection();
+  };
+
+  onSheetMouseDown = () => {
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+
+    this.selector.startSelection(x, y);
+  };
+
+  onSheetMouseMove = () => {
+    this.selector.moveSelection();
+  };
+
+  onSheetMouseUp = () => {
+    this.selector.endSelection();
+  };
+
+  stageOnClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button === 0) {
+      this.rightClickMenu.hide();
     }
+
+    if (e.evt.button === 2) {
+      if (this.rightClickMenu.dropdown.state.isShown) {
+        this.rightClickMenu.hide();
+      } else {
+        this.rightClickMenu.show();
+      }
+    }
+  };
+
+  stageOnMousedown = () => {
+    this.cellEditor.hideAndSave();
+  };
+
+  private stageOnTap() {
+    const selectedFirstcell = this.selector.selectedFirstCell!;
+    const id = selectedFirstcell.id();
+
+    if (this.hasDoubleClickedOnCell()) {
+      this.cellEditor.show(selectedFirstcell);
+    }
+
+    if (this.cellRenderer.getCellData(id)?.comment) {
+      this.comment.show(id);
+    }
+  }
+
+  sheetOnTap = () => {
+    this.stageOnTap();
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
-      const selectedFirstcell = this.selector.selectedFirstCell!;
-      const id = selectedFirstcell.id();
-
-      if (this.hasDoubleClickedOnCell()) {
-        this.cellEditor.show(selectedFirstcell);
-      }
-
-      if (this.cellRenderer.getCellData(id)?.comment) {
-        this.comment.show(id);
-      }
+      this.stageOnTap();
     }
   };
 
@@ -633,11 +729,19 @@ class Sheet {
   }
 
   destroy() {
+    this.stage.off('mousedown', this.stageOnMousedown);
+    this.stage.off('click', this.stageOnClick);
+    this.stage.off('contextmenu', this.onContextMenu);
+    this.stage.off('wheel', this.onWheel);
+    this.shapes.sheet.off('click', this.sheetOnClick);
+    this.shapes.sheet.off('mousedown', this.onSheetMouseDown);
+    this.shapes.sheet.off('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.off('mouseup', this.onSheetMouseUp);
+
     this.sheetEl.remove();
     this.stage.destroy();
     this.col.destroy();
     this.row.destroy();
-
     this.cellEditor?.destroy();
 
     this.spreadsheet.hyperformula?.removeSheet(this.sheetId);

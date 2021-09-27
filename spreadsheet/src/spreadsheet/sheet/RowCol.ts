@@ -263,11 +263,12 @@ class RowCol {
       );
     }, 0);
 
-    return (
+    const totalSize =
       this.spreadsheet.options[this.type].amount *
         this.spreadsheet.options[this.type].defaultSize +
-      totalSizeDifference
-    );
+      totalSizeDifference;
+
+    return totalSize;
   }
 
   setSizeData(index: number, size: number) {

@@ -14,6 +14,7 @@ import Exporter from './Exporter';
 import getHyperformulaConfig from './getHyperformulaConfig';
 import BottomBar from './bottomBar/BottomBar';
 import { ISheetData } from './sheet/Sheet';
+import TouchEmulator from 'hammer-touchemulator';
 
 export default {
   title: 'Spreadsheet',
@@ -184,6 +185,14 @@ DifferentSizeCells.args = {
     },
   ],
 };
+
+const MobileTemplate: Story<IArgs> = (args) => {
+  TouchEmulator();
+
+  return buildSpreadsheetWithEverything(args);
+};
+
+export const Mobile = MobileTemplate.bind({});
 
 const MillionRowsTemplate: Story<IArgs> = (args) => {
   args.options.row.amount = 1_000_000;

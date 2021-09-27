@@ -366,12 +366,9 @@ class Sheet {
     this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
     this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
 
-    this.stage.on('touchstart', this.stageOnTouchStart);
-    this.stage.on('touchmove', this.stageOnTouchMove);
+    this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
+    this.shapes.sheet.on('touchmove', this.sheetOnTouchMove);
     this.shapes.sheet.on('tap', this.sheetOnTap);
-    // this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
-    // this.shapes.sheet.on('touchmove', this.sheetOnTouchMove);
-    // this.shapes.sheet.on('touchend', this.onSheetMouseUp);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
@@ -425,8 +422,13 @@ class Sheet {
     this.spreadsheet.emit(events.scrollWheel.scroll, e);
   };
 
-  stageOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
-    const { clientX, clientY } = e.evt.touches[0];
+  sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) return;
+
+    const { clientX, clientY } = touch1;
 
     this.cellEditor.hideAndSave();
 
@@ -434,8 +436,13 @@ class Sheet {
     this.row.scrollBar.previousTouchMovePosition = clientY;
   };
 
-  stageOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
-    const { clientX, clientY } = e.evt.touches[0];
+  sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) return;
+
+    const { clientX, clientY } = touch1;
 
     const deltaX =
       (this.col.scrollBar.previousTouchMovePosition - clientX) *
@@ -454,20 +461,6 @@ class Sheet {
 
   onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
     e.evt.preventDefault();
-  };
-
-  sheetOnTouchStart = () => {
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
-
-    this.selector.startSelection(x, y);
-  };
-
-  sheetOnTouchMove = () => {
-    this.selector.moveSelection();
-  };
-
-  sheetOnTouchEnd = () => {
-    this.selector.endSelection();
   };
 
   onSheetMouseDown = () => {
@@ -502,7 +495,7 @@ class Sheet {
     this.cellEditor.hideAndSave();
   };
 
-  private stageOnTap() {
+  private setCellOnAction() {
     const selectedFirstcell = this.selector.selectedFirstCell!;
     const id = selectedFirstcell.id();
 
@@ -516,12 +509,17 @@ class Sheet {
   }
 
   sheetOnTap = () => {
-    this.stageOnTap();
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+
+    this.selector.startSelection(x, y);
+    this.selector.endSelection();
+
+    this.setCellOnAction();
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
-      this.stageOnTap();
+      this.setCellOnAction();
     }
   };
 
@@ -729,14 +727,20 @@ class Sheet {
   }
 
   destroy() {
+    this.stage.off('contextmenu', this.onContextMenu);
     this.stage.off('mousedown', this.stageOnMousedown);
     this.stage.off('click', this.stageOnClick);
-    this.stage.off('contextmenu', this.onContextMenu);
     this.stage.off('wheel', this.onWheel);
     this.shapes.sheet.off('click', this.sheetOnClick);
     this.shapes.sheet.off('mousedown', this.onSheetMouseDown);
     this.shapes.sheet.off('mousemove', this.onSheetMouseMove);
     this.shapes.sheet.off('mouseup', this.onSheetMouseUp);
+
+    this.shapes.sheet.off('touchstart', this.sheetOnTouchStart);
+    this.shapes.sheet.off('touchmove', this.sheetOnTouchMove);
+    this.shapes.sheet.off('tap', this.sheetOnTap);
+
+    this.sheetEl.removeEventListener('keydown', this.keyHandler);
 
     this.sheetEl.remove();
     this.stage.destroy();

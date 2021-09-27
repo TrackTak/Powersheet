@@ -550,9 +550,11 @@ class RowCol {
   }
 
   draw(index: number) {
-    this.drawHeader(index);
-    this.drawGridLine(index);
-    this.drawFrozenGridLine(index);
+    if (index < this.spreadsheet.options[this.type].amount) {
+      this.drawHeader(index);
+      this.drawGridLine(index);
+      this.drawFrozenGridLine(index);
+    }
   }
 
   getAxisAtIndex(index: number) {
@@ -573,8 +575,8 @@ class RowCol {
 
     const axis =
       this.spreadsheet.options[this.type].defaultSize * index +
-      totalPreviousCustomSizeDifferences +
-      this.sheet.getViewportVector()[this.functions.axis];
+      totalPreviousCustomSizeDifferences; //+
+    //this.sheet.getViewportVector()[this.functions.axis];
 
     return axis;
   }
@@ -611,13 +613,17 @@ class RowCol {
           this.sheet.scrollGroups.ySticky
         );
 
-        yStickyGroup.add(headerGroup);
+        if (!this.isCol) {
+          yStickyGroup.add(headerGroup);
+        }
       } else {
         const xStickyGroup = getHeaderGroupFromScrollGroup(
           this.sheet.scrollGroups.xSticky
         );
 
-        xStickyGroup.add(headerGroup);
+        if (!this.isCol) {
+          xStickyGroup.add(headerGroup);
+        }
       }
     }
   }

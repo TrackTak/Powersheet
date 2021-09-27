@@ -780,9 +780,8 @@ class Sheet {
   }
 
   drawTopLeftOffsetRect() {
-    this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
-
-    this.shapes.topLeftRect.moveToTop();
+    // this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
+    // this.shapes.topLeftRect.moveToTop();
   }
 
   updateFrozenBackgrounds() {

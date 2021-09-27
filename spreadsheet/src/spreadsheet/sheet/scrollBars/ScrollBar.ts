@@ -13,6 +13,7 @@ class ScrollBar {
   scrollBarEl: HTMLDivElement;
   scrollEl: HTMLDivElement;
   scroll = 0;
+  totalCustomSizeDifferences: number = 0;
   totalPreviousCustomSizeDifferences = 0;
   sheetViewportPosition: Vector2d = {
     x: 0,
@@ -56,18 +57,45 @@ class ScrollBar {
 
     this.scrollBarEl.appendChild(this.scrollEl);
 
+    const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
+
+    Object.keys(sizes).forEach((key) => {
+      const index = parseInt(key, 10);
+
+      this.totalCustomSizeDifferences +=
+        sizes[index] - this.spreadsheet.options[this.type].defaultSize;
+    });
+
     // 60 fps: (1000ms / 60fps = 16ms);
     this.throttledScroll = throttle(this.onScroll, 16);
 
     this.scrollBarEl.addEventListener('scroll', this.throttledScroll);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
-
-    this.setScrollSize();
   }
 
   setScrollSize() {
+    // let nonScrolledSizeDifference = 0;
+
+    // for (
+    //   let index = this.sheetViewportPosition.x;
+    //   index < this.sheetViewportPosition.y;
+    //   index++
+    // ) {
+    //   nonScrolledSizeDifference +=
+    //     this.sheet.row.getSize(index) -
+    //     this.spreadsheet.options.row.defaultSize;
+    // }
+
+    // const stageHeight = this.sheet.stage.height();
+    // const remainingHeight =
+    //   stageHeight % this.spreadsheet.options.row.defaultSize;
+
+    // const padding = this.spreadsheet.options.row.defaultSize;
     const scrollSize = this.sheet.sheetDimensions[this.functions.size];
+    //padding +
+    // remainingHeight +
+    // 1;
     //   this.sheet.getViewportVector()[this.functions.axis];
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
@@ -125,8 +153,21 @@ class ScrollBar {
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
     const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight;
+    const scrollPercent =
+      (scroll - this.totalPreviousCustomSizeDifferences) /
+      (scrollSize - this.totalCustomSizeDifferences);
 
-    const scrollPercent = scroll / scrollSize;
+    // const f =
+    //   this.spreadsheet.options[this.type].amount /
+    //   this.totalCustomSizeDifferences;
+    console.log(
+      'totalPreviousCustomSizeDifferences',
+      this.totalPreviousCustomSizeDifferences
+    );
+    console.log(
+      'am',
+      this.spreadsheet.options[this.type].amount * scrollPercent
+    );
 
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
@@ -158,12 +199,15 @@ class ScrollBar {
     newScroll *= -1;
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(newScroll);
+      this.sheet.scrollGroups.ySticky.x(-scroll);
     } else {
-      this.sheet.scrollGroups.xSticky.y(newScroll);
+      this.sheet.scrollGroups.xSticky.y(-scroll);
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](newScroll);
+    this.sheet.scrollGroups.main[this.functions.axis](-scroll);
+
+    // console.log('newScroll', newScroll);
+    // console.log('scroll', -scroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;

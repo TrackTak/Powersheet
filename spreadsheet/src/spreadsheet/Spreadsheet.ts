@@ -81,6 +81,10 @@ class Spreadsheet {
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
+  setOptions(options: IOptions) {
+    this.options = options;
+  }
+
   addToHistory() {
     const data = cloneDeep(this.data);
 

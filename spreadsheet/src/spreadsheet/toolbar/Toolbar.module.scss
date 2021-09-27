@@ -1,6 +1,7 @@
 @import '../styles.scss';
 
 .toolbar {
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   background: #f5f6f7;

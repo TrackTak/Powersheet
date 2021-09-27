@@ -185,15 +185,16 @@ class RowCol {
     this.shapes.gridLine.cache();
   }
 
-  setup() {
-    const yIndex = this.calculateSheetViewportEndPosition(
-      this.getAvailableSize(),
-      0
-    );
+  updateViewportSize() {
+    this.scrollBar.setYIndex();
 
     let sumOfSizes = 0;
 
-    for (let index = 0; index < yIndex; index++) {
+    for (
+      let index = 0;
+      index < this.scrollBar.sheetViewportPosition.y;
+      index++
+    ) {
       sumOfSizes += this.getSize(index);
     }
 

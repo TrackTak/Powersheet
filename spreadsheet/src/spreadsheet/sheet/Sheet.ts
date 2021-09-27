@@ -18,7 +18,7 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { isNil, merge } from 'lodash';
+import { DebouncedFunc, isNil, merge, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../events';
 
@@ -248,6 +248,7 @@ class Sheet {
   rightClickMenu: RightClickMenu;
   comment: Comment;
   isSaving = false;
+  private throttledResize: DebouncedFunc<(e: Event) => void>;
 
   constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
     this.spreadsheet = spreadsheet;
@@ -269,6 +270,9 @@ class Sheet {
       ySticky: new Group(),
       xySticky: new Group(),
     };
+
+    // 60 fps: (1000ms / 60fps = 16ms);
+    this.throttledResize = throttle(this.onResize, 16);
 
     Object.keys(this.scrollGroups).forEach((key) => {
       const scrollGroup =
@@ -349,8 +353,8 @@ class Sheet {
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
 
-    this.col.setup();
-    this.row.setup();
+    this.row.updateViewportSize();
+    this.col.updateViewportSize();
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
@@ -373,6 +377,8 @@ class Sheet {
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
 
+    window.addEventListener('resize', this.throttledResize);
+
     this.updateSheetDimensions();
 
     const sheetConfig: RectConfig = {
@@ -385,16 +391,7 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-
-    const width = this.col.totalSize + this.getViewportVector().x;
-    const height = this.row.totalSize + this.getViewportVector().y;
-
-    this.stage.width(width);
-    this.stage.height(height);
-
-    const context = this.layer.canvas.getContext();
-
-    context.translate(0.5, 0.5);
+    this.updateSize();
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -412,6 +409,36 @@ class Sheet {
 
     this.cellEditor = new CellEditor(this);
   }
+
+  private updateSize() {
+    this.spreadsheet.setOptions({
+      ...this.spreadsheet.options,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+
+    this.row.updateViewportSize();
+    this.col.updateViewportSize();
+
+    const width = this.col.totalSize + this.getViewportVector().x;
+    const height = this.row.totalSize + this.getViewportVector().y;
+
+    this.stage.width(width);
+    this.stage.height(height);
+
+    const context = this.layer.canvas.getContext();
+
+    // We reset the translate each time and then
+    // translate 0.5 for crisp lines.
+    context.reset();
+    context.translate(0.5, 0.5);
+
+    this.updateViewport();
+  }
+
+  onResize = () => {
+    this.updateSize();
+  };
 
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
@@ -741,6 +768,7 @@ class Sheet {
     this.shapes.sheet.off('tap', this.sheetOnTap);
 
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
+    window.removeEventListener('resize', this.throttledResize);
 
     this.sheetEl.remove();
     this.stage.destroy();

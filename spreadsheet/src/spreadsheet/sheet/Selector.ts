@@ -96,7 +96,7 @@ class Selector {
 
     this.sheet.updateViewport();
 
-    this.spreadsheet.emit(
+    this.spreadsheet.eventEmitter.emit(
       events.selector.startSelection,
       this.sheet,
       selectedFirstCell
@@ -135,7 +135,10 @@ class Selector {
         this.selectCells(cells);
         this.spreadsheet.toolbar?.updateActiveStates();
 
-        this.spreadsheet.emit(events.selector.moveSelection, cells);
+        this.spreadsheet.eventEmitter.emit(
+          events.selector.moveSelection,
+          cells
+        );
       }
     }
   }
@@ -145,7 +148,7 @@ class Selector {
 
     this.setSelectionBorder();
 
-    this.spreadsheet.emit(events.selector.endSelection);
+    this.spreadsheet.eventEmitter.emit(events.selector.endSelection);
   }
 
   setFirstCell(cell: Cell) {

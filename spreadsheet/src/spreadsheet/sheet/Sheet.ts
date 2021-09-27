@@ -419,7 +419,7 @@ class Sheet {
     this.col.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
     this.row.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
 
-    this.spreadsheet.emit(events.scrollWheel.scroll, e);
+    this.spreadsheet.eventEmitter.emit(events.scrollWheel.scroll, e);
   };
 
   sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {

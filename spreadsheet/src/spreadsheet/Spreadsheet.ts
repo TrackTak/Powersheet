@@ -81,17 +81,6 @@ class Spreadsheet {
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
-  emit<T extends EventEmitter.EventNames<string | symbol>>(
-    event: T,
-    ...args: any[]
-  ) {
-    if (this.options.devMode) {
-      console.log(event, ...args);
-    }
-
-    this.eventEmitter.emit(event, ...args);
-  }
-
   addToHistory() {
     const data = cloneDeep(this.data);
 

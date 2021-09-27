@@ -181,7 +181,11 @@ class ScrollBar {
       this.sheet.cellEditor.hideCellTooltip();
     }
 
-    this.spreadsheet.emit(events.scroll[this.scrollType], e, newScroll);
+    this.spreadsheet.eventEmitter.emit(
+      events.scroll[this.scrollType],
+      e,
+      newScroll
+    );
   };
 
   private drawItem(index: number) {

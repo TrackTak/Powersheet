@@ -15,6 +15,8 @@ import getHyperformulaConfig from './getHyperformulaConfig';
 import BottomBar from './bottomBar/BottomBar';
 import { ISheetData } from './sheet/Sheet';
 import TouchEmulator from 'hammer-touchemulator';
+import { action } from '@storybook/addon-actions';
+import EventEmitter from 'eventemitter3';
 
 export default {
   title: 'Spreadsheet',
@@ -37,6 +39,18 @@ const getSpreadsheet = (params: ISpreadsheetConstructor) => {
       done();
     }, 500);
   });
+
+  const oldEmit = spreadsheet.eventEmitter.emit;
+
+  spreadsheet.eventEmitter.emit = function <
+    T extends EventEmitter.EventNames<string | symbol>
+  >(event: T, ...args: any[]) {
+    action(event.toString())(...args);
+
+    oldEmit.call(spreadsheet.eventEmitter, event, ...args);
+
+    return true;
+  };
 
   return spreadsheet;
 };

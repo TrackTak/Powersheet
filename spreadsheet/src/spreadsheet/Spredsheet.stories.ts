@@ -17,6 +17,7 @@ import { ISheetData } from './sheet/Sheet';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import EventEmitter from 'eventemitter3';
+import { throttle } from 'lodash';
 
 export default {
   title: 'Spreadsheet',
@@ -28,6 +29,10 @@ interface IArgs {
   styles: IStyles;
   data?: ISheetData[];
 }
+
+const eventLog = (event: string, ...args: any[]) => {
+  action(event)(...args);
+};
 
 const getSpreadsheet = (params: ISpreadsheetConstructor) => {
   const spreadsheet = new Spreadsheet(params);
@@ -42,10 +47,14 @@ const getSpreadsheet = (params: ISpreadsheetConstructor) => {
 
   const oldEmit = spreadsheet.eventEmitter.emit;
 
+  // Throttling storybooks action log so that it doesn't
+  // reduce FPS by 10-15~ on resize and scroll
+  const throttledEventLog = throttle(eventLog, 250);
+
   spreadsheet.eventEmitter.emit = function <
     T extends EventEmitter.EventNames<string | symbol>
   >(event: T, ...args: any[]) {
-    action(event.toString())(...args);
+    throttledEventLog(event.toString(), ...args);
 
     oldEmit.call(spreadsheet.eventEmitter, event, ...args);
 

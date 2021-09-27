@@ -161,14 +161,15 @@ class RowCol {
           this.spreadsheet.formulaBar?.formulaBarEl.getBoundingClientRect()
             .height ?? 0;
 
-        return (
+        const size =
           this.spreadsheet.options.height -
           bottomBarHeight -
           toolbarHeight -
           formulaBarHeight -
           this.sheet.getViewportVector().y -
-          this.sheet.col.scrollBar.scrollEl.getBoundingClientRect().height
-        );
+          this.sheet.col.scrollBar.scrollEl.getBoundingClientRect().height;
+
+        return size;
       };
     }
 
@@ -191,7 +192,7 @@ class RowCol {
     let sumOfSizes = 0;
 
     for (
-      let index = 0;
+      let index = this.scrollBar.sheetViewportPosition.x;
       index < this.scrollBar.sheetViewportPosition.y;
       index++
     ) {

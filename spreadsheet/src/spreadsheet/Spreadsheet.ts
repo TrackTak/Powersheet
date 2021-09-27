@@ -60,7 +60,7 @@ class Spreadsheet {
     );
 
     this.sheetsEl = document.createElement('div');
-    this.sheetsEl.classList.add(`${prefix}-sheets`);
+    this.sheetsEl.classList.add(styles.sheets, `${prefix}-sheets`);
 
     this.spreadsheetEl.appendChild(this.sheetsEl);
 
@@ -78,7 +78,27 @@ class Spreadsheet {
       return currentData;
     }, this.hyperformula.getConfig().undoLimit);
 
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+    if (this.data.length) {
+      this.data.forEach((data) => {
+        this.createNewSheet(data);
+      });
+    } else {
+      this.createNewSheet({
+        sheetName: this.getSheetName(),
+      });
+    }
+
+    this.switchSheet(0);
+
+    this.sheets.forEach((sheet) => {
+      const data = sheet.getData().cellsData || {};
+
+      Object.keys(data).forEach((id) => {
+        sheet.cellRenderer.setHyperformulaCellData(id, data[id].value);
+      });
+    });
+
+    this.updateViewport();
   }
 
   setOptions(options: IOptions) {
@@ -104,34 +124,6 @@ class Spreadsheet {
     this.history.redo();
     this.updateViewport();
   }
-
-  destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
-  }
-
-  onDOMContentLoaded = () => {
-    if (this.data.length) {
-      this.data.forEach((data) => {
-        this.createNewSheet(data);
-      });
-    } else {
-      this.createNewSheet({
-        sheetName: this.getSheetName(),
-      });
-    }
-
-    this.switchSheet(0);
-
-    this.sheets.forEach((sheet) => {
-      const data = sheet.getData().cellsData || {};
-
-      Object.keys(data).forEach((id) => {
-        sheet.cellRenderer.setHyperformulaCellData(id, data[id].value);
-      });
-    });
-
-    this.updateViewport();
-  };
 
   getSheetName() {
     return `Sheet${this.totalSheetCount + 1}`;

@@ -271,8 +271,7 @@ class Sheet {
       xySticky: new Group(),
     };
 
-    // 60 fps: (1000ms / 60fps = 16ms);
-    this.throttledResize = throttle(this.onResize, 16);
+    this.throttledResize = throttle(this.onResize, 50);
 
     Object.keys(this.scrollGroups).forEach((key) => {
       const scrollGroup =
@@ -391,7 +390,6 @@ class Sheet {
     this.shapes.sheet.setAttrs(sheetConfig);
 
     this.drawTopLeftOffsetRect();
-    this.updateSize();
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -408,7 +406,13 @@ class Sheet {
     this.selector.endSelection();
 
     this.cellEditor = new CellEditor(this);
+
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
+
+  onDOMContentLoaded = () => {
+    this.updateSize();
+  };
 
   private updateSize() {
     this.spreadsheet.setOptions({
@@ -420,11 +424,8 @@ class Sheet {
     this.row.updateViewportSize();
     this.col.updateViewportSize();
 
-    const width = this.col.totalSize + this.getViewportVector().x;
-    const height = this.row.totalSize + this.getViewportVector().y;
-
-    this.stage.width(width);
-    this.stage.height(height);
+    this.stage.width(this.sheetEl.offsetWidth);
+    this.stage.height(this.sheetEl.offsetHeight);
 
     const context = this.layer.canvas.getContext();
 
@@ -768,7 +769,9 @@ class Sheet {
     this.shapes.sheet.off('tap', this.sheetOnTap);
 
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
+
     window.removeEventListener('resize', this.throttledResize);
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
 
     this.sheetEl.remove();
     this.stage.destroy();

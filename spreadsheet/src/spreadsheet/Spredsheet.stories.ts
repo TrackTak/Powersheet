@@ -268,6 +268,17 @@ const OnlySpreadsheetTemplate: Story<IArgs> = (args) => {
 
 export const OnlySpreadsheet = OnlySpreadsheetTemplate.bind({});
 
+export const CustomSizeSpreadsheet = Template.bind({});
+
+CustomSizeSpreadsheet.args = {
+  ...defaultStoryArgs,
+  options: {
+    ...defaultOptions,
+    width: 500,
+    height: 700,
+  },
+};
+
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
   return buildSpreadsheetWithEverything(args, {
     currencySymbol: Object.values(currencySymbolMap),

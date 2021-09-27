@@ -415,17 +415,14 @@ class Sheet {
   };
 
   private updateSize() {
-    this.spreadsheet.setOptions({
-      ...this.spreadsheet.options,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
+    this.stage.width(this.sheetEl.offsetWidth);
+    this.stage.height(this.sheetEl.offsetHeight);
+
+    this.shapes.sheet.width(this.stage.width() - this.getViewportVector().x);
+    this.shapes.sheet.height(this.stage.height() - this.getViewportVector().y);
 
     this.row.updateViewportSize();
     this.col.updateViewportSize();
-
-    this.stage.width(this.sheetEl.offsetWidth);
-    this.stage.height(this.sheetEl.offsetHeight);
 
     const context = this.layer.canvas.getContext();
 

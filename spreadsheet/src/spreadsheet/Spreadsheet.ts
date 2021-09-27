@@ -59,6 +59,14 @@ class Spreadsheet {
       styles.spreadsheet
     );
 
+    if (!isNil(this.options.width)) {
+      this.spreadsheetEl.style.width = `${this.options.width}px`;
+    }
+
+    if (!isNil(this.options.height)) {
+      this.spreadsheetEl.style.height = `${this.options.height}px`;
+    }
+
     this.sheetsEl = document.createElement('div');
     this.sheetsEl.classList.add(styles.sheets, `${prefix}-sheets`);
 
@@ -103,6 +111,8 @@ class Spreadsheet {
 
   setOptions(options: IOptions) {
     this.options = options;
+
+    this.updateViewport();
   }
 
   addToHistory() {

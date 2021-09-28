@@ -4,8 +4,7 @@ const events = {
     horizontal: 'sh-scroll',
   },
   scrollWheel: {
-    vertical: 'swv-scroll',
-    horizontal: 'swh-scroll',
+    scroll: 'sw-scroll',
   },
   toolbar: {
     change: 't-change',

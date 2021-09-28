@@ -44,10 +44,6 @@ class Selector {
     this.selectionBorderCell = null;
 
     this.selectedCells = [];
-
-    this.sheet.shapes.sheet.on('mousedown', this.onSheetMouseDown);
-    this.sheet.shapes.sheet.on('mousemove', this.onSheetMouseMove);
-    this.sheet.shapes.sheet.on('mouseup', this.onSheetMouseUp);
   }
 
   updateSelectedCells() {
@@ -72,7 +68,22 @@ class Selector {
     this.selectCells(cells);
   }
 
-  startSelection(start: Vector2d, end: Vector2d) {
+  startSelection(x: number, y: number) {
+    const start = {
+      x,
+      y,
+    };
+    const end = {
+      x,
+      y,
+    };
+
+    this.selectionArea = {
+      start,
+      end,
+    };
+
+    this.isInSelectionMode = true;
     this.previousSelectedCellPosition = this.selectedFirstCell?.getClientRect();
 
     const { rows, cols } = this.sheet.getRowColsBetweenVectors(start, end);
@@ -85,11 +96,59 @@ class Selector {
 
     this.sheet.updateViewport();
 
-    this.spreadsheet.emit(
+    this.spreadsheet.eventEmitter.emit(
       events.selector.startSelection,
       this.sheet,
       selectedFirstCell
     );
+  }
+
+  moveSelection() {
+    if (this.isInSelectionMode) {
+      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
+
+      const start = {
+        x: this.selectionArea.start.x,
+        y: this.selectionArea.start.y,
+      };
+
+      this.selectionArea.end = {
+        x,
+        y,
+      };
+
+      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
+        start,
+        this.selectionArea.end
+      );
+
+      const cells = this.sheet.cellRenderer.convertFromRowColsToCells(
+        rows,
+        cols
+      );
+
+      if (this.selectedCells.length !== cells.length) {
+        this.setCells(cells);
+
+        this.removeSelectedCells(false);
+
+        this.selectCells(cells);
+        this.spreadsheet.toolbar?.updateActiveStates();
+
+        this.spreadsheet.eventEmitter.emit(
+          events.selector.moveSelection,
+          cells
+        );
+      }
+    }
+  }
+
+  endSelection() {
+    this.isInSelectionMode = false;
+
+    this.setSelectionBorder();
+
+    this.spreadsheet.eventEmitter.emit(events.selector.endSelection);
   }
 
   setFirstCell(cell: Cell) {
@@ -122,73 +181,6 @@ class Selector {
       });
     }
   }
-
-  onSheetMouseDown = () => {
-    const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
-
-    const start = {
-      x,
-      y,
-    };
-    const end = {
-      x,
-      y,
-    };
-
-    this.selectionArea = {
-      start,
-      end,
-    };
-
-    this.startSelection(start, end);
-
-    this.isInSelectionMode = true;
-  };
-
-  onSheetMouseMove = () => {
-    if (this.isInSelectionMode) {
-      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
-
-      const start = {
-        x: this.selectionArea.start.x,
-        y: this.selectionArea.start.y,
-      };
-
-      this.selectionArea.end = {
-        x,
-        y,
-      };
-
-      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
-        start,
-        this.selectionArea.end
-      );
-
-      const cells = this.sheet.cellRenderer.convertFromRowColsToCells(
-        rows,
-        cols
-      );
-
-      if (this.selectedCells.length !== cells.length) {
-        this.setCells(cells);
-
-        this.removeSelectedCells(false);
-
-        this.selectCells(cells);
-        this.spreadsheet.toolbar?.updateActiveStates();
-
-        this.spreadsheet.emit(events.selector.moveSelection, cells);
-      }
-    }
-  };
-
-  onSheetMouseUp = () => {
-    this.isInSelectionMode = false;
-
-    this.setSelectionBorder();
-
-    this.spreadsheet.emit(events.selector.endSelection);
-  };
 
   removeSelectedCells(destroySelectedFirstCell: boolean = true) {
     this.selectedCells

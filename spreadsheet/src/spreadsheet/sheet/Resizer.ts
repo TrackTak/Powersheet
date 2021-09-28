@@ -87,6 +87,16 @@ class Resizer {
     this.sheet.layer.add(this.shapes.resizeGuideLine);
   }
 
+  destroy() {
+    this.shapes.resizeLine.off('dragstart', this.resizeLineDragStart);
+    this.shapes.resizeLine.off('dragmove', this.resizeLineDragMove);
+    this.shapes.resizeLine.off('dragend', this.resizeLineDragEnd);
+    this.shapes.resizeLine.off('mousedown', this.resizeLineOnMousedown);
+    this.shapes.resizeLine.off('mouseover', this.resizeLineOnMouseover);
+    this.shapes.resizeLine.off('mouseout', this.resizeLineOnMouseout);
+    this.shapes.resizeLine.off('mouseup', this.resizeLineOnMouseup);
+  }
+
   setResizeGuideLinePoints() {
     this.shapes.resizeGuideLine.points(
       this.isCol
@@ -155,7 +165,7 @@ class Resizer {
 
     this.shapes.resizeGuideLine.moveToTop();
 
-    this.spreadsheet.emit(events.resize[this.type].start, e);
+    this.spreadsheet.eventEmitter.emit(events.resize[this.type].start, e);
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -187,7 +197,11 @@ class Resizer {
     // Stops moving this element completely
     target.setPosition(this.resizeStartPos);
 
-    this.spreadsheet.emit(events.resize[this.type].move, e, newAxis);
+    this.spreadsheet.eventEmitter.emit(
+      events.resize[this.type].move,
+      e,
+      newAxis
+    );
   };
 
   resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
@@ -210,7 +224,12 @@ class Resizer {
 
     this.sheet.updateViewport();
 
-    this.spreadsheet.emit(events.resize[this.type].end, e, index, axis);
+    this.spreadsheet.eventEmitter.emit(
+      events.resize[this.type].end,
+      e,
+      index,
+      axis
+    );
   };
 
   resizeLineOnMousedown = (e: KonvaEventObject<Event>) => {

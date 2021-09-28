@@ -59,8 +59,16 @@ class Spreadsheet {
       styles.spreadsheet
     );
 
+    if (!isNil(this.options.width)) {
+      this.spreadsheetEl.style.width = `${this.options.width}px`;
+    }
+
+    if (!isNil(this.options.height)) {
+      this.spreadsheetEl.style.height = `${this.options.height}px`;
+    }
+
     this.sheetsEl = document.createElement('div');
-    this.sheetsEl.classList.add(`${prefix}-sheets`);
+    this.sheetsEl.classList.add(styles.sheets, `${prefix}-sheets`);
 
     this.spreadsheetEl.appendChild(this.sheetsEl);
 
@@ -78,45 +86,6 @@ class Spreadsheet {
       return currentData;
     }, this.hyperformula.getConfig().undoLimit);
 
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
-  }
-
-  emit<T extends EventEmitter.EventNames<string | symbol>>(
-    event: T,
-    ...args: any[]
-  ) {
-    if (this.options.devMode) {
-      console.log(event, ...args);
-    }
-
-    this.eventEmitter.emit(event, ...args);
-  }
-
-  addToHistory() {
-    const data = cloneDeep(this.data);
-
-    this.history.push(data);
-  }
-
-  undo() {
-    if (!this.history.canUndo) return;
-
-    this.history.undo();
-    this.updateViewport();
-  }
-
-  redo() {
-    if (!this.history.canRedo) return;
-
-    this.history.redo();
-    this.updateViewport();
-  }
-
-  destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
-  }
-
-  onDOMContentLoaded = () => {
     if (this.data.length) {
       this.data.forEach((data) => {
         this.createNewSheet(data);
@@ -138,7 +107,33 @@ class Spreadsheet {
     });
 
     this.updateViewport();
-  };
+  }
+
+  setOptions(options: IOptions) {
+    this.options = options;
+
+    this.updateViewport();
+  }
+
+  addToHistory() {
+    const data = cloneDeep(this.data);
+
+    this.history.push(data);
+  }
+
+  undo() {
+    if (!this.history.canUndo) return;
+
+    this.history.undo();
+    this.updateViewport();
+  }
+
+  redo() {
+    if (!this.history.canRedo) return;
+
+    this.history.redo();
+    this.updateViewport();
+  }
 
   getSheetName() {
     return `Sheet${this.totalSheetCount + 1}`;

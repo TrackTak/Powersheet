@@ -9,9 +9,6 @@ export const parameters = {
   },
 };
 
-// https://github.com/storybookjs/storybook/issues/15753
-document.addEventListener('DOMContentLoaded', function (e) {
-  if (e.cancelable) {
-    e.stopPropagation();
-  }
-});
+const root = document.querySelector('#root');
+
+root.style.height = '100vh';

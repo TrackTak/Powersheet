@@ -5,18 +5,16 @@ export interface IRowColOptions {
 }
 
 export interface IOptions {
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   row: IRowColOptions;
   col: IRowColOptions;
-  devMode: boolean;
   showFormulas: boolean;
   exportSpreadsheetName: string;
+  touchScrollSpeed: number;
 }
 
 export const defaultOptions: IOptions = {
-  width: window.innerWidth,
-  height: window.innerHeight,
   row: {
     amount: 100,
     minSize: 25,
@@ -29,5 +27,5 @@ export const defaultOptions: IOptions = {
   },
   showFormulas: false,
   exportSpreadsheetName: 'Powersheet.xlsx',
-  devMode: false,
+  touchScrollSpeed: 1.2,
 };

@@ -18,18 +18,13 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
 import { Text } from 'konva/lib/shapes/Text';
-import { isNil, merge } from 'lodash';
+import { DebouncedFunc, isNil, merge, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../events';
 
 export interface IDimensions {
   width: number;
   height: number;
-}
-
-export interface ISheetViewportPosition {
-  x: number;
-  y: number;
 }
 
 interface IShapes {
@@ -253,6 +248,7 @@ class Sheet {
   rightClickMenu: RightClickMenu;
   comment: Comment;
   isSaving = false;
+  private throttledResize: DebouncedFunc<(e: Event) => void>;
 
   constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
     this.spreadsheet = spreadsheet;
@@ -274,6 +270,8 @@ class Sheet {
       ySticky: new Group(),
       xySticky: new Group(),
     };
+
+    this.throttledResize = throttle(this.onResize, 50);
 
     Object.keys(this.scrollGroups).forEach((key) => {
       const scrollGroup =
@@ -354,19 +352,31 @@ class Sheet {
     this.col = new RowCol('col', this);
     this.row = new RowCol('row', this);
 
-    this.col.setup();
-    this.row.setup();
+    this.row.updateViewportSize();
+    this.col.updateViewportSize();
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
 
+    this.stage.on('contextmenu', this.onContextMenu);
+    this.stage.on('mousedown', this.stageOnMousedown);
+    this.stage.on('click', this.stageOnClick);
+    this.stage.on('wheel', this.onWheel);
     this.shapes.sheet.on('click', this.sheetOnClick);
-    this.stage.on('mousedown', this.stageOnClick);
+    this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
+    this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
+
+    this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
+    this.shapes.sheet.on('touchmove', this.sheetOnTouchMove);
+    this.shapes.sheet.on('tap', this.sheetOnTap);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
+
+    window.addEventListener('resize', this.throttledResize);
 
     this.updateSheetDimensions();
 
@@ -381,16 +391,6 @@ class Sheet {
 
     this.drawTopLeftOffsetRect();
 
-    const width = this.col.totalSize + this.getViewportVector().x;
-    const height = this.row.totalSize + this.getViewportVector().y;
-
-    this.stage.width(width);
-    this.stage.height(height);
-
-    const context = this.layer.canvas.getContext();
-
-    context.translate(0.5, 0.5);
-
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
 
@@ -402,30 +402,149 @@ class Sheet {
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
-    this.selector.startSelection({ x: 0, y: 0 }, { x: 0, y: 0 });
+    this.selector.startSelection(0, 0);
+    this.selector.endSelection();
 
     this.cellEditor = new CellEditor(this);
+
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
-  stageOnClick = () => {
-    if (!this.cellEditor.getIsHidden()) {
-      this.cellEditor.saveContentToCell();
-      this.cellEditor.hide();
+  onDOMContentLoaded = () => {
+    this.updateSize();
+  };
+
+  private updateSize() {
+    this.stage.width(this.sheetEl.offsetWidth);
+    this.stage.height(this.sheetEl.offsetHeight);
+
+    this.shapes.sheet.width(this.stage.width() - this.getViewportVector().x);
+    this.shapes.sheet.height(this.stage.height() - this.getViewportVector().y);
+
+    this.row.updateViewportSize();
+    this.col.updateViewportSize();
+
+    const context = this.layer.canvas.getContext();
+
+    // We reset the translate each time and then
+    // translate 0.5 for crisp lines.
+    context.reset();
+    context.translate(0.5, 0.5);
+
+    this.updateViewport();
+  }
+
+  onResize = () => {
+    this.updateSize();
+  };
+
+  onWheel = (e: KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+
+    this.col.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
+    this.row.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
+
+    this.spreadsheet.eventEmitter.emit(events.scrollWheel.scroll, e);
+  };
+
+  sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) return;
+
+    const { clientX, clientY } = touch1;
+
+    this.cellEditor.hideAndSave();
+
+    this.col.scrollBar.previousTouchMovePosition = clientX;
+    this.row.scrollBar.previousTouchMovePosition = clientY;
+  };
+
+  sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) return;
+
+    const { clientX, clientY } = touch1;
+
+    const deltaX =
+      (this.col.scrollBar.previousTouchMovePosition - clientX) *
+      this.spreadsheet.options.touchScrollSpeed;
+
+    const deltaY =
+      (this.row.scrollBar.previousTouchMovePosition - clientY) *
+      this.spreadsheet.options.touchScrollSpeed;
+
+    this.col.scrollBar.scrollBarEl.scrollBy(deltaX, 0);
+    this.row.scrollBar.scrollBarEl.scrollBy(0, deltaY);
+
+    this.col.scrollBar.previousTouchMovePosition = clientX;
+    this.row.scrollBar.previousTouchMovePosition = clientY;
+  };
+
+  onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
+    e.evt.preventDefault();
+  };
+
+  onSheetMouseDown = () => {
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+
+    this.selector.startSelection(x, y);
+  };
+
+  onSheetMouseMove = () => {
+    this.selector.moveSelection();
+  };
+
+  onSheetMouseUp = () => {
+    this.selector.endSelection();
+  };
+
+  stageOnClick = (e: KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button === 0) {
+      this.rightClickMenu.hide();
     }
+
+    if (e.evt.button === 2) {
+      if (this.rightClickMenu.dropdown.state.isShown) {
+        this.rightClickMenu.hide();
+      } else {
+        this.rightClickMenu.show();
+      }
+    }
+  };
+
+  stageOnMousedown = () => {
+    this.cellEditor.hideAndSave();
+  };
+
+  private setCellOnAction() {
+    const selectedFirstcell = this.selector.selectedFirstCell!;
+    const id = selectedFirstcell.id();
+
+    if (this.hasDoubleClickedOnCell()) {
+      this.cellEditor.show(selectedFirstcell);
+    }
+
+    if (this.cellRenderer.getCellData(id)?.comment) {
+      this.comment.show(id);
+    }
+  }
+
+  sheetOnTap = () => {
+    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+
+    this.selector.startSelection(x, y);
+    this.selector.endSelection();
+
+    this.setCellOnAction();
   };
 
   sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
-      const selectedFirstcell = this.selector.selectedFirstCell!;
-      const id = selectedFirstcell.id();
-
-      if (this.hasDoubleClickedOnCell()) {
-        this.cellEditor.show(selectedFirstcell);
-      }
-
-      if (this.cellRenderer.getCellData(id)?.comment) {
-        this.comment.show(id);
-      }
+      this.setCellOnAction();
     }
   };
 
@@ -633,11 +752,28 @@ class Sheet {
   }
 
   destroy() {
+    this.stage.off('contextmenu', this.onContextMenu);
+    this.stage.off('mousedown', this.stageOnMousedown);
+    this.stage.off('click', this.stageOnClick);
+    this.stage.off('wheel', this.onWheel);
+    this.shapes.sheet.off('click', this.sheetOnClick);
+    this.shapes.sheet.off('mousedown', this.onSheetMouseDown);
+    this.shapes.sheet.off('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.off('mouseup', this.onSheetMouseUp);
+
+    this.shapes.sheet.off('touchstart', this.sheetOnTouchStart);
+    this.shapes.sheet.off('touchmove', this.sheetOnTouchMove);
+    this.shapes.sheet.off('tap', this.sheetOnTap);
+
+    this.sheetEl.removeEventListener('keydown', this.keyHandler);
+
+    window.removeEventListener('resize', this.throttledResize);
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+
     this.sheetEl.remove();
     this.stage.destroy();
     this.col.destroy();
     this.row.destroy();
-
     this.cellEditor?.destroy();
 
     this.spreadsheet.hyperformula?.removeSheet(this.sheetId);

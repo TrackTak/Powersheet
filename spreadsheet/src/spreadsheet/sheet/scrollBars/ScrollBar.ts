@@ -87,9 +87,9 @@ class ScrollBar {
     //     this.spreadsheet.options.row.defaultSize;
     // }
 
-    // const stageHeight = this.sheet.stage.height();
-    // const remainingHeight =
-    //   stageHeight % this.spreadsheet.options.row.defaultSize;
+    const stageHeight = this.sheet.stage.height();
+    const remainingHeight =
+      (stageHeight % this.spreadsheet.options.row.defaultSize) + 25;
 
     // const padding = this.spreadsheet.options.row.defaultSize;
     const scrollSize = this.sheet.sheetDimensions[this.functions.size];
@@ -98,7 +98,7 @@ class ScrollBar {
     // 1;
     //   this.sheet.getViewportVector()[this.functions.axis];
 
-    this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
+    this.scrollEl.style[this.functions.size] = `${2500 + remainingHeight}px`;
   }
 
   private getNewScrollAmount(start: number, end: number) {
@@ -153,16 +153,11 @@ class ScrollBar {
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
     const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight;
-    const scrollPercent =
-      (scroll - this.totalPreviousCustomSizeDifferences) /
-      (scrollSize - this.totalCustomSizeDifferences);
+    const scrollPercent = scroll / scrollSize;
 
     // TODO: Issue is it's snapping over custom size at the default size
     // instead of the custom size
 
-    // const f =
-    //   this.spreadsheet.options[this.type].amount /
-    //   this.totalCustomSizeDifferences;
     console.log(
       'totalPreviousCustomSizeDifferences',
       this.totalPreviousCustomSizeDifferences
@@ -202,12 +197,12 @@ class ScrollBar {
     newScroll *= -1;
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(-scroll);
+      this.sheet.scrollGroups.ySticky.x(newScroll);
     } else {
-      this.sheet.scrollGroups.xSticky.y(-scroll);
+      this.sheet.scrollGroups.xSticky.y(newScroll);
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](-scroll);
+    this.sheet.scrollGroups.main[this.functions.axis](newScroll);
 
     // console.log('newScroll', newScroll);
     // console.log('scroll', -scroll);

@@ -157,6 +157,9 @@ class ScrollBar {
       (scroll - this.totalPreviousCustomSizeDifferences) /
       (scrollSize - this.totalCustomSizeDifferences);
 
+    // TODO: Issue is it's snapping over custom size at the default size
+    // instead of the custom size
+
     // const f =
     //   this.spreadsheet.options[this.type].amount /
     //   this.totalCustomSizeDifferences;

@@ -12,7 +12,6 @@
 .verticalScrollBar {
   @include scrollBar();
 
-  height: 100%;
   bottom: 0;
   top: 0;
   overflow-x: hidden;
@@ -27,7 +26,6 @@
 .horizontalScrollBar {
   @include scrollBar();
 
-  display: none;
   bottom: 1px;
   left: 0;
   overflow-x: scroll;

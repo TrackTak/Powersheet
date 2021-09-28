@@ -13,7 +13,6 @@ class ScrollBar {
   scrollBarEl: HTMLDivElement;
   scrollEl: HTMLDivElement;
   scroll = 0;
-  totalCustomSizeDifferences: number = 0;
   totalPreviousCustomSizeDifferences = 0;
   sheetViewportPosition: Vector2d = {
     x: 0,
@@ -57,48 +56,21 @@ class ScrollBar {
 
     this.scrollBarEl.appendChild(this.scrollEl);
 
-    const sizes = this.sheet.getData()[this.type]?.sizes ?? {};
-
-    Object.keys(sizes).forEach((key) => {
-      const index = parseInt(key, 10);
-
-      this.totalCustomSizeDifferences +=
-        sizes[index] - this.spreadsheet.options[this.type].defaultSize;
-    });
-
     // 60 fps: (1000ms / 60fps = 16ms);
     this.throttledScroll = throttle(this.onScroll, 16);
 
     this.scrollBarEl.addEventListener('scroll', this.throttledScroll);
 
     this.sheet.sheetEl.appendChild(this.scrollBarEl);
+
+    this.setScrollSize();
   }
 
   setScrollSize() {
-    // let nonScrolledSizeDifference = 0;
-
-    // for (
-    //   let index = this.sheetViewportPosition.x;
-    //   index < this.sheetViewportPosition.y;
-    //   index++
-    // ) {
-    //   nonScrolledSizeDifference +=
-    //     this.sheet.row.getSize(index) -
-    //     this.spreadsheet.options.row.defaultSize;
-    // }
-
-    const stageHeight = this.sheet.stage.height();
-    const remainingHeight =
-      (stageHeight % this.spreadsheet.options.row.defaultSize) + 25;
-
-    // const padding = this.spreadsheet.options.row.defaultSize;
     const scrollSize = this.sheet.sheetDimensions[this.functions.size];
-    //padding +
-    // remainingHeight +
-    // 1;
     //   this.sheet.getViewportVector()[this.functions.axis];
 
-    this.scrollEl.style[this.functions.size] = `${2500 + remainingHeight}px`;
+    this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }
 
   private getNewScrollAmount(start: number, end: number) {
@@ -153,19 +125,8 @@ class ScrollBar {
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
     const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight;
+
     const scrollPercent = scroll / scrollSize;
-
-    // TODO: Issue is it's snapping over custom size at the default size
-    // instead of the custom size
-
-    console.log(
-      'totalPreviousCustomSizeDifferences',
-      this.totalPreviousCustomSizeDifferences
-    );
-    console.log(
-      'am',
-      this.spreadsheet.options[this.type].amount * scrollPercent
-    );
 
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
@@ -203,9 +164,6 @@ class ScrollBar {
     }
 
     this.sheet.scrollGroups.main[this.functions.axis](newScroll);
-
-    // console.log('newScroll', newScroll);
-    // console.log('scroll', -scroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;

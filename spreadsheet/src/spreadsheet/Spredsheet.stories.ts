@@ -194,8 +194,16 @@ DifferentSizeCells.args = {
   data: [
     {
       sheetName: 'Different Size Cells',
+      col: {
+        sizes: {
+          3: 70,
+        },
+      },
       row: {
-        sizes: { 88: 70 },
+        sizes: {
+          1: 250,
+          5: 100,
+        },
       },
     },
   ],
@@ -259,18 +267,6 @@ const OnlySpreadsheetTemplate: Story<IArgs> = (args) => {
 };
 
 export const OnlySpreadsheet = OnlySpreadsheetTemplate.bind({});
-
-OnlySpreadsheet.args = {
-  ...defaultStoryArgs,
-  data: [
-    {
-      sheetName: 'Only Spreadsheet',
-      row: {
-        sizes: { 10: 500 },
-      },
-    },
-  ],
-};
 
 export const CustomSizeSpreadsheet = Template.bind({});
 

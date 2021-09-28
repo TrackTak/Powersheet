@@ -64,7 +64,10 @@ class BottomBar {
     this.content.classList.add(styles.content, `${bottomBarPrefix}-content`);
 
     this.tabContainer = document.createElement('div');
-    this.tabContainer.classList.add(`${bottomBarPrefix}-tab-container`);
+    this.tabContainer.classList.add(
+      styles.tabContainer,
+      `${bottomBarPrefix}-tab-container`
+    );
 
     this.sheetSelectionButtonContainer = document.createElement('div');
     this.sheetSelectionButtonContainer.classList.add(

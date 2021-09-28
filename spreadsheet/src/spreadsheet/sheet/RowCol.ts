@@ -69,7 +69,6 @@ class RowCol {
   shapes: IShapes;
   frozenLine?: Line;
   getHeaderText: (index: number) => string;
-  getAvailableSize!: () => number;
   private getLinePoints: (size: number) => number[];
   private functions: IRowColFunctions;
   private oppositeType: RowColType;
@@ -120,13 +119,6 @@ class RowCol {
       this.getLinePoints = (height: number) => {
         return [0, 0, 0, height];
       };
-      this.getAvailableSize = () => {
-        return (
-          this.spreadsheet.options.width -
-          this.sheet.getViewportVector().x -
-          this.sheet.row.scrollBar.scrollEl.getBoundingClientRect().width
-        );
-      };
     } else {
       this.oppositeType = 'col';
       this.functions = {
@@ -147,28 +139,6 @@ class RowCol {
       };
       this.getLinePoints = (width: number) => {
         return [0, 0, width, 0];
-      };
-      this.getAvailableSize = () => {
-        const bottomBarHeight =
-          this.spreadsheet.bottomBar?.bottomBarEl.getBoundingClientRect()
-            .height ?? 0;
-
-        const toolbarHeight =
-          this.spreadsheet.toolbar?.toolbarEl.getBoundingClientRect().height ??
-          0;
-
-        const formulaBarHeight =
-          this.spreadsheet.formulaBar?.formulaBarEl.getBoundingClientRect()
-            .height ?? 0;
-
-        return (
-          this.spreadsheet.options.height -
-          bottomBarHeight -
-          toolbarHeight -
-          formulaBarHeight -
-          this.sheet.getViewportVector().y -
-          this.sheet.col.scrollBar.scrollEl.getBoundingClientRect().height
-        );
       };
     }
 
@@ -191,7 +161,7 @@ class RowCol {
     let sumOfSizes = 0;
 
     for (
-      let index = 0;
+      let index = this.scrollBar.sheetViewportPosition.x;
       index < this.scrollBar.sheetViewportPosition.y;
       index++
     ) {
@@ -263,11 +233,12 @@ class RowCol {
       );
     }, 0);
 
-    return (
+    const totalSize =
       this.spreadsheet.options[this.type].amount *
         this.spreadsheet.options[this.type].defaultSize +
-      totalSizeDifference
-    );
+      totalSizeDifference;
+
+    return totalSize;
   }
 
   setSizeData(index: number, size: number) {

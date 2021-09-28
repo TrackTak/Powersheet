@@ -99,7 +99,7 @@ class ScrollBar {
 
   private getYIndex() {
     const xIndex = this.sheetViewportPosition.x;
-    const stageSize = this.sheet[this.type].getAvailableSize();
+    const stageSize = this.sheet.stage[this.functions.size]();
 
     const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
       stageSize,
@@ -124,9 +124,9 @@ class ScrollBar {
 
     const event = e.target! as any;
     const scroll = this.isCol ? event.scrollLeft : event.scrollTop;
-    const scrollHeight = event.scrollHeight;
+    const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight;
 
-    const scrollPercent = scroll / scrollHeight;
+    const scrollPercent = scroll / scrollSize;
 
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent

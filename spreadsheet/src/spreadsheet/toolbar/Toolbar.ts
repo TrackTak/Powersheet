@@ -451,9 +451,9 @@ class Toolbar {
         `=${functionName}(${xCellAddress}:${yCellAddress})`
       );
     } else {
-      const selectedFirstCell = sheet.selector.selectedFirstCell!;
+      const selectedCell = sheet.selector.selectedCell!;
 
-      sheet.cellEditor.show(selectedFirstCell);
+      sheet.cellEditor.show(selectedCell);
       sheet.cellEditor.setTextContent(`=${functionName}()`);
     }
   }
@@ -726,7 +726,7 @@ class Toolbar {
         if (this.iconElementsMap.freeze.active) {
           delete sheet.getData().frozenCells;
         } else {
-          const { row, col } = sheet.selector.selectedFirstCell?.attrs;
+          const { row, col } = sheet.selector.selectedCell?.attrs;
 
           sheet.setData({ frozenCells: { row: row.x, col: col.x } });
         }
@@ -795,8 +795,8 @@ class Toolbar {
     if (!sheet) return;
 
     const selectedCells = sheet.selector.selectedCells;
-    const selectedFirstCell = sheet.selector.selectedFirstCell;
-    const selectedFirstCellId = selectedFirstCell!.id();
+    const selectedCell = sheet.selector.selectedCell;
+    const selectedFirstCellId = selectedCell!.id();
 
     this.setActiveColor(selectedFirstCellId, 'backgroundColor');
     this.setActiveColor(selectedFirstCellId, 'fontColor');
@@ -829,7 +829,7 @@ class Toolbar {
     this.setActiveVerticalIcon(selectedFirstCellId);
     this.setActiveFontSize(selectedFirstCellId);
     this.setActiveTextFormat(selectedFirstCellId);
-    this.setActiveMergedCells(selectedCells);
+    this.setActiveMergedCells(selectedCells, selectedFirstCellId);
     this.setActiveHistoryIcons(this.spreadsheet.history);
     this.setActiveSaveState();
   };
@@ -916,20 +916,18 @@ class Toolbar {
     ].colorBar.style.backgroundColor = fill;
   }
 
-  setActiveMergedCells(selectedCells: Cell[]) {
-    const cell = selectedCells[0];
+  setActiveMergedCells(selectedCells: Cell[], selectedFirstCellId: CellId) {
     const isMerged = this.spreadsheet
       .getActiveSheet()!
-      .merger.getIsCellPartOfMerge(cell.id());
-    const isActive = selectedCells.length === 1 && isMerged;
+      .merger.getIsCellPartOfMerge(selectedFirstCellId);
 
-    if (isActive) {
+    if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false;
     } else {
       this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
     }
 
-    this.setActive(this.iconElementsMap.merge, isActive);
+    this.setActive(this.iconElementsMap.merge, isMerged);
   }
 
   setActiveSaveState() {

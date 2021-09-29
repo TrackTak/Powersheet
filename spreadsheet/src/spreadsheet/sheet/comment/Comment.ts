@@ -58,7 +58,7 @@ class Comment {
   };
 
   successButtonOnClick = () => {
-    const id = this.sheet.selector.selectedFirstCell!.id();
+    const id = this.sheet.selector.selectedCell!.id();
 
     this.sheet.cellRenderer.setCellData(id, {
       comment: this.textarea.value,

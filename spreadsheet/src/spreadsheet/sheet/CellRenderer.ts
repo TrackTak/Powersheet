@@ -39,6 +39,22 @@ export const convertFromCellIdToRowColId = (id: CellId): IRowColAddress => {
   };
 };
 
+export const convertFromCellsToMinMax = (
+  cells: Cell[],
+  minCallbackFn: (cell: Cell) => number,
+  maxCallbackFn: (cell: Cell) => number
+) => {
+  const getMin = () => Math.min(...cells.map(minCallbackFn));
+  const getMax = () => Math.max(...cells.map(maxCallbackFn));
+
+  const minMax = {
+    min: getMin(),
+    max: getMax(),
+  };
+
+  return minMax;
+};
+
 class CellRenderer {
   cellsMap: Map<CellId, Cell>;
   commentMarkerConfig: LineConfig;
@@ -626,25 +642,25 @@ class CellRenderer {
 
     if (isFrozenRow && isFrozenCol) {
       const xyStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky
+        this.sheet.scrollGroups.xySticky.group
       );
 
       xyStickyCellGroup.add(cell);
     } else if (isFrozenRow) {
       const yStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.ySticky
+        this.sheet.scrollGroups.ySticky.group
       );
 
       yStickyCellGroup.add(cell);
     } else if (isFrozenCol) {
       const xStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xSticky
+        this.sheet.scrollGroups.xSticky.group
       );
 
       xStickyCellGroup.add(cell);
     } else {
       const mainCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.main
+        this.sheet.scrollGroups.main.group
       );
 
       mainCellGroup.add(cell);

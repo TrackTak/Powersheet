@@ -158,12 +158,12 @@ class ScrollBar {
     newScroll *= -1;
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.x(newScroll);
+      this.sheet.scrollGroups.ySticky.group.x(newScroll);
     } else {
-      this.sheet.scrollGroups.xSticky.y(newScroll);
+      this.sheet.scrollGroups.xSticky.group.y(newScroll);
     }
 
-    this.sheet.scrollGroups.main[this.functions.axis](newScroll);
+    this.sheet.scrollGroups.main.group[this.functions.axis](newScroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;

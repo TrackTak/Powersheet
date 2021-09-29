@@ -98,11 +98,18 @@ export interface ICellsData {
   [cellId: CellId]: ICellData;
 }
 
+interface IScrollGroup {
+  group: Group;
+  sheetGroup: Group;
+}
+
+const scrollGroups = ['main', 'xSticky', 'ySticky', 'xySticky'];
+
 export interface IScrollGroups {
-  main: Group;
-  xSticky: Group;
-  ySticky: Group;
-  xySticky: Group;
+  main: IScrollGroup;
+  xSticky: IScrollGroup;
+  ySticky: IScrollGroup;
+  xySticky: IScrollGroup;
 }
 
 export interface ICustomSizes {
@@ -193,7 +200,7 @@ export function* iterateRowColVector(vector: Vector2d) {
 }
 
 export function* iterateXToY(vector: Vector2d) {
-  for (let index = vector.x; index < vector.y; index++) {
+  for (let index = vector.x; index <= vector.y; index++) {
     yield index;
   }
 }
@@ -243,12 +250,16 @@ class Sheet {
   cellRenderer: CellRenderer;
   shapes: IShapes;
   sheetDimensions: IDimensions;
-  lastClickTime: number = new Date().getTime();
+  previousSheetClickTime = 0;
+  sheetClickTime = 0;
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
   isSaving = false;
   private throttledResize: DebouncedFunc<(e: Event) => void>;
+  private throttledSheetMove: DebouncedFunc<
+    (e: KonvaEventObject<MouseEvent>) => void
+  >;
 
   constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
     this.spreadsheet = spreadsheet;
@@ -264,18 +275,15 @@ class Sheet {
 
     this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
 
-    this.scrollGroups = {
-      main: new Group(),
-      xSticky: new Group(),
-      ySticky: new Group(),
-      xySticky: new Group(),
-    };
+    this.scrollGroups = {} as IScrollGroups;
 
     this.throttledResize = throttle(this.onResize, 50);
+    this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
 
-    Object.keys(this.scrollGroups).forEach((key) => {
-      const scrollGroup =
-        this.scrollGroups[key as keyof typeof this.scrollGroups];
+    scrollGroups.forEach((key) => {
+      const type = key as keyof IScrollGroups;
+
+      const group = new Group();
 
       const sheetGroup = new Group({
         ...performanceProperties,
@@ -313,7 +321,13 @@ class Sheet {
 
       // The order added here matters as it determines the zIndex for konva
       sheetGroup.add(rowColGroup, cellGroup);
-      scrollGroup.add(sheetGroup, headerGroup);
+      group.add(sheetGroup, headerGroup);
+
+      this.scrollGroups[type] = {
+        ...this.scrollGroups[type],
+        group,
+        sheetGroup,
+      };
     });
 
     this.shapes = {
@@ -344,7 +358,7 @@ class Sheet {
 
     this.shapes.frozenLine.cache();
 
-    Object.values(this.scrollGroups).forEach((group) => {
+    Object.values(this.scrollGroups).forEach(({ group }) => {
       this.layer.add(group);
     });
 
@@ -366,7 +380,7 @@ class Sheet {
     this.stage.on('wheel', this.onWheel);
     this.shapes.sheet.on('click', this.sheetOnClick);
     this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
-    this.shapes.sheet.on('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.on('mousemove', this.throttledSheetMove);
     this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
 
     this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
@@ -401,9 +415,6 @@ class Sheet {
 
     // TODO: use scrollBar size instead of hardcoded value
     this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
-
-    this.selector.startSelection(0, 0);
-    this.selector.endSelection();
 
     this.cellEditor = new CellEditor(this);
 
@@ -521,7 +532,7 @@ class Sheet {
   };
 
   private setCellOnAction() {
-    const selectedFirstcell = this.selector.selectedFirstCell!;
+    const selectedFirstcell = this.selector.selectedCell!;
     const id = selectedFirstcell.id();
 
     if (this.hasDoubleClickedOnCell()) {
@@ -549,14 +560,14 @@ class Sheet {
   };
 
   hasDoubleClickedOnCell() {
-    const timeNow = new Date().getTime();
-    const delayTime = 500;
+    this.previousSheetClickTime = this.sheetClickTime;
 
-    this.lastClickTime = timeNow;
+    this.sheetClickTime = new Date().getTime();
+    const delayTimeMilliseconds = 300;
 
     return (
       !this.selector.hasChangedCellSelection() &&
-      timeNow <= this.lastClickTime + delayTime
+      this.sheetClickTime <= this.previousSheetClickTime + delayTimeMilliseconds
     );
   }
 
@@ -589,7 +600,7 @@ class Sheet {
       }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
-          this.cellEditor.show(this.selector.selectedFirstCell!);
+          this.cellEditor.show(this.selector.selectedCell!);
         }
     }
   };
@@ -758,7 +769,7 @@ class Sheet {
     this.stage.off('wheel', this.onWheel);
     this.shapes.sheet.off('click', this.sheetOnClick);
     this.shapes.sheet.off('mousedown', this.onSheetMouseDown);
-    this.shapes.sheet.off('mousemove', this.onSheetMouseMove);
+    this.shapes.sheet.off('mousemove', this.throttledSheetMove);
     this.shapes.sheet.off('mouseup', this.onSheetMouseUp);
 
     this.shapes.sheet.off('touchstart', this.sheetOnTouchStart);
@@ -780,7 +791,7 @@ class Sheet {
   }
 
   drawTopLeftOffsetRect() {
-    this.scrollGroups.xySticky.add(this.shapes.topLeftRect);
+    this.scrollGroups.xySticky.group.add(this.shapes.topLeftRect);
 
     this.shapes.topLeftRect.moveToTop();
   }
@@ -788,13 +799,13 @@ class Sheet {
   updateFrozenBackgrounds() {
     const frozenCells = this.getData().frozenCells;
     const xStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.xSticky
+      this.scrollGroups.xSticky.group
     );
     const yStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.ySticky
+      this.scrollGroups.ySticky.group
     );
     const xyStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.xySticky
+      this.scrollGroups.xySticky.group
     );
 
     if (frozenCells && this.row.frozenLine && this.col.frozenLine) {
@@ -837,7 +848,7 @@ class Sheet {
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
-      this.selector.selectedFirstCell?.id() ?? ''
+      this.selector.selectedCell?.id() ?? ''
     );
     this.updateFrozenBackgrounds();
   }

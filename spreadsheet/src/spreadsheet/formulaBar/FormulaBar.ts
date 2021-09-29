@@ -43,7 +43,7 @@ class FormulaBar {
     const textContent = target.firstChild?.textContent;
 
     if (sheet?.cellEditor.getIsHidden()) {
-      sheet.cellEditor.show(sheet.selector.selectedFirstCell!, false);
+      sheet.cellEditor.show(sheet.selector.selectedCell!, false);
     }
     sheet?.cellEditor.setTextContent(textContent ?? null);
   };

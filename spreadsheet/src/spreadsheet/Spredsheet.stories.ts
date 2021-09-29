@@ -35,6 +35,8 @@ const eventLog = (event: string, ...args: any[]) => {
 };
 
 const getSpreadsheet = (params: ISpreadsheetConstructor) => {
+  TouchEmulator.stop();
+
   const spreadsheet = new Spreadsheet(params);
 
   spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
@@ -210,9 +212,11 @@ DifferentSizeCells.args = {
 };
 
 const MobileTemplate: Story<IArgs> = (args) => {
-  TouchEmulator();
+  const spreadsheet = buildSpreadsheetWithEverything(args);
 
-  return buildSpreadsheetWithEverything(args);
+  TouchEmulator.start();
+
+  return spreadsheet;
 };
 
 export const Mobile = MobileTemplate.bind({});

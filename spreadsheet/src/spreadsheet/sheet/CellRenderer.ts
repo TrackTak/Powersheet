@@ -482,16 +482,22 @@ class CellRenderer {
     const cellText = getCellTextFromCell(cell);
 
     if (cellText) {
-      const text = cellText.text();
-      const num = parseFloat(text);
+      const { format } = await import('numfmt');
+      let text = cellText.text();
 
-      const numfmt = await import('numfmt');
+      try {
+        text = format(textFormatPattern, Number(text));
+      } catch (e) {
+        text = e as string;
+      }
 
-      // TODO: Change to same as exporter?
-      const formattedText =
-        numfmt.format(textFormatPattern, isFinite(num) ? num : text) ?? text;
+      try {
+        text = format(textFormatPattern, text);
+      } catch (e) {
+        text = e as string;
+      }
 
-      cellText.text(formattedText);
+      cellText.text(text);
     }
   }
 

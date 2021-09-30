@@ -151,28 +151,15 @@ class CellRenderer {
     cellRect.height(rowHeader.height());
   }
 
-  private destroyOutOfViewportCells() {
-    for (const [key, cell] of this.cellsMap) {
-      if (this.sheet.isShapeOutsideOfViewport(cell)) {
-        cell.destroy();
-
-        this.sheet.cellRenderer.cellsMap.delete(key);
-      }
-    }
-  }
-
-  updateViewport() {
+  private clearAll() {
     this.cellsMap.forEach((cell) => {
       cell.destroy();
     });
     this.cellsMap.clear();
     this.sheet.merger.associatedMergedCellIdMap.clear();
-
-    this.destroyOutOfViewportCells();
-    this.drawCells();
   }
 
-  private drawCells() {
+  drawViewport() {
     for (const ri of iterateXToY(
       this.sheet.row.scrollBar.sheetViewportPosition
     )) {
@@ -182,6 +169,14 @@ class CellRenderer {
         this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
       }
     }
+  }
+
+  updateViewport() {
+    this.clearAll();
+    this.drawViewport();
+
+    // TODO: Fix viewport for frozenCells on scroll
+    console.log(this.sheet.row.scrollBar.sheetViewportPosition);
   }
 
   drawCell(cellId: CellId) {

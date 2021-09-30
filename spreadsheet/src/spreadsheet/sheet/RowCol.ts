@@ -461,6 +461,14 @@ class RowCol {
     this.rowColMap.clear();
   }
 
+  drawViewport() {
+    for (const index of iterateXToY(
+      this.sheet[this.type].scrollBar.sheetViewportPosition
+    )) {
+      this.sheet[this.type].draw(index);
+    }
+  }
+
   updateViewport() {
     this.clearAll();
 
@@ -476,11 +484,7 @@ class RowCol {
       }
     }
 
-    for (const index of iterateXToY(
-      this.sheet[this.type].scrollBar.sheetViewportPosition
-    )) {
-      this.sheet[this.type].draw(index);
-    }
+    this.drawViewport();
 
     this.scrollBar.setScrollSize();
   }

@@ -1,7 +1,7 @@
 import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../events';
 import { prefix } from '../../utils';
-import Sheet, { iterateXToY } from '../Sheet';
+import Sheet from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../Spreadsheet';
@@ -173,7 +173,6 @@ class ScrollBar {
 
     this.setYIndex();
     this.drawItems();
-    this.sheet.cellRenderer.updateViewport();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();
@@ -198,11 +197,8 @@ class ScrollBar {
   }
 
   private drawViewportItems() {
-    for (const index of iterateXToY(
-      this.sheet[this.type].scrollBar.sheetViewportPosition
-    )) {
-      this.drawItem(index);
-    }
+    this.sheet[this.type].drawViewport();
+    this.sheet.cellRenderer.drawViewport();
   }
 
   private destroyOutOfViewportItems() {
@@ -219,6 +215,14 @@ class ScrollBar {
         header.destroy();
 
         this.sheet[this.type].headerGroupMap.delete(key);
+      }
+    }
+
+    for (const [key, cell] of this.sheet.cellRenderer.cellsMap) {
+      if (this.sheet.isShapeOutsideOfViewport(cell)) {
+        cell.destroy();
+
+        this.sheet.cellRenderer.cellsMap.delete(key);
       }
     }
   }

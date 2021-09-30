@@ -22,7 +22,7 @@ export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: Partial<ISpreadsheetData>;
-  hyperformula: HyperFormula;
+  hyperformula?: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -45,6 +45,7 @@ class Spreadsheet {
   history: any;
   bottomBar?: BottomBar;
   activeSheetId?: number;
+  registeredFunctionNames?: string[] | null;
   totalSheetCount = 0;
 
   constructor(params: ISpreadsheetConstructor) {
@@ -53,6 +54,9 @@ class Spreadsheet {
       ...params.data,
     };
     this.hyperformula = params.hyperformula;
+    this.registeredFunctionNames = this.hyperformula
+      ? HyperFormula.getRegisteredFunctionNames('enGB')
+      : null;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.toolbar = params.toolbar;
@@ -92,7 +96,7 @@ class Spreadsheet {
       this.data = data;
 
       return currentData;
-    }, this.hyperformula.getConfig().undoLimit);
+    }, this.options.undoRedoLimit);
 
     if (this.data.sheetData.length) {
       this.data.sheetData.forEach((data) => {
@@ -206,7 +210,8 @@ class Spreadsheet {
   createNewSheet(data: ISheetData) {
     this.hyperformula?.addSheet(data.sheetName);
 
-    const sheetId = this.hyperformula?.getSheetId(data.sheetName)!;
+    const sheetId =
+      this.hyperformula?.getSheetId(data.sheetName) ?? this.totalSheetCount;
 
     this.data.sheetData[sheetId] = data;
 

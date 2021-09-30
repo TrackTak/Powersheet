@@ -4,7 +4,6 @@ import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
-import { HyperFormula } from 'hyperformula';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell } from '../CellRenderer';
@@ -18,7 +17,7 @@ class CellEditor {
   cellEditorContainerEl: HTMLDivElement;
   cellEditorEl: HTMLDivElement;
   cellTooltip: DelegateInstance;
-  formulaHelper: FormulaHelper;
+  formulaHelper?: FormulaHelper;
   spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
@@ -47,10 +46,18 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
 
-    const formulas = HyperFormula.getRegisteredFunctionNames('enGB');
+    if (this.spreadsheet.hyperformula) {
+      this.formulaHelper = new FormulaHelper(
+        this.spreadsheet.registeredFunctionNames!,
+        this.onItemClick
+      );
+    }
 
-    this.formulaHelper = new FormulaHelper(formulas, this.onItemClick);
-    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
+    if (this.formulaHelper) {
+      this.cellEditorContainerEl.appendChild(
+        this.formulaHelper.formulaHelperEl
+      );
+    }
 
     this.cellEditorContainerEl.style.display = 'none';
   }
@@ -74,7 +81,7 @@ class CellEditor {
     this.cellEditorContainerEl.remove();
     this.cellEditorEl.removeEventListener('input', this.onInput);
     this.cellEditorEl.removeEventListener('keydown', this.onKeyDown);
-    this.formulaHelper.destroy();
+    this.formulaHelper?.destroy();
   }
 
   getIsHidden() {
@@ -86,7 +93,7 @@ class CellEditor {
 
     this.setTextContent(value);
     this.cellEditorEl.focus();
-    this.formulaHelper.hide();
+    this.formulaHelper?.hide();
   };
 
   setTextContent(value: string | null) {
@@ -121,9 +128,9 @@ class CellEditor {
     const isFormulaInput = textContent?.startsWith('=');
 
     if (isFormulaInput) {
-      this.formulaHelper.show(textContent?.slice(1));
+      this.formulaHelper?.show(textContent?.slice(1));
     } else {
-      this.formulaHelper.hide();
+      this.formulaHelper?.hide();
     }
   };
 

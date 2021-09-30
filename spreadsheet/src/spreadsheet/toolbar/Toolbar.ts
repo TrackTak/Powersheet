@@ -40,9 +40,13 @@ import {
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
 import { Group } from 'konva/lib/Group';
-import { Cell, CellId, getCellId } from '../sheet/CellRenderer';
+import {
+  Cell,
+  CellId,
+  convertFromRowColToCellString,
+  getCellId,
+} from '../sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
-import { HyperFormula } from 'hyperformula';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -97,7 +101,7 @@ class Toolbar {
   fontSizeElements!: IFontSizeElements;
   textFormatElements!: ITextFormatElements;
   textFormatMap!: ITextFormatMap;
-  functionElements!: IFunctionElements;
+  functionElements?: IFunctionElements;
   autosaveElement!: IAutosaveElement;
   toolbarActionGroups!: IToolbarActionGroups[];
   tooltip!: DelegateInstance;
@@ -233,19 +237,20 @@ class Toolbar {
           break;
         }
         case 'functions': {
-          const registeredFunctionNames =
-            HyperFormula.getRegisteredFunctionNames('enGB');
+          if (spreadsheet.hyperformula) {
+            const { dropdownContent, registeredFunctionButtons } =
+              createFunctionDropdownContent(
+                this.spreadsheet.registeredFunctionNames!.sort((a, b) =>
+                  a.localeCompare(b)
+                )
+              );
 
-          const { dropdownContent, registeredFunctionButtons } =
-            createFunctionDropdownContent(
-              registeredFunctionNames.sort((a, b) => a.localeCompare(b))
-            );
+            this.setDropdownIconContent(name, dropdownContent, true);
 
-          this.setDropdownIconContent(name, dropdownContent, true);
-
-          this.functionElements = {
-            registeredFunctionButtons,
-          };
+            this.functionElements = {
+              registeredFunctionButtons,
+            };
+          }
 
           break;
         }
@@ -347,7 +352,9 @@ class Toolbar {
       {
         elements: [
           icons.freeze.buttonContainer,
-          icons.functions.buttonContainer,
+          ...(this.spreadsheet.hyperformula
+            ? [icons.functions.buttonContainer]
+            : []),
           icons.formula.buttonContainer,
         ],
       },
@@ -392,7 +399,7 @@ class Toolbar {
       });
     });
 
-    this.dropdownMap.functions.dropdownContent.addEventListener(
+    this.dropdownMap.functions?.dropdownContent.addEventListener(
       'click',
       (e: MouseEvent) => {
         const target = e.target as HTMLElement;
@@ -426,29 +433,15 @@ class Toolbar {
 
       const viewportVector = sheet.getViewportVector();
 
-      const xCellId = getCellId(rowRange.x, colRange.x);
-      const yCellId = getCellId(rowRange.y, colRange.y);
-
-      const xAddress = sheet.cellRenderer.getCellHyperformulaAddress(xCellId);
-      const yAddress = sheet.cellRenderer.getCellHyperformulaAddress(yCellId);
-
-      const xCellAddress =
-        this.spreadsheet.hyperformula?.simpleCellAddressToString(
-          xAddress,
-          xAddress.sheet
-        );
-      const yCellAddress =
-        this.spreadsheet.hyperformula?.simpleCellAddressToString(
-          yAddress,
-          yAddress.sheet
-        );
+      const xCellString = convertFromRowColToCellString(rowRange.x, colRange.x);
+      const yCellString = convertFromRowColToCellString(rowRange.y, colRange.y);
 
       cell.x(cell.x() + viewportVector.x);
       cell.y(cell.y() + viewportVector.y);
 
       sheet.cellEditor.show(cell);
       sheet.cellEditor.setTextContent(
-        `=${functionName}(${xCellAddress}:${yCellAddress})`
+        `=${functionName}(${xCellString}:${yCellString})`
       );
     } else {
       const selectedCell = sheet.selector.selectedCell!;

@@ -205,6 +205,9 @@ class Selector {
 
     const cellClientRect = cell.getClientRect({ skipStroke: true });
 
+    cellClientRect.x -= Math.abs(this.sheet.col.scrollBar.scroll);
+    cellClientRect.y -= Math.abs(this.sheet.row.scrollBar.scroll);
+
     this.selectionArea = {
       start: {
         x: cellClientRect.x + 0.1,

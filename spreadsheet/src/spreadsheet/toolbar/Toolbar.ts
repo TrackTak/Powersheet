@@ -47,6 +47,7 @@ import {
   getCellId,
 } from '../sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
+import HyperFormulaModule from '../HyperFormula';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -237,12 +238,12 @@ class Toolbar {
           break;
         }
         case 'functions': {
-          if (spreadsheet.hyperformula) {
+          if (HyperFormulaModule) {
             const { dropdownContent, registeredFunctionButtons } =
               createFunctionDropdownContent(
-                this.spreadsheet.registeredFunctionNames!.sort((a, b) =>
-                  a.localeCompare(b)
-                )
+                this.spreadsheet
+                  .getRegisteredFunctions()!
+                  .sort((a, b) => a.localeCompare(b))
               );
 
             this.setDropdownIconContent(name, dropdownContent, true);

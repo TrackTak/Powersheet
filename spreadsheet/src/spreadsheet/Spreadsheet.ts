@@ -7,11 +7,12 @@ import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
-import { HyperFormula } from 'hyperformula';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
+import type { HyperFormula } from 'hyperformula';
+import HyperFormulaModule from './HyperFormula';
 
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string;
@@ -45,7 +46,6 @@ class Spreadsheet {
   history: any;
   bottomBar?: BottomBar;
   activeSheetId?: number;
-  registeredFunctionNames?: string[] | null;
   totalSheetCount = 0;
 
   constructor(params: ISpreadsheetConstructor) {
@@ -54,9 +54,6 @@ class Spreadsheet {
       ...params.data,
     };
     this.hyperformula = params.hyperformula;
-    this.registeredFunctionNames = this.hyperformula
-      ? HyperFormula.getRegisteredFunctionNames('enGB')
-      : null;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.toolbar = params.toolbar;
@@ -119,6 +116,10 @@ class Spreadsheet {
     });
 
     this.updateViewport();
+  }
+
+  getRegisteredFunctions() {
+    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
   }
 
   setOptions(options: IOptions) {

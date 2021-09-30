@@ -1,4 +1,4 @@
-import { SimpleCellAddress, SimpleCellRange } from 'hyperformula';
+import type { SimpleCellAddress, SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
 import { getCellId } from './sheet/CellRenderer';
 import Spreadsheet from './Spreadsheet';

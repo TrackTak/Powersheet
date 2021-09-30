@@ -7,6 +7,7 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import { Cell } from '../CellRenderer';
+import HyperFormulaModule from '../../HyperFormula';
 
 export interface ICurrentScroll {
   row: number;
@@ -46,9 +47,9 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
 
-    if (this.spreadsheet.hyperformula) {
+    if (HyperFormulaModule) {
       this.formulaHelper = new FormulaHelper(
-        this.spreadsheet.registeredFunctionNames!,
+        this.spreadsheet.getRegisteredFunctions()!,
         this.onItemClick
       );
     }

@@ -37,7 +37,6 @@ export interface IStyles {
   topLeftRect: RectConfig;
   selectionFirstCell: RectConfig;
   selection: RectConfig;
-  selectionBorder: RectConfig;
   commentMarker: LineConfig;
   cell: ICellConfig;
 }
@@ -75,7 +74,7 @@ const sharedStyles = {
   },
   selection: {
     ...performanceProperties,
-    stroke: '#0057ff',
+    strokeWidth: 1,
   },
 };
 
@@ -130,19 +129,15 @@ export const defaultStyles: IStyles = {
     ...performanceProperties,
     fill: sharedStyles.headerRect.fill,
   },
-  selectionBorder: {
-    ...performanceProperties,
-    stroke: '#0057ff',
-    strokeWidth: 1,
-  },
   selectionFirstCell: {
     ...sharedStyles.selection,
-    strokeWidth: 1.5,
     fill: 'transparent',
+    stroke: '#0057ff',
+    strokeWidth: 1.5,
   },
   selection: {
     ...sharedStyles.selection,
-    strokeWidth: 0,
+    stroke: '#1a73e8',
     fill: 'rgb(14, 101, 235, 0.1)',
   },
   commentMarker: {

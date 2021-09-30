@@ -16,13 +16,25 @@ interface ISelectionArea {
   end: Vector2d;
 }
 
+interface IGroupedCell {
+  cells: Cell[];
+  rect?: Rect;
+}
+
+interface IGroupedCells {
+  main: IGroupedCell;
+  xSticky: IGroupedCell;
+  ySticky: IGroupedCell;
+  xySticky: IGroupedCell;
+}
+
 class Selector {
   isInSelectionMode = false;
   selectedCell?: Cell;
   selectedCells: Cell[] = [];
   selectedCellId: CellId = '0_0';
   previousSelectedCellId?: CellId;
-  selectionRect?: Rect;
+  groupedCells?: IGroupedCells | null;
   selectionArea?: ISelectionArea | null;
   private spreadsheet: Spreadsheet;
 
@@ -40,13 +52,31 @@ class Selector {
       const rect = this.selectedCell.getClientRect({
         skipStroke: true,
       });
+
       const cellRect = getCellRectFromCell(this.selectedCell);
+
+      const { strokeWidth, stroke } =
+        this.spreadsheet.styles.selectionFirstCell;
 
       const rectConfig: RectConfig = {
         ...this.spreadsheet.styles.selectionFirstCell,
         width: rect.width,
         height: rect.height,
+        stroke: undefined,
       };
+
+      // We mut have another Rect for the inside borders
+      // as konva does not allow stroke positioning
+      const innerSelectedCellRect = new Rect({
+        x: strokeWidth! / 2,
+        y: strokeWidth! / 2,
+        width: rect.width - strokeWidth!,
+        height: rect.height - strokeWidth!,
+        stroke,
+        strokeWidth,
+      });
+
+      this.selectedCell.add(innerSelectedCellRect);
 
       this.selectedCell.position({
         x: rect.x,
@@ -71,40 +101,86 @@ class Selector {
         cols
       );
 
-      const topLeftCellClientRect = this.selectedCells[0].getClientRect({
-        skipStroke: true,
+      this.groupedCells = {
+        main: {
+          cells: [],
+        },
+        xSticky: {
+          cells: [],
+        },
+        ySticky: {
+          cells: [],
+        },
+        xySticky: {
+          cells: [],
+        },
+      };
+
+      this.selectedCells.forEach((cell) => {
+        const stickyType =
+          this.sheet.cellRenderer.getStickyGroupTypeFromCell(cell);
+
+        this.groupedCells![stickyType].cells.push(cell);
       });
 
-      const width = cols.reduce((prev, curr) => {
-        return (prev += curr.width());
-      }, 0);
+      Object.keys(this.groupedCells).forEach((key) => {
+        const type = key as keyof IGroupedCells;
+        const cells = this.groupedCells![type].cells;
 
-      const height = rows.reduce((prev, curr) => {
-        return (prev += curr.height());
-      }, 0);
+        if (cells.length) {
+          const topLeftCellClientRect = cells[0].getClientRect({
+            skipStroke: true,
+          });
 
-      const sheetGroup = this.sheet.scrollGroups.main.sheetGroup;
+          let minCol = -Infinity;
+          let minRow = -Infinity;
+          let width = 0;
+          let height = 0;
 
-      this.selectionRect = new Rect({
-        ...this.spreadsheet.styles.selection,
-        ...topLeftCellClientRect,
-        width,
-        height,
+          cells.forEach((cell) => {
+            const clientRect = cell.getClientRect({ skipStroke: true });
+            const { col, row } = cell.attrs;
+
+            if (col.x > minCol) {
+              minCol = col.x;
+              width += clientRect.width;
+            }
+
+            if (row.y > minRow) {
+              minRow = row.y;
+              height += clientRect.height;
+            }
+          });
+
+          const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
+
+          this.groupedCells![type].rect = new Rect({
+            ...this.spreadsheet.styles.selection,
+            ...topLeftCellClientRect,
+            stroke: undefined,
+            width,
+            height,
+          });
+
+          sheetGroup.add(this.groupedCells![type].rect!);
+        }
       });
-
-      sheetGroup.add(this.selectionRect);
     }
   }
 
   destroySelection() {
     this.selectedCell?.destroy();
-    this.selectionRect?.destroy();
+    Object.keys(this.groupedCells ?? {}).forEach((key) => {
+      const type = key as keyof IGroupedCells;
+
+      this.groupedCells?.[type].rect?.destroy();
+    });
   }
 
   updateSelectedCells() {
     this.destroySelection();
-    this.renderSelectedCell();
     this.renderSelectionArea();
+    this.renderSelectedCell();
   }
 
   startSelection(x: number, y: number) {
@@ -185,44 +261,20 @@ class Selector {
   endSelection() {
     this.isInSelectionMode = false;
 
-    this.setSelectionBorder();
+    Object.keys(this.groupedCells ?? {}).forEach((key) => {
+      const type = key as keyof IGroupedCells;
+      const value = this.groupedCells![type];
+
+      if (value.cells.length > 1) {
+        value.rect?.stroke(this.spreadsheet.styles.selection.stroke as string);
+      }
+    });
 
     this.spreadsheet.eventEmitter.emit(events.selector.endSelection);
   }
 
   hasChangedCellSelection() {
     return this.selectedCell?.id() !== this.previousSelectedCellId;
-  }
-
-  setSelectionBorder() {
-    // if (!this.selectedCells.length) return;
-    // const row = this.sheet.row.convertFromCellsToRange(this.selectedCells);
-    // const col = this.sheet.col.convertFromCellsToRange(this.selectedCells);
-    // const rows = this.sheet.row.convertFromRangeToRowCols(row);
-    // const cols = this.sheet.col.convertFromRangeToRowCols(col);
-    // const width = cols.reduce((prev, curr) => {
-    //   return (prev += curr.width());
-    // }, 0);
-    // const height = rows.reduce((prev, curr) => {
-    //   return (prev += curr.height());
-    // }, 0);
-    // const indexZeroCell = this.selectedCells[0];
-    // const rect: IRect = {
-    //   x: indexZeroCell.x(),
-    //   y: indexZeroCell.y(),
-    //   width,
-    //   height,
-    // };
-    // const cell = this.sheet.getCell(
-    //   null,
-    //   rect,
-    //   indexZeroCell.attrs.row,
-    //   indexZeroCell.attrs.col
-    // );
-    // const cellRect = getCellRectFromCell(cell);
-    // cellRect.setAttrs(this.spreadsheet.styles.selectionBorder);
-    // this.sheet.drawCell(cell);
-    // this.selectionBorderCell = cell;
   }
 }
 

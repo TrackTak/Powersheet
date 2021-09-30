@@ -342,6 +342,8 @@ class CellRenderer {
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
+
+    return line;
   }
 
   setRightBorder(cell: Cell) {
@@ -636,35 +638,28 @@ class CellRenderer {
     return cells;
   }
 
-  addCell(cell: Cell) {
+  getStickyGroupTypeFromCell(cell: Cell) {
     const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
     const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
 
     if (isFrozenRow && isFrozenCol) {
-      const xyStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky.group
-      );
-
-      xyStickyCellGroup.add(cell);
+      return 'xySticky';
     } else if (isFrozenRow) {
-      const yStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.ySticky.group
-      );
-
-      yStickyCellGroup.add(cell);
+      return 'ySticky';
     } else if (isFrozenCol) {
-      const xStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xSticky.group
-      );
-
-      xStickyCellGroup.add(cell);
+      return 'xSticky';
     } else {
-      const mainCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.main.group
-      );
-
-      mainCellGroup.add(cell);
+      return 'main';
     }
+  }
+
+  addCell(cell: Cell) {
+    const stickyType = this.getStickyGroupTypeFromCell(cell);
+    const stickyCellGroup = getCellGroupFromScrollGroup(
+      this.sheet.scrollGroups[stickyType].group
+    );
+
+    stickyCellGroup.add(cell);
 
     cell.moveToTop();
   }

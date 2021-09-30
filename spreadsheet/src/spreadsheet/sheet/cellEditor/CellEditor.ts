@@ -139,11 +139,7 @@ class CellEditor {
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(
-      cell.getClientRect({
-        skipStroke: true,
-      })
-    );
+    this.setCellEditorElPosition(cell.getClientRect());
 
     if (setTextContent) {
       this.setTextContent(

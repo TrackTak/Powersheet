@@ -13,10 +13,15 @@ import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 
+export interface ISpreadsheetData {
+  exportSpreadsheetName?: string;
+  sheetData: ISheetData[];
+}
+
 export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
-  data?: ISheetData[];
+  data?: Partial<ISpreadsheetData>;
   hyperformula: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
@@ -31,7 +36,7 @@ class Spreadsheet {
   styles: IStyles;
   eventEmitter: EventEmitter;
   options: IOptions;
-  data: ISheetData[];
+  data: ISpreadsheetData;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -43,7 +48,10 @@ class Spreadsheet {
   totalSheetCount = 0;
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = params.data ?? [];
+    this.data = {
+      sheetData: [],
+      ...params.data,
+    };
     this.hyperformula = params.hyperformula;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
@@ -78,7 +86,7 @@ class Spreadsheet {
     this.bottomBar?.initialize(this);
     this.clipboard = new Clipboard(this);
 
-    this.history = new Manager((data: ISheetData[]) => {
+    this.history = new Manager((data: ISpreadsheetData) => {
       const currentData = this.data;
 
       this.data = data;
@@ -86,8 +94,8 @@ class Spreadsheet {
       return currentData;
     }, this.hyperformula.getConfig().undoLimit);
 
-    if (this.data.length) {
-      this.data.forEach((data) => {
+    if (this.data.sheetData.length) {
+      this.data.sheetData.forEach((data) => {
         this.createNewSheet(data);
       });
     } else {
@@ -176,7 +184,7 @@ class Spreadsheet {
 
     this.sheets.delete(sheetId);
 
-    delete this.data[sheetId];
+    delete this.data.sheetData[sheetId];
 
     this.updateViewport();
   }
@@ -188,7 +196,7 @@ class Spreadsheet {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data[sheetId].sheetName = sheetName;
+    this.data.sheetData[sheetId].sheetName = sheetName;
 
     this.hyperformula?.renameSheet(sheetId, sheetName);
 
@@ -200,7 +208,7 @@ class Spreadsheet {
 
     const sheetId = this.hyperformula?.getSheetId(data.sheetName)!;
 
-    this.data[sheetId] = data;
+    this.data.sheetData[sheetId] = data;
 
     const sheet = new Sheet(this, sheetId);
 

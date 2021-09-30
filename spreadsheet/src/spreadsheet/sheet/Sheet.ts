@@ -666,7 +666,7 @@ class Sheet {
       this.spreadsheet.addToHistory();
     }
 
-    this.spreadsheet.data[this.sheetId] = updatedData;
+    this.spreadsheet.data.sheetData[this.sheetId] = updatedData;
 
     const done = () => {
       this.isSaving = false;
@@ -684,7 +684,7 @@ class Sheet {
   }
 
   getData(): ISheetData {
-    return this.spreadsheet.data[this.sheetId];
+    return this.spreadsheet.data.sheetData[this.sheetId];
   }
 
   updateSheetDimensions() {

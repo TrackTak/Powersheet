@@ -151,7 +151,7 @@ class Export {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new();
 
-    this.spreadsheet.data.forEach((data) => {
+    this.spreadsheet.data.sheetData.forEach((data) => {
       const sheet = Array.from(this.spreadsheet.sheets.values()).find(
         (x) => x.getData().sheetName === data.sheetName
       )!;
@@ -169,7 +169,11 @@ class Export {
 
     const workbook = this.getWorkbook(utils);
 
-    writeFile(workbook, this.spreadsheet.options.exportSpreadsheetName);
+    writeFile(
+      workbook,
+      this.spreadsheet.data.exportSpreadsheetName ??
+        this.spreadsheet.options.exportSpreadsheetName
+    );
   }
 }
 

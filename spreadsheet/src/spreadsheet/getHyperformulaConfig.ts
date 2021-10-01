@@ -1,8 +1,9 @@
-import { AlwaysSparse, ConfigParams } from 'hyperformula';
+import type { ConfigParams } from 'hyperformula';
+import HyperFormulaModule from './HyperFormula';
 
 const getHyperformulaConfig = (): Partial<ConfigParams> => {
   return {
-    chooseAddressMappingPolicy: new AlwaysSparse(),
+    chooseAddressMappingPolicy: new HyperFormulaModule!.AlwaysSparse(),
   };
 };
 

@@ -39,6 +39,13 @@ export const convertFromCellIdToRowColId = (id: CellId): IRowColAddress => {
   };
 };
 
+export const convertFromRowColToCellString = (row: number, col: number) => {
+  const letter = String.fromCharCode('A'.charCodeAt(0) + col);
+  const number = row + 1;
+
+  return `${letter}${number}`;
+};
+
 export const convertFromCellsToMinMax = (
   cells: Cell[],
   minCallbackFn: (cell: Cell) => number,
@@ -225,12 +232,15 @@ class CellRenderer {
     const cell = this.convertFromCellIdToCell(cellId);
     const style = cellData?.style;
     const address = this.getCellHyperformulaAddress(cellId);
-    const hyperformulaValue = this.spreadsheet.options.showFormulas
-      ? this.spreadsheet.hyperformula?.getCellSerialized(address)
-      : this.spreadsheet.hyperformula?.getCellValue(address);
+    let value =
+      this.spreadsheet.hyperformula?.getCellValue(address) ?? cellData?.value;
 
-    if (hyperformulaValue) {
-      this.setCellTextValue(cell, hyperformulaValue?.toString());
+    if (this.spreadsheet.options.showFormulas) {
+      value = cellData?.value;
+    }
+
+    if (value) {
+      this.setCellTextValue(cell, value?.toString());
     }
 
     if (cellData?.comment) {
@@ -517,7 +527,7 @@ class CellRenderer {
   async setTextFormat(cell: Cell, textFormatPattern: string) {
     const cellText = getCellTextFromCell(cell);
 
-    if (cellText) {
+    if (cellText && !this.spreadsheet.options.showFormulas) {
       const { format } = await import('numfmt');
       let text = cellText.text();
 

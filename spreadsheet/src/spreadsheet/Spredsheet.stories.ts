@@ -76,25 +76,15 @@ const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
   });
 };
 
-const buildOnlySpreadsheet = (args: IArgs, config?: Partial<ConfigParams>) => {
-  const hyperformula = getHyperformulaInstance(config);
+const buildOnlySpreadsheet = (args: IArgs) => {
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
 
   const spreadsheet = getSpreadsheet({
-    hyperformula,
     options,
     styles,
     data,
-  });
-
-  spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
-    // Simulating an async API call that saves the sheet data to
-    // a DB
-    setTimeout(() => {
-      done();
-    }, 500);
   });
 
   return spreadsheet.spreadsheetEl;
@@ -102,9 +92,8 @@ const buildOnlySpreadsheet = (args: IArgs, config?: Partial<ConfigParams>) => {
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  config?: Partial<ConfigParams>
+  hyperformula?: HyperFormula
 ) => {
-  const hyperformula = getHyperformulaInstance(config);
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
@@ -132,8 +121,19 @@ const buildSpreadsheetWithEverything = (
   return spreadsheet.spreadsheetEl;
 };
 
+export const buildSpreadsheetWithHyperformula = (
+  args: IArgs,
+  config?: Partial<ConfigParams>
+) => {
+  const hyperformula = getHyperformulaInstance({
+    ...config,
+  });
+
+  return buildSpreadsheetWithEverything(args, hyperformula);
+};
+
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args);
+  return buildSpreadsheetWithHyperformula(args);
 };
 
 const defaultStoryArgs: IArgs = {
@@ -271,7 +271,7 @@ DifferentSizeCells.args = {
 };
 
 const MobileTemplate: Story<IArgs> = (args) => {
-  const spreadsheet = buildSpreadsheetWithEverything(args);
+  const spreadsheet = buildSpreadsheetWithHyperformula(args);
 
   TouchEmulator.start();
 
@@ -289,7 +289,7 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     }
   })
 
-  return buildSpreadsheetWithEverything(newArgs, {
+  return buildSpreadsheetWithHyperformula(newArgs, {
     maxRows: newArgs.options.row.amount,
   });
 };
@@ -333,11 +333,17 @@ CustomStyles.args = {
   },
 };
 
-const OnlySpreadsheetTemplate: Story<IArgs> = (args) => {
+const OnlySpreadsheet: Story<IArgs> = (args) => {
   return buildOnlySpreadsheet(args);
 };
 
-export const OnlySpreadsheet = OnlySpreadsheetTemplate.bind({});
+export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
+
+const NoHyperformulaTemplate: Story<IArgs> = (args) => {
+  return buildSpreadsheetWithEverything(args);
+};
+
+export const NoHyperformula = NoHyperformulaTemplate.bind({});
 
 export const CustomSizeSpreadsheet = Template.bind({});
 
@@ -351,7 +357,7 @@ CustomSizeSpreadsheet.args = {
 };
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args, {
+  return buildSpreadsheetWithHyperformula(args, {
     currencySymbol: Object.values(currencySymbolMap),
   });
 };
@@ -380,8 +386,8 @@ const MultipleSpreadsheetsTemplate: Story = () => {
   };
 
   const firstSpreadsheetEl =
-    buildSpreadsheetWithEverything(firstSpreadsheetArgs);
-  const secondSpreadsheetEl = buildSpreadsheetWithEverything(
+    buildSpreadsheetWithHyperformula(firstSpreadsheetArgs);
+  const secondSpreadsheetEl = buildSpreadsheetWithHyperformula(
     secondSpreadsheetArgs
   );
 

@@ -7,11 +7,12 @@ import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
-import { HyperFormula } from 'hyperformula';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
+import type { HyperFormula } from 'hyperformula';
+import HyperFormulaModule from './HyperFormula';
 
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string;
@@ -22,7 +23,7 @@ export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
   data?: Partial<ISpreadsheetData>;
-  hyperformula: HyperFormula;
+  hyperformula?: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -92,7 +93,7 @@ class Spreadsheet {
       this.data = data;
 
       return currentData;
-    }, this.hyperformula.getConfig().undoLimit);
+    }, this.options.undoRedoLimit);
 
     if (this.data.sheetData.length) {
       this.data.sheetData.forEach((data) => {
@@ -115,6 +116,10 @@ class Spreadsheet {
     });
 
     this.updateViewport();
+  }
+
+  getRegisteredFunctions() {
+    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
   }
 
   setOptions(options: IOptions) {
@@ -206,7 +211,8 @@ class Spreadsheet {
   createNewSheet(data: ISheetData) {
     this.hyperformula?.addSheet(data.sheetName);
 
-    const sheetId = this.hyperformula?.getSheetId(data.sheetName)!;
+    const sheetId =
+      this.hyperformula?.getSheetId(data.sheetName) ?? this.totalSheetCount;
 
     this.data.sheetData[sheetId] = data;
 

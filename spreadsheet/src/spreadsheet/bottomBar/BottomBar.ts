@@ -249,7 +249,9 @@ class BottomBar {
       sheetName,
     });
 
-    const sheetId = this.spreadsheet.hyperformula!.getSheetId(sheetName)!;
+    const sheetId =
+      this.spreadsheet.hyperformula!.getSheetId(sheetName) ??
+      this.spreadsheet.totalSheetCount;
 
     this.spreadsheet.switchSheet(sheetId);
   };

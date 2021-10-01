@@ -6,9 +6,6 @@ import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
 import Sheet, {
   centerRectTwoInRectOne,
-  getHeaderGroupFromScrollGroup,
-  getRowColGroupFromScrollGroup,
-  getSheetGroupFromScrollGroup,
   iterateRowColVector,
   iterateXToY,
 } from './Sheet';
@@ -618,24 +615,12 @@ class RowCol {
     this.headerGroupMap.set(index, headerGroup);
 
     if (isFrozen) {
-      const xyStickyGroup = getHeaderGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky.group
-      );
-
-      xyStickyGroup.add(headerGroup);
+      this.sheet.scrollGroups.xySticky.headerGroup.add(headerGroup);
     } else {
       if (this.isCol) {
-        const yStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.ySticky.group
-        );
-
-        yStickyGroup.add(headerGroup);
+        this.sheet.scrollGroups.ySticky.headerGroup.add(headerGroup);
       } else {
-        const xStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.xSticky.group
-        );
-
-        xStickyGroup.add(headerGroup);
+        this.sheet.scrollGroups.xSticky.headerGroup.add(headerGroup);
       }
     }
   }
@@ -687,7 +672,7 @@ class RowCol {
 
   private getFrozenGridLine(
     index: number,
-    scrollGroup: Group,
+    rowColGroup: Group,
     map: Map<number, Line>,
     getLine: (size: number) => Line
   ) {
@@ -703,10 +688,9 @@ class RowCol {
       size = value.size;
     }
 
-    const stickyGroup = getRowColGroupFromScrollGroup(scrollGroup);
     const line = getLine(size);
 
-    stickyGroup.add(line);
+    rowColGroup.add(line);
 
     map.set(index, line);
   }
@@ -715,7 +699,7 @@ class RowCol {
     if (!this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xSticky.group,
+        this.sheet.scrollGroups.xSticky.rowColGroup,
         this.xFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -729,7 +713,7 @@ class RowCol {
     if (this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xSticky.group,
+        this.sheet.scrollGroups.xSticky.rowColGroup,
         this.xFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -744,7 +728,7 @@ class RowCol {
     if (!this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.ySticky.group,
+        this.sheet.scrollGroups.ySticky.rowColGroup,
         this.yFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -759,7 +743,7 @@ class RowCol {
     if (this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.ySticky.group,
+        this.sheet.scrollGroups.ySticky.rowColGroup,
         this.yFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -773,7 +757,7 @@ class RowCol {
     if (index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xySticky.group,
+        this.sheet.scrollGroups.xySticky.rowColGroup,
         this.xyFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -829,17 +813,9 @@ class RowCol {
     if (isLastFrozen) {
       this.frozenLine = line;
 
-      const xyStickyGridLineGroup = getSheetGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky.group
-      );
-
-      xyStickyGridLineGroup.add(line);
+      this.sheet.scrollGroups.xySticky.sheetGroup.add(line);
     } else {
-      const mainGridLineGroup = getRowColGroupFromScrollGroup(
-        this.sheet.scrollGroups.main.group
-      );
-
-      mainGridLineGroup.add(line);
+      this.sheet.scrollGroups.main.rowColGroup.add(line);
     }
   }
 

@@ -7,7 +7,6 @@ import { performanceProperties } from '../styles';
 import { rotateAroundCenter } from '../utils';
 import Sheet, {
   BorderStyle,
-  getCellGroupFromScrollGroup,
   getCellRectFromCell,
   getCellTextFromCell,
   HorizontalTextAlign,
@@ -334,11 +333,8 @@ class CellRenderer {
     this.cellsMap.set(cellId, cell);
 
     const type = this.getStickyGroupTypeFromCell(cell);
-    const stickyCellGroup = getCellGroupFromScrollGroup(
-      this.sheet.scrollGroups[type].group
-    );
 
-    stickyCellGroup.add(cell);
+    this.sheet.scrollGroups[type].cellGroup.add(cell);
 
     cell.moveToTop();
 

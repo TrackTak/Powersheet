@@ -8,7 +8,6 @@ import Selector from './Selector';
 import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
-import { BorderIconName } from '../toolbar/toolbarHtmlElementHelpers';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import Spreadsheet from '../Spreadsheet';
@@ -21,6 +20,7 @@ import { Text } from 'konva/lib/shapes/Text';
 import { DebouncedFunc, isNil, merge, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../events';
+import { BorderIconName } from '../htmlElementHelpers';
 
 export interface IDimensions {
   width: number;
@@ -101,6 +101,10 @@ export interface ICellsData {
 interface IScrollGroup {
   group: Group;
   sheetGroup: Group;
+  cellGroup: Group;
+  rowColGroup: Group;
+  headerGroup: Group;
+  frozenBackground: Rect;
 }
 
 const scrollGroups = ['main', 'xSticky', 'ySticky', 'xySticky'];
@@ -135,47 +139,6 @@ export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
 
   return cellBorder;
 };
-
-export const getSheetGroupFromScrollGroup = (scrollGroup: Group) => {
-  const sheetGroup = scrollGroup.children?.find(
-    (x) => x.attrs.type === 'sheet'
-  ) as Group;
-
-  return sheetGroup;
-};
-
-export const getHeaderGroupFromScrollGroup = (scrollGroup: Group) => {
-  const headerGroup = scrollGroup.children?.find(
-    (x) => x.attrs.type === 'header'
-  ) as Group;
-
-  return headerGroup;
-};
-
-export const getRowColGroupFromScrollGroup = (scrollGroup: Group) => {
-  const rowColGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
-    (x) => x.attrs.type === 'rowCol'
-  ) as Group;
-
-  return rowColGroup;
-};
-
-export const getCellGroupFromScrollGroup = (scrollGroup: Group) => {
-  const cellGroup = getSheetGroupFromScrollGroup(scrollGroup).children?.find(
-    (x) => x.attrs.type === 'cell'
-  ) as Group;
-
-  return cellGroup;
-};
-
-export const getFrozenBackgroundFromScrollGroup = (scrollGroup: Group) => {
-  const frozenBackground = getSheetGroupFromScrollGroup(
-    scrollGroup
-  ).children?.find((x) => x.attrs.type === 'frozenBackground') as Group;
-
-  return frozenBackground;
-};
-
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.x + rectOne.width / 2,
@@ -327,6 +290,10 @@ class Sheet {
         ...this.scrollGroups[type],
         group,
         sheetGroup,
+        cellGroup,
+        rowColGroup,
+        headerGroup,
+        frozenBackground,
       };
     });
 
@@ -798,15 +765,10 @@ class Sheet {
 
   updateFrozenBackgrounds() {
     const frozenCells = this.getData().frozenCells;
-    const xStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.xSticky.group
-    );
-    const yStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.ySticky.group
-    );
-    const xyStickyFrozenBackground = getFrozenBackgroundFromScrollGroup(
-      this.scrollGroups.xySticky.group
-    );
+    const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
+    const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
+    const xyStickyFrozenBackground =
+      this.scrollGroups.xySticky.frozenBackground;
 
     if (frozenCells && this.row.frozenLine && this.col.frozenLine) {
       const colClientRect = this.col.frozenLine.getClientRect({

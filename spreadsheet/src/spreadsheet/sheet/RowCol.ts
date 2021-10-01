@@ -8,6 +8,7 @@ import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
+  getSheetGroupFromScrollGroup,
   iterateRowColVector,
   iterateXToY,
 } from './Sheet';
@@ -828,7 +829,7 @@ class RowCol {
     if (isLastFrozen) {
       this.frozenLine = line;
 
-      const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
+      const xyStickyGridLineGroup = getSheetGroupFromScrollGroup(
         this.sheet.scrollGroups.xySticky.group
       );
 

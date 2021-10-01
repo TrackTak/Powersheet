@@ -565,9 +565,11 @@ class RowCol {
   }
 
   draw(index: number) {
-    this.drawHeader(index);
-    this.drawGridLine(index);
-    this.drawFrozenGridLine(index);
+    if (index < this.spreadsheet.options[this.type].amount) {
+      this.drawHeader(index);
+      this.drawGridLine(index);
+      this.drawFrozenGridLine(index);
+    }
   }
 
   getAxisAtIndex(index: number) {
@@ -731,7 +733,7 @@ class RowCol {
         (size) =>
           this.getGridLine(index, {
             y: size,
-            points: this.getLinePoints(this.sheet.stage.height()),
+            points: this.getLinePoints(this.sheet.sheetDimensions.height),
           })
       );
     }
@@ -746,7 +748,7 @@ class RowCol {
         (size) =>
           this.getGridLine(index, {
             x: size,
-            points: this.getLinePoints(this.sheet.stage.width()),
+            points: this.getLinePoints(this.sheet.sheetDimensions.width),
           })
       );
     }

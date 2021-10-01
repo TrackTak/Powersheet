@@ -17,7 +17,7 @@ import Sheet, {
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 
 export type CellId = string;
 
@@ -37,6 +37,29 @@ export const convertFromCellIdToRowColId = (id: CellId): IRowColAddress => {
     row: parseInt(sections[0], 10),
     col: parseInt(sections[1], 10),
   };
+};
+
+export const convertFromRowColToCellString = (row: number, col: number) => {
+  const letter = String.fromCharCode('A'.charCodeAt(0) + col);
+  const number = row + 1;
+
+  return `${letter}${number}`;
+};
+
+export const convertFromCellsToMinMax = (
+  cells: Cell[],
+  minCallbackFn: (cell: Cell) => number,
+  maxCallbackFn: (cell: Cell) => number
+) => {
+  const getMin = () => Math.min(...cells.map(minCallbackFn));
+  const getMax = () => Math.max(...cells.map(maxCallbackFn));
+
+  const minMax = {
+    min: getMin(),
+    max: getMax(),
+  };
+
+  return minMax;
 };
 
 class CellRenderer {
@@ -135,37 +158,66 @@ class CellRenderer {
     cellRect.height(rowHeader.height());
   }
 
-  private destroyOutOfViewportCells() {
-    for (const [key, cell] of this.cellsMap) {
-      if (this.sheet.isShapeOutsideOfViewport(cell)) {
-        cell.destroy();
-
-        this.sheet.cellRenderer.cellsMap.delete(key);
-      }
-    }
-  }
-
-  updateViewport() {
+  private clearAll() {
     this.cellsMap.forEach((cell) => {
       cell.destroy();
     });
     this.cellsMap.clear();
     this.sheet.merger.associatedMergedCellIdMap.clear();
-
-    this.destroyOutOfViewportCells();
-    this.drawCells();
   }
 
-  private drawCells() {
+  // forceDraw is turned off for scrolling for performance
+  drawViewport(forceDraw = false) {
+    const getShouldDraw = (ri: number, ci: number) => {
+      const cellId = getCellId(ri, ci);
+      const cellAlreadyExists = this.cellsMap.get(cellId);
+
+      return forceDraw || !cellAlreadyExists;
+    };
+
+    const data = this.sheet.getData();
+
+    if (data.frozenCells) {
+      const frozenRow = data.frozenCells.row;
+      const frozenCol = data.frozenCells.col;
+
+      if (!isNil(frozenRow)) {
+        for (let ri = 0; ri <= frozenRow; ri++) {
+          for (const ci of this.sheet.col.headerGroupMap.keys()) {
+            if (getShouldDraw(ri, ci)) {
+              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+            }
+          }
+        }
+      }
+
+      if (!isNil(frozenCol)) {
+        for (let ci = 0; ci <= frozenCol; ci++) {
+          for (const ri of this.sheet.row.headerGroupMap.keys()) {
+            if (getShouldDraw(ri, ci)) {
+              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+            }
+          }
+        }
+      }
+    }
+
     for (const ri of iterateXToY(
       this.sheet.row.scrollBar.sheetViewportPosition
     )) {
       for (const ci of iterateXToY(
         this.sheet.col.scrollBar.sheetViewportPosition
       )) {
-        this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+        if (getShouldDraw(ri, ci)) {
+          this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+        }
       }
     }
+  }
+
+  updateViewport() {
+    this.clearAll();
+    this.drawViewport(true);
   }
 
   drawCell(cellId: CellId) {
@@ -180,12 +232,15 @@ class CellRenderer {
     const cell = this.convertFromCellIdToCell(cellId);
     const style = cellData?.style;
     const address = this.getCellHyperformulaAddress(cellId);
-    const hyperformulaValue = this.spreadsheet.options.showFormulas
-      ? this.spreadsheet.hyperformula?.getCellSerialized(address)
-      : this.spreadsheet.hyperformula?.getCellValue(address);
+    let value =
+      this.spreadsheet.hyperformula?.getCellValue(address) ?? cellData?.value;
 
-    if (hyperformulaValue) {
-      this.setCellTextValue(cell, hyperformulaValue?.toString());
+    if (this.spreadsheet.options.showFormulas) {
+      value = cellData?.value;
+    }
+
+    if (value) {
+      this.setCellTextValue(cell, value?.toString());
     }
 
     if (cellData?.comment) {
@@ -278,7 +333,14 @@ class CellRenderer {
 
     this.cellsMap.set(cellId, cell);
 
-    this.addCell(cell);
+    const type = this.getStickyGroupTypeFromCell(cell);
+    const stickyCellGroup = getCellGroupFromScrollGroup(
+      this.sheet.scrollGroups[type].group
+    );
+
+    stickyCellGroup.add(cell);
+
+    cell.moveToTop();
 
     if (!this.sheet.merger.getIsCellPartOfMerge(cellId)) {
       const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
@@ -326,6 +388,8 @@ class CellRenderer {
 
     line.y(clientRect.height);
     line.points([0, 0, clientRect.width, 0]);
+
+    return line;
   }
 
   setRightBorder(cell: Cell) {
@@ -463,17 +527,23 @@ class CellRenderer {
   async setTextFormat(cell: Cell, textFormatPattern: string) {
     const cellText = getCellTextFromCell(cell);
 
-    if (cellText) {
-      const text = cellText.text();
-      const num = parseFloat(text);
+    if (cellText && !this.spreadsheet.options.showFormulas) {
+      const { format } = await import('numfmt');
+      let text = cellText.text();
 
-      const numfmt = await import('numfmt');
+      try {
+        text = format(textFormatPattern, Number(text));
+      } catch (e) {
+        text = e as string;
+      }
 
-      // TODO: Change to same as exporter?
-      const formattedText =
-        numfmt.format(textFormatPattern, isFinite(num) ? num : text) ?? text;
+      try {
+        text = format(textFormatPattern, text);
+      } catch (e) {
+        text = e as string;
+      }
 
-      cellText.text(formattedText);
+      cellText.text(text);
     }
   }
 
@@ -620,37 +690,27 @@ class CellRenderer {
     return cells;
   }
 
-  addCell(cell: Cell) {
-    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
-    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
+  isOnFrozenRow(cell: Cell) {
+    return this.sheet.row.getIsFrozen(cell.attrs.row.x);
+  }
 
-    if (isFrozenRow && isFrozenCol) {
-      const xyStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky
-      );
+  isOnFrozenCol(cell: Cell) {
+    return this.sheet.col.getIsFrozen(cell.attrs.col.x);
+  }
 
-      xyStickyCellGroup.add(cell);
-    } else if (isFrozenRow) {
-      const yStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.ySticky
-      );
+  getStickyGroupTypeFromCell(cell: Cell) {
+    const isOnFrozenRow = this.isOnFrozenRow(cell);
+    const isOnFrozenCol = this.isOnFrozenCol(cell);
 
-      yStickyCellGroup.add(cell);
-    } else if (isFrozenCol) {
-      const xStickyCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.xSticky
-      );
-
-      xStickyCellGroup.add(cell);
+    if (isOnFrozenRow && isOnFrozenCol) {
+      return 'xySticky';
+    } else if (isOnFrozenRow) {
+      return 'ySticky';
+    } else if (isOnFrozenCol) {
+      return 'xSticky';
     } else {
-      const mainCellGroup = getCellGroupFromScrollGroup(
-        this.sheet.scrollGroups.main
-      );
-
-      mainCellGroup.add(cell);
+      return 'main';
     }
-
-    cell.moveToTop();
   }
 
   getCellHyperformulaAddress(id: CellId) {

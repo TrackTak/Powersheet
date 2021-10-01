@@ -1,6 +1,7 @@
 import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import {
   convertFromCellIdToRowColId,
+  convertFromRowColToCellString,
   IRowColAddress,
 } from './sheet/CellRenderer';
 import Sheet, { ISheetData } from './sheet/Sheet';
@@ -18,7 +19,6 @@ class Export {
   private getWorksheet(sheet: Sheet, data: ISheetData) {
     const worksheet: WorkSheet = {};
     const cellsData = data.cellsData ?? {};
-    const sheetId = this.spreadsheet.hyperformula?.getSheetId(data.sheetName)!;
 
     let startRowColAddress: Partial<IRowColAddress> = {
       row: 0,
@@ -33,15 +33,7 @@ class Export {
     for (const key in cellsData) {
       const cell = cellsData[key];
       const { row, col } = convertFromCellIdToRowColId(key);
-      const address = {
-        sheet: sheetId,
-        row,
-        col,
-      };
-      const cellId = this.spreadsheet.hyperformula?.simpleCellAddressToString(
-        address,
-        address.sheet
-      )!;
+      const cellString = convertFromRowColToCellString(row, col);
 
       startRowColAddress = {
         row: Math.min(row, startRowColAddress.row ?? Infinity),
@@ -65,14 +57,14 @@ class Export {
         type = 'n';
       }
 
-      worksheet[cellId] = {
+      worksheet[cellString] = {
         z: textFormatPattern,
         v: cell.value,
         t: type,
       };
 
-      if (this.spreadsheet.hyperformula?.doesCellHaveFormula(address)) {
-        worksheet[cellId].f = cell.value!.slice(1);
+      if (cell.value?.charAt(0) === '=') {
+        worksheet[cellString].f = cell.value!.slice(1);
       }
     }
 
@@ -98,26 +90,17 @@ class Export {
       }
     }
 
-    const startCellAddress =
-      this.spreadsheet.hyperformula?.simpleCellAddressToString(
-        {
-          row: startRowColAddress.row ?? 0,
-          col: startRowColAddress.col ?? 0,
-          sheet: sheetId,
-        },
-        sheetId
-      )!;
+    const startCellString = convertFromRowColToCellString(
+      startRowColAddress.row ?? 0,
+      startRowColAddress.col ?? 0
+    );
 
-    const endCellAddress =
-      this.spreadsheet.hyperformula?.simpleCellAddressToString(
-        {
-          ...endRowColAddress,
-          sheet: sheetId,
-        },
-        sheetId
-      )!;
+    const endCellString = convertFromRowColToCellString(
+      endRowColAddress.row,
+      endRowColAddress.col
+    );
 
-    worksheet['!ref'] = `${startCellAddress}:${endCellAddress}`;
+    worksheet['!ref'] = `${startCellString}:${endCellString}`;
 
     const cols: ColInfo[] = [];
     const rows: RowInfo[] = [];
@@ -151,7 +134,7 @@ class Export {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new();
 
-    this.spreadsheet.data.forEach((data) => {
+    this.spreadsheet.data.sheetData.forEach((data) => {
       const sheet = Array.from(this.spreadsheet.sheets.values()).find(
         (x) => x.getData().sheetName === data.sheetName
       )!;
@@ -169,7 +152,11 @@ class Export {
 
     const workbook = this.getWorkbook(utils);
 
-    writeFile(workbook, this.spreadsheet.options.exportSpreadsheetName);
+    writeFile(
+      workbook,
+      this.spreadsheet.data.exportSpreadsheetName ??
+        this.spreadsheet.options.exportSpreadsheetName
+    );
   }
 }
 

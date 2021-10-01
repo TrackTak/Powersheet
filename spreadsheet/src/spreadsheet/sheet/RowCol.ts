@@ -8,6 +8,7 @@ import Sheet, {
   centerRectTwoInRectOne,
   getHeaderGroupFromScrollGroup,
   getRowColGroupFromScrollGroup,
+  getSheetGroupFromScrollGroup,
   iterateRowColVector,
   iterateXToY,
 } from './Sheet';
@@ -18,6 +19,7 @@ import {
   Cell,
   CellId,
   convertFromCellIdToRowColId,
+  convertFromCellsToMinMax,
   getCellId,
 } from './CellRenderer';
 import { performanceProperties } from '../styles';
@@ -196,15 +198,16 @@ class RowCol {
   }
 
   convertFromCellsToRange(cells: Cell[]) {
-    const getMin = () => Math.min(...cells.map((o) => o.attrs[this.type].x));
-    const getMax = () => Math.max(...cells.map((o) => o.attrs[this.type].y));
+    const { min, max } = convertFromCellsToMinMax(
+      cells,
+      (cell) => cell.attrs[this.type].x,
+      (cell) => cell.attrs[this.type].y
+    );
 
-    const vector = {
-      x: getMin(),
-      y: getMax(),
+    return {
+      x: min,
+      y: max,
     };
-
-    return vector;
   }
 
   convertFromRangeToRowCols(vector: Vector2d) {
@@ -459,26 +462,39 @@ class RowCol {
     this.rowColMap.clear();
   }
 
-  updateViewport() {
-    this.clearAll();
+  // forceDraw is turned off for scrolling for performance
+  drawViewport(forceDraw = false) {
+    const getShouldDraw = (index: number) => {
+      const rowColAlreadyExists =
+        this.headerGroupMap.get(index) && this.rowColMap.get(index);
+
+      return forceDraw || !rowColAlreadyExists;
+    };
 
     const data = this.sheet.getData();
 
     if (data.frozenCells) {
       const frozenCell = data.frozenCells[this.type];
 
-      if (frozenCell) {
+      if (!isNil(frozenCell)) {
         for (let index = 0; index <= frozenCell; index++) {
-          this.sheet[this.type].draw(index);
+          if (getShouldDraw(index)) {
+            this.draw(index);
+          }
         }
       }
     }
 
-    for (const index of iterateXToY(
-      this.sheet[this.type].scrollBar.sheetViewportPosition
-    )) {
-      this.sheet[this.type].draw(index);
+    for (const index of iterateXToY(this.scrollBar.sheetViewportPosition)) {
+      if (getShouldDraw(index)) {
+        this.draw(index);
+      }
     }
+  }
+
+  updateViewport() {
+    this.clearAll();
+    this.drawViewport(true);
 
     this.scrollBar.setScrollSize();
   }
@@ -550,9 +566,11 @@ class RowCol {
   }
 
   draw(index: number) {
-    this.drawHeader(index);
-    this.drawGridLine(index);
-    this.drawFrozenGridLine(index);
+    if (index < this.spreadsheet.options[this.type].amount) {
+      this.drawHeader(index);
+      this.drawGridLine(index);
+      this.drawFrozenGridLine(index);
+    }
   }
 
   getAxisAtIndex(index: number) {
@@ -601,20 +619,20 @@ class RowCol {
 
     if (isFrozen) {
       const xyStickyGroup = getHeaderGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky
+        this.sheet.scrollGroups.xySticky.group
       );
 
       xyStickyGroup.add(headerGroup);
     } else {
       if (this.isCol) {
         const yStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.ySticky
+          this.sheet.scrollGroups.ySticky.group
         );
 
         yStickyGroup.add(headerGroup);
       } else {
         const xStickyGroup = getHeaderGroupFromScrollGroup(
-          this.sheet.scrollGroups.xSticky
+          this.sheet.scrollGroups.xSticky.group
         );
 
         xStickyGroup.add(headerGroup);
@@ -697,7 +715,7 @@ class RowCol {
     if (!this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xSticky,
+        this.sheet.scrollGroups.xSticky.group,
         this.xFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -711,12 +729,12 @@ class RowCol {
     if (this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xSticky,
+        this.sheet.scrollGroups.xSticky.group,
         this.xFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
             y: size,
-            points: this.getLinePoints(this.sheet.stage.height()),
+            points: this.getLinePoints(this.sheet.sheetDimensions.height),
           })
       );
     }
@@ -726,12 +744,12 @@ class RowCol {
     if (!this.isCol && index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.ySticky,
+        this.sheet.scrollGroups.ySticky.group,
         this.yFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
             x: size,
-            points: this.getLinePoints(this.sheet.stage.width()),
+            points: this.getLinePoints(this.sheet.sheetDimensions.width),
           })
       );
     }
@@ -741,7 +759,7 @@ class RowCol {
     if (this.isCol && index > frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.ySticky,
+        this.sheet.scrollGroups.ySticky.group,
         this.yFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -755,7 +773,7 @@ class RowCol {
     if (index < frozenCell) {
       this.getFrozenGridLine(
         index,
-        this.sheet.scrollGroups.xySticky,
+        this.sheet.scrollGroups.xySticky.group,
         this.xyFrozenRowColMap,
         (size) =>
           this.getGridLine(index, {
@@ -811,14 +829,14 @@ class RowCol {
     if (isLastFrozen) {
       this.frozenLine = line;
 
-      const xyStickyGridLineGroup = getRowColGroupFromScrollGroup(
-        this.sheet.scrollGroups.xySticky
+      const xyStickyGridLineGroup = getSheetGroupFromScrollGroup(
+        this.sheet.scrollGroups.xySticky.group
       );
 
       xyStickyGridLineGroup.add(line);
     } else {
       const mainGridLineGroup = getRowColGroupFromScrollGroup(
-        this.sheet.scrollGroups.main
+        this.sheet.scrollGroups.main.group
       );
 
       mainGridLineGroup.add(line);

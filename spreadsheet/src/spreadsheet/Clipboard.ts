@@ -1,7 +1,34 @@
-import { SimpleCellRange } from 'hyperformula';
+import type { SimpleCellAddress, SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
 import { getCellId } from './sheet/CellRenderer';
 import Spreadsheet from './Spreadsheet';
+
+const getHeightOfRange = (range: SimpleCellRange) => {
+  return range.end.row - range.start.row + 1;
+};
+
+const getWidthOfRange = (range: SimpleCellRange) => {
+  return range.end.col - range.start.col + 1;
+};
+
+const getArrayOfAddresses = (range: SimpleCellRange) => {
+  const addresses: SimpleCellAddress[][] = [];
+
+  for (let y = 0; y < getHeightOfRange(range); ++y) {
+    addresses[y] = [];
+
+    for (let x = 0; x < getWidthOfRange(range); ++x) {
+      const value = {
+        sheet: range.start.sheet,
+        row: range.start.row + y,
+        col: range.start.col + x,
+      };
+
+      addresses[y].push(value);
+    }
+  }
+  return addresses;
+};
 
 class Clipboard {
   private sourceRange: SimpleCellRange | null = null;
@@ -36,11 +63,8 @@ class Clipboard {
       return;
     }
 
-    const pastedData = this.spreadsheet.hyperformula?.getFillRangeData(
-      this.sourceRange,
-      targetRange,
-      true
-    );
+    let pastedData = this.getRange(this.sourceRange, targetRange, true);
+
     this.spreadsheet.hyperformula?.setCellContents(
       targetRange.start,
       pastedData
@@ -105,6 +129,42 @@ class Clipboard {
     this.spreadsheet.getActiveSheet()?.updateViewport();
     this.isCut = false;
   }
+
+  private getRange = (
+    sourceRange: SimpleCellRange,
+    targetRange: SimpleCellRange,
+    offset: boolean
+  ) => {
+    const data = this.spreadsheet.data.sheetData[targetRange.start.sheet];
+
+    return getArrayOfAddresses(targetRange).map((arr) =>
+      arr.map((address) => {
+        const height = getHeightOfRange(sourceRange);
+        const width = getWidthOfRange(sourceRange);
+
+        const row =
+          ((((address.row - (offset ? targetRange : sourceRange).start.row) %
+            height) +
+            height) %
+            height) +
+          sourceRange.start.row;
+
+        const col =
+          ((((address.col - (offset ? targetRange : sourceRange).start.col) %
+            width) +
+            width) %
+            width) +
+          sourceRange.start.col;
+
+        const cellId = this.spreadsheet.sheets
+          .get(targetRange.start.sheet)!
+          .cellRenderer.convertFromRowColIdToCell(row, col)
+          .id();
+
+        return data.cellsData?.[cellId].value;
+      })
+    );
+  };
 
   private getCellRangeForSelection(
     expandSelectionForPaste: boolean = false

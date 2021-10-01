@@ -12,9 +12,11 @@ export interface IOptions {
   showFormulas: boolean;
   exportSpreadsheetName: string;
   touchScrollSpeed: number;
+  undoRedoLimit: number;
 }
 
 export const defaultOptions: IOptions = {
+  undoRedoLimit: 20,
   row: {
     amount: 100,
     minSize: 25,

@@ -64,6 +64,8 @@ class Merger {
         existingTopLeftCellStyle
       );
     }
+
+    this.sheet.selector.selectedCellId = topLeftMergedCellId;
   }
 
   removeMergedCells(mergedCell: IMergedCell) {

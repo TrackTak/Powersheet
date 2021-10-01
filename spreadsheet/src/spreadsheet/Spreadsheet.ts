@@ -7,17 +7,23 @@ import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
 import styles from './Spreadsheet.module.scss';
-import { HyperFormula } from 'hyperformula';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
+import type { HyperFormula } from 'hyperformula';
+import HyperFormulaModule from './HyperFormula';
+
+export interface ISpreadsheetData {
+  exportSpreadsheetName?: string;
+  sheetData: ISheetData[];
+}
 
 export interface ISpreadsheetConstructor {
   styles?: Partial<IStyles>;
   options: IOptions;
-  data?: ISheetData[];
-  hyperformula: HyperFormula;
+  data?: Partial<ISpreadsheetData>;
+  hyperformula?: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -31,7 +37,7 @@ class Spreadsheet {
   styles: IStyles;
   eventEmitter: EventEmitter;
   options: IOptions;
-  data: ISheetData[];
+  data: ISpreadsheetData;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -43,7 +49,10 @@ class Spreadsheet {
   totalSheetCount = 0;
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = params.data ?? [];
+    this.data = {
+      sheetData: [],
+      ...params.data,
+    };
     this.hyperformula = params.hyperformula;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
@@ -78,16 +87,16 @@ class Spreadsheet {
     this.bottomBar?.initialize(this);
     this.clipboard = new Clipboard(this);
 
-    this.history = new Manager((data: ISheetData[]) => {
+    this.history = new Manager((data: ISpreadsheetData) => {
       const currentData = this.data;
 
       this.data = data;
 
       return currentData;
-    }, this.hyperformula.getConfig().undoLimit);
+    }, this.options.undoRedoLimit);
 
-    if (this.data.length) {
-      this.data.forEach((data) => {
+    if (this.data.sheetData.length) {
+      this.data.sheetData.forEach((data) => {
         this.createNewSheet(data);
       });
     } else {
@@ -107,6 +116,10 @@ class Spreadsheet {
     });
 
     this.updateViewport();
+  }
+
+  getRegisteredFunctions() {
+    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
   }
 
   setOptions(options: IOptions) {
@@ -176,7 +189,7 @@ class Spreadsheet {
 
     this.sheets.delete(sheetId);
 
-    delete this.data[sheetId];
+    delete this.data.sheetData[sheetId];
 
     this.updateViewport();
   }
@@ -188,7 +201,7 @@ class Spreadsheet {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data[sheetId].sheetName = sheetName;
+    this.data.sheetData[sheetId].sheetName = sheetName;
 
     this.hyperformula?.renameSheet(sheetId, sheetName);
 
@@ -198,9 +211,10 @@ class Spreadsheet {
   createNewSheet(data: ISheetData) {
     this.hyperformula?.addSheet(data.sheetName);
 
-    const sheetId = this.hyperformula?.getSheetId(data.sheetName)!;
+    const sheetId =
+      this.hyperformula?.getSheetId(data.sheetName) ?? this.totalSheetCount;
 
-    this.data[sheetId] = data;
+    this.data.sheetData[sheetId] = data;
 
     const sheet = new Sheet(this, sheetId);
 

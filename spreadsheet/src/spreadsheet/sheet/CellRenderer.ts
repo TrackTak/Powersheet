@@ -17,7 +17,7 @@ import Sheet, {
   TextWrap,
   VerticalTextAlign,
 } from './Sheet';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 
 export type CellId = string;
 
@@ -159,24 +159,58 @@ class CellRenderer {
     this.sheet.merger.associatedMergedCellIdMap.clear();
   }
 
-  drawViewport() {
+  // forceDraw is turned off for scrolling for performance
+  drawViewport(forceDraw = false) {
+    const getShouldDraw = (ri: number, ci: number) => {
+      const cellId = getCellId(ri, ci);
+      const cellAlreadyExists = this.cellsMap.get(cellId);
+
+      return forceDraw || !cellAlreadyExists;
+    };
+
+    const data = this.sheet.getData();
+
+    if (data.frozenCells) {
+      const frozenRow = data.frozenCells.row;
+      const frozenCol = data.frozenCells.col;
+
+      if (!isNil(frozenRow)) {
+        for (let ri = 0; ri <= frozenRow; ri++) {
+          for (const ci of this.sheet.col.headerGroupMap.keys()) {
+            if (getShouldDraw(ri, ci)) {
+              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+            }
+          }
+        }
+      }
+
+      if (!isNil(frozenCol)) {
+        for (let ci = 0; ci <= frozenCol; ci++) {
+          for (const ri of this.sheet.row.headerGroupMap.keys()) {
+            if (getShouldDraw(ri, ci)) {
+              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+            }
+          }
+        }
+      }
+    }
+
     for (const ri of iterateXToY(
       this.sheet.row.scrollBar.sheetViewportPosition
     )) {
       for (const ci of iterateXToY(
         this.sheet.col.scrollBar.sheetViewportPosition
       )) {
-        this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+        if (getShouldDraw(ri, ci)) {
+          this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+        }
       }
     }
   }
 
   updateViewport() {
     this.clearAll();
-    this.drawViewport();
-
-    // TODO: Fix viewport for frozenCells on scroll
-    console.log(this.sheet.row.scrollBar.sheetViewportPosition);
+    this.drawViewport(true);
   }
 
   drawCell(cellId: CellId) {

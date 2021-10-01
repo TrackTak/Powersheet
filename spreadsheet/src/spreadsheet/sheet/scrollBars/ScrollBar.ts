@@ -114,11 +114,6 @@ class ScrollBar {
     this.sheetViewportPosition.y = this.getYIndex();
   }
 
-  drawItems() {
-    this.destroyOutOfViewportItems();
-    this.drawViewportItems();
-  }
-
   onScroll = (e: Event) => {
     e.preventDefault();
 
@@ -172,7 +167,8 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.drawItems();
+    this.destroyOutOfViewportItems();
+    this.drawViewportItems();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();
@@ -186,15 +182,6 @@ class ScrollBar {
       newScroll
     );
   };
-
-  private drawItem(index: number) {
-    if (
-      !this.sheet[this.type].headerGroupMap.get(index) ||
-      !this.sheet[this.type].rowColMap.get(index)
-    ) {
-      this.sheet[this.type].draw(index);
-    }
-  }
 
   private drawViewportItems() {
     this.sheet[this.type].drawViewport();

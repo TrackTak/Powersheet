@@ -461,30 +461,39 @@ class RowCol {
     this.rowColMap.clear();
   }
 
-  drawViewport() {
-    for (const index of iterateXToY(
-      this.sheet[this.type].scrollBar.sheetViewportPosition
-    )) {
-      this.sheet[this.type].draw(index);
-    }
-  }
+  // forceDraw is turned off for scrolling for performance
+  drawViewport(forceDraw = false) {
+    const getShouldDraw = (index: number) => {
+      const rowColAlreadyExists =
+        this.headerGroupMap.get(index) && this.rowColMap.get(index);
 
-  updateViewport() {
-    this.clearAll();
+      return forceDraw || !rowColAlreadyExists;
+    };
 
     const data = this.sheet.getData();
 
     if (data.frozenCells) {
       const frozenCell = data.frozenCells[this.type];
 
-      if (frozenCell) {
+      if (!isNil(frozenCell)) {
         for (let index = 0; index <= frozenCell; index++) {
-          this.sheet[this.type].draw(index);
+          if (getShouldDraw(index)) {
+            this.draw(index);
+          }
         }
       }
     }
 
-    this.drawViewport();
+    for (const index of iterateXToY(this.scrollBar.sheetViewportPosition)) {
+      if (getShouldDraw(index)) {
+        this.draw(index);
+      }
+    }
+  }
+
+  updateViewport() {
+    this.clearAll();
+    this.drawViewport(true);
 
     this.scrollBar.setScrollSize();
   }

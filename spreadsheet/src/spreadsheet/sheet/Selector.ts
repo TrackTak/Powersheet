@@ -60,12 +60,10 @@ class Selector {
 
       const rectConfig: RectConfig = {
         ...this.spreadsheet.styles.selectionFirstCell,
-        width: rect.width,
-        height: rect.height,
         stroke: undefined,
       };
 
-      // We mut have another Rect for the inside borders
+      // We must have another Rect for the inside borders
       // as konva does not allow stroke positioning
       const innerSelectedCellRect = new Rect({
         x: strokeWidth! / 2,
@@ -78,14 +76,15 @@ class Selector {
 
       this.selectedCell.add(innerSelectedCellRect);
 
-      this.selectedCell.position({
-        x: rect.x,
-        y: rect.y,
-      });
+      const type = this.sheet.cellRenderer.getStickyGroupTypeFromCell(
+        this.selectedCell
+      );
+
+      const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
 
       cellRect.setAttrs(rectConfig);
 
-      this.sheet.cellRenderer.addCell(this.selectedCell);
+      sheetGroup.add(this.selectedCell);
     }
   }
 
@@ -204,6 +203,14 @@ class Selector {
     )[0];
 
     const cellClientRect = cell.getClientRect({ skipStroke: true });
+
+    if (!this.sheet.cellRenderer.isOnFrozenCol(cell)) {
+      cellClientRect.x -= Math.abs(this.sheet.col.scrollBar.scroll);
+    }
+
+    if (!this.sheet.cellRenderer.isOnFrozenRow(cell)) {
+      cellClientRect.y -= Math.abs(this.sheet.row.scrollBar.scroll);
+    }
 
     this.selectionArea = {
       start: {

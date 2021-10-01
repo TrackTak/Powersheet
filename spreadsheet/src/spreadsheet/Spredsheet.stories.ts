@@ -19,7 +19,7 @@ import BottomBar from './bottomBar/BottomBar';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import EventEmitter from 'eventemitter3';
-import { throttle } from 'lodash';
+import { merge, throttle } from 'lodash';
 
 export default {
   title: 'Spreadsheet',
@@ -157,6 +157,57 @@ FrozenCells.args = {
           row: 3,
           col: 3,
         },
+        cellsData: {
+          '1_0': {
+            style: {
+              horizontalTextAlign: 'right',
+              verticalTextAlign: 'bottom',
+              backgroundColor: 'red',
+              fontColor: '#ffeb3b',
+            },
+            value: 'HI!',
+          },
+          '1_1': {
+            style: {
+              horizontalTextAlign: 'center',
+              verticalTextAlign: 'middle',
+              bold: true,
+              italic: true,
+            },
+            comment: 'Powersheet is the best',
+            value:
+              'A very long piece of text that should wrap to the next line on the word.',
+          },
+          '3_3': {
+            style: {
+              borders: [
+                'borderBottom',
+                'borderRight',
+                'borderTop',
+                'borderLeft',
+              ],
+              backgroundColor: 'yellow',
+            },
+          },
+          '4_1': {
+            style: {
+              underline: true,
+              strikeThrough: true,
+              fontSize: 14,
+              borders: ['borderBottom'],
+            },
+            value: 'Some value',
+          },
+          '4_4': {
+            style: {
+              textFormatPattern: '0.00%',
+            },
+            value: '0.05',
+          },
+          '40_4': {
+            value: 'Cell Value',
+          },
+        },
       },
     ],
   },
@@ -230,10 +281,16 @@ const MobileTemplate: Story<IArgs> = (args) => {
 export const Mobile = MobileTemplate.bind({});
 
 const MillionRowsTemplate: Story<IArgs> = (args) => {
-  args.options.row.amount = 1_000_000;
+  const newArgs = merge({}, args, {
+    options: {
+      row: {
+        amount: 1_000_000
+      }
+    }
+  })
 
-  return buildSpreadsheetWithHyperformula(args, {
-    maxRows: args.options.row.amount,
+  return buildSpreadsheetWithHyperformula(newArgs, {
+    maxRows: newArgs.options.row.amount,
   });
 };
 

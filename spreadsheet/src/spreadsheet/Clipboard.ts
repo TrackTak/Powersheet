@@ -139,18 +139,21 @@ class Clipboard {
 
     return getArrayOfAddresses(targetRange).map((arr) =>
       arr.map((address) => {
+        const height = getHeightOfRange(sourceRange);
+        const width = getWidthOfRange(sourceRange);
+
         const row =
           ((((address.row - (offset ? targetRange : sourceRange).start.row) %
-            getHeightOfRange(sourceRange)) +
-            getHeightOfRange(sourceRange)) %
-            getHeightOfRange(sourceRange)) +
+            height) +
+            height) %
+            height) +
           sourceRange.start.row;
 
         const col =
           ((((address.col - (offset ? targetRange : sourceRange).start.col) %
-            getWidthOfRange(sourceRange)) +
-            getWidthOfRange(sourceRange)) %
-            getWidthOfRange(sourceRange)) +
+            width) +
+            width) %
+            width) +
           sourceRange.start.col;
 
         const cellId = this.spreadsheet.sheets

@@ -3,7 +3,6 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
-import { performanceProperties } from '../styles';
 import Selector from './Selector';
 import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
 import RowCol from './RowCol';
@@ -25,12 +24,6 @@ import { BorderIconName } from '../htmlElementHelpers';
 export interface IDimensions {
   width: number;
   height: number;
-}
-
-interface IShapes {
-  sheet: Rect;
-  frozenLine: Line;
-  topLeftRect: Rect;
 }
 
 export type SheetId = number;
@@ -202,16 +195,16 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 };
 
 class Sheet {
-  scrollGroups: IScrollGroups;
+  scrollGroups!: IScrollGroups;
   sheetEl: HTMLDivElement;
   stage: Stage;
   layer: Layer;
+  sheet: Rect;
   col: RowCol;
   row: RowCol;
   selector: Selector;
   merger: Merger;
   cellRenderer: CellRenderer;
-  shapes: IShapes;
   sheetDimensions: IDimensions;
   previousSheetClickTime = 0;
   sheetClickTime = 0;
@@ -238,81 +231,14 @@ class Sheet {
 
     this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
 
-    this.scrollGroups = {} as IScrollGroups;
-
     this.throttledResize = throttle(this.onResize, 50);
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
 
-    scrollGroups.forEach((key) => {
-      const type = key as keyof IScrollGroups;
-
-      const group = new Group();
-
-      const sheetGroup = new Group({
-        ...performanceProperties,
-        ...this.getViewportVector(),
-        listening: true,
-        type: 'sheet',
-      });
-
-      const cellGroup = new Group({
-        ...performanceProperties,
-        type: 'cell',
-      });
-
-      const rowColGroup = new Group({
-        ...performanceProperties,
-        type: 'rowCol',
-      });
-
-      const headerGroup = new Group({
-        ...performanceProperties,
-        listening: true,
-        type: 'header',
-      });
-
-      const frozenBackground = new Rect({
-        ...performanceProperties,
-        type: 'frozenBackground',
-        fill: 'white',
-        visible: false,
-      });
-
-      if (key !== 'main') {
-        sheetGroup.add(frozenBackground);
-      }
-
-      // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(rowColGroup, cellGroup);
-      group.add(sheetGroup, headerGroup);
-
-      this.scrollGroups[type] = {
-        ...this.scrollGroups[type],
-        group,
-        sheetGroup,
-        cellGroup,
-        rowColGroup,
-        headerGroup,
-        frozenBackground,
-      };
+    this.sheet = new Rect({
+      type: 'sheet',
+      listening: true,
+      opacity: 0,
     });
-
-    this.shapes = {
-      sheet: new Rect({
-        ...performanceProperties,
-        type: 'sheet',
-        listening: true,
-        opacity: 0,
-      }),
-      frozenLine: new Line({
-        ...this.spreadsheet.styles.frozenLine,
-      }),
-      topLeftRect: new Rect({
-        ...this.spreadsheet.styles.topLeftRect,
-        width: this.getViewportVector().x,
-        height: this.getViewportVector().y,
-      }),
-    };
 
     this.stage = new Stage({
       container: this.sheetEl,
@@ -320,14 +246,9 @@ class Sheet {
 
     this.layer = new Layer();
 
+    this.layer.add(this.sheet);
+
     this.stage.add(this.layer);
-    this.layer.add(this.shapes.sheet);
-
-    this.shapes.frozenLine.cache();
-
-    Object.values(this.scrollGroups).forEach(({ group }) => {
-      this.layer.add(group);
-    });
 
     this.cellRenderer = new CellRenderer(this);
     this.col = new RowCol('col', this);
@@ -345,14 +266,14 @@ class Sheet {
     this.stage.on('mousedown', this.stageOnMousedown);
     this.stage.on('click', this.stageOnClick);
     this.stage.on('wheel', this.onWheel);
-    this.shapes.sheet.on('click', this.sheetOnClick);
-    this.shapes.sheet.on('mousedown', this.onSheetMouseDown);
-    this.shapes.sheet.on('mousemove', this.throttledSheetMove);
-    this.shapes.sheet.on('mouseup', this.onSheetMouseUp);
+    this.sheet.on('click', this.sheetOnClick);
+    this.sheet.on('mousedown', this.onSheetMouseDown);
+    this.sheet.on('mousemove', this.throttledSheetMove);
+    this.sheet.on('mouseup', this.onSheetMouseUp);
 
-    this.shapes.sheet.on('touchstart', this.sheetOnTouchStart);
-    this.shapes.sheet.on('touchmove', this.sheetOnTouchMove);
-    this.shapes.sheet.on('tap', this.sheetOnTap);
+    this.sheet.on('touchstart', this.sheetOnTouchStart);
+    this.sheet.on('touchmove', this.sheetOnTouchMove);
+    this.sheet.on('tap', this.sheetOnTap);
 
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
@@ -368,9 +289,7 @@ class Sheet {
       y: this.getViewportVector().y,
     };
 
-    this.shapes.sheet.setAttrs(sheetConfig);
-
-    this.drawTopLeftOffsetRect();
+    this.sheet.setAttrs(sheetConfig);
 
     this.col.resizer.setResizeGuideLinePoints();
     this.row.resizer.setResizeGuideLinePoints();
@@ -396,8 +315,8 @@ class Sheet {
     this.stage.width(this.sheetEl.offsetWidth);
     this.stage.height(this.sheetEl.offsetHeight);
 
-    this.shapes.sheet.width(this.stage.width() - this.getViewportVector().x);
-    this.shapes.sheet.height(this.stage.height() - this.getViewportVector().y);
+    this.sheet.width(this.stage.width() - this.getViewportVector().x);
+    this.sheet.height(this.stage.height() - this.getViewportVector().y);
 
     this.row.updateViewportSize();
     this.col.updateViewportSize();
@@ -467,7 +386,7 @@ class Sheet {
   };
 
   onSheetMouseDown = () => {
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+    const { x, y } = this.sheet.getRelativePointerPosition();
 
     this.selector.startSelection(x, y);
   };
@@ -512,7 +431,7 @@ class Sheet {
   }
 
   sheetOnTap = () => {
-    const { x, y } = this.shapes.sheet.getRelativePointerPosition();
+    const { x, y } = this.sheet.getRelativePointerPosition();
 
     this.selector.startSelection(x, y);
     this.selector.endSelection();
@@ -734,14 +653,14 @@ class Sheet {
     this.stage.off('mousedown', this.stageOnMousedown);
     this.stage.off('click', this.stageOnClick);
     this.stage.off('wheel', this.onWheel);
-    this.shapes.sheet.off('click', this.sheetOnClick);
-    this.shapes.sheet.off('mousedown', this.onSheetMouseDown);
-    this.shapes.sheet.off('mousemove', this.throttledSheetMove);
-    this.shapes.sheet.off('mouseup', this.onSheetMouseUp);
+    this.sheet.off('click', this.sheetOnClick);
+    this.sheet.off('mousedown', this.onSheetMouseDown);
+    this.sheet.off('mousemove', this.throttledSheetMove);
+    this.sheet.off('mouseup', this.onSheetMouseUp);
 
-    this.shapes.sheet.off('touchstart', this.sheetOnTouchStart);
-    this.shapes.sheet.off('touchmove', this.sheetOnTouchMove);
-    this.shapes.sheet.off('tap', this.sheetOnTap);
+    this.sheet.off('touchstart', this.sheetOnTouchStart);
+    this.sheet.off('touchmove', this.sheetOnTouchMove);
+    this.sheet.off('tap', this.sheetOnTap);
 
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
 
@@ -758,9 +677,14 @@ class Sheet {
   }
 
   drawTopLeftOffsetRect() {
-    this.scrollGroups.xySticky.group.add(this.shapes.topLeftRect);
+    const topLeftRect = new Rect({
+      ...this.spreadsheet.styles.topLeftRect,
+      width: this.getViewportVector().x,
+      height: this.getViewportVector().y,
+    });
+    this.scrollGroups.xySticky.group.add(topLeftRect);
 
-    this.shapes.topLeftRect.moveToTop();
+    topLeftRect.moveToTop();
   }
 
   updateFrozenBackgrounds() {
@@ -802,7 +726,67 @@ class Sheet {
     }
   }
 
+  setScrollGroups() {
+    scrollGroups.forEach((key) => {
+      const type = key as keyof IScrollGroups;
+
+      this.scrollGroups?.[type]?.group?.destroy();
+
+      const group = new Group();
+
+      const sheetGroup = new Group({
+        ...this.getViewportVector(),
+        listening: true,
+        type: 'sheet',
+      });
+
+      const cellGroup = new Group({
+        type: 'cell',
+      });
+
+      const rowColGroup = new Group({
+        type: 'rowCol',
+      });
+
+      const headerGroup = new Group({
+        listening: true,
+        type: 'header',
+      });
+
+      const frozenBackground = new Rect({
+        type: 'frozenBackground',
+        fill: 'white',
+        visible: false,
+      });
+
+      if (key !== 'main') {
+        sheetGroup.add(frozenBackground);
+      }
+
+      // The order added here matters as it determines the zIndex for konva
+      sheetGroup.add(rowColGroup, cellGroup);
+      group.add(sheetGroup, headerGroup);
+
+      this.layer.add(group);
+
+      this.scrollGroups = {
+        ...this.scrollGroups,
+        [type]: {
+          ...this.scrollGroups?.[type],
+          group,
+          sheetGroup,
+          cellGroup,
+          rowColGroup,
+          headerGroup,
+          frozenBackground,
+        },
+      };
+    });
+  }
+
   updateViewport() {
+    this.setScrollGroups();
+    this.drawTopLeftOffsetRect();
     this.updateSheetDimensions();
     this.row.updateViewport();
     this.col.updateViewport();

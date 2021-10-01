@@ -167,17 +167,7 @@ class Selector {
     }
   }
 
-  destroySelection() {
-    this.selectedCell?.destroy();
-    Object.keys(this.groupedCells ?? {}).forEach((key) => {
-      const type = key as keyof IGroupedCells;
-
-      this.groupedCells?.[type].rect?.destroy();
-    });
-  }
-
   updateSelectedCells() {
-    this.destroySelection();
     this.renderSelectionArea();
     this.renderSelectedCell();
   }
@@ -238,7 +228,7 @@ class Selector {
 
   moveSelection() {
     if (this.isInSelectionMode) {
-      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
+      const { x, y } = this.sheet.sheet.getRelativePointerPosition();
       const selectedCellRect = this.selectedCell!.getClientRect({
         skipStroke: true,
       });

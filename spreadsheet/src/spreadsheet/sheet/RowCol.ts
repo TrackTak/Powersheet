@@ -19,7 +19,6 @@ import {
   convertFromCellsToMinMax,
   getCellId,
 } from './CellRenderer';
-import { performanceProperties } from '../styles';
 import { isNil } from 'lodash';
 
 interface IShapes {
@@ -436,25 +435,9 @@ class RowCol {
   }
 
   private clearAll() {
-    const frozenRowColGroupMaps = [
-      this.xFrozenRowColMap,
-      this.yFrozenRowColMap,
-      this.xyFrozenRowColMap,
-    ];
-
-    frozenRowColGroupMaps.forEach((frozenRowColGroupMap) => {
-      frozenRowColGroupMap.forEach((frozenRowColGroup) => {
-        frozenRowColGroup.destroy();
-      });
-      frozenRowColGroupMap.clear();
-    });
-
-    this.headerGroupMap.forEach((headerGroup) => {
-      headerGroup.destroy();
-    });
-    this.rowColMap.forEach((rowCol) => {
-      rowCol.destroy();
-    });
+    this.xFrozenRowColMap.clear();
+    this.yFrozenRowColMap.clear();
+    this.xyFrozenRowColMap.clear();
     this.headerGroupMap.clear();
     this.rowColMap.clear();
   }
@@ -632,7 +615,6 @@ class RowCol {
     };
     const rect = this.shapes.headerRect.clone(rectConfig) as Rect;
     const text = new Text({
-      ...performanceProperties,
       text: this.getHeaderText(index),
     });
 
@@ -650,11 +632,7 @@ class RowCol {
     };
   }
 
-  private getGridLine(
-    index: number,
-    lineConfig: LineConfig,
-    line = this.shapes.gridLine
-  ) {
+  private getGridLine(index: number, lineConfig: LineConfig) {
     const headerGroup = this.headerGroupMap.get(index)!;
     const mergedLineConfig: LineConfig = {
       index,
@@ -665,7 +643,7 @@ class RowCol {
       ...lineConfig,
     };
 
-    const gridLine = line.clone(mergedLineConfig) as Line;
+    const gridLine = this.shapes.gridLine.clone(mergedLineConfig) as Line;
 
     return gridLine;
   }
@@ -676,10 +654,6 @@ class RowCol {
     map: Map<number, Line>,
     getLine: (size: number) => Line
   ) {
-    if (map.has(index)) {
-      map.get(index)!.destroy();
-    }
-
     let size = 0;
 
     for (const value of this.sheet[this.oppositeType].getSizeForFrozenCell(
@@ -800,17 +774,15 @@ class RowCol {
       this.sheet.sheetDimensions[this.oppositeFunctions.size] +
       this.sheet.getViewportVector()[this.oppositeFunctions.axis];
 
-    const line = this.getGridLine(
-      index,
-      {
-        points: this.getLinePoints(sheetSize),
-      },
-      isLastFrozen ? this.sheet.shapes.frozenLine : undefined
-    );
+    const line = this.getGridLine(index, {
+      points: this.getLinePoints(sheetSize),
+    });
 
     this.rowColMap.set(index, line);
 
     if (isLastFrozen) {
+      line.setAttrs(this.spreadsheet.styles.frozenLine);
+
       this.frozenLine = line;
 
       this.sheet.scrollGroups.xySticky.sheetGroup.add(line);

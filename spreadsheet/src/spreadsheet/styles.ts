@@ -42,38 +42,27 @@ export interface IStyles {
 }
 
 export const resizeMarkerSize = 7;
-export const performanceProperties = {
-  shadowForStrokeEnabled: false,
-  hitStrokeWidth: 0,
-  perfectDrawEnabled: false,
-  listening: false,
-};
 
 const sharedStyles = {
   gridLine: {
-    ...performanceProperties,
     stroke: '#e3e3e3',
     strokeWidth: 1,
   },
   resizeMarker: {
-    ...performanceProperties,
     fill: '#0057ff',
     opacity: 0.3,
     visible: false,
   },
   headerRect: {
-    ...performanceProperties,
     fill: '#f4f5f8',
     listening: true,
   },
   headerText: {
-    ...performanceProperties,
     fontSize: 12,
     fontFamily: 'Source Sans Pro',
     fill: '#585757',
   },
   selection: {
-    ...performanceProperties,
     strokeWidth: 1,
   },
 };
@@ -126,7 +115,6 @@ export const defaultStyles: IStyles = {
     },
   },
   topLeftRect: {
-    ...performanceProperties,
     fill: sharedStyles.headerRect.fill,
   },
   selectionFirstCell: {
@@ -141,7 +129,6 @@ export const defaultStyles: IStyles = {
     fill: 'rgb(14, 101, 235, 0.1)',
   },
   commentMarker: {
-    ...performanceProperties,
     type: 'commentMarker',
     stroke: 'orange',
     fill: 'orange',

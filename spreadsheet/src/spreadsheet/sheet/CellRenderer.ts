@@ -3,7 +3,6 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import Spreadsheet from '../Spreadsheet';
-import { performanceProperties } from '../styles';
 import { rotateAroundCenter } from '../utils';
 import Sheet, {
   BorderStyle,
@@ -158,9 +157,6 @@ class CellRenderer {
   }
 
   private clearAll() {
-    this.cellsMap.forEach((cell) => {
-      cell.destroy();
-    });
     this.cellsMap.clear();
     this.sheet.merger.associatedMergedCellIdMap.clear();
   }
@@ -184,7 +180,7 @@ class CellRenderer {
         for (let ri = 0; ri <= frozenRow; ri++) {
           for (const ci of this.sheet.col.headerGroupMap.keys()) {
             if (getShouldDraw(ri, ci)) {
-              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+              this.drawCell(getCellId(ri, ci));
             }
           }
         }
@@ -194,7 +190,7 @@ class CellRenderer {
         for (let ci = 0; ci <= frozenCol; ci++) {
           for (const ri of this.sheet.row.headerGroupMap.keys()) {
             if (getShouldDraw(ri, ci)) {
-              this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+              this.drawCell(getCellId(ri, ci));
             }
           }
         }
@@ -208,7 +204,7 @@ class CellRenderer {
         this.sheet.col.scrollBar.sheetViewportPosition
       )) {
         if (getShouldDraw(ri, ci)) {
-          this.sheet.cellRenderer.drawCell(getCellId(ri, ci));
+          this.drawCell(getCellId(ri, ci));
         }
       }
     }
@@ -220,6 +216,10 @@ class CellRenderer {
   }
 
   drawCell(cellId: CellId) {
+    if (this.cellsMap.has(cellId)) {
+      this.cellsMap.get(cellId)!.destroy();
+    }
+
     const cellData = this.getCellData(cellId);
     const shouldDrawCell =
       cellData || this.sheet.merger.getIsCellTopLeftMergedCell(cellId);
@@ -326,10 +326,6 @@ class CellRenderer {
       }
     }
 
-    if (this.cellsMap.has(cellId)) {
-      this.cellsMap.get(cellId)!.destroy();
-    }
-
     this.cellsMap.set(cellId, cell);
 
     const type = this.getStickyGroupTypeFromCell(cell);
@@ -366,7 +362,6 @@ class CellRenderer {
     });
 
     const line = new Line({
-      ...performanceProperties,
       type,
       stroke: 'black',
       strokeWidth: this.spreadsheet.styles.gridLine.strokeWidth,
@@ -595,7 +590,6 @@ class CellRenderer {
     };
 
     const cell = new Group({
-      ...performanceProperties,
       row: rowRange,
       col: colRange,
     });

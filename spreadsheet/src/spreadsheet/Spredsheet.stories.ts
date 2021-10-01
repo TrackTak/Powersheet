@@ -121,7 +121,7 @@ const buildSpreadsheetWithEverything = (
   return spreadsheet.spreadsheetEl;
 };
 
-export const buildSpreadsheetWithHyperformula = (
+const buildSpreadsheetWithHyperformula = (
   args: IArgs,
   config?: Partial<ConfigParams>
 ) => {
@@ -284,10 +284,10 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
   const newArgs = merge({}, args, {
     options: {
       row: {
-        amount: 1_000_000
-      }
-    }
-  })
+        amount: 1_000_000,
+      },
+    },
+  });
 
   return buildSpreadsheetWithHyperformula(newArgs, {
     maxRows: newArgs.options.row.amount,

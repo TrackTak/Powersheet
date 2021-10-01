@@ -323,7 +323,14 @@ class CellRenderer {
 
     this.cellsMap.set(cellId, cell);
 
-    this.addCell(cell);
+    const type = this.getStickyGroupTypeFromCell(cell);
+    const stickyCellGroup = getCellGroupFromScrollGroup(
+      this.sheet.scrollGroups[type].group
+    );
+
+    stickyCellGroup.add(cell);
+
+    cell.moveToTop();
 
     if (!this.sheet.merger.getIsCellPartOfMerge(cellId)) {
       const cell = this.sheet.cellRenderer.cellsMap.get(cellId)!;
@@ -673,30 +680,27 @@ class CellRenderer {
     return cells;
   }
 
-  getStickyGroupTypeFromCell(cell: Cell) {
-    const isFrozenRow = this.sheet.row.getIsFrozen(cell.attrs.row.x);
-    const isFrozenCol = this.sheet.col.getIsFrozen(cell.attrs.col.x);
+  isOnFrozenRow(cell: Cell) {
+    return this.sheet.row.getIsFrozen(cell.attrs.row.x);
+  }
 
-    if (isFrozenRow && isFrozenCol) {
+  isOnFrozenCol(cell: Cell) {
+    return this.sheet.col.getIsFrozen(cell.attrs.col.x);
+  }
+
+  getStickyGroupTypeFromCell(cell: Cell) {
+    const isOnFrozenRow = this.isOnFrozenRow(cell);
+    const isOnFrozenCol = this.isOnFrozenCol(cell);
+
+    if (isOnFrozenRow && isOnFrozenCol) {
       return 'xySticky';
-    } else if (isFrozenRow) {
+    } else if (isOnFrozenRow) {
       return 'ySticky';
-    } else if (isFrozenCol) {
+    } else if (isOnFrozenCol) {
       return 'xSticky';
     } else {
       return 'main';
     }
-  }
-
-  addCell(cell: Cell) {
-    const stickyType = this.getStickyGroupTypeFromCell(cell);
-    const stickyCellGroup = getCellGroupFromScrollGroup(
-      this.sheet.scrollGroups[stickyType].group
-    );
-
-    stickyCellGroup.add(cell);
-
-    cell.moveToTop();
   }
 
   getCellHyperformulaAddress(id: CellId) {

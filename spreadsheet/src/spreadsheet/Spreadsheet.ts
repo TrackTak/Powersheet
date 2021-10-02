@@ -20,8 +20,9 @@ export interface ISpreadsheetData {
 }
 
 export interface ISpreadsheetConstructor {
+  eventEmitter: EventEmitter;
+  options?: IOptions;
   styles?: Partial<IStyles>;
-  options: IOptions;
   data?: Partial<ISpreadsheetData>;
   hyperformula?: HyperFormula;
   toolbar?: Toolbar;
@@ -54,6 +55,7 @@ class Spreadsheet {
       ...params.data,
     };
     this.hyperformula = params.hyperformula;
+    this.eventEmitter = params.eventEmitter;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.toolbar = params.toolbar;
@@ -61,7 +63,6 @@ class Spreadsheet {
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
     this.sheets = new Map();
-    this.eventEmitter = new EventEmitter();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,

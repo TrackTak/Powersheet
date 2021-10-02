@@ -464,6 +464,18 @@ class Sheet {
       case 'Escape': {
         break;
       }
+      case 'Delete': {
+        this.selector.selectedCells.forEach((cell) => {
+          const id = cell.id();
+          const cellData = this.cellRenderer.getCellData(id);
+
+          // TODO: Once setCellData is changed to no merge then update this
+          delete cellData?.value;
+
+          this.cellRenderer.setHyperformulaCellData(id, '');
+        });
+        break;
+      }
       case e.ctrlKey && 'z': {
         this.spreadsheet.undo();
         break;
@@ -480,15 +492,13 @@ class Sheet {
         this.spreadsheet.clipboard.copy();
         break;
       }
-      case e.ctrlKey && 'v': {
-        this.spreadsheet.clipboard.paste();
-        break;
-      }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           this.cellEditor.show(this.selector.selectedCell!);
         }
     }
+
+    this.updateViewport();
   };
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {

@@ -36,12 +36,28 @@ const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
 };
 
-const getSpreadsheet = (params: ISpreadsheetConstructor) => {
+const getSpreadsheet = (params: Partial<ISpreadsheetConstructor>) => {
   TouchEmulator.stop();
 
-  const spreadsheet = new Spreadsheet(params);
+  const eventEmitter = new EventEmitter();
 
-  spreadsheet.eventEmitter.on(events.sheet.setData, (_, __, done) => {
+  const oldEmit = eventEmitter.emit;
+
+  // Throttling storybooks action log so that it doesn't
+  // reduce FPS by 10-15~ on resize and scroll
+  const throttledEventLog = throttle(eventLog, 250);
+
+  eventEmitter.emit = function <
+    T extends EventEmitter.EventNames<string | symbol>
+  >(event: T, ...args: any[]) {
+    throttledEventLog(event.toString(), ...args);
+
+    oldEmit.call(eventEmitter, event, ...args);
+
+    return true;
+  };
+
+  eventEmitter.on(events.sheet.setData, (_, __, done) => {
     // Simulating an async API call that saves the sheet data to
     // a DB
     setTimeout(() => {
@@ -49,21 +65,10 @@ const getSpreadsheet = (params: ISpreadsheetConstructor) => {
     }, 500);
   });
 
-  const oldEmit = spreadsheet.eventEmitter.emit;
-
-  // Throttling storybooks action log so that it doesn't
-  // reduce FPS by 10-15~ on resize and scroll
-  const throttledEventLog = throttle(eventLog, 250);
-
-  spreadsheet.eventEmitter.emit = function <
-    T extends EventEmitter.EventNames<string | symbol>
-  >(event: T, ...args: any[]) {
-    throttledEventLog(event.toString(), ...args);
-
-    oldEmit.call(spreadsheet.eventEmitter, event, ...args);
-
-    return true;
-  };
+  const spreadsheet = new Spreadsheet({
+    eventEmitter,
+    ...params,
+  });
 
   return spreadsheet;
 };

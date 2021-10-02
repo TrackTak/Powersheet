@@ -41,7 +41,8 @@ export interface IStyles {
   cell: ICellConfig;
 }
 
-export const resizeMarkerSize = 7;
+const resizeMarkerSize = 7;
+const resizeHitStrokeWidth = 15;
 
 const sharedStyles = {
   gridLine: {
@@ -52,7 +53,7 @@ const sharedStyles = {
     fill: '#0057ff',
     opacity: 0.3,
     visible: false,
-    hitStrokeWidth: 15,
+    hitStrokeWidth: resizeHitStrokeWidth,
     draggable: true,
   },
   headerRect: {
@@ -89,7 +90,7 @@ export const defaultStyles: IStyles = {
   resizeLine: {
     ...sharedStyles.gridLine,
     stroke: '#8a8a8a',
-    hitStrokeWidth: 15,
+    hitStrokeWidth: resizeHitStrokeWidth,
     opacity: 0.7,
   },
   gridLine: {

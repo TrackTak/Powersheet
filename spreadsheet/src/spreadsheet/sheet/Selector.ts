@@ -45,6 +45,8 @@ class Selector {
 
   private renderSelectedCell() {
     if (this.selectedCellId) {
+      this.selectedCell?.destroy();
+
       this.selectedCell = this.sheet.cellRenderer.convertFromCellIdToCell(
         this.selectedCellId
       );
@@ -90,6 +92,12 @@ class Selector {
 
   private renderSelectionArea() {
     if (this.selectionArea) {
+      Object.keys(this.groupedCells ?? {}).forEach((key) => {
+        const type = key as keyof IGroupedCells;
+
+        this.groupedCells?.[type].rect?.destroy();
+      });
+
       const { rows, cols } = this.sheet.getRowColsBetweenVectors(
         this.selectionArea.start,
         this.selectionArea.end
@@ -125,6 +133,8 @@ class Selector {
       Object.keys(this.groupedCells).forEach((key) => {
         const type = key as keyof IGroupedCells;
         const cells = this.groupedCells![type].cells;
+
+        this.groupedCells?.[type].rect?.destroy();
 
         if (cells.length) {
           const topLeftCellClientRect = cells[0].getClientRect({

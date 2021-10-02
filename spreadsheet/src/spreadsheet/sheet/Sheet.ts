@@ -100,7 +100,7 @@ interface IScrollGroup {
   frozenBackground: Rect;
 }
 
-const scrollGroups = ['main', 'xSticky', 'ySticky', 'xySticky'];
+export const scrollGroups = ['main', 'xSticky', 'ySticky', 'xySticky'];
 
 export interface IScrollGroups {
   main: IScrollGroup;
@@ -726,11 +726,11 @@ class Sheet {
     }
   }
 
-  setScrollGroups() {
+  updateScrollGroups() {
     scrollGroups.forEach((key) => {
       const type = key as keyof IScrollGroups;
 
-      this.scrollGroups?.[type]?.group?.destroy();
+      // this.scrollGroups?.[type]?.group?.destroy();
 
       const group = new Group();
 
@@ -769,6 +769,8 @@ class Sheet {
 
       this.layer.add(group);
 
+      this.sheet.moveToTop();
+
       this.scrollGroups = {
         ...this.scrollGroups,
         [type]: {
@@ -785,7 +787,7 @@ class Sheet {
   }
 
   updateViewport() {
-    this.setScrollGroups();
+    this.updateScrollGroups();
     this.drawTopLeftOffsetRect();
     this.updateSheetDimensions();
     this.row.updateViewport();

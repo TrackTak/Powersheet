@@ -311,7 +311,6 @@ class Sheet {
   }
 
   onDOMContentLoaded = () => {
-    debugger;
     this.updateSize();
   };
 

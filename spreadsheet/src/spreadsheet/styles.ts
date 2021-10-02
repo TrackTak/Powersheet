@@ -52,10 +52,11 @@ const sharedStyles = {
     fill: '#0057ff',
     opacity: 0.3,
     visible: false,
+    hitStrokeWidth: 15,
+    draggable: true,
   },
   headerRect: {
     fill: '#f4f5f8',
-    listening: true,
   },
   headerText: {
     fontSize: 12,
@@ -89,8 +90,6 @@ export const defaultStyles: IStyles = {
     ...sharedStyles.gridLine,
     stroke: '#8a8a8a',
     hitStrokeWidth: 15,
-    listening: true,
-    draggable: true,
     opacity: 0.7,
   },
   gridLine: {

@@ -291,9 +291,6 @@ class Sheet {
 
     this.sheet.setAttrs(sheetConfig);
 
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
-
     this.col.scrollBar.setYIndex();
     this.row.scrollBar.setYIndex();
 
@@ -323,6 +320,9 @@ class Sheet {
 
     this.row.updateViewportSize();
     this.col.updateViewportSize();
+
+    this.col.resizer.setResizeGuideLinePoints();
+    this.row.resizer.setResizeGuideLinePoints();
 
     const context = this.layer.canvas.getContext();
 

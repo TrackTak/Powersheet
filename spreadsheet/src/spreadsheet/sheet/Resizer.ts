@@ -1,7 +1,7 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
-import { Vector2d } from 'konva/lib/types';
+import { IRect } from 'konva/lib/types';
 import events from '../events';
 import Sheet from './Sheet';
 import { IRowColFunctions, RowColType } from './RowCol';
@@ -15,8 +15,7 @@ interface IShapes {
 
 class Resizer {
   shapes!: IShapes;
-  private resizeStartPos: Vector2d;
-  private resizePosition: Vector2d;
+  currentIndex?: number | null;
   private spreadsheet: Spreadsheet;
 
   constructor(
@@ -30,16 +29,6 @@ class Resizer {
     this.type = type;
     this.isCol = isCol;
     this.functions = functions;
-
-    this.resizeStartPos = {
-      x: 0,
-      y: 0,
-    };
-
-    this.resizePosition = {
-      x: 0,
-      y: 0,
-    };
 
     this.shapes = {
       resizeMarker: new Rect(),
@@ -55,6 +44,7 @@ class Resizer {
       this.shapes.resizeMarker.setAttrs(
         this.spreadsheet.styles.colResizeMarker
       );
+      this.shapes.resizeMarker.height(this.sheet.getViewportVector().y);
       this.shapes.resizeLine.points([
         0,
         0,
@@ -65,6 +55,8 @@ class Resizer {
       this.shapes.resizeMarker.setAttrs(
         this.spreadsheet.styles.rowResizeMarker
       );
+      this.shapes.resizeMarker.width(this.sheet.getViewportVector().x);
+
       this.shapes.resizeLine.points([
         0,
         0,
@@ -73,12 +65,10 @@ class Resizer {
       ]);
     }
 
-    this.shapes.resizeLine.on('dragstart', this.resizeLineDragStart);
-    this.shapes.resizeLine.on('dragmove', this.resizeLineDragMove);
-    this.shapes.resizeLine.on('dragend', this.resizeLineDragEnd);
-    this.shapes.resizeLine.on('mousedown', this.resizeLineOnMousedown);
+    this.shapes.resizeMarker.on('dragmove', this.resizeLineDragMove);
+    this.shapes.resizeMarker.on('dragend', this.resizeLineDragEnd);
+    this.shapes.resizeMarker.on('mouseout', this.resizeLineOnMouseout);
     this.shapes.resizeLine.on('mouseover', this.resizeLineOnMouseover);
-    this.shapes.resizeLine.on('mouseout', this.resizeLineOnMouseout);
     this.shapes.resizeLine.on('mouseup', this.resizeLineOnMouseup);
 
     this.shapes.resizeLine.cache();
@@ -88,12 +78,10 @@ class Resizer {
   }
 
   destroy() {
-    this.shapes.resizeLine.off('dragstart', this.resizeLineDragStart);
-    this.shapes.resizeLine.off('dragmove', this.resizeLineDragMove);
-    this.shapes.resizeLine.off('dragend', this.resizeLineDragEnd);
-    this.shapes.resizeLine.off('mousedown', this.resizeLineOnMousedown);
+    this.shapes.resizeMarker.off('dragmove', this.resizeLineDragMove);
+    this.shapes.resizeMarker.off('dragend', this.resizeLineDragEnd);
+    this.shapes.resizeMarker.off('mouseout', this.resizeLineOnMouseout);
     this.shapes.resizeLine.off('mouseover', this.resizeLineOnMouseover);
-    this.shapes.resizeLine.off('mouseout', this.resizeLineOnMouseout);
     this.shapes.resizeLine.off('mouseup', this.resizeLineOnMouseup);
   }
 
@@ -114,18 +102,18 @@ class Resizer {
       this.shapes.resizeMarker[this.functions.size]();
 
     this.shapes.resizeMarker[this.functions.axis](axisAmount);
+
     this.shapes.resizeMarker.show();
+    this.shapes.resizeMarker.moveToTop();
   }
 
   hideResizeMarker() {
     this.shapes.resizeMarker.hide();
   }
 
-  showGuideLine(target: Line) {
+  showGuideLine(clientRect: IRect) {
     let x = 0;
     let y = 0;
-
-    const clientRect = target.getClientRect();
 
     if (this.isCol) {
       x = clientRect.x;
@@ -135,67 +123,46 @@ class Resizer {
       y = clientRect.y;
     }
 
+    this.shapes.resizeMarker.x(x);
+    this.shapes.resizeMarker.y(y);
+
     this.shapes.resizeGuideLine.x(x);
     this.shapes.resizeGuideLine.y(y);
-
     this.shapes.resizeGuideLine.show();
+    this.shapes.resizeGuideLine.moveToTop();
   }
 
   hideGuideLine() {
     this.shapes.resizeGuideLine.hide();
   }
 
-  resize(index: number, newSize: number) {
-    const size = this.sheet[this.type].getSize(index);
-    const sizeChange = newSize - size;
-
-    if (sizeChange !== 0) {
-      this.sheet.setData({
-        [this.type]: {
-          sizes: {
-            [index]: newSize,
-          },
-        },
-      });
-    }
-  }
-
-  resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
-    this.resizeStartPos = e.target.getPosition();
-
-    this.shapes.resizeGuideLine.moveToTop();
-
-    this.spreadsheet.eventEmitter.emit(events.resize[this.type].start, e);
-  };
-
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line;
     const position = target.getPosition();
-    const minSize = this.spreadsheet.options[this.type].minSize;
+    const currentRowCol = this.sheet[this.type].headerGroupMap.get(
+      this.currentIndex!
+    )!;
+    const minAxis =
+      currentRowCol[this.functions.axis]() +
+      this.spreadsheet.options[this.type].minSize;
     let newAxis = position[this.functions.axis];
 
     const getNewPosition = () => {
       const newPosition = {
         ...position,
+        [this.functions.axis]: newAxis,
       };
-      newPosition[this.functions.axis] = newAxis;
 
       return newPosition;
     };
 
-    if (newAxis <= minSize) {
-      newAxis = minSize;
+    if (newAxis <= minAxis) {
+      newAxis = minAxis;
 
       target.setPosition(getNewPosition());
     }
 
-    this.resizePosition = getNewPosition();
-
-    this.showResizeMarker(target);
-    this.showGuideLine(target);
-
-    // Stops moving this element completely
-    target.setPosition(this.resizeStartPos);
+    this.showGuideLine(target.getClientRect());
 
     this.spreadsheet.eventEmitter.emit(
       events.resize[this.type].move,
@@ -207,35 +174,31 @@ class Resizer {
   resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
     document.body.style.cursor = 'default';
 
-    const target = e.target as Line;
-    const index = target.parent!.attrs.index;
+    const currentRowCol = this.sheet[this.type].headerGroupMap.get(
+      this.currentIndex!
+    )!;
 
-    const position = this.resizePosition;
-    const minSize = this.spreadsheet.options[this.type].minSize;
-
-    const axis = position[this.functions.axis];
+    const newSize =
+      e.target.getPosition()[this.functions.axis] -
+      currentRowCol[this.functions.axis]();
 
     this.hideGuideLine();
-    this.hideResizeMarker();
 
-    if (axis >= minSize) {
-      this.resize(index, axis);
-    }
-
+    this.sheet.setData({
+      [this.type]: {
+        sizes: {
+          [this.currentIndex!]: newSize,
+        },
+      },
+    });
     this.sheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(
       events.resize[this.type].end,
       e,
-      index,
-      axis
+      this.currentIndex,
+      newSize
     );
-  };
-
-  resizeLineOnMousedown = (e: KonvaEventObject<Event>) => {
-    const target = e.target as Line;
-
-    this.showGuideLine(target);
   };
 
   resizeLineOnMouseup = () => {
@@ -245,10 +208,14 @@ class Resizer {
   resizeLineOnMouseover = (e: KonvaEventObject<Event>) => {
     const target = e.target as Line;
 
+    this.currentIndex = e.target.parent!.attrs.index;
+
     this.showResizeMarker(target);
   };
 
   resizeLineOnMouseout = () => {
+    this.currentIndex = null;
+
     document.body.style.cursor = 'default';
 
     this.hideResizeMarker();

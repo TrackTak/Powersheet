@@ -304,10 +304,14 @@ class Sheet {
 
     this.cellEditor = new CellEditor(this);
 
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+    // once is StoryBook ug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
+      once: true,
+    });
   }
 
   onDOMContentLoaded = () => {
+    debugger;
     this.updateSize();
   };
 

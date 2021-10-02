@@ -442,6 +442,24 @@ class RowCol {
     this.rowColMap.clear();
   }
 
+  destroyOutOfViewportItems() {
+    for (const [key, rowCol] of this.rowColMap) {
+      if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
+        rowCol.destroy();
+
+        this.rowColMap.delete(key);
+      }
+    }
+
+    for (const [key, header] of this.headerGroupMap) {
+      if (this.sheet.isShapeOutsideOfViewport(header)) {
+        header.destroy();
+
+        this.headerGroupMap.delete(key);
+      }
+    }
+  }
+
   // forceDraw is turned off for scrolling for performance
   drawViewport(forceDraw = false) {
     const getShouldDraw = (index: number) => {
@@ -555,7 +573,6 @@ class RowCol {
 
   getAxisAtIndex(index: number) {
     const data = this.sheet.getData();
-
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let totalPreviousCustomSizeDifferences =

@@ -161,6 +161,16 @@ class CellRenderer {
     this.sheet.merger.associatedMergedCellIdMap.clear();
   }
 
+   destroyOutOfViewportItems() {
+    for (const [key, cell] of this.cellsMap) {
+      if (this.sheet.isShapeOutsideOfViewport(cell)) {
+        cell.destroy();
+
+        this.cellsMap.delete(key);
+      }
+    }
+  }
+
   // forceDraw is turned off for scrolling for performance
   drawViewport(forceDraw = false) {
     const getShouldDraw = (ri: number, ci: number) => {

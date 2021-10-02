@@ -730,9 +730,14 @@ class Sheet {
     scrollGroups.forEach((key) => {
       const type = key as keyof IScrollGroups;
 
-      // this.scrollGroups?.[type]?.group?.destroy();
+      const existingGroup = this.scrollGroups?.[type]?.group;
 
-      const group = new Group();
+      existingGroup?.destroy();
+
+      const group = new Group({
+        x: existingGroup?.x(),
+        y: existingGroup?.y(),
+      });
 
       const sheetGroup = new Group({
         ...this.getViewportVector(),

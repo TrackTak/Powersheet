@@ -167,8 +167,10 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.destroyOutOfViewportItems();
-    this.drawViewportItems();
+    this.sheet[this.type].destroyOutOfViewportItems();
+    this.sheet.cellRenderer.destroyOutOfViewportItems();
+    this.sheet[this.type].drawViewport();
+    this.sheet.cellRenderer.drawViewport();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();
@@ -182,37 +184,6 @@ class ScrollBar {
       newScroll
     );
   };
-
-  private drawViewportItems() {
-    this.sheet[this.type].drawViewport();
-    this.sheet.cellRenderer.drawViewport();
-  }
-
-  private destroyOutOfViewportItems() {
-    for (const [key, rowCol] of this.sheet[this.type].rowColMap) {
-      if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
-        rowCol.destroy();
-
-        this.sheet[this.type].rowColMap.delete(key);
-      }
-    }
-
-    for (const [key, header] of this.sheet[this.type].headerGroupMap) {
-      if (this.sheet.isShapeOutsideOfViewport(header)) {
-        header.destroy();
-
-        this.sheet[this.type].headerGroupMap.delete(key);
-      }
-    }
-
-    for (const [key, cell] of this.sheet.cellRenderer.cellsMap) {
-      if (this.sheet.isShapeOutsideOfViewport(cell)) {
-        cell.destroy();
-
-        this.sheet.cellRenderer.cellsMap.delete(key);
-      }
-    }
-  }
 
   destroy() {
     this.scrollBarEl.removeEventListener('scroll', this.throttledScroll);

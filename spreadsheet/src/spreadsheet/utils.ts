@@ -1,4 +1,5 @@
 import { Shape } from 'konva/lib/Shape';
+import { IRect, Vector2d } from 'konva/lib/types';
 
 export const prefix = 'powersheet';
 
@@ -30,4 +31,54 @@ export const rotateAroundCenter = (shape: Shape, rotation: number) => {
   shape.y(shape.y() + dy);
 
   return { shape, rotation };
+};
+
+export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
+  const rectOneMidPoint = {
+    x: rectOne.x + rectOne.width / 2,
+    y: rectOne.y + rectOne.height / 2,
+  };
+
+  const rectTwoMidPoint = {
+    x: rectTwo.width / 2,
+    y: rectTwo.height / 2,
+  };
+
+  return {
+    x: rectOneMidPoint.x - rectTwoMidPoint.x,
+    y: rectOneMidPoint.y - rectTwoMidPoint.y,
+  };
+};
+
+export const reverseVectorsIfStartBiggerThanEnd = (
+  start: Vector2d,
+  end: Vector2d
+) => {
+  const newStart = { ...start };
+  const newEnd = { ...end };
+  let isReversedX = false;
+  let isReversedY = false;
+
+  if (start.x > end.x) {
+    const temp = start.x;
+
+    newStart.x = end.x;
+    newEnd.x = temp;
+    isReversedX = true;
+  }
+
+  if (start.y > end.y) {
+    const temp = start.y;
+
+    newStart.y = end.y;
+    newEnd.y = temp;
+    isReversedY = true;
+  }
+
+  return {
+    start: newStart,
+    end: newEnd,
+    isReversedX,
+    isReversedY,
+  };
 };

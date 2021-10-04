@@ -184,7 +184,8 @@ class Resizer {
 
     this.hideGuideLine();
 
-    this.sheet.setData({
+    this.spreadsheet.data.setSheetData({
+      ...this.spreadsheet.data.getSheetData(),
       [this.type]: {
         sizes: {
           [this.currentIndex!]: newSize,

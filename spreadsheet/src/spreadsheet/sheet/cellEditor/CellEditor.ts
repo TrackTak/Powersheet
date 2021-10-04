@@ -6,8 +6,8 @@ import styles from './CellEditor.module.scss';
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell } from '../CellRenderer';
 import HyperFormulaModule from '../../HyperFormula';
+import Cell from '../cell/Cell';
 
 export interface ICurrentScroll {
   row: number;
@@ -64,15 +64,17 @@ class CellEditor {
   }
 
   saveContentToCell() {
+    const simpleCellAddress = this.currentCell!.simpleCellAddress;
+    const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
+
     if (this.cellEditorEl.textContent) {
-      this.sheet.cellRenderer.setCellData(this.currentCell!.id(), {
+      this.spreadsheet.data.setCellData(simpleCellAddress, {
+        ...cellData,
         value: this.cellEditorEl.textContent,
       });
     } else {
-      const cell = this.sheet.cellRenderer.getCellData(this.currentCell!.id());
-
-      if (cell) {
-        delete cell.value;
+      if (cellData) {
+        delete cellData.value;
       }
     }
   }
@@ -142,16 +144,16 @@ class CellEditor {
       col: this.sheet.col.scrollBar.scroll,
     };
 
-    const id = cell.id();
+    const simpleCellAddress = cell.simpleCellAddress;
 
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(cell.getClientRect());
+    this.setCellEditorElPosition(cell.group.getClientRect());
 
     if (setTextContent) {
       this.setTextContent(
-        this.sheet.cellRenderer.getCellData(id)?.value ?? null
+        this.spreadsheet.data.getCellData(simpleCellAddress)?.value ?? null
       );
       this.cellEditorEl.focus();
     }
@@ -192,9 +194,9 @@ class CellEditor {
 
   showCellTooltip = () => {
     if (this.currentCell) {
-      const { row, col } = this.currentCell.attrs;
-      const rowText = this.sheet.row.getHeaderText(row.x);
-      const colText = this.sheet.col.getHeaderText(col.x);
+      const simpleCellAddress = this.currentCell.simpleCellAddress;
+      const rowText = this.sheet.row.getHeaderText(simpleCellAddress.row);
+      const colText = this.sheet.col.getHeaderText(simpleCellAddress.col);
 
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();

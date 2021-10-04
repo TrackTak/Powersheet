@@ -2,10 +2,7 @@ import { Story, Meta } from '@storybook/html';
 import { defaultOptions, IOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
-import Spreadsheet, {
-  ISpreadsheetConstructor,
-  ISpreadsheetData,
-} from './Spreadsheet';
+import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
 import { defaultStyles, IStyles } from './styles';
 import events from './events';
 import { ConfigParams, HyperFormula } from 'hyperformula';
@@ -20,6 +17,7 @@ import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import EventEmitter from 'eventemitter3';
 import { merge, throttle } from 'lodash';
+import { ISpreadsheetData } from './sheet/Data';
 
 export default {
   title: 'Spreadsheet',

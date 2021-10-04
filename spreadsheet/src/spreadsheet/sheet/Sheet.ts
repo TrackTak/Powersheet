@@ -1,25 +1,26 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import { Line } from 'konva/lib/shapes/Line';
 import { Group } from 'konva/lib/Group';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
-import Merger, { IMergedCell, TopLeftMergedCellId } from './Merger';
-import RowCol from './RowCol';
+import Merger from './Merger';
+import RowCols, { RowColType } from './RowCol';
 import CellEditor from './cellEditor/CellEditor';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import Spreadsheet from '../Spreadsheet';
-import { prefix } from '../utils';
+import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer, { Cell, CellId, getCellId } from './CellRenderer';
-import { Text } from 'konva/lib/shapes/Text';
-import { DebouncedFunc, isNil, merge, throttle } from 'lodash';
+import CellRenderer from './CellRenderer';
+import { DebouncedFunc, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../events';
-import { BorderIconName } from '../htmlElementHelpers';
+import SimpleCellAddress from './cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './cell/RangeSimpleCellAddress';
+import RowCol from './RowCol';
+import Cell from './cell/Cell';
 
 export interface IDimensions {
   width: number;
@@ -27,69 +28,6 @@ export interface IDimensions {
 }
 
 export type SheetId = number;
-
-export interface IFrozenCells {
-  row?: number;
-  col?: number;
-}
-
-export interface IMergedCells {
-  [index: TopLeftMergedCellId]: IMergedCell;
-}
-
-export interface ISizes {
-  [index: number]: number;
-}
-
-export interface IRowColData {
-  sizes?: ISizes;
-}
-
-export type BorderStyle =
-  | 'borderLeft'
-  | 'borderTop'
-  | 'borderRight'
-  | 'borderBottom';
-
-export type TextWrap = 'wrap';
-
-export type HorizontalTextAlign = 'left' | 'center' | 'right';
-
-export type VerticalTextAlign = 'top' | 'middle' | 'bottom';
-
-export interface ICellStyle {
-  borders?: BorderStyle[];
-  backgroundColor?: string;
-  fontColor?: string;
-  fontSize?: number;
-  textWrap?: TextWrap;
-  textFormatPattern?: string;
-  underline?: boolean;
-  strikeThrough?: boolean;
-  bold?: boolean;
-  italic?: boolean;
-  horizontalTextAlign?: HorizontalTextAlign;
-  verticalTextAlign?: VerticalTextAlign;
-}
-
-export interface ICellData {
-  style?: ICellStyle;
-  value?: string;
-  comment?: string;
-}
-
-export interface ISheetData {
-  sheetName: string;
-  frozenCells?: IFrozenCells;
-  mergedCells?: IMergedCells;
-  cellsData?: ICellsData;
-  row?: IRowColData;
-  col?: IRowColData;
-}
-
-export interface ICellsData {
-  [cellId: CellId]: ICellData;
-}
 
 interface IScrollGroup {
   group: Group;
@@ -113,87 +51,6 @@ export interface ICustomSizes {
   size: number;
 }
 
-export const getCellRectFromCell = (cell: Cell) => {
-  const cellRect = cell.children?.find(
-    (x) => x.attrs.type === 'cellRect'
-  ) as Rect;
-
-  return cellRect;
-};
-
-export const getCellTextFromCell = (cell: Cell) => {
-  const text = cell.children?.find((x) => x.attrs.type === 'cellText') as Text;
-
-  return text;
-};
-
-export const getCellBorderFromCell = (cell: Cell, type: BorderIconName) => {
-  const cellBorder = cell.children?.find((x) => x.attrs.type === type) as Line;
-
-  return cellBorder;
-};
-export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
-  const rectOneMidPoint = {
-    x: rectOne.x + rectOne.width / 2,
-    y: rectOne.y + rectOne.height / 2,
-  };
-
-  const rectTwoMidPoint = {
-    x: rectTwo.width / 2,
-    y: rectTwo.height / 2,
-  };
-
-  return {
-    x: rectOneMidPoint.x - rectTwoMidPoint.x,
-    y: rectOneMidPoint.y - rectTwoMidPoint.y,
-  };
-};
-
-export function* iterateRowColVector(vector: Vector2d) {
-  for (let index = vector.x; index <= vector.y; index++) {
-    yield index;
-  }
-}
-
-export function* iterateXToY(vector: Vector2d) {
-  for (let index = vector.x; index <= vector.y; index++) {
-    yield index;
-  }
-}
-
-export const reverseVectorsIfStartBiggerThanEnd = (
-  start: Vector2d,
-  end: Vector2d
-) => {
-  const newStart = { ...start };
-  const newEnd = { ...end };
-  let isReversedX = false;
-  let isReversedY = false;
-
-  if (start.x > end.x) {
-    const temp = start.x;
-
-    newStart.x = end.x;
-    newEnd.x = temp;
-    isReversedX = true;
-  }
-
-  if (start.y > end.y) {
-    const temp = start.y;
-
-    newStart.y = end.y;
-    newEnd.y = temp;
-    isReversedY = true;
-  }
-
-  return {
-    start: newStart,
-    end: newEnd,
-    isReversedX,
-    isReversedY,
-  };
-};
-
 class Sheet {
   scrollGroups!: IScrollGroups;
   sheetEl: HTMLDivElement;
@@ -211,7 +68,6 @@ class Sheet {
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
-  isSaving = false;
   private throttledResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
@@ -251,8 +107,8 @@ class Sheet {
     this.stage.add(this.layer);
 
     this.cellRenderer = new CellRenderer(this);
-    this.col = new RowCol('col', this);
-    this.row = new RowCol('row', this);
+    this.col = new RowCols('col', this);
+    this.row = new RowCols('row', this);
 
     this.row.updateViewportSize();
     this.col.updateViewportSize();
@@ -389,9 +245,9 @@ class Sheet {
   };
 
   onSheetMouseDown = () => {
-    const { x, y } = this.sheet.getRelativePointerPosition();
+    const vector = this.sheet.getRelativePointerPosition();
 
-    this.selector.startSelection(x, y);
+    this.selector.startSelection(vector);
   };
 
   onSheetMouseMove = () => {
@@ -422,21 +278,21 @@ class Sheet {
 
   private setCellOnAction() {
     const selectedFirstcell = this.selector.selectedCell!;
-    const id = selectedFirstcell.id();
+    const simpleCellAddress = selectedFirstcell.simpleCellAddress;
 
     if (this.hasDoubleClickedOnCell()) {
       this.cellEditor.show(selectedFirstcell);
     }
 
-    if (this.cellRenderer.getCellData(id)?.comment) {
-      this.comment.show(id);
+    if (this.spreadsheet.data.getCellData(simpleCellAddress)?.comment) {
+      this.comment.show(simpleCellAddress);
     }
   }
 
   sheetOnTap = () => {
-    const { x, y } = this.sheet.getRelativePointerPosition();
+    const vector = this.sheet.getRelativePointerPosition();
 
-    this.selector.startSelection(x, y);
+    this.selector.startSelection(vector);
     this.selector.endSelection();
 
     this.setCellOnAction();
@@ -460,6 +316,27 @@ class Sheet {
     );
   }
 
+  getMinMaxRangeSimpleCellAddress(cells: Cell[]) {
+    const getMin = (type: RowColType) =>
+      Math.min(
+        ...cells.map(
+          (cell) => cell.rangeSimpleCellAddress.topLeftSimpleCellAddress[type]
+        )
+      );
+    const getMax = (type: RowColType) =>
+      Math.max(
+        ...cells.map(
+          (cell) =>
+            cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress[type]
+        )
+      );
+
+    return new RangeSimpleCellAddress(
+      new SimpleCellAddress(this.sheetId, getMin('row'), getMin('col')),
+      new SimpleCellAddress(this.sheetId, getMax('row'), getMax('col'))
+    );
+  }
+
   keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();
 
@@ -469,13 +346,10 @@ class Sheet {
       }
       case 'Delete': {
         this.selector.selectedCells.forEach((cell) => {
-          const id = cell.id();
-          const cellData = this.cellRenderer.getCellData(id);
+          const simpleCellAddress = cell.simpleCellAddress;
+          const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
 
-          // TODO: Once setCellData is changed to no merge then update this
           delete cellData?.value;
-
-          this.cellRenderer.setHyperformulaCellData(id, '');
         });
         break;
       }
@@ -511,81 +385,6 @@ class Sheet {
     });
   }
 
-  setData(value: Partial<ISheetData>, addToHistory: boolean = true) {
-    const updatedData = merge({}, this.getData(), value);
-
-    if (value.frozenCells) {
-      const frozenCells = updatedData.frozenCells!;
-
-      if (!isNil(frozenCells.row)) {
-        if (frozenCells.row < 0) {
-          delete frozenCells.row;
-        }
-      }
-
-      if (!isNil(frozenCells.col)) {
-        if (frozenCells.col < 0) {
-          delete frozenCells.col;
-        }
-      }
-
-      if (isNil(frozenCells.row) && isNil(frozenCells.col)) {
-        delete updatedData.frozenCells;
-      }
-    }
-
-    if (value.mergedCells) {
-      Object.keys(value.mergedCells).forEach((topLeftCellId) => {
-        const mergedCell = value.mergedCells![topLeftCellId];
-
-        if (mergedCell.col.x < 0) {
-          mergedCell.col.x = 0;
-        }
-
-        if (mergedCell.row.x < 0) {
-          mergedCell.row.x = 0;
-        }
-
-        const newTopLeftCellId = getCellId(mergedCell.row.x, mergedCell.col.x);
-
-        delete updatedData.mergedCells![topLeftCellId];
-
-        updatedData.mergedCells![newTopLeftCellId] = mergedCell;
-
-        if (
-          mergedCell.col.x >= mergedCell.col.y &&
-          mergedCell.row.x >= mergedCell.row.y
-        ) {
-          delete updatedData.mergedCells![newTopLeftCellId];
-        }
-      });
-    }
-
-    if (addToHistory) {
-      this.spreadsheet.addToHistory();
-    }
-
-    this.spreadsheet.data.sheetData[this.sheetId] = updatedData;
-
-    const done = () => {
-      this.isSaving = false;
-      this.updateViewport();
-    };
-
-    this.isSaving = true;
-
-    this.spreadsheet.eventEmitter.emit(
-      events.sheet.setData,
-      this,
-      updatedData,
-      done
-    );
-  }
-
-  getData(): ISheetData {
-    return this.spreadsheet.data.sheetData[this.sheetId];
-  }
-
   updateSheetDimensions() {
     this.sheetDimensions.width = this.col.getTotalSize();
     this.sheetDimensions.height = this.row.getTotalSize();
@@ -598,57 +397,63 @@ class Sheet {
     };
   }
 
-  getRowColsBetweenVectors(start: Vector2d, end: Vector2d) {
+  convertVectorsToRangeSimpleCellAddress(start: Vector2d, end: Vector2d) {
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
       start,
       end
     );
 
-    const rowIndexes = this.row.getIndexesBetweenVectors({
+    const rowIndexes = this.row.getTopBottomIndexFromPosition({
       x: newStart.y,
       y: newEnd.y,
     });
 
-    const colIndexes = this.col.getIndexesBetweenVectors({
+    const colIndexes = this.col.getTopBottomIndexFromPosition({
       x: newStart.x,
       y: newEnd.x,
     });
 
-    for (const ri of iterateRowColVector(rowIndexes)) {
-      for (const ci of iterateRowColVector(colIndexes)) {
-        const existingCellId = getCellId(ri, ci);
-        const mergedCells =
-          this.merger.associatedMergedCellIdMap.get(existingCellId);
+    const rangeSimpleCellAddress = new RangeSimpleCellAddress(
+      new SimpleCellAddress(
+        this.sheetId,
+        rowIndexes.topIndex,
+        colIndexes.topIndex
+      ),
+      new SimpleCellAddress(
+        this.sheetId,
+        rowIndexes.bottomIndex,
+        colIndexes.bottomIndex
+      )
+    );
 
-        if (mergedCells) {
-          const { row, col } = mergedCells;
+    for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+      for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+        const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
+        const existingRangeSimpleCellAddress =
+          this.merger.associatedMergedCellAddressMap.get(simpleCellAddress);
 
-          if (col.x < colIndexes.x) {
-            colIndexes.x = col.x;
-          }
-
-          if (row.x < rowIndexes.x) {
-            rowIndexes.x = row.x;
-          }
-
-          if (col.y > colIndexes.y) {
-            colIndexes.y = col.y;
-          }
-
-          if (row.y > rowIndexes.y) {
-            rowIndexes.y = row.y;
-          }
+        if (existingRangeSimpleCellAddress) {
+          rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
+            'col',
+            existingRangeSimpleCellAddress
+          );
+          rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
+            'row',
+            existingRangeSimpleCellAddress
+          );
+          rangeSimpleCellAddress.limitBottomRightAddressToAnotherRange(
+            'col',
+            existingRangeSimpleCellAddress
+          );
+          rangeSimpleCellAddress.limitBottomRightAddressToAnotherRange(
+            'row',
+            existingRangeSimpleCellAddress
+          );
         }
       }
     }
 
-    const rows = this.row.convertFromRangeToRowCols(rowIndexes);
-    const cols = this.col.convertFromRangeToRowCols(colIndexes);
-
-    return {
-      rows,
-      cols,
-    };
+    return rangeSimpleCellAddress;
   }
 
   hide() {
@@ -659,6 +464,18 @@ class Sheet {
   show() {
     this.stage.show();
     this.sheetEl.style.display = 'block';
+  }
+
+  getStickyGroupType(isOnFrozenRow: boolean, isOnFrozenCol: boolean) {
+    if (isOnFrozenRow && isOnFrozenCol) {
+      return 'xySticky';
+    } else if (isOnFrozenRow) {
+      return 'ySticky';
+    } else if (isOnFrozenCol) {
+      return 'xSticky';
+    } else {
+      return 'main';
+    }
   }
 
   destroy() {
@@ -685,8 +502,6 @@ class Sheet {
     this.col.destroy();
     this.row.destroy();
     this.cellEditor?.destroy();
-
-    this.spreadsheet.hyperformula?.removeSheet(this.sheetId);
   }
 
   drawTopLeftOffsetRect() {
@@ -701,7 +516,7 @@ class Sheet {
   }
 
   updateFrozenBackgrounds() {
-    const frozenCells = this.getData().frozenCells;
+    const frozenCells = this.spreadsheet.data.getSheetData().frozenCells;
     const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
     const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
     const xyStickyFrozenBackground =
@@ -814,7 +629,7 @@ class Sheet {
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
-      this.selector.selectedCell?.id() ?? ''
+      this.selector.selectedCell?.simpleCellAddress
     );
     this.updateFrozenBackgrounds();
   }

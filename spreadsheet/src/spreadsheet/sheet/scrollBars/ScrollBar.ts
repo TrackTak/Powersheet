@@ -5,7 +5,7 @@ import Sheet from '../Sheet';
 import { IRowColFunctions, RowColType } from '../RowCol';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../Spreadsheet';
-import { Vector2d } from 'konva/lib/types';
+import ViewportPosition from './ViewportPosition';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -14,14 +14,8 @@ class ScrollBar {
   scrollEl: HTMLDivElement;
   scroll = 0;
   totalPreviousCustomSizeDifferences = 0;
-  sheetViewportPosition: Vector2d = {
-    x: 0,
-    y: 0,
-  };
-  previousSheetViewportPosition: Vector2d = {
-    x: 0,
-    y: 0,
-  };
+  sheetViewportPosition = new ViewportPosition();
+  previousSheetViewportPosition = new ViewportPosition();
   previousTouchMovePosition: number = 0;
   private scrollType: ScrollBarType;
   private throttledScroll: DebouncedFunc<(e: Event) => void>;
@@ -74,7 +68,7 @@ class ScrollBar {
   }
 
   private getNewScrollAmount(start: number, end: number) {
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.getSheetData();
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let newScrollAmount = 0;
@@ -106,8 +100,7 @@ class ScrollBar {
       xIndex
     );
 
-    // Add 1 to make it inclusive
-    return yIndex + 1;
+    return Math.max(0, yIndex - 1);
   }
 
   setYIndex() {

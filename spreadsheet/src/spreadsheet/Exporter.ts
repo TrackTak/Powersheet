@@ -1,13 +1,11 @@
 import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
-import {
-  convertFromCellIdToRowColId,
-  convertFromRowColToCellString,
-  IRowColAddress,
-} from './sheet/CellRenderer';
-import Sheet, { ISheetData } from './sheet/Sheet';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
+import Sheet from './sheet/Sheet';
+import { ISheetData } from './sheet/Data';
+import RangeSimpleCellAddress from './sheet/cell/RangeSimpleCellAddress';
+import SimpleCellAddress from './sheet/cell/SimpleCellAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;
@@ -20,28 +18,36 @@ class Export {
     const worksheet: WorkSheet = {};
     const cellsData = data.cellsData ?? {};
 
-    let startRowColAddress: Partial<IRowColAddress> = {
-      row: 0,
-      col: 0,
-    };
+    const rangeSimpleCellAddress = new RangeSimpleCellAddress(
+      new SimpleCellAddress(sheet.sheetId, 0, 0),
+      new SimpleCellAddress(sheet.sheetId, 0, 0)
+    );
 
-    const endRowColAddress: IRowColAddress = {
-      row: 0,
-      col: 0,
-    };
+    for (const cellId in cellsData) {
+      const cell = cellsData[cellId];
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+        sheet.sheetId,
+        cellId
+      );
+      const cellString = simpleCellAddress.addressToString();
 
-    for (const key in cellsData) {
-      const cell = cellsData[key];
-      const { row, col } = convertFromCellIdToRowColId(key);
-      const cellString = convertFromRowColToCellString(row, col);
+      rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
+        simpleCellAddress.row,
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.row
+      );
+      rangeSimpleCellAddress.topLeftSimpleCellAddress.col = Math.min(
+        simpleCellAddress.col,
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+      );
 
-      startRowColAddress = {
-        row: Math.min(row, startRowColAddress.row ?? Infinity),
-        col: Math.min(col, startRowColAddress.col ?? Infinity),
-      };
-
-      endRowColAddress.row = Math.max(row, endRowColAddress.row);
-      endRowColAddress.col = Math.max(col, endRowColAddress.col);
+      rangeSimpleCellAddress.bottomRightSimpleCellAddress.row = Math.max(
+        simpleCellAddress.row,
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row
+      );
+      rangeSimpleCellAddress.bottomRightSimpleCellAddress.col = Math.max(
+        simpleCellAddress.col,
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
+      );
 
       let type;
 
@@ -68,9 +74,10 @@ class Export {
       }
     }
 
-    for (const [cellId, { row, col }] of sheet.merger
-      .associatedMergedCellIdMap) {
-      const isTopLeftCell = sheet.merger.getIsCellTopLeftMergedCell(cellId);
+    for (const [simpleCellAddress, rangeSimpleCellAddress] of sheet.merger
+      .associatedMergedCellAddressMap) {
+      const isTopLeftCell =
+        this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress);
 
       if (isTopLeftCell) {
         if (!worksheet['!merges']) {
@@ -79,28 +86,20 @@ class Export {
 
         worksheet['!merges'].push({
           s: {
-            r: row.x,
-            c: col.x,
+            r: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
+            c: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
           },
           e: {
-            r: row.y,
-            c: col.y,
+            r: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+            c: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
           },
         });
       }
     }
 
-    const startCellString = convertFromRowColToCellString(
-      startRowColAddress.row ?? 0,
-      startRowColAddress.col ?? 0
-    );
-
-    const endCellString = convertFromRowColToCellString(
-      endRowColAddress.row,
-      endRowColAddress.col
-    );
-
-    worksheet['!ref'] = `${startCellString}:${endCellString}`;
+    worksheet[
+      '!ref'
+    ] = `${rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()}:${rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()}`;
 
     const cols: ColInfo[] = [];
     const rows: RowInfo[] = [];
@@ -134,9 +133,9 @@ class Export {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new();
 
-    this.spreadsheet.data.sheetData.forEach((data) => {
+    this.spreadsheet.data.spreadsheetData.sheetData.forEach((data) => {
       const sheet = Array.from(this.spreadsheet.sheets.values()).find(
-        (x) => x.getData().sheetName === data.sheetName
+        (x) => x.spreadsheet.data.getSheetData().sheetName === data.sheetName
       )!;
 
       const worksheet = this.getWorksheet(sheet, data);
@@ -154,7 +153,7 @@ class Export {
 
     writeFile(
       workbook,
-      this.spreadsheet.data.exportSpreadsheetName ??
+      this.spreadsheet.data.spreadsheetData.exportSpreadsheetName ??
         this.spreadsheet.options.exportSpreadsheetName
     );
   }

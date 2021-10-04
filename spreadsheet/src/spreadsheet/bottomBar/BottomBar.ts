@@ -116,7 +116,7 @@ class BottomBar {
     }
 
     sheetSelectionDropdownButton.textContent =
-      this.spreadsheet.data.sheetData[sheetId].sheetName;
+      this.spreadsheet.data.getSheetData(sheetId).sheetName;
 
     const switchSheet = () => {
       this.spreadsheet.switchSheet(sheetId);
@@ -213,7 +213,7 @@ class BottomBar {
     );
 
     nameContainer.textContent =
-      this.spreadsheet.data.sheetData[sheetId].sheetName;
+      this.spreadsheet.data.getSheetData(sheetId).sheetName;
 
     this.scrollSliderContainer.appendChild(sheetTabContainer);
     this.sheetSelectionDropdownContent.appendChild(

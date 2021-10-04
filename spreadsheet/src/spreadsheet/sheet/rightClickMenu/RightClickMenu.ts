@@ -4,7 +4,6 @@ import styles from './RightClickMenu.module.scss';
 import Sheet from '../Sheet';
 import { createGroup } from '../../htmlElementHelpers';
 import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
-import { convertFromCellIdToRowColId } from '../CellRenderer';
 import Spreadsheet from '../../Spreadsheet';
 
 export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
@@ -125,37 +124,38 @@ class RightClickMenu {
   }
 
   commentOnClick = () => {
-    const id = this.sheet.selector.selectedCell!.id();
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.comment?.show(id);
+    this.sheet.comment?.show(simpleCellAddress);
   };
 
   insertRowOnClick = () => {
-    const cellId = this.sheet.selector.selectedCell!.id();
-    const { row } = convertFromCellIdToRowColId(cellId);
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.row.insert(row, 1);
+    this.sheet.row.insert(simpleCellAddress.row, 1);
   };
 
   insertColOnClick = () => {
-    const cellId = this.sheet.selector.selectedCell!.id();
-    const { col } = convertFromCellIdToRowColId(cellId);
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.col.insert(col, 1);
+    this.sheet.col.insert(simpleCellAddress.col, 1);
   };
 
   deleteRowOnClick = () => {
-    const cellId = this.sheet.selector.selectedCell!.id();
-    const { row } = convertFromCellIdToRowColId(cellId);
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.row.delete(row, 1);
+    this.sheet.row.delete(simpleCellAddress.row, 1);
   };
 
   deleteColOnClick = () => {
-    const cellId = this.sheet.selector.selectedCell!.id();
-    const { col } = convertFromCellIdToRowColId(cellId);
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.col.delete(col, 1);
+    this.sheet.col.delete(simpleCellAddress.col, 1);
   };
 }
 

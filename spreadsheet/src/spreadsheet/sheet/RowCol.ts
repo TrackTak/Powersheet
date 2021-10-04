@@ -4,22 +4,16 @@ import { Line, LineConfig } from 'konva/lib/shapes/Line';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Vector2d } from 'konva/lib/types';
-import Sheet, {
-  centerRectTwoInRectOne,
-  iterateRowColVector,
-  iterateXToY,
-} from './Sheet';
+
 import Resizer from './Resizer';
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../Spreadsheet';
-import {
-  Cell,
-  CellId,
-  convertFromCellIdToRowColId,
-  convertFromCellsToMinMax,
-  getCellId,
-} from './CellRenderer';
-import { isNil } from 'lodash';
+
+import { isNil, merge } from 'lodash';
+import RangeSimpleCellAddress from './cell/RangeSimpleCellAddress';
+import Sheet from './Sheet';
+import { centerRectTwoInRectOne } from '../utils';
+import SimpleCellAddress from './cell/SimpleCellAddress';
 
 interface IShapes {
   headerGroup: Group;
@@ -38,22 +32,6 @@ export interface IRowColFunctions {
 export type HeaderGroupId = number;
 
 export type RowColGroupId = number;
-
-export const getGridLineFromRowColGroup = (group: Group) => {
-  const gridLine = group.children?.find(
-    (x) => x.attrs.type === 'gridLine'
-  ) as Line;
-
-  return gridLine;
-};
-
-export const getHeaderRectFromHeader = (group: Group) => {
-  const headerRect = group.children?.find(
-    (x) => x.attrs.type === 'headerRect'
-  ) as Line;
-
-  return headerRect;
-};
 
 class RowCol {
   resizer: Resizer;
@@ -158,11 +136,7 @@ class RowCol {
 
     let sumOfSizes = 0;
 
-    for (
-      let index = this.scrollBar.sheetViewportPosition.x;
-      index < this.scrollBar.sheetViewportPosition.y;
-      index++
-    ) {
+    for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
       sumOfSizes += this.getSize(index);
     }
 
@@ -193,35 +167,28 @@ class RowCol {
     this.resizer.destroy();
   }
 
-  convertFromCellsToRange(cells: Cell[]) {
-    const { min, max } = convertFromCellsToMinMax(
-      cells,
-      (cell) => cell.attrs[this.type].x,
-      (cell) => cell.attrs[this.type].y
-    );
+  getHeadersFromRangeSimpleCellAddress(
+    rangeSimpleCellAddress: RangeSimpleCellAddress
+  ) {
+    const headers: Group[] = [];
 
-    return {
-      x: min,
-      y: max,
-    };
-  }
+    for (const index of rangeSimpleCellAddress.iterateFromTopToBottom(
+      this.type
+    )) {
+      const header = this.headerGroupMap.get(index);
 
-  convertFromRangeToRowCols(vector: Vector2d) {
-    const rowCols: Group[] = [];
-
-    for (const index of iterateRowColVector(vector)) {
-      const rowCol = this.sheet[this.type].headerGroupMap.get(index);
-
-      if (rowCol) {
-        rowCols.push(rowCol);
+      if (header) {
+        headers.push(header);
       }
     }
 
-    return rowCols;
+    return headers;
   }
 
   getTotalSize() {
-    const sizes = Object.keys(this.sheet.getData()[this.type]?.sizes ?? {});
+    const sizes = Object.keys(
+      this.spreadsheet.data.getSheetData()[this.type]?.sizes ?? {}
+    );
 
     const totalSizeDifference = sizes.reduce((currentSize, key) => {
       const index = parseInt(key, 10);
@@ -241,13 +208,15 @@ class RowCol {
   }
 
   setSizeData(index: number, size: number) {
-    this.sheet.setData({
+    const newSheetData = merge({}, this.spreadsheet.data.getSheetData(), {
       [this.type]: {
         sizes: {
           [index]: size,
         },
       },
     });
+
+    this.spreadsheet.data.setSheetData(newSheetData);
   }
 
   private moveData(
@@ -257,10 +226,13 @@ class RowCol {
     hyperformulaRowFunctionName: 'addRows' | 'removeRows',
     modifyCallback: (value: number, amount: number) => number,
     sizesCallback: (sizeIndex: number) => void,
-    cellsDataCallback: (cellId: CellId) => void,
+    cellsDataCallback: (
+      simpleCellAddress: SimpleCellAddress,
+      newSimpleCellAddress: SimpleCellAddress
+    ) => void,
     comparer?: (a: string, b: string) => number
   ) {
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.getSheetData();
     const { frozenCells, mergedCells, cellsData } = data;
     const sizes = data[this.type]?.sizes!;
 
@@ -307,7 +279,20 @@ class RowCol {
       Object.keys(cellsData)
         .sort(comparer)
         .forEach((cellId) => {
-          cellsDataCallback(cellId);
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+            this.sheet.sheetId,
+            cellId
+          );
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            this.isCol
+              ? simpleCellAddress.row
+              : modifyCallback(simpleCellAddress.row, amount),
+            this.isCol
+              ? modifyCallback(simpleCellAddress.col, amount)
+              : simpleCellAddress.col
+          );
+          cellsDataCallback(simpleCellAddress, newSimpleCellAddress);
         });
     }
 
@@ -322,8 +307,7 @@ class RowCol {
         [index, amount]
       );
     }
-
-    this.sheet.setData({
+    const newSheetData = merge({}, this.spreadsheet.data.getSheetData(), {
       [this.type]: {
         sizes,
       },
@@ -332,11 +316,13 @@ class RowCol {
       cellsData,
     });
 
+    this.spreadsheet.data.setSheetData(newSheetData);
+
     this.sheet.updateViewport();
   }
 
   insert(index: number, amount: number) {
-    const { cellsData, ...data } = this.sheet.getData();
+    const { cellsData, ...data } = this.spreadsheet.data.getSheetData();
     const modifyCallback = (value: number, amount: number) => {
       return value + amount;
     };
@@ -359,19 +345,13 @@ class RowCol {
           delete sizes[sizeIndex];
         }
       },
-      (cellId) => {
-        const rowCol = convertFromCellIdToRowColId(cellId);
-
-        if (rowCol[this.type] >= index) {
-          const params: [number, number] = this.isCol
-            ? [rowCol.row, modifyCallback(rowCol.col, amount)]
-            : [modifyCallback(rowCol.row, amount), rowCol.col];
-
-          const newCellId = getCellId(...params);
-
-          cellsData![newCellId] = cellsData![cellId];
-
-          this.sheet.cellRenderer.deleteCellData(cellId);
+      (simpleCellAddress, newSimpleCellAddress) => {
+        if (simpleCellAddress[this.type] >= index) {
+          this.spreadsheet.data.setCellData(
+            newSimpleCellAddress,
+            cellsData![simpleCellAddress.addressToCellId()]
+          );
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
       },
       (a, b) => {
@@ -381,7 +361,7 @@ class RowCol {
   }
 
   delete(index: number, amount: number) {
-    const { cellsData, ...data } = this.sheet.getData();
+    const { cellsData, ...data } = this.spreadsheet.data.getSheetData();
     const modifyCallback = (value: number, amount: number) => {
       return value - amount;
     };
@@ -406,29 +386,24 @@ class RowCol {
 
         delete sizes[sizeIndex];
       },
-      (cellId) => {
-        const rowCol = convertFromCellIdToRowColId(cellId);
+      (simpleCellAddress, newSimpleCellAddress) => {
+        if (simpleCellAddress[this.type] < index) return;
 
-        if (rowCol[this.type] < index) return;
-
-        if (rowCol[this.type] > index) {
-          const params: [number, number] = this.isCol
-            ? [rowCol.row, modifyCallback(rowCol.col, amount)]
-            : [modifyCallback(rowCol.row, amount), rowCol.col];
-
-          const newCellId = getCellId(...params);
-
-          cellsData![newCellId] = cellsData![cellId];
+        if (simpleCellAddress[this.type] > index) {
+          this.spreadsheet.data.setCellData(
+            newSimpleCellAddress,
+            cellsData![simpleCellAddress.addressToCellId()]
+          );
         }
 
-        this.sheet.cellRenderer.deleteCellData(cellId);
+        this.spreadsheet.data.deleteCellData(simpleCellAddress);
       }
     );
   }
 
   getSize(index: number) {
     let size =
-      this.sheet.getData()[this.type]?.sizes?.[index] ??
+      this.spreadsheet.data.getSheetData()[this.type]?.sizes?.[index] ??
       this.spreadsheet.options[this.type].defaultSize;
 
     return size;
@@ -469,7 +444,7 @@ class RowCol {
       return forceDraw || !rowColAlreadyExists;
     };
 
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.getSheetData();
 
     if (data.frozenCells) {
       const frozenCell = data.frozenCells[this.type];
@@ -483,7 +458,7 @@ class RowCol {
       }
     }
 
-    for (const index of iterateXToY(this.scrollBar.sheetViewportPosition)) {
+    for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
       if (getShouldDraw(index)) {
         this.draw(index);
       }
@@ -498,7 +473,7 @@ class RowCol {
   }
 
   *getSizeForFrozenCell(type: RowColType) {
-    const { frozenCells } = this.sheet.getData();
+    const { frozenCells } = this.spreadsheet.data.getSheetData();
     const frozenCell = frozenCells?.[type];
 
     if (isNil(frozenCell)) return null;
@@ -514,53 +489,53 @@ class RowCol {
     return size;
   }
 
-  getIndexesBetweenVectors(position: Vector2d) {
+  getTopBottomIndexFromPosition(position: Vector2d) {
     let sheetViewportStartYIndex = this.scrollBar.sheetViewportPosition.x;
 
-    const indexes = {
-      x: this.calculateSheetViewportEndPosition(
-        position.x,
-        sheetViewportStartYIndex
-      ),
-      y: this.calculateSheetViewportEndPosition(
-        position.y,
-        sheetViewportStartYIndex
-      ),
-    };
-
-    let xIndex = null;
-    let yIndex = null;
+    let topIndex = null;
+    let bottomIndex = null;
 
     for (const { size, index } of this.getSizeForFrozenCell(this.type)) {
-      if (xIndex === null && position.x <= size) {
-        xIndex = index;
+      if (topIndex === null && position.x <= size) {
+        topIndex = index;
       }
 
-      if (yIndex === null && position.y <= size) {
-        yIndex = index;
+      if (bottomIndex === null && position.y <= size) {
+        bottomIndex = index;
       }
     }
 
-    if (xIndex !== null) {
-      indexes.x = xIndex;
+    if (topIndex === null) {
+      topIndex = this.calculateSheetViewportEndPosition(
+        position.x,
+        sheetViewportStartYIndex
+      );
     }
 
-    if (yIndex !== null) {
-      indexes.y = yIndex;
+    if (bottomIndex === null) {
+      bottomIndex = this.calculateSheetViewportEndPosition(
+        position.y,
+        sheetViewportStartYIndex
+      );
     }
 
-    return indexes;
+    return {
+      topIndex,
+      bottomIndex,
+    };
   }
 
   getIsFrozen(index: number) {
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.getSheetData();
     const frozenCell = data.frozenCells?.[this.type];
 
     return isNil(frozenCell) ? false : index <= frozenCell;
   }
 
   getIsLastFrozen(index: number) {
-    return index === this.sheet.getData().frozenCells?.[this.type];
+    return (
+      index === this.spreadsheet.data.getSheetData().frozenCells?.[this.type]
+    );
   }
 
   draw(index: number) {
@@ -572,7 +547,7 @@ class RowCol {
   }
 
   getAxisAtIndex(index: number) {
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.getSheetData();
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let totalPreviousCustomSizeDifferences =
@@ -759,7 +734,7 @@ class RowCol {
   }
 
   private drawFrozenGridLine(index: number) {
-    const { frozenCells } = this.sheet.getData();
+    const { frozenCells } = this.spreadsheet.data.getSheetData();
     const frozenRow = frozenCells?.row;
     const frozenCol = frozenCells?.col;
 

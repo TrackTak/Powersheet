@@ -34,8 +34,8 @@ import {
 import Spreadsheet from '../Spreadsheet';
 import { sentenceCase } from 'sentence-case';
 import HyperFormulaModule from '../HyperFormula';
-import Cell from '../sheet/cell/Cell';
-import SimpleCellAddress from '../sheet/cell/SimpleCellAddress';
+import Cell from '../sheet/cells/cell/Cell';
+import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import {
   BorderStyle,
   HorizontalTextAlign,
@@ -43,8 +43,8 @@ import {
   TextWrap,
   VerticalTextAlign,
 } from '../sheet/Data';
-import RangeSimpleCellAddress from '../sheet/cell/RangeSimpleCellAddress';
-import SelectedCell from '../sheet/cell/SelectedCell';
+import RangeSimpleCellAddress from '../sheet/cells/cell/RangeSimpleCellAddress';
+import SelectedCell from '../sheet/cells/cell/SelectedCell';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];

@@ -2,7 +2,7 @@ import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
-import SimpleCellAddress, { CellId } from './cell/SimpleCellAddress';
+import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import { SheetId } from './Sheet';
 
 export type TextWrap = 'wrap';

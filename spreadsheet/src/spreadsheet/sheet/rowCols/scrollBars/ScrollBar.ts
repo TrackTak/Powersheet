@@ -1,10 +1,10 @@
 import { DebouncedFunc, throttle } from 'lodash';
-import events from '../../events';
-import { prefix } from '../../utils';
-import Sheet from '../Sheet';
-import { IRowColFunctions, RowColType } from '../RowCol';
+import events from '../../../events';
+import { prefix } from '../../../utils';
+import Sheet from '../../Sheet';
+import RowCols, { IRowColFunctions, RowColType } from '../RowCols';
 import styles from './ScrollBar.module.scss';
-import Spreadsheet from '../../Spreadsheet';
+import Spreadsheet from '../../../Spreadsheet';
 import ViewportPosition from './ViewportPosition';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
@@ -17,22 +17,22 @@ class ScrollBar {
   sheetViewportPosition = new ViewportPosition();
   previousSheetViewportPosition = new ViewportPosition();
   previousTouchMovePosition: number = 0;
-  private scrollType: ScrollBarType;
-  private throttledScroll: DebouncedFunc<(e: Event) => void>;
-  private spreadsheet: Spreadsheet;
+  scrollType: ScrollBarType;
+  throttledScroll: DebouncedFunc<(e: Event) => void>;
+  spreadsheet: Spreadsheet;
+  sheet: Sheet;
+  type: RowColType;
+  isCol: boolean;
+  functions: IRowColFunctions;
 
-  constructor(
-    private sheet: Sheet,
-    private type: RowColType,
-    private isCol: boolean,
-    private functions: IRowColFunctions
-  ) {
-    this.sheet = sheet;
-    this.type = type;
+  constructor(public rowCols: RowCols) {
+    this.rowCols = rowCols;
+    this.sheet = this.rowCols.sheet;
+    this.type = this.rowCols.type;
     this.spreadsheet = this.sheet.spreadsheet;
-    this.isCol = isCol;
+    this.isCol = this.rowCols.isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
-    this.functions = functions;
+    this.functions = this.rowCols.functions;
 
     this.scrollBarEl = document.createElement('div');
     this.scrollEl = document.createElement('div');
@@ -95,7 +95,7 @@ class ScrollBar {
     const xIndex = this.sheetViewportPosition.x;
     const stageSize = this.sheet.stage[this.functions.size]();
 
-    const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
+    const yIndex = this.rowCols.calculateSheetViewportEndPosition(
       stageSize,
       xIndex
     );
@@ -160,10 +160,10 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.sheet[this.type].destroyOutOfViewportItems();
-    this.sheet.cellRenderer.destroyOutOfViewportItems();
-    this.sheet[this.type].drawViewport();
-    this.sheet.cellRenderer.drawViewport();
+    this.rowCols.destroyOutOfViewportItems();
+    this.sheet.cells.destroyOutOfViewportItems();
+    this.rowCols.drawViewport();
+    this.sheet.cells.drawViewport();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();

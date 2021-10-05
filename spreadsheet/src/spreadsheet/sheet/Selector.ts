@@ -3,8 +3,8 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
-import SelectedCell from './cell/SelectedCell';
-import SimpleCellAddress from './cell/SimpleCellAddress';
+import SelectedCell from './cells/cell/SelectedCell';
+import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import Sheet from './Sheet';
 
 export interface ISelectedRowCols {
@@ -173,11 +173,11 @@ class Selector {
     const rect = cell.getClientRectWithoutStroke();
 
     if (!cell.isOnFrozenCol()) {
-      rect.x -= Math.abs(this.sheet.col.scrollBar.scroll);
+      rect.x -= Math.abs(this.sheet.cols.scrollBar.scroll);
     }
 
     if (!cell.isOnFrozenRow()) {
-      rect.y -= Math.abs(this.sheet.row.scrollBar.scroll);
+      rect.y -= Math.abs(this.sheet.rows.scrollBar.scroll);
     }
 
     this.selectionArea = {

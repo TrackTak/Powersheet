@@ -1,5 +1,5 @@
-import { RowColType } from '../RowCol';
-import Sheet from '../Sheet';
+import { RowColType } from '../../rowCols/RowCols';
+import Sheet from '../../Sheet';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 

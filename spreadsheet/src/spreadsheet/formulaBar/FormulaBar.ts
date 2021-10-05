@@ -1,4 +1,4 @@
-import SimpleCellAddress from '../sheet/cell/SimpleCellAddress';
+import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from './../utils';
 import styles from './FormulaBar.module.scss';

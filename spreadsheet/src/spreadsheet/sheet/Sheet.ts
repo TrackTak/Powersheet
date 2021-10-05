@@ -4,7 +4,7 @@ import { Group } from 'konva/lib/Group';
 import { Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
 import Merger from './Merger';
-import RowCols, { RowColType } from './RowCol';
+import RowCols, { RowColType } from './rowCols/RowCols';
 import CellEditor from './cellEditor/CellEditor';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
@@ -13,14 +13,13 @@ import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import CellRenderer from './CellRenderer';
 import { DebouncedFunc, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import events from '../events';
-import SimpleCellAddress from './cell/SimpleCellAddress';
-import RangeSimpleCellAddress from './cell/RangeSimpleCellAddress';
-import RowCol from './RowCol';
-import Cell from './cell/Cell';
+import SimpleCellAddress from './cells/cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
+import Cell from './cells/cell/Cell';
+import Cells from './cells/Cells';
 
 export interface IDimensions {
   width: number;
@@ -57,11 +56,11 @@ class Sheet {
   stage: Stage;
   layer: Layer;
   sheet: Rect;
-  col: RowCol;
-  row: RowCol;
+  cols: RowCols;
+  rows: RowCols;
   selector: Selector;
   merger: Merger;
-  cellRenderer: CellRenderer;
+  cells: Cells;
   sheetDimensions: IDimensions;
   previousSheetClickTime = 0;
   sheetClickTime = 0;
@@ -106,12 +105,12 @@ class Sheet {
 
     this.stage.add(this.layer);
 
-    this.cellRenderer = new CellRenderer(this);
-    this.col = new RowCols('col', this);
-    this.row = new RowCols('row', this);
+    this.cells = new Cells(this);
+    this.cols = new RowCols('col', this);
+    this.rows = new RowCols('row', this);
 
-    this.row.updateViewportSize();
-    this.col.updateViewportSize();
+    this.rows.updateViewportSize();
+    this.cols.updateViewportSize();
 
     this.merger = new Merger(this);
     this.selector = new Selector(this);
@@ -139,21 +138,21 @@ class Sheet {
     this.updateSheetDimensions();
 
     const sheetConfig: RectConfig = {
-      width: this.col.totalSize,
-      height: this.row.totalSize,
+      width: this.cols.totalSize,
+      height: this.rows.totalSize,
       x: this.getViewportVector().x,
       y: this.getViewportVector().y,
     };
 
     this.sheet.setAttrs(sheetConfig);
 
-    this.col.scrollBar.setYIndex();
-    this.row.scrollBar.setYIndex();
+    this.cols.scrollBar.setYIndex();
+    this.rows.scrollBar.setYIndex();
 
     this.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
-    this.row.scrollBar.scrollBarEl.style.bottom = `${18}px`;
+    this.rows.scrollBar.scrollBarEl.style.bottom = `${18}px`;
 
     this.cellEditor = new CellEditor(this);
 
@@ -174,11 +173,8 @@ class Sheet {
     this.sheet.width(this.stage.width() - this.getViewportVector().x);
     this.sheet.height(this.stage.height() - this.getViewportVector().y);
 
-    this.row.updateViewportSize();
-    this.col.updateViewportSize();
-
-    this.col.resizer.setResizeGuideLinePoints();
-    this.row.resizer.setResizeGuideLinePoints();
+    this.rows.updateViewportSize();
+    this.cols.updateViewportSize();
 
     const context = this.layer.canvas.getContext();
 
@@ -197,8 +193,8 @@ class Sheet {
   onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
 
-    this.col.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
-    this.row.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
+    this.cols.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
+    this.rows.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
 
     this.spreadsheet.eventEmitter.emit(events.scrollWheel.scroll, e);
   };
@@ -213,8 +209,8 @@ class Sheet {
 
     this.cellEditor.hideAndSave();
 
-    this.col.scrollBar.previousTouchMovePosition = clientX;
-    this.row.scrollBar.previousTouchMovePosition = clientY;
+    this.cols.scrollBar.previousTouchMovePosition = clientX;
+    this.rows.scrollBar.previousTouchMovePosition = clientY;
   };
 
   sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
@@ -226,18 +222,18 @@ class Sheet {
     const { clientX, clientY } = touch1;
 
     const deltaX =
-      (this.col.scrollBar.previousTouchMovePosition - clientX) *
+      (this.cols.scrollBar.previousTouchMovePosition - clientX) *
       this.spreadsheet.options.touchScrollSpeed;
 
     const deltaY =
-      (this.row.scrollBar.previousTouchMovePosition - clientY) *
+      (this.rows.scrollBar.previousTouchMovePosition - clientY) *
       this.spreadsheet.options.touchScrollSpeed;
 
-    this.col.scrollBar.scrollBarEl.scrollBy(deltaX, 0);
-    this.row.scrollBar.scrollBarEl.scrollBy(0, deltaY);
+    this.cols.scrollBar.scrollBarEl.scrollBy(deltaX, 0);
+    this.rows.scrollBar.scrollBarEl.scrollBy(0, deltaY);
 
-    this.col.scrollBar.previousTouchMovePosition = clientX;
-    this.row.scrollBar.previousTouchMovePosition = clientY;
+    this.cols.scrollBar.previousTouchMovePosition = clientX;
+    this.rows.scrollBar.previousTouchMovePosition = clientY;
   };
 
   onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
@@ -386,14 +382,14 @@ class Sheet {
   }
 
   updateSheetDimensions() {
-    this.sheetDimensions.width = this.col.getTotalSize();
-    this.sheetDimensions.height = this.row.getTotalSize();
+    this.sheetDimensions.width = this.cols.getTotalSize();
+    this.sheetDimensions.height = this.rows.getTotalSize();
   }
 
   getViewportVector() {
     return {
-      x: this.spreadsheet.styles.rowHeader.rect.width,
-      y: this.spreadsheet.styles.colHeader.rect.height,
+      x: this.spreadsheet.styles.row.headerRect.width!,
+      y: this.spreadsheet.styles.col.headerRect.height!,
     };
   }
 
@@ -403,12 +399,12 @@ class Sheet {
       end
     );
 
-    const rowIndexes = this.row.getTopBottomIndexFromPosition({
+    const rowIndexes = this.rows.getTopBottomIndexFromPosition({
       x: newStart.y,
       y: newEnd.y,
     });
 
-    const colIndexes = this.col.getTopBottomIndexFromPosition({
+    const colIndexes = this.cols.getTopBottomIndexFromPosition({
       x: newStart.x,
       y: newEnd.x,
     });
@@ -499,8 +495,8 @@ class Sheet {
 
     this.sheetEl.remove();
     this.stage.destroy();
-    this.col.destroy();
-    this.row.destroy();
+    this.cols.destroy();
+    this.rows.destroy();
     this.cellEditor?.destroy();
   }
 
@@ -522,11 +518,11 @@ class Sheet {
     const xyStickyFrozenBackground =
       this.scrollGroups.xySticky.frozenBackground;
 
-    if (frozenCells && this.row.frozenLine && this.col.frozenLine) {
-      const colClientRect = this.col.frozenLine.getClientRect({
+    if (frozenCells && this.rows.frozenLine && this.cols.frozenLine) {
+      const colClientRect = this.cols.frozenLine.getClientRect({
         skipStroke: true,
       });
-      const rowClientRect = this.row.frozenLine.getClientRect({
+      const rowClientRect = this.rows.frozenLine.getClientRect({
         skipStroke: true,
       });
 
@@ -623,9 +619,9 @@ class Sheet {
     this.updateScrollGroups();
     this.drawTopLeftOffsetRect();
     this.updateSheetDimensions();
-    this.row.updateViewport();
-    this.col.updateViewport();
-    this.cellRenderer.updateViewport();
+    this.rows.updateViewport();
+    this.cols.updateViewport();
+    this.cells.updateViewport();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(

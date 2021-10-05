@@ -25,29 +25,34 @@ export interface ICellConfig {
   text: TextConfig;
 }
 
-export interface IStyles {
+export interface IRowColConfig {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
+  resizeMarker: LineConfig;
   gridLine: LineConfig;
   frozenLine: LineConfig;
-  rowResizeMarker: RectConfig;
-  colResizeMarker: RectConfig;
-  rowHeader: IRowHeaderConfig;
-  colHeader: IColHeaderConfig;
+  headerRect: RectConfig;
+  headerText?: TextConfig;
+}
+
+export interface IStyles {
   topLeftRect: RectConfig;
   selectionFirstCell: RectConfig;
   selection: RectConfig;
   commentMarker: LineConfig;
+  col: IRowColConfig;
+  row: IRowColConfig;
   cell: ICellConfig;
 }
 
 const resizeMarkerSize = 7;
 const resizeHitStrokeWidth = 15;
+const strokeWidth = 1;
 
-const sharedStyles = {
+export const sharedStyles = {
   gridLine: {
     stroke: '#e3e3e3',
-    strokeWidth: 1,
+    strokeWidth,
   },
   resizeMarker: {
     fill: '#0057ff',
@@ -56,64 +61,30 @@ const sharedStyles = {
     hitStrokeWidth: resizeHitStrokeWidth,
     draggable: true,
   },
+  resizeGuideLine: {
+    strokeWidth,
+    visible: false,
+    stroke: 'blue',
+  },
+  resizeLine: {
+    stroke: '#8a8a8a',
+    strokeWidth,
+    hitStrokeWidth: resizeHitStrokeWidth,
+    opacity: 0.7,
+  },
+  frozenLine: {
+    strokeWidth,
+    stroke: 'blue',
+  },
   headerRect: {
     fill: '#f4f5f8',
   },
-  headerText: {
-    fontSize: 12,
-    fontFamily: 'Source Sans Pro',
-    fill: '#585757',
-  },
   selection: {
-    strokeWidth: 1,
+    strokeWidth,
   },
 };
 
 export const defaultStyles: IStyles = {
-  frozenLine: {
-    ...sharedStyles.gridLine,
-    stroke: 'blue',
-  },
-  resizeGuideLine: {
-    ...sharedStyles.gridLine,
-    visible: false,
-    stroke: 'blue',
-  },
-  rowResizeMarker: {
-    ...sharedStyles.resizeMarker,
-    height: resizeMarkerSize,
-  },
-  colResizeMarker: {
-    ...sharedStyles.resizeMarker,
-    width: resizeMarkerSize,
-  },
-  resizeLine: {
-    ...sharedStyles.gridLine,
-    stroke: '#8a8a8a',
-    hitStrokeWidth: resizeHitStrokeWidth,
-    opacity: 0.7,
-  },
-  gridLine: {
-    ...sharedStyles.gridLine,
-  },
-  rowHeader: {
-    rect: {
-      ...sharedStyles.headerRect,
-      width: 25,
-    },
-    text: {
-      ...sharedStyles.headerText,
-    },
-  },
-  colHeader: {
-    rect: {
-      ...sharedStyles.headerRect,
-      height: 20,
-    },
-    text: {
-      ...sharedStyles.headerText,
-    },
-  },
   topLeftRect: {
     fill: sharedStyles.headerRect.fill,
   },
@@ -138,6 +109,34 @@ export const defaultStyles: IStyles = {
     points: [0, 5, 5, 5, 0, 0],
     closed: true,
   },
+  row: {
+    frozenLine: sharedStyles.frozenLine,
+    resizeGuideLine: sharedStyles.resizeGuideLine,
+    resizeMarker: {
+      ...sharedStyles.resizeMarker,
+      height: resizeMarkerSize,
+    },
+    resizeLine: sharedStyles.resizeLine,
+    gridLine: sharedStyles.gridLine,
+    headerRect: {
+      ...sharedStyles.headerRect,
+      width: 25,
+    },
+  },
+  col: {
+    frozenLine: sharedStyles.frozenLine,
+    resizeGuideLine: sharedStyles.resizeGuideLine,
+    resizeMarker: {
+      ...sharedStyles.resizeMarker,
+      width: resizeMarkerSize,
+    },
+    resizeLine: sharedStyles.resizeLine,
+    gridLine: sharedStyles.gridLine,
+    headerRect: {
+      ...sharedStyles.headerRect,
+      height: 20,
+    },
+  },
   cell: {
     rect: {
       type: 'cellRect',
@@ -146,7 +145,6 @@ export const defaultStyles: IStyles = {
       strokeWidth: sharedStyles.gridLine.strokeWidth,
     },
     text: {
-      ...sharedStyles.headerText,
       type: 'cellText',
       fontSize: 14,
       fill: 'black',

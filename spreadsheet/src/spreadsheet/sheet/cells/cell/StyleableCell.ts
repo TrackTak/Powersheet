@@ -1,11 +1,11 @@
 import { Line } from 'konva/lib/shapes/Line';
 import { Text } from 'konva/lib/shapes/Text';
-import Sheet from '../Sheet';
+import Sheet from '../../Sheet';
 import Border from './Border';
 import FontStyle from './FontStyle';
 import TextDecoration from './TextDecoration';
 import { format } from 'numfmt';
-import { rotateAroundCenter } from '../../utils';
+import { rotateAroundCenter } from '../../../utils';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 import {
@@ -13,7 +13,7 @@ import {
   HorizontalTextAlign,
   TextWrap,
   VerticalTextAlign,
-} from '../Data';
+} from '../../Data';
 
 class StyleableCell extends Cell {
   text?: Text;
@@ -298,15 +298,15 @@ class StyleableCell extends Cell {
     this.group.moveToTop();
 
     if (!this.getIsCellPartOfMerge()) {
-      const size = this.sheet.row.getSize(this.simpleCellAddress.row);
-      const cellSize = this.getClientRectWithoutStroke().height;
+      const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
+      const cellHeight = this.getClientRectWithoutStroke().height;
 
-      if (cellSize > size) {
+      if (cellHeight > height) {
         this.spreadsheet.data.setSheetData({
           ...this.spreadsheet.data.getSheetData(),
           row: {
             sizes: {
-              [this.simpleCellAddress.row]: cellSize,
+              [this.simpleCellAddress.row]: cellHeight,
             },
           },
         });

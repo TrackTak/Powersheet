@@ -1,11 +1,11 @@
 import { isNil } from 'lodash';
-import Spreadsheet from '../Spreadsheet';
+import Spreadsheet from '../../Spreadsheet';
 import Cell from './cell/Cell';
 import SimpleCellAddress from './cell/SimpleCellAddress';
 import StyleableCell from './cell/StyleableCell';
-import Sheet from './Sheet';
+import Sheet from '../Sheet';
 
-class CellRenderer {
+class Cells {
   cellsMap: Map<SimpleCellAddress, Cell>;
   private spreadsheet: Spreadsheet;
 
@@ -40,7 +40,7 @@ class CellRenderer {
 
       if (!isNil(frozenRow)) {
         for (let ri = 0; ri <= frozenRow; ri++) {
-          for (const ci of this.sheet.col.headerGroupMap.keys()) {
+          for (const ci of this.sheet.cols.rowColMap.keys()) {
             const simpleCellAddress = new SimpleCellAddress(
               this.sheet.sheetId,
               ri,
@@ -54,7 +54,7 @@ class CellRenderer {
 
       if (!isNil(frozenCol)) {
         for (let ci = 0; ci <= frozenCol; ci++) {
-          for (const ri of this.sheet.row.headerGroupMap.keys()) {
+          for (const ri of this.sheet.rows.rowColMap.keys()) {
             const simpleCellAddress = new SimpleCellAddress(
               this.sheet.sheetId,
               ri,
@@ -67,10 +67,8 @@ class CellRenderer {
       }
     }
 
-    console.log(this.sheet.row.scrollBar.sheetViewportPosition.y);
-
-    for (const ri of this.sheet.row.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      for (const ci of this.sheet.col.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
         const simpleCellAddress = new SimpleCellAddress(
           this.sheet.sheetId,
           ri,
@@ -89,15 +87,15 @@ class CellRenderer {
 
     if (!shouldDraw) return;
 
-    if (this.sheet.cellRenderer.cellsMap.has(simpleCellAddress)) {
-      this.sheet.cellRenderer.cellsMap.get(simpleCellAddress)!.destroy();
+    if (this.sheet.cells.cellsMap.has(simpleCellAddress)) {
+      this.sheet.cells.cellsMap.get(simpleCellAddress)!.destroy();
     }
 
     const cell = new StyleableCell(this.sheet, simpleCellAddress);
 
     cell.draw();
 
-    this.sheet.cellRenderer.cellsMap.set(simpleCellAddress, cell);
+    this.sheet.cells.cellsMap.set(simpleCellAddress, cell);
   }
 
   updateViewport() {
@@ -106,4 +104,4 @@ class CellRenderer {
   }
 }
 
-export default CellRenderer;
+export default Cells;

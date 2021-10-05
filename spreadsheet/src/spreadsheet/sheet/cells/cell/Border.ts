@@ -1,5 +1,6 @@
 import { Line } from 'konva/lib/shapes/Line';
-import { BorderStyle } from '../Data';
+import { sharedStyles } from '../../../styles';
+import { BorderStyle } from '../../Data';
 import StyleableCell from './StyleableCell';
 
 class Border {
@@ -14,7 +15,7 @@ class Border {
 
     this.line = new Line({
       stroke: 'black',
-      strokeWidth: this.styleableCell.spreadsheet.styles.gridLine.strokeWidth,
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
     });
 
     this.styleableCell.group.add(this.line);

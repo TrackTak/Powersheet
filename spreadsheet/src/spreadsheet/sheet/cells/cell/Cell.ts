@@ -1,7 +1,7 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
-import Spreadsheet from '../../Spreadsheet';
-import Sheet from '../Sheet';
+import Spreadsheet from '../../../Spreadsheet';
+import Sheet from '../../Sheet';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 
@@ -33,19 +33,19 @@ class Cell {
   setMergedCellProperties(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     this.rangeSimpleCellAddress = rangeSimpleCellAddress;
 
-    const rows = this.sheet.row.getHeadersFromRangeSimpleCellAddress(
+    const rows = this.sheet.rows.getRowColsFromRangeSimpleCellAddress(
       this.rangeSimpleCellAddress
     );
-    const cols = this.sheet.col.getHeadersFromRangeSimpleCellAddress(
+    const cols = this.sheet.cols.getRowColsFromRangeSimpleCellAddress(
       this.rangeSimpleCellAddress
     );
 
     const width = cols.reduce((prev, curr) => {
-      return (prev += curr.width());
+      return (prev += this.sheet.cols.getSize(curr.index));
     }, 0);
 
     const height = rows.reduce((prev, curr) => {
-      return (prev += curr.height());
+      return (prev += this.sheet.rows.getSize(curr.index));
     }, 0);
 
     this.rect.width(width);
@@ -66,15 +66,15 @@ class Cell {
   }
 
   isOnFrozenRow() {
-    return this.sheet.row.getIsFrozen(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row
-    );
+    return this.sheet.rows.rowColMap
+      .get(this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row)!
+      .getIsFrozen();
   }
 
   isOnFrozenCol() {
-    return this.sheet.col.getIsFrozen(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-    );
+    return this.sheet.cols.rowColMap
+      .get(this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col)!
+      .getIsFrozen();
   }
 
   destroy() {
@@ -82,18 +82,18 @@ class Cell {
   }
 
   private setCellRectProperties() {
-    const rowHeader = this.sheet.row.headerGroupMap.get(
+    const row = this.sheet.rows.rowColMap.get(
       this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row
     )!;
-    const colHeader = this.sheet.col.headerGroupMap.get(
+    const col = this.sheet.cols.rowColMap.get(
       this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col
     )!;
 
-    this.group.x(colHeader.x() - this.sheet.getViewportVector().x);
-    this.group.y(rowHeader.y() - this.sheet.getViewportVector().y);
+    this.group.x(col.getAxis() - this.sheet.getViewportVector().x);
+    this.group.y(row.getAxis() - this.sheet.getViewportVector().y);
 
-    this.rect.width(colHeader.width());
-    this.rect.height(rowHeader.height());
+    this.rect.width(this.sheet.cols.getSize(col.index));
+    this.rect.height(this.sheet.rows.getSize(row.index));
 
     this.group.add(this.rect);
   }

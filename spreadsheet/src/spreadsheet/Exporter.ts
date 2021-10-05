@@ -4,8 +4,8 @@ import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
 import Sheet from './sheet/Sheet';
 import { ISheetData } from './sheet/Data';
-import RangeSimpleCellAddress from './sheet/cell/RangeSimpleCellAddress';
-import SimpleCellAddress from './sheet/cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
+import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;

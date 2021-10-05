@@ -14,7 +14,7 @@ import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
 import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
-import SimpleCellAddress from './sheet/cell/SimpleCellAddress';
+import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;

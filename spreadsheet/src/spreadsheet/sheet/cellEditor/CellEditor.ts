@@ -7,7 +7,7 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import HyperFormulaModule from '../../HyperFormula';
-import Cell from '../cell/Cell';
+import Cell from '../cells/cell/Cell';
 
 export interface ICurrentScroll {
   row: number;
@@ -140,8 +140,8 @@ class CellEditor {
   show(cell: Cell, setTextContent = true) {
     this.currentCell = cell;
     this.currentScroll = {
-      row: this.sheet.row.scrollBar.scroll,
-      col: this.sheet.col.scrollBar.scroll,
+      row: this.sheet.rows.scrollBar.scroll,
+      col: this.sheet.cols.scrollBar.scroll,
     };
 
     const simpleCellAddress = cell.simpleCellAddress;
@@ -194,9 +194,13 @@ class CellEditor {
 
   showCellTooltip = () => {
     if (this.currentCell) {
-      const simpleCellAddress = this.currentCell.simpleCellAddress;
-      const rowText = this.sheet.row.getHeaderText(simpleCellAddress.row);
-      const colText = this.sheet.col.getHeaderText(simpleCellAddress.col);
+      const { row, col } = this.currentCell.simpleCellAddress;
+      const rowText = this.sheet.rows.rowColMap
+        .get(row)!
+        .getHeaderTextContent();
+      const colText = this.sheet.cols.rowColMap
+        .get(col)!
+        .getHeaderTextContent();
 
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();

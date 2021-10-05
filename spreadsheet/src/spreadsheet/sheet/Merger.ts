@@ -1,6 +1,6 @@
 import Sheet from './Sheet';
-import SimpleCellAddress from './cell/SimpleCellAddress';
-import RangeSimpleCellAddress from './cell/RangeSimpleCellAddress';
+import SimpleCellAddress from './cells/cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 
 class Merger {
@@ -97,7 +97,7 @@ class Merger {
   removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const { mergedCells } = this.spreadsheet.data.getSheetData();
 
-    this.sheet.cellRenderer.cellsMap.forEach((cell, simpleCellAddress) => {
+    this.sheet.cells.cellsMap.forEach((cell, simpleCellAddress) => {
       if (
         this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress) &&
         mergedCells

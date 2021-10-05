@@ -131,31 +131,27 @@ class RightClickMenu {
   };
 
   insertRowOnClick = () => {
-    const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { row } = this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.row.insert(simpleCellAddress.row, 1);
+    this.sheet.rows.rowColMap.get(row)!.insert(1);
   };
 
   insertColOnClick = () => {
-    const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { col } = this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.col.insert(simpleCellAddress.col, 1);
+    this.sheet.cols.rowColMap.get(col)!.insert(1);
   };
 
   deleteRowOnClick = () => {
-    const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { row } = this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.row.delete(simpleCellAddress.row, 1);
+    this.sheet.rows.rowColMap.get(row)!.delete(1);
   };
 
   deleteColOnClick = () => {
-    const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { col } = this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.col.delete(simpleCellAddress.col, 1);
+    this.sheet.cols.rowColMap.get(col)!.delete(1);
   };
 }
 

@@ -7,7 +7,7 @@ import {
   createSuccessButton,
   createTextarea,
 } from './commentHtmlHelpers';
-import SimpleCellAddress from '../cell/SimpleCellAddress';
+import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
 import Spreadsheet from '../../Spreadsheet';
 
 class Comment {

@@ -522,12 +522,15 @@ class Toolbar {
   setVerticalBorders(cells: Cell[]) {
     this.setBorderStyles(
       cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
-          rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
-      'borderRight'
+      (cell, rangeSimpleCellAddress) => {
+        return (
+          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >
+            rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
+          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <=
+            rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
+        );
+      },
+      'borderLeft'
     );
   }
 
@@ -535,11 +538,11 @@ class Toolbar {
     this.setBorderStyles(
       cells,
       (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >
           rangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <=
           rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-      'borderBottom'
+      'borderTop'
     );
   }
 

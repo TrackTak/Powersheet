@@ -8,6 +8,7 @@ import { isNil } from 'lodash';
 import RangeSimpleCellAddress from '../cells/cell/RangeSimpleCellAddress';
 import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
+import Resizer from './rowCol/Resizer';
 
 export type RowColType = 'row' | 'col';
 
@@ -30,6 +31,7 @@ class RowCols {
   oppositeFunctions: IRowColFunctions;
   isCol: boolean;
   spreadsheet: Spreadsheet;
+  resizer: Resizer;
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -62,6 +64,7 @@ class RowCols {
       };
     }
 
+    this.resizer = new Resizer(this);
     this.scrollBar = new ScrollBar(this);
   }
 

@@ -115,6 +115,12 @@ export const defaultStyles: IStyles = {
     resizeMarker: {
       ...sharedStyles.resizeMarker,
       height: resizeMarkerSize,
+      dragBoundFunc: function (pos) {
+        return {
+          ...pos,
+          x: this.absolutePosition().x,
+        };
+      },
     },
     resizeLine: sharedStyles.resizeLine,
     gridLine: sharedStyles.gridLine,
@@ -129,6 +135,12 @@ export const defaultStyles: IStyles = {
     resizeMarker: {
       ...sharedStyles.resizeMarker,
       width: resizeMarkerSize,
+      dragBoundFunc: function (pos) {
+        return {
+          ...pos,
+          y: this.absolutePosition().y,
+        };
+      },
     },
     resizeLine: sharedStyles.resizeLine,
     gridLine: sharedStyles.gridLine,

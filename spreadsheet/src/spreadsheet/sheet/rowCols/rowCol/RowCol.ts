@@ -6,7 +6,6 @@ import { isNil, merge } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import { centerRectTwoInRectOne } from '../../../utils';
 import SimpleCellAddress from '../../cells/cell/SimpleCellAddress';
-import Resizer from './Resizer';
 import RowCols, { IRowColFunctions, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
 
@@ -16,10 +15,10 @@ class RowCol {
   headerRect: Rect;
   headerText: Text;
   gridLine: Line;
+  resizeLine: Line;
   xFrozenLine?: Line;
   yFrozenLine?: Line;
   xyFrozenLine?: Line;
-  resizer: Resizer;
   sheet: Sheet;
   type: RowColType;
   isCol: boolean;
@@ -37,8 +36,6 @@ class RowCol {
     this.oppositeType = rowCols.oppositeType;
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
-
-    this.resizer = new Resizer(this);
 
     this.headerGroup = new Group({
       [this.functions.size]: this.rowCols.getSize(this.index),
@@ -69,13 +66,20 @@ class RowCol {
       points: this.getLinePoints(this.getSheetSize()),
     });
 
-    this.headerGroup.add(
-      this.headerRect,
-      this.headerText,
-      this.resizer.resizeLine
-    );
+    this.resizeLine = new Line({
+      ...this.spreadsheet.styles[this.type].resizeLine,
+      [this.functions.axis]: this.rowCols.getSize(this.index),
+      points: this.isCol
+        ? [0, 0, 0, this.sheet.getViewportVector().y]
+        : [0, 0, this.sheet.getViewportVector().x, 0],
+    });
+
+    this.headerGroup.add(this.headerRect, this.headerText, this.resizeLine);
 
     this.draw();
+
+    this.resizeLine.on('mouseover', this.resizeLineOnMouseOver);
+    this.resizeLine.on('mouseout', this.resizeLineOnMouseOut);
   }
 
   getIsLastFrozen() {
@@ -123,7 +127,22 @@ class RowCol {
     return axis;
   }
 
+  resizeLineOnMouseOver = () => {
+    this.rowCols.resizer.setCursor();
+
+    this.rowCols.resizer.showResizeMarker(this.index);
+  };
+
+  resizeLineOnMouseOut = () => {
+    this.rowCols.resizer.resetCursor();
+
+    this.rowCols.resizer.hideResizeMarker();
+  };
+
   destroy() {
+    this.resizeLine.off('mouseover', this.resizeLineOnMouseOver);
+    this.resizeLine.off('mouseup', this.resizeLineOnMouseOut);
+
     this.headerGroup.destroy();
     this.gridLine.destroy();
     this.xFrozenLine?.destroy();

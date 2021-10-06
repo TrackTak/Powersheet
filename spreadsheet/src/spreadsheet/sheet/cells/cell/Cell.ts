@@ -27,26 +27,38 @@ class Cell {
 
     this.rect = new Rect(this.spreadsheet.styles.cell.rect);
 
-    this.setCellRectProperties();
+    const { row, col } = this.rangeSimpleCellAddress.topLeftSimpleCellAddress;
+
+    this.group.x(
+      this.sheet.cols.getAxis(col) - this.sheet.getViewportVector().x
+    );
+    this.group.y(
+      this.sheet.rows.getAxis(row) - this.sheet.getViewportVector().y
+    );
+
+    this.rect.width(this.sheet.cols.getSize(col));
+    this.rect.height(this.sheet.rows.getSize(row));
+
+    this.group.add(this.rect);
   }
 
   setMergedCellProperties(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     this.rangeSimpleCellAddress = rangeSimpleCellAddress;
 
-    const rows = this.sheet.rows.getRowColsFromRangeSimpleCellAddress(
-      this.rangeSimpleCellAddress
-    );
-    const cols = this.sheet.cols.getRowColsFromRangeSimpleCellAddress(
-      this.rangeSimpleCellAddress
-    );
+    let width = 0;
+    let height = 0;
 
-    const width = cols.reduce((prev, curr) => {
-      return (prev += this.sheet.cols.getSize(curr.index));
-    }, 0);
+    for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
+      'col'
+    )) {
+      width += this.sheet.cols.getSize(index);
+    }
 
-    const height = rows.reduce((prev, curr) => {
-      return (prev += this.sheet.rows.getSize(curr.index));
-    }, 0);
+    for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
+      'row'
+    )) {
+      height += this.sheet.rows.getSize(index);
+    }
 
     this.rect.width(width);
     this.rect.height(height);
@@ -66,36 +78,19 @@ class Cell {
   }
 
   isOnFrozenRow() {
-    return this.sheet.rows.rowColMap
-      .get(this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row)!
-      .getIsFrozen();
+    return this.sheet.rows.getIsFrozen(
+      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row
+    );
   }
 
   isOnFrozenCol() {
-    return this.sheet.cols.rowColMap
-      .get(this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col)!
-      .getIsFrozen();
+    return this.sheet.cols.getIsFrozen(
+      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+    );
   }
 
   destroy() {
     this.group.destroy();
-  }
-
-  private setCellRectProperties() {
-    const row = this.sheet.rows.rowColMap.get(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row
-    )!;
-    const col = this.sheet.cols.rowColMap.get(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-    )!;
-
-    this.group.x(col.getAxis() - this.sheet.getViewportVector().x);
-    this.group.y(row.getAxis() - this.sheet.getViewportVector().y);
-
-    this.rect.width(this.sheet.cols.getSize(col.index));
-    this.rect.height(this.sheet.rows.getSize(row.index));
-
-    this.group.add(this.rect);
   }
 
   getClientRectWithoutStroke() {

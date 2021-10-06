@@ -38,7 +38,7 @@ class RowCol {
     this.oppositeFunctions = rowCols.oppositeFunctions;
 
     this.headerGroup = new Group({
-      [this.functions.axis]: this.getAxis(),
+      [this.functions.axis]: this.rowCols.getAxis(this.index),
     });
     this.headerRect = new Rect({
       ...this.spreadsheet.styles[this.type].headerRect,
@@ -81,50 +81,9 @@ class RowCol {
     this.resizeLine.on('mouseout', this.resizeLineOnMouseOut);
   }
 
-  getIsLastFrozen() {
-    return (
-      this.index ===
-      this.spreadsheet.data.getSheetData().frozenCells?.[this.type]
-    );
-  }
-
-  getIsFrozen() {
-    const data = this.spreadsheet.data.getSheetData();
-    const frozenCell = data.frozenCells?.[this.type];
-
-    return isNil(frozenCell) ? false : this.index <= frozenCell;
-  }
-
   getLinePoints = (size: number) => {
     return this.isCol ? [0, 0, 0, size] : [0, 0, size, 0];
   };
-
-  getAxis() {
-    const data = this.spreadsheet.data.getSheetData();
-    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-
-    let totalPreviousCustomSizeDifferences =
-      this.rowCols.scrollBar.totalPreviousCustomSizeDifferences;
-
-    for (
-      let i = this.rowCols.scrollBar.sheetViewportPosition.x;
-      i < this.index;
-      i++
-    ) {
-      const size = data[this.type]?.sizes?.[i];
-
-      if (size) {
-        totalPreviousCustomSizeDifferences += size - defaultSize;
-      }
-    }
-
-    const axis =
-      this.spreadsheet.options[this.type].defaultSize * this.index +
-      totalPreviousCustomSizeDifferences +
-      this.sheet.getViewportVector()[this.functions.axis];
-
-    return axis;
-  }
 
   resizeLineOnMouseOver = () => {
     this.rowCols.resizer.setCursor();
@@ -249,7 +208,7 @@ class RowCol {
     const { frozenCells, mergedCells, cellsData } = data;
     const sizes = data[this.type]?.sizes!;
 
-    if (this.getIsFrozen()) {
+    if (this.rowCols.getIsFrozen(this.index)) {
       frozenCells![this.type] = modifyCallback(
         frozenCells![this.type]!,
         amount
@@ -427,7 +386,7 @@ class RowCol {
   }
 
   private drawHeader() {
-    const isFrozen = this.getIsFrozen();
+    const isFrozen = this.rowCols.getIsFrozen(this.index);
 
     if (isFrozen) {
       this.sheet.scrollGroups.xySticky.headerGroup.add(this.headerGroup);

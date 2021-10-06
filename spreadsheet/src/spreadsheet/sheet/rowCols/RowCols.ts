@@ -72,11 +72,47 @@ class RowCols {
     this.scrollBar.destroy();
   }
 
+  getAxis(index: number) {
+    const data = this.spreadsheet.data.getSheetData();
+    const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+
+    let totalPreviousCustomSizeDifferences =
+      this.scrollBar.totalPreviousCustomSizeDifferences;
+
+    for (let i = this.scrollBar.sheetViewportPosition.x; i < index; i++) {
+      const size = data[this.type]?.sizes?.[i];
+
+      if (size) {
+        totalPreviousCustomSizeDifferences += size - defaultSize;
+      }
+    }
+
+    const axis =
+      this.spreadsheet.options[this.type].defaultSize * index +
+      totalPreviousCustomSizeDifferences +
+      this.sheet.getViewportVector()[this.functions.axis];
+
+    return axis;
+  }
+
   getSize(index: number) {
     return (
       this.spreadsheet.data.getSheetData()[this.type]?.sizes?.[index] ??
       this.spreadsheet.options[this.type].defaultSize
     );
+  }
+
+  getIsLastFrozen(index: number) {
+    return (
+      index === this.spreadsheet.data.getSheetData().frozenCells?.[this.type]
+    );
+  }
+
+  getIsFrozen(index: number) {
+    const data = this.spreadsheet.data.getSheetData();
+    const frozenCell = data.frozenCells?.[this.type];
+
+    return isNil(frozenCell) ? false : index <= frozenCell;
   }
 
   updateViewportSize() {
@@ -109,24 +145,6 @@ class RowCols {
 
     return i;
   };
-
-  getRowColsFromRangeSimpleCellAddress(
-    rangeSimpleCellAddress: RangeSimpleCellAddress
-  ) {
-    const rowCols: RowCol[] = [];
-
-    for (const index of rangeSimpleCellAddress.iterateFromTopToBottom(
-      this.type
-    )) {
-      const rowCol = this.rowColMap.get(index);
-
-      if (rowCol) {
-        rowCols.push(rowCol);
-      }
-    }
-
-    return rowCols;
-  }
 
   getTotalSize() {
     const sizes = Object.keys(
@@ -255,7 +273,7 @@ class RowCols {
 
       const rowCol = new RowCol(this, index);
 
-      if (rowCol.getIsLastFrozen()) {
+      if (this.getIsLastFrozen(index)) {
         rowCol.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
 
         this.frozenLine = rowCol.gridLine;

@@ -101,7 +101,7 @@ class ScrollBar {
       xIndex
     );
 
-    return Math.max(0, yIndex - 1);
+    return yIndex;
   }
 
   setYIndex() {

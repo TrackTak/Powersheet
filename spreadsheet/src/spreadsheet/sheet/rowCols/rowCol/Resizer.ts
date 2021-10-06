@@ -59,22 +59,15 @@ class Resizer {
 
   private getPosition() {
     return (
-      this.rowCols.rowColMap
-        .get(this.currentIndex!)!
-        .headerGroup[this.rowCols.functions.axis]() +
-      this.rowCols.scrollBar.scroll
+      this.rowCols.getAxis(this.currentIndex) + this.rowCols.scrollBar.scroll
     );
   }
 
   showResizeMarker(index: number) {
     this.currentIndex = index;
 
-    const rowCol = this.rowCols.rowColMap.get(this.currentIndex!)!;
-
-    const clientRect = rowCol.headerGroup.getClientRect({ skipStroke: true });
-
     this.resizeMarker[this.rowCols.functions.axis](
-      this.getPosition() + clientRect[this.rowCols.functions.size]
+      this.getPosition() + this.rowCols.getSize(this.currentIndex)
     );
 
     this.resizeMarker.show();

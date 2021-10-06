@@ -32,7 +32,7 @@ export interface IRowColConfig {
   gridLine: LineConfig;
   frozenLine: LineConfig;
   headerRect: RectConfig;
-  headerText?: TextConfig;
+  headerText: TextConfig;
 }
 
 export interface IStyles {
@@ -48,6 +48,7 @@ export interface IStyles {
 const resizeMarkerSize = 7;
 const resizeHitStrokeWidth = 15;
 const strokeWidth = 1;
+const fontFamily = 'Arial';
 
 export const sharedStyles = {
   gridLine: {
@@ -78,6 +79,9 @@ export const sharedStyles = {
   },
   headerRect: {
     fill: '#f4f5f8',
+  },
+  headerText: {
+    fontFamily,
   },
   selection: {
     strokeWidth,
@@ -128,6 +132,7 @@ export const defaultStyles: IStyles = {
       ...sharedStyles.headerRect,
       width: 25,
     },
+    headerText: sharedStyles.headerText,
   },
   col: {
     frozenLine: sharedStyles.frozenLine,
@@ -148,6 +153,7 @@ export const defaultStyles: IStyles = {
       ...sharedStyles.headerRect,
       height: 20,
     },
+    headerText: sharedStyles.headerText,
   },
   cell: {
     rect: {
@@ -158,6 +164,7 @@ export const defaultStyles: IStyles = {
     },
     text: {
       type: 'cellText',
+      fontFamily,
       fontSize: 14,
       fill: 'black',
       align: 'left',

@@ -24,6 +24,7 @@ class ScrollBar {
   type: RowColType;
   isCol: boolean;
   functions: IRowColFunctions;
+  layerListeningTimeout?: NodeJS.Timeout;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
@@ -170,6 +171,17 @@ class ScrollBar {
     } else {
       this.sheet.cellEditor.hideCellTooltip();
     }
+
+    if (this.layerListeningTimeout) {
+      clearTimeout(this.layerListeningTimeout);
+    }
+
+    this.layerListeningTimeout = setTimeout(() => {
+      this.sheet.layer.listening(true);
+    }, 40);
+
+    // Improves performance by ~5fps
+    this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
       events.scroll[this.scrollType],

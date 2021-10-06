@@ -69,13 +69,13 @@ class Resizer {
   showResizeMarker(index: number) {
     this.currentIndex = index;
 
-    const headerGroup = this.rowCols.rowColMap.get(
-      this.currentIndex!
-    )!.headerGroup;
+    const rowCol = this.rowCols.rowColMap.get(this.currentIndex!)!;
 
-    const size = headerGroup[this.rowCols.functions.size]();
+    const clientRect = rowCol.headerGroup.getClientRect({ skipStroke: true });
 
-    this.resizeMarker[this.rowCols.functions.axis](this.getPosition() + size);
+    this.resizeMarker[this.rowCols.functions.axis](
+      this.getPosition() + clientRect[this.rowCols.functions.size]
+    );
 
     this.resizeMarker.show();
     this.resizeMarker.moveToTop();

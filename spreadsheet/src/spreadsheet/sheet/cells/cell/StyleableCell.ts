@@ -176,14 +176,14 @@ class StyleableCell extends Cell {
   setCellTextValue(value: string) {
     const { width } = this.getClientRectWithoutStroke();
 
-    const text = new Text({
+    this.text = new Text({
       ...this.spreadsheet.styles.cell.text,
       text: value,
       // Only set the width for text wrapping to work
       width,
     });
 
-    this.group.add(text);
+    this.group.add(this.text);
   }
 
   draw() {

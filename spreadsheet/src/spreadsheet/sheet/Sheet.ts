@@ -343,9 +343,8 @@ class Sheet {
       case 'Delete': {
         this.selector.selectedCells.forEach((cell) => {
           const simpleCellAddress = cell.simpleCellAddress;
-          const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
 
-          delete cellData?.value;
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         });
         break;
       }

@@ -294,6 +294,18 @@ class Data {
       this.setCellData(simpleCellAddress, cellData);
     }
   }
+
+  deleteCellDataValue(simpleCellAddress: SimpleCellAddress) {
+    const cellData = this.getCellData(simpleCellAddress);
+
+    if (cellData) {
+      delete cellData.value;
+
+      this.spreadsheet.hyperformula?.setCellContents(simpleCellAddress, null);
+
+      this.setCellData(simpleCellAddress, cellData);
+    }
+  }
 }
 
 export default Data;

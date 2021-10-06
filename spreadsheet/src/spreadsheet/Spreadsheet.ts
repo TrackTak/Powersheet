@@ -13,7 +13,7 @@ import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
-import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
+import Data, { ICellsData, ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
 
 export interface ISpreadsheetConstructor {
@@ -103,20 +103,34 @@ class Spreadsheet {
     this.switchSheet(0);
 
     this.sheets.forEach((sheet) => {
-      const cellsData = this.data.getSheetData().cellsData || {};
+      const cellsData = this.data.getSheetData(sheet.sheetId).cellsData || {};
 
-      Object.keys(cellsData).forEach((cellId) => {
-        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
-          sheet.sheetId,
-          cellId
-        );
-
-        this.data.setCellData(simpleCellAddress, cellsData[cellId], false);
-      });
+      this.data.setCellDataBatch(
+        this.convertCellsDataToCellsMap(cellsData, sheet.sheetId),
+        false
+      );
     });
 
     this.updateViewport();
   }
+
+  convertCellsDataToCellsMap = (
+    cellsData: ICellsData,
+    sheetId: number = this.activeSheetId
+  ) => {
+    const cellsMap = new Map();
+
+    Object.keys(cellsData).forEach((cellId) => {
+      const cellData = cellsData[cellId];
+
+      cellsMap.set(
+        SimpleCellAddress.cellIdToAddress(sheetId, cellId),
+        cellData
+      );
+    });
+
+    return cellsMap;
+  };
 
   getRegisteredFunctions() {
     return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');

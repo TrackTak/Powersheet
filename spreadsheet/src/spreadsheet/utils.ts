@@ -1,5 +1,7 @@
 import { Shape } from 'konva/lib/Shape';
 import { IRect, Vector2d } from 'konva/lib/types';
+import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import { ICellsData } from './sheet/Data';
 
 export const prefix = 'powersheet';
 

@@ -225,21 +225,20 @@ class Data {
     this.spreadsheet.eventEmitter.emit(events.sheet.setData, this, data, done);
   }
 
-  setCellDataBatch(cellDatas: Record<CellId, ICellData>) {
-    this.spreadsheet.addToHistory();
+  setCellDataBatch(
+    cellsData: Map<SimpleCellAddress, ICellData>,
+    addToHistory: boolean = true
+  ) {
+    if (addToHistory) {
+      this.spreadsheet.addToHistory();
+    }
+    this.spreadsheet.hyperformula?.suspendEvaluation();
 
-    Object.keys(cellDatas).forEach((cellId) => {
-      const cellData = cellDatas[cellId];
-
-      this.setCellData(
-        SimpleCellAddress.cellIdToAddress(
-          this.spreadsheet.activeSheetId!,
-          cellId
-        ),
-        cellData,
-        false
-      );
+    cellsData.forEach((cellData, simpleCellAddress) => {
+      this.setCellData(simpleCellAddress, cellData, false);
     });
+
+    this.spreadsheet.hyperformula?.resumeEvaluation();
   }
 
   setCellData(

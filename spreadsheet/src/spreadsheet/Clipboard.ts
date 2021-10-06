@@ -50,7 +50,7 @@ class Clipboard {
     );
 
     const sheetData = this.spreadsheet.data.getSheetData();
-    const cellDatas = pastedData.reduce((all, rowData, rowIndex) => {
+    const cellsData = pastedData.reduce((all, rowData, rowIndex) => {
       const colData = rowData.reduce(
         (allColumnData, currentValue, colIndex) => {
           this.sourceRange!.topLeftSimpleCellAddress.row +=
@@ -91,7 +91,9 @@ class Clipboard {
       };
     }, {});
 
-    this.spreadsheet.data.setCellDataBatch(cellDatas);
+    this.spreadsheet.data.setCellDataBatch(
+      this.spreadsheet.convertCellsDataToCellsMap(cellsData)
+    );
     this.spreadsheet.getActiveSheet()?.updateViewport();
     this.isCut = false;
   }

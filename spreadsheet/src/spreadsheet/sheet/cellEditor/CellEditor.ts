@@ -8,6 +8,7 @@ import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import HyperFormulaModule from '../../HyperFormula';
 import Cell from '../cells/cell/Cell';
+import { setCaretToEndOfElement } from '../../utils';
 
 export interface ICurrentScroll {
   row: number;
@@ -155,6 +156,9 @@ class CellEditor {
       this.setTextContent(
         this.spreadsheet.data.getCellData(simpleCellAddress)?.value ?? null
       );
+
+      setCaretToEndOfElement(this.cellEditorEl);
+
       this.cellEditorEl.focus();
     }
   }

@@ -82,3 +82,16 @@ export const reverseVectorsIfStartBiggerThanEnd = (
     isReversedY,
   };
 };
+
+export const setCaretToEndOfElement = (element: HTMLElement) => {
+  const range = document.createRange();
+  const sel = window.getSelection();
+
+  range.selectNodeContents(element);
+  range.collapse(false);
+
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+
+  range.detach();
+};

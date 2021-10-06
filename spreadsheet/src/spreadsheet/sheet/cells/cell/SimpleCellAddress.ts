@@ -29,6 +29,10 @@ class SimpleCellAddress {
   addressToCellId(): CellId {
     return SimpleCellAddress.rowColToCellId(this.row, this.col);
   }
+
+  toStringFormat() {
+    return `${this.sheet}_${this.row}_${this.col}`;
+  }
 }
 
 export default SimpleCellAddress;

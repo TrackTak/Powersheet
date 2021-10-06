@@ -248,8 +248,8 @@ class Selector {
 
   hasChangedCellSelection() {
     return (
-      this.selectedCell?.simpleCellAddress !==
-      this.previousSelectedSimpleCellAddress
+      this.selectedCell?.simpleCellAddress.toStringFormat() !==
+      this.previousSelectedSimpleCellAddress?.toStringFormat()
     );
   }
 }

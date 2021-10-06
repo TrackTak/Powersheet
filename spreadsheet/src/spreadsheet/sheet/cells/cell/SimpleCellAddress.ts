@@ -8,7 +8,7 @@ class SimpleCellAddress {
   }
 
   static rowColToCellId = (row: number, col: number): CellId => {
-    return `${row}_${col};`;
+    return `${row}_${col}`;
   };
 
   static cellIdToAddress(sheet: number, cellId: CellId) {

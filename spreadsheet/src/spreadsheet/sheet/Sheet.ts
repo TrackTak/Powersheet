@@ -167,8 +167,8 @@ class Sheet {
   };
 
   private updateSize() {
-    this.stage.width(this.sheetEl.offsetWidth);
-    this.stage.height(this.sheetEl.offsetHeight);
+    this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
+    this.stage.height(this.spreadsheet.sheetsEl.offsetHeight);
 
     this.sheet.width(this.stage.width() - this.getViewportVector().x);
     this.sheet.height(this.stage.height() - this.getViewportVector().y);

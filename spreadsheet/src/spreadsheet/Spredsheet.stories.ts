@@ -404,6 +404,8 @@ const MultipleSpreadsheetsTemplate: Story = () => {
   containerEl.appendChild(firstSpreadsheetEl);
   containerEl.appendChild(secondSpreadsheetEl);
 
+  containerEl.style.height = '50%';
+
   return containerEl;
 };
 

@@ -247,7 +247,7 @@ class Data {
     cellData: ICellData,
     addToHistory: boolean = true
   ) {
-    const data = this.getSheetData();
+    const data = this.getSheetData(simpleCellAddress.sheet);
     const cellId = simpleCellAddress.addressToCellId();
 
     const updatedData: ISheetData = {

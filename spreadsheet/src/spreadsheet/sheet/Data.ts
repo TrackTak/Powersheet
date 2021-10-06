@@ -250,9 +250,9 @@ class Data {
     const data = this.getSheetData();
     const cellId = simpleCellAddress.addressToCellId();
 
-    const updatedData = {
+    const updatedData: ISheetData = {
       ...data,
-      cellData: {
+      cellsData: {
         ...data.cellsData,
         [cellId]: cellData,
       },

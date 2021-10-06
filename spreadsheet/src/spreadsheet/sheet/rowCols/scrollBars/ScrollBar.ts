@@ -180,7 +180,7 @@ class ScrollBar {
       this.sheet.layer.listening(true);
     }, 40);
 
-    // Improves performance by ~5fps
+    // Improves performance by ~4fps
     this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(

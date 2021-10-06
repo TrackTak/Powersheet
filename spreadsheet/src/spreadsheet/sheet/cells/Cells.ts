@@ -80,20 +80,27 @@ class Cells {
     }
   }
 
+  private getShouldDraw = (
+    simpleCellAddress: SimpleCellAddress,
+    forceDraw: boolean
+  ) => {
+    const cellAlreadyExists = !!this.cellsMap.get(simpleCellAddress);
+    const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
+    const hasCellData = !!(
+      cellData || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
+    );
+
+    return (forceDraw || !cellAlreadyExists) && hasCellData;
+  };
+
   drawCell(simpleCellAddress: SimpleCellAddress, forceDraw: boolean) {
-    const cellAlreadyExists = this.cellsMap.get(simpleCellAddress);
+    if (!this.getShouldDraw(simpleCellAddress, forceDraw)) return;
 
-    const shouldDraw = forceDraw || !cellAlreadyExists;
+    const existingCell = this.sheet.cells.cellsMap.get(simpleCellAddress);
 
-    if (!shouldDraw) return;
-
-    if (this.sheet.cells.cellsMap.has(simpleCellAddress)) {
-      this.sheet.cells.cellsMap.get(simpleCellAddress)!.destroy();
-    }
+    existingCell?.destroy();
 
     const cell = new StyleableCell(this.sheet, simpleCellAddress);
-
-    cell.draw();
 
     this.sheet.cells.cellsMap.set(simpleCellAddress, cell);
   }

@@ -38,7 +38,6 @@ class RowCol {
     this.oppositeFunctions = rowCols.oppositeFunctions;
 
     this.headerGroup = new Group({
-      [this.functions.size]: this.rowCols.getSize(this.index),
       [this.functions.axis]: this.getAxis(),
     });
     this.headerRect = new Rect({

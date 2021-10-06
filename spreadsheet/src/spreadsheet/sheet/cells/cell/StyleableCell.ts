@@ -24,6 +24,8 @@ class StyleableCell extends Cell {
     public simpleCellAddress: SimpleCellAddress
   ) {
     super(sheet, simpleCellAddress);
+
+    this.draw();
   }
 
   private getBorder(type: BorderStyle) {
@@ -186,11 +188,6 @@ class StyleableCell extends Cell {
 
   draw() {
     const cellData = this.spreadsheet.data.getCellData(this.simpleCellAddress);
-    const shouldDraw =
-      cellData ||
-      this.spreadsheet.data.getIsCellAMergedCell(this.simpleCellAddress);
-
-    if (!shouldDraw) return;
 
     this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 

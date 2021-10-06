@@ -162,12 +162,6 @@ class RowCols {
 
   // forceDraw is turned off for scrolling for performance
   drawViewport(forceDraw = false) {
-    const getShouldDraw = (index: number) => {
-      const rowColAlreadyExists = !!this.rowColMap.get(index);
-
-      return forceDraw || !rowColAlreadyExists;
-    };
-
     const data = this.spreadsheet.data.getSheetData();
 
     if (data.frozenCells) {
@@ -175,17 +169,13 @@ class RowCols {
 
       if (!isNil(frozenCell)) {
         for (let index = 0; index <= frozenCell; index++) {
-          if (getShouldDraw(index)) {
-            this.draw(index);
-          }
+          this.draw(index, forceDraw);
         }
       }
     }
 
     for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      if (getShouldDraw(index)) {
-        this.draw(index);
-      }
+      this.draw(index, forceDraw);
     }
   }
 
@@ -249,7 +239,15 @@ class RowCols {
     };
   }
 
-  draw(index: number) {
+  private getShouldDraw = (index: number, forceDraw: boolean) => {
+    const rowColAlreadyExists = !!this.rowColMap.get(index);
+
+    return forceDraw || !rowColAlreadyExists;
+  };
+
+  draw(index: number, forceDraw: boolean) {
+    if (!this.getShouldDraw(index, forceDraw)) return;
+
     if (index < this.spreadsheet.options[this.type].amount) {
       const existingRowCol = this.rowColMap.get(index);
 

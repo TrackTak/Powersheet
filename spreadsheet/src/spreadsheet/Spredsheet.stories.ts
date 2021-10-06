@@ -303,9 +303,10 @@ MillionRows.args = {
   ...defaultStoryArgs,
   styles: {
     ...defaultStyles,
-    rowHeader: {
-      ...defaultStyles.rowHeader,
-      rect: {
+    row: {
+      ...defaultStyles.row,
+      headerRect: {
+        ...defaultStyles.row.headerRect,
         width: 50,
       },
     },
@@ -325,13 +326,17 @@ CustomStyles.args = {
   ...defaultStoryArgs,
   styles: {
     ...defaultStyles,
-    gridLine: {
-      ...defaultStyles.gridLine,
-      stroke: '#add8e6',
+    row: {
+      ...defaultStyles.row,
+      gridLine: {
+        ...defaultStyles.row.gridLine,
+        stroke: '#add8e6',
+      },
     },
     selection: {
       ...defaultStyles.cell,
       fill: 'orange',
+      opacity: 0.3,
     },
   },
 };

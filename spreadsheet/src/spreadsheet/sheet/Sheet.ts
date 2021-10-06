@@ -149,7 +149,7 @@ class Sheet {
     this.cols.scrollBar.setYIndex();
     this.rows.scrollBar.setYIndex();
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${18}px`;
@@ -183,7 +183,7 @@ class Sheet {
     context.reset();
     context.translate(0.5, 0.5);
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   onResize = () => {
@@ -370,7 +370,7 @@ class Sheet {
         }
     }
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
   };
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {

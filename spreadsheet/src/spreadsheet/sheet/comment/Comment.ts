@@ -69,7 +69,7 @@ class Comment {
       comment: this.textarea.value,
     });
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
     this.hide();
   };
 

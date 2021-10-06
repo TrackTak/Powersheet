@@ -162,7 +162,7 @@ class Resizer {
     });
 
     this.spreadsheet.data.setSheetData(newSheetData);
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(
       events.resize[this.rowCols.type].end,

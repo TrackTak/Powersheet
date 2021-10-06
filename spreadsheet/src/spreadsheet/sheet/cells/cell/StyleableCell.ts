@@ -307,7 +307,7 @@ class StyleableCell extends Cell {
             },
           },
         });
-        this.sheet.updateViewport();
+        this.spreadsheet.updateViewport();
       }
     }
     this.setCellTextHeight();

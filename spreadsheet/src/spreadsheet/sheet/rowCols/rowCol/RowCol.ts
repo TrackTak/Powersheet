@@ -331,7 +331,7 @@ class RowCol {
 
     this.spreadsheet.data.setSheetData(newSheetData);
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   getHeaderTextContent() {

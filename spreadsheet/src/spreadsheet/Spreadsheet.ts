@@ -143,9 +143,8 @@ class Spreadsheet {
   }
 
   addToHistory() {
-    const data = cloneDeep(this.data);
-
-    this.history.push(data);
+    // const data = cloneDeep(this.data);
+    // this.history.push(data);
   }
 
   undo() {

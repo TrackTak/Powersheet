@@ -94,7 +94,7 @@ class Clipboard {
     this.spreadsheet.data.setCellDataBatch(
       this.spreadsheet.convertCellsDataToCellsMap(cellsData)
     );
-    this.spreadsheet.getActiveSheet()?.updateViewport();
+    this.spreadsheet.updateViewport();
     this.isCut = false;
   }
 

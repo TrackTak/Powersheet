@@ -45,6 +45,7 @@ import {
 } from '../sheet/Data';
 import RangeSimpleCellAddress from '../sheet/cells/cell/RangeSimpleCellAddress';
 import SelectedCell from '../sheet/cells/cell/SelectedCell';
+import { merge } from 'lodash';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -700,13 +701,14 @@ class Toolbar {
           const simpleCellAddress =
             sheet.selector.selectedCell!.simpleCellAddress;
 
-          this.spreadsheet.data.setSheetData({
-            ...this.spreadsheet.data.getSheetData(),
+          const sheetData = merge({}, this.spreadsheet.data.getSheetData(), {
             frozenCells: {
               row: simpleCellAddress.row,
               col: simpleCellAddress.col,
             },
           });
+
+          this.spreadsheet.data.setSheetData(sheetData);
         }
         break;
       }

@@ -2,6 +2,7 @@ import Sheet from './Sheet';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
+import { merge } from 'lodash';
 
 class Merger {
   associatedMergedCellAddressMap: Map<
@@ -47,23 +48,21 @@ class Merger {
     const existingTopLeftCellStyle = this.spreadsheet.data.getCellData(
       rangeSimpleCellAddress.topLeftSimpleCellAddress
     )?.style;
-    const sheetData = this.spreadsheet.data.getSheetData();
 
-    this.spreadsheet.data.setSheetData({
-      ...sheetData,
-      mergedCells: {
-        [mergedCellId]: {
-          row: {
-            x: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
-            y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-          },
-          col: {
-            x: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
-            y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
-          },
+    const sheetData = merge({}, this.spreadsheet.data.getSheetData(), {
+      [mergedCellId]: {
+        row: {
+          x: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
+          y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+        },
+        col: {
+          x: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
+          y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
         },
       },
     });
+
+    this.spreadsheet.data.setSheetData(sheetData);
 
     for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {

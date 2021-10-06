@@ -14,6 +14,7 @@ import {
   TextWrap,
   VerticalTextAlign,
 } from '../../Data';
+import { merge } from 'lodash';
 
 class StyleableCell extends Cell {
   text?: Text;
@@ -299,14 +300,14 @@ class StyleableCell extends Cell {
       const cellHeight = this.getClientRectWithoutStroke().height;
 
       if (cellHeight > height) {
-        this.spreadsheet.data.setSheetData({
-          ...this.spreadsheet.data.getSheetData(),
+        const sheetData = merge({}, this.spreadsheet.data.getSheetData(), {
           row: {
             sizes: {
               [this.simpleCellAddress.row]: cellHeight,
             },
           },
         });
+        this.spreadsheet.data.setSheetData(sheetData);
         this.spreadsheet.updateViewport();
       }
     }

@@ -98,7 +98,22 @@ class RangeSimpleCellAddress {
       }
     }
 
-    return cells;
+    const filterOutAssociatedMergedCells = (cell: C) => {
+      const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
+        cell.simpleCellAddress.toStringFormat()
+      );
+
+      if (
+        !mergedCellAddress ||
+        sheet.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    return cells.filter(filterOutAssociatedMergedCells);
   }
 }
 

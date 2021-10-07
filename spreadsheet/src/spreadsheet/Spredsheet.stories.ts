@@ -224,14 +224,6 @@ MergedCells.args = {
     sheetData: [
       {
         sheetName: 'Merged Cells',
-        cellsData: {
-          '4_0': {
-            value: 'Merged Cells Sheet',
-          },
-          '10_1': {
-            value: 'Another value',
-          },
-        },
         mergedCells: {
           '3_1': {
             row: {

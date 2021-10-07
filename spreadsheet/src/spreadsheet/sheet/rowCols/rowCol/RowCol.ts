@@ -5,7 +5,7 @@ import { Text } from 'konva/lib/shapes/Text';
 import { isNil, merge } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import { centerRectTwoInRectOne } from '../../../utils';
-import SimpleCellAddress from '../../cells/cell/SimpleCellAddress';
+import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
 
@@ -59,8 +59,8 @@ class RowCol {
     this.gridLine = new Line({
       ...this.spreadsheet.styles[this.type].gridLine,
       [this.functions.axis]:
-        this.headerGroup[this.functions.axis]() +
-        this.headerGroup[this.functions.size]() -
+        this.rowCols.getAxis(this.index) +
+        this.rowCols.getSize(this.index) -
         this.sheet.getViewportVector()[this.functions.axis],
       points: this.getLinePoints(this.getSheetSize()),
     });
@@ -111,7 +111,6 @@ class RowCol {
   draw() {
     this.drawHeader();
     this.drawGridLine();
-    this.drawFrozenGridLine();
   }
 
   insert(amount: number) {
@@ -229,7 +228,7 @@ class RowCol {
       Object.keys(mergedCells)
         .sort(comparer)
         .forEach((topLeftCellId) => {
-          const mergedCell = mergedCells[topLeftCellId];
+          const mergedCell = mergedCells[topLeftCellId as CellId];
 
           if (mergedCell[this.type].x > this.index) {
             mergedCell[this.type].x = modifyCallback(
@@ -253,7 +252,7 @@ class RowCol {
         .forEach((cellId) => {
           const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
             this.sheet.sheetId,
-            cellId
+            cellId as CellId
           );
           const newSimpleCellAddress = new SimpleCellAddress(
             this.sheet.sheetId,
@@ -307,14 +306,16 @@ class RowCol {
   private getSizeUpToFrozenRowCol() {
     let size = 0;
 
-    for (const value of this.rowCols.getSizeForFrozenCell(this.oppositeType)) {
+    for (const value of this.sheet[
+      this.isCol ? 'rows' : 'cols'
+    ].getSizeForFrozenCell()) {
       size = value.size;
     }
 
     return size;
   }
 
-  private drawXFrozenGridLine(frozenCell: number) {
+  private setXFrozenGridLine(frozenCell: number) {
     const size = this.getSizeUpToFrozenRowCol();
 
     if (!this.isCol && this.index > frozenCell) {
@@ -331,7 +332,7 @@ class RowCol {
     }
   }
 
-  private drawYFrozenGridLine(frozenCell: number) {
+  private setYFrozenGridLine(frozenCell: number) {
     const size = this.getSizeUpToFrozenRowCol();
 
     if (!this.isCol && this.index < frozenCell) {
@@ -348,29 +349,13 @@ class RowCol {
     }
   }
 
-  private drawXYFrozenGridLine(frozenCell: number) {
+  private setXYFrozenGridLine(frozenCell: number) {
     const size = this.getSizeUpToFrozenRowCol();
 
     if (this.index < frozenCell) {
       this.xyFrozenLine = this.gridLine.clone({
         points: this.getLinePoints(size),
       });
-    }
-  }
-
-  private drawFrozenGridLine() {
-    const { frozenCells } = this.spreadsheet.data.getSheetData();
-    const frozenRow = frozenCells?.row;
-    const frozenCol = frozenCells?.col;
-    const frozenCell = frozenCells?.[this.type];
-
-    if (!isNil(frozenCell)) {
-      this.drawXFrozenGridLine(frozenCell);
-      this.drawYFrozenGridLine(frozenCell);
-    }
-
-    if (!isNil(!frozenRow) && !isNil(!frozenCol)) {
-      this.drawXYFrozenGridLine(frozenCell!);
     }
   }
 
@@ -382,6 +367,31 @@ class RowCol {
   }
 
   private drawGridLine() {
+    const { frozenCells } = this.spreadsheet.data.getSheetData();
+    const frozenRow = frozenCells?.row;
+    const frozenCol = frozenCells?.col;
+    const frozenCell = frozenCells?.[this.type];
+
+    if (!isNil(frozenCell)) {
+      this.setXFrozenGridLine(frozenCell);
+      this.setYFrozenGridLine(frozenCell);
+    }
+
+    if (!isNil(frozenRow) && !isNil(frozenCol)) {
+      this.setXYFrozenGridLine(frozenCell!);
+    }
+
+    if (this.xyFrozenLine) {
+      this.sheet.scrollGroups.xySticky.rowColGroup.add(this.xyFrozenLine!);
+    }
+
+    if (this.yFrozenLine) {
+      this.sheet.scrollGroups.ySticky.rowColGroup.add(this.yFrozenLine!);
+    }
+
+    if (this.xFrozenLine) {
+      this.sheet.scrollGroups.xSticky.rowColGroup.add(this.xFrozenLine!);
+    }
     this.sheet.scrollGroups.main.rowColGroup.add(this.gridLine);
   }
 

@@ -5,7 +5,6 @@ import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
 
 import { isNil } from 'lodash';
-import RangeSimpleCellAddress from '../cells/cell/RangeSimpleCellAddress';
 import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
@@ -204,9 +203,9 @@ class RowCols {
     this.scrollBar.setScrollSize();
   }
 
-  *getSizeForFrozenCell(type: RowColType = this.type) {
+  *getSizeForFrozenCell() {
     const { frozenCells } = this.spreadsheet.data.getSheetData();
-    const frozenCell = frozenCells?.[type];
+    const frozenCell = frozenCells?.[this.type];
 
     if (isNil(frozenCell)) return null;
 
@@ -277,6 +276,12 @@ class RowCols {
         rowCol.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
 
         this.frozenLine = rowCol.gridLine;
+
+        this.frozenLine[this.functions.axis](
+          this.getAxis(index) +
+            this.getSize(index) -
+            this.sheet.getViewportVector()[this.functions.axis]
+        );
 
         this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
       }

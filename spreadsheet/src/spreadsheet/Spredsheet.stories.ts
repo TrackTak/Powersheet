@@ -157,8 +157,8 @@ FrozenCells.args = {
       {
         sheetName: 'Frozen Cells',
         frozenCells: {
-          row: 3,
-          col: 3,
+          row: 2,
+          col: 2,
         },
         cellsData: {
           '1_0': {

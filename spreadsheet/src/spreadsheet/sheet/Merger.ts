@@ -5,7 +5,6 @@ import SimpleCellAddress, {
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { merge } from 'lodash';
-import { ISheetData } from './Data';
 
 class Merger {
   associatedMergedCellAddressMap: Map<

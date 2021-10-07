@@ -190,8 +190,6 @@ class StyleableCell extends Cell {
   draw() {
     const cellData = this.spreadsheet.data.getCellData(this.simpleCellAddress);
 
-    this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
-
     const style = cellData?.style;
     let value =
       this.spreadsheet.hyperformula?.getCellValue(this.simpleCellAddress) ??

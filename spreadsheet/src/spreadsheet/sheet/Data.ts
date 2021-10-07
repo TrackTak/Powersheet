@@ -178,7 +178,7 @@ class Data {
 
     if (data.mergedCells) {
       Object.keys(data.mergedCells).forEach((topLeftCellId) => {
-        const mergedCell = data.mergedCells![topLeftCellId];
+        const mergedCell = data.mergedCells![topLeftCellId as CellId];
 
         if (mergedCell.col.x < 0) {
           mergedCell.col.x = 0;
@@ -193,7 +193,7 @@ class Data {
           mergedCell.col.x
         );
 
-        delete data.mergedCells![topLeftCellId];
+        delete data.mergedCells![topLeftCellId as CellId];
 
         data.mergedCells![newTopLeftCellId] = mergedCell;
 

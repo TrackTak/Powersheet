@@ -15,11 +15,6 @@ class Cells {
     this.cellsMap = new Map();
   }
 
-  private clearAll() {
-    this.cellsMap.clear();
-    this.sheet.merger.associatedMergedCellAddressMap.clear();
-  }
-
   destroyOutOfViewportItems() {
     for (const [key, cell] of this.cellsMap) {
       if (this.sheet.isShapeOutsideOfViewport(cell.group)) {
@@ -106,7 +101,7 @@ class Cells {
   }
 
   updateViewport() {
-    this.clearAll();
+    this.cellsMap.clear();
     this.drawViewport(true);
   }
 }

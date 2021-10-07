@@ -40,9 +40,19 @@ class Cell {
     this.rect.height(this.sheet.rows.getSize(row));
 
     this.group.add(this.rect);
+
+    const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
+      simpleCellAddress.toStringFormat()
+    );
+
+    if (mergedCellAddress) {
+      this.setMergedCellProperties(mergedCellAddress);
+    }
   }
 
-  setMergedCellProperties(rangeSimpleCellAddress: RangeSimpleCellAddress) {
+  private setMergedCellProperties(
+    rangeSimpleCellAddress: RangeSimpleCellAddress
+  ) {
     this.rangeSimpleCellAddress = rangeSimpleCellAddress;
 
     let width = 0;
@@ -66,7 +76,7 @@ class Cell {
 
   getIsCellPartOfMerge() {
     return this.sheet.merger.associatedMergedCellAddressMap.has(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress
+      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.toStringFormat()
     );
   }
 

@@ -5,7 +5,9 @@ import { isText, isDate } from 'numfmt';
 import Sheet from './sheet/Sheet';
 import { ISheetData } from './sheet/Data';
 import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+} from './sheet/cells/cell/SimpleCellAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;
@@ -23,7 +25,8 @@ class Export {
       new SimpleCellAddress(sheet.sheetId, 0, 0)
     );
 
-    for (const cellId in cellsData) {
+    for (const key in cellsData) {
+      const cellId = key as CellId;
       const cell = cellsData[cellId];
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
         sheet.sheetId,
@@ -74,10 +77,11 @@ class Export {
       }
     }
 
-    for (const [simpleCellAddress, rangeSimpleCellAddress] of sheet.merger
+    for (const [simpleCellAddressFormat, rangeSimpleCellAddress] of sheet.merger
       .associatedMergedCellAddressMap) {
-      const isTopLeftCell =
-        this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress);
+      const isTopLeftCell = this.spreadsheet.data.getIsCellAMergedCell(
+        SimpleCellAddress.stringFormatToAddress(simpleCellAddressFormat)
+      );
 
       if (isTopLeftCell) {
         if (!worksheet['!merges']) {

@@ -87,27 +87,14 @@ class RangeSimpleCellAddress {
     sheet: Sheet,
     getCell: (simpleCellAddress: SimpleCellAddress) => C
   ) {
-    const mergedCellsAddedMap = new Map();
     const cells: C[] = [];
 
     for (const ri of this.iterateFromTopToBottom('row')) {
       for (const ci of this.iterateFromTopToBottom('col')) {
         const simpleCellAddress = new SimpleCellAddress(sheet.sheetId, ri, ci);
-        const mergedCellAddress =
-          sheet.merger.associatedMergedCellAddressMap.get(simpleCellAddress);
         const cell = getCell(simpleCellAddress);
 
-        if (mergedCellAddress) {
-          if (!mergedCellsAddedMap?.get(mergedCellAddress)) {
-            mergedCellsAddedMap?.set(mergedCellAddress, cell);
-
-            cell.setMergedCellProperties(mergedCellAddress);
-
-            cells.push(cell);
-          }
-        } else {
-          cells.push(cell);
-        }
+        cells.push(cell);
       }
     }
 

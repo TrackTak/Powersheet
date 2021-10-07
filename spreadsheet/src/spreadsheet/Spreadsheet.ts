@@ -14,7 +14,9 @@ import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
 import Data, { ICellsData, ISheetData, ISpreadsheetData } from './sheet/Data';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+} from './sheet/cells/cell/SimpleCellAddress';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
@@ -120,7 +122,8 @@ class Spreadsheet {
   ) => {
     const cellsMap = new Map();
 
-    Object.keys(cellsData).forEach((cellId) => {
+    Object.keys(cellsData).forEach((key) => {
+      const cellId = key as CellId;
       const cellData = cellsData[cellId];
 
       cellsMap.set(

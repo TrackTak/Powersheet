@@ -1,12 +1,16 @@
 import Sheet from './Sheet';
-import SimpleCellAddress from './cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+  SimpleCellAddressStringFormat,
+} from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { merge } from 'lodash';
+import { IMergedCellData } from './Data';
 
 class Merger {
   associatedMergedCellAddressMap: Map<
-    SimpleCellAddress,
+    SimpleCellAddressStringFormat,
     RangeSimpleCellAddress
   >;
   spreadsheet: Spreadsheet;
@@ -15,35 +19,37 @@ class Merger {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.associatedMergedCellAddressMap = new Map();
+
+    const mergedCells = this.spreadsheet.data.getSheetData().mergedCells;
+
+    for (const mergedCellId in mergedCells) {
+      const mergedCellData = mergedCells[mergedCellId as CellId];
+
+      this.setAssociatedMergedCellId(mergedCellData);
+    }
   }
 
-  setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
-    const cellId = simpleCellAddress.addressToCellId();
-    const { mergedCells } = this.spreadsheet.data.getSheetData();
-    const mergedCell = mergedCells?.[cellId];
+  private setAssociatedMergedCellId(mergedCellData: IMergedCellData) {
+    const { row, col } = mergedCellData;
+    const sheetId = this.sheet.sheetId;
 
-    if (mergedCell) {
-      const sheetId = this.sheet.sheetId;
-      const { row, col } = mergedCell;
+    const rangeSimpleCellAddress = new RangeSimpleCellAddress(
+      new SimpleCellAddress(sheetId, row.x, col.x),
+      new SimpleCellAddress(sheetId, row.y, col.y)
+    );
 
-      const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-        new SimpleCellAddress(sheetId, row.x, col.x),
-        new SimpleCellAddress(sheetId, row.y, col.y)
-      );
+    for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+      for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+        const associatedSimpleCellAddress = new SimpleCellAddress(
+          sheetId,
+          ri,
+          ci
+        );
 
-      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-          const associatedSimpleCellAddress = new SimpleCellAddress(
-            sheetId,
-            ri,
-            ci
-          );
-
-          this.associatedMergedCellAddressMap.set(
-            associatedSimpleCellAddress,
-            rangeSimpleCellAddress
-          );
-        }
+        this.associatedMergedCellAddressMap.set(
+          associatedSimpleCellAddress.toStringFormat(),
+          rangeSimpleCellAddress
+        );
       }
     }
   }

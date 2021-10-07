@@ -425,7 +425,9 @@ class Sheet {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
         const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
         const existingRangeSimpleCellAddress =
-          this.merger.associatedMergedCellAddressMap.get(simpleCellAddress);
+          this.merger.associatedMergedCellAddressMap.get(
+            simpleCellAddress.toStringFormat()
+          );
 
         if (existingRangeSimpleCellAddress) {
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(

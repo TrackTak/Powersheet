@@ -1,5 +1,5 @@
 import EventEmitter from 'eventemitter3';
-import { cloneDeep, isNil, merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import { defaultOptions, IOptions } from './options';
 import Sheet, { SheetId } from './sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';

@@ -83,6 +83,8 @@ class Selector {
         }
       );
 
+      console.log(this.selectedCells);
+
       this.groupedCells = {
         main: {
           cells: [],
@@ -113,26 +115,23 @@ class Selector {
         if (cells.length) {
           const topLeftCellClientRect = cells[0].getClientRectWithoutStroke();
 
-          let minCol = -Infinity;
-          let minRow = -Infinity;
           let width = 0;
           let height = 0;
 
-          cells.forEach((cell) => {
-            const clientRect = cell.getClientRectWithoutStroke();
-            const { topLeftSimpleCellAddress, bottomRightSimpleCellAddress } =
-              cell.rangeSimpleCellAddress;
+          const minMaxRangeSimpleCellAddress =
+            this.sheet.getMinMaxRangeSimpleCellAddress(cells);
 
-            if (topLeftSimpleCellAddress.col > minCol) {
-              minCol = topLeftSimpleCellAddress.col;
-              width += clientRect.width;
-            }
+          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+            'row'
+          )) {
+            height += this.sheet.rows.getSize(index);
+          }
 
-            if (bottomRightSimpleCellAddress.row > minRow) {
-              minRow = bottomRightSimpleCellAddress.row;
-              height += clientRect.height;
-            }
-          });
+          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+            'col'
+          )) {
+            width += this.sheet.cols.getSize(index);
+          }
 
           const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
 

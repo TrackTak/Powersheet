@@ -901,7 +901,8 @@ class Toolbar {
   }
 
   setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
-    const isMerged = selectedCell.getIsCellPartOfMerge();
+    const isMerged =
+      selectedCell.getIsCellPartOfMerge() && selectedCells.length === 1;
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false;

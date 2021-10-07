@@ -83,8 +83,6 @@ class Selector {
         }
       );
 
-      console.log(this.selectedCells);
-
       this.groupedCells = {
         main: {
           cells: [],

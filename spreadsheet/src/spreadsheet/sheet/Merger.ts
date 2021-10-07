@@ -31,10 +31,16 @@ class Merger {
         new SimpleCellAddress(sheetId, row.y, col.y)
       );
 
-      for (const _ of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-        for (const __ of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+          const associatedSimpleCellAddress = new SimpleCellAddress(
+            sheetId,
+            ri,
+            ci
+          );
+
           this.associatedMergedCellAddressMap.set(
-            simpleCellAddress,
+            associatedSimpleCellAddress,
             rangeSimpleCellAddress
           );
         }
@@ -126,10 +132,16 @@ class Merger {
     )?.style;
 
     if (style) {
-      for (const _ of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-        for (const __ of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+          const associatedSimpleCellAddress = new SimpleCellAddress(
+            rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet,
+            ri,
+            ci
+          );
+
           this.spreadsheet.data.setCellDataStyle(
-            rangeSimpleCellAddress.topLeftSimpleCellAddress,
+            associatedSimpleCellAddress,
             style
           );
         }

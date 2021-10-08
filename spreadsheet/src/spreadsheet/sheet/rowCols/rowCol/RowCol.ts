@@ -203,15 +203,18 @@ class RowCol {
     ) => void,
     comparer?: (a: string, b: string) => number
   ) {
-    const data = this.spreadsheet.data.getSheetData();
-    const { frozenCells, mergedCells, cellsData } = data;
+    const { frozenCells, mergedCells, cellsData, ...data } =
+      this.spreadsheet.data.getSheetData();
     const sizes = data[this.type]?.sizes!;
 
     if (this.rowCols.getIsFrozen(this.index)) {
-      frozenCells![this.type] = modifyCallback(
-        frozenCells![this.type]!,
-        amount
-      );
+      this.spreadsheet.data.setSheetData({
+        ...this.spreadsheet.data.getSheetData(),
+        frozenCells: {
+          ...frozenCells,
+          [this.type]: amount,
+        },
+      });
     }
 
     if (data[this.type]?.sizes) {
@@ -278,16 +281,6 @@ class RowCol {
         [this.index, amount]
       );
     }
-    const newSheetData = merge({}, this.spreadsheet.data.getSheetData(), {
-      [this.type]: {
-        sizes,
-      },
-      frozenCells,
-      mergedCells,
-      cellsData,
-    });
-
-    this.spreadsheet.data.setSheetData(newSheetData);
 
     this.spreadsheet.updateViewport();
   }

@@ -128,7 +128,7 @@ class Clipboard {
           sourceRange.topLeftSimpleCellAddress.sheet,
           row,
           col
-        ).addressToCellId();
+        ).toCellId();
 
         return data.cellsData?.[sourceCellId];
       })

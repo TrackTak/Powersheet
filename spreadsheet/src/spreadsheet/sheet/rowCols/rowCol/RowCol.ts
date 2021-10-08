@@ -140,7 +140,7 @@ class RowCol {
         if (simpleCellAddress[this.type] >= this.index) {
           this.spreadsheet.data.setCellData(
             newSimpleCellAddress,
-            cellsData![simpleCellAddress.addressToCellId()]
+            cellsData![simpleCellAddress.toCellId()]
           );
           this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
@@ -182,7 +182,7 @@ class RowCol {
         if (simpleCellAddress[this.type] > this.index) {
           this.spreadsheet.data.setCellData(
             newSimpleCellAddress,
-            cellsData![simpleCellAddress.addressToCellId()]
+            cellsData![simpleCellAddress.toCellId()]
           );
         }
 

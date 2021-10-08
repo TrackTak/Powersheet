@@ -44,7 +44,7 @@ class Cell {
     this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 
     const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
-      simpleCellAddress.toStringFormat()
+      simpleCellAddress.toCellId()
     );
 
     if (mergedCellAddress) {
@@ -78,7 +78,7 @@ class Cell {
 
   getIsCellPartOfMerge() {
     return this.sheet.merger.associatedMergedCellAddressMap.has(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.toStringFormat()
+      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
     );
   }
 

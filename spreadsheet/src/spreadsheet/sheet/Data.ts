@@ -1,8 +1,8 @@
-import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
+import { RowColId } from './rowCols/RowCols';
 import { SheetId } from './Sheet';
 
 export type TextWrap = 'wrap';
@@ -13,7 +13,15 @@ export type BorderStyle =
   | 'borderTop'
   | 'borderRight'
   | 'borderBottom';
-export interface ICellStyle {
+
+export type FrozenCellId = number;
+export type MergedRowId = number;
+export type MergedColId = number;
+export type MergedCellId = number;
+export type SizeId = number;
+
+export interface ICellStyleData {
+  id: CellId;
   borders?: BorderStyle[];
   backgroundColor?: string;
   fontColor?: string;
@@ -28,49 +36,94 @@ export interface ICellStyle {
   verticalTextAlign?: VerticalTextAlign;
 }
 export interface ICellData {
-  style?: ICellStyle;
+  id: CellId;
+  style?: CellId;
   value?: string;
   comment?: string;
 }
 
-export interface IFrozenCellsData {
-  row?: number;
-  col?: number;
+export interface ISheetData {
+  id: SheetId;
+  sheetName: string;
+  frozenCells?: FrozenCellId;
+  mergedCells?: MergedCellId[];
+  rowSizes?: SizeId[];
+  colSizes?: SizeId[];
+  cells?: CellId[];
+}
+
+export interface IFrozenCellData {
+  id: FrozenCellId;
+  row?: RowColId;
+  col?: RowColId;
+}
+
+export interface IMergedRowData {
+  id: MergedRowId;
+  x: number;
+  y: number;
+}
+
+export interface IMergedColData {
+  id: MergedColId;
+  x: number;
+  y: number;
 }
 
 export interface IMergedCellData {
-  row: Vector2d;
-  col: Vector2d;
+  id: MergedCellId;
+  mergedRow: MergedRowId;
+  mergedCol: MergedColId;
 }
 
-export interface IMergedCellsData {
-  [index: CellId]: IMergedCellData;
+export interface ISizeData {
+  id: SizeId;
+  size: number;
+}
+
+export interface IMergedRowsData {
+  [index: MergedRowId]: IMergedRowData;
+}
+
+export interface IMergedColsData {
+  [index: MergedColId]: IMergedColData;
 }
 
 export interface ISizesData {
-  [index: number]: number;
-}
-
-export interface IRowColData {
-  sizes?: ISizesData;
-}
-
-export interface ISheetData {
-  sheetName: string;
-  frozenCells?: IFrozenCellsData;
-  mergedCells?: IMergedCellsData;
-  cellsData?: ICellsData;
-  row?: IRowColData;
-  col?: IRowColData;
+  [index: SizeId]: ISizeData;
 }
 
 export interface ICellsData {
-  [cellId: CellId]: ICellData;
+  [index: CellId]: ICellData;
+}
+
+export interface ICellStylesData {
+  [index: CellId]: ICellStyleData;
+}
+
+export interface ISheetsData {
+  [index: SheetId]: ISheetData;
+}
+
+export interface IFrozenCellsData {
+  [index: string]: IFrozenCellData;
+}
+
+export interface IMergedCellsData {
+  [index: MergedCellId]: IMergedCellData;
 }
 
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string;
-  sheetData: ISheetData[];
+  frozenCells?: IFrozenCellsData;
+  mergedCells?: IMergedCellsData;
+  mergedRows?: IMergedRowsData;
+  mergedCols?: IMergedColsData;
+  rowSizes?: ISizesData;
+  colSizes?: ISizesData;
+  cells?: ICellsData;
+  cellStyles?: ICellStylesData;
+  sheets?: ISheetsData;
 }
 
 class Data {
@@ -82,16 +135,13 @@ class Data {
     spreadsheetData?: Partial<ISpreadsheetData>
   ) {
     this.spreadsheet = spreadsheet;
-    this.spreadsheetData = {
-      sheetData: [],
-      ...spreadsheetData,
-    };
+    this.spreadsheetData = spreadsheetData ?? {};
   }
 
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
     const data = this.getSheetData();
 
-    return !!data.mergedCells?.[simpleCellAddress.addressToCellId()];
+    return !!data.mergedCells?.[simpleCellAddress.toCellId()];
   }
 
   getSheetData(sheetId = this.spreadsheet.activeSheetId!): ISheetData {
@@ -100,14 +150,14 @@ class Data {
 
   getCellData(simpleCellAddress: SimpleCellAddress) {
     return this.getSheetData(simpleCellAddress.sheet).cellsData?.[
-      simpleCellAddress.addressToCellId()
+      simpleCellAddress.toCellId()
     ];
   }
 
   deleteCellData(simpleCellAddress: SimpleCellAddress) {
     const newSheetData = this.getSheetData(simpleCellAddress.sheet);
 
-    delete newSheetData.cellsData?.[simpleCellAddress.addressToCellId()];
+    delete newSheetData.cellsData?.[simpleCellAddress.toCellId()];
 
     this.setSheetData(newSheetData, true, simpleCellAddress.sheet);
   }
@@ -247,7 +297,7 @@ class Data {
     addToHistory: boolean = true
   ) {
     const data = this.getSheetData(simpleCellAddress.sheet);
-    const cellId = simpleCellAddress.addressToCellId();
+    const cellId = simpleCellAddress.toCellId();
 
     const updatedData: ISheetData = {
       ...data,

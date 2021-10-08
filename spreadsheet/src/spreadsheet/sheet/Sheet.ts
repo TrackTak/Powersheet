@@ -430,7 +430,7 @@ class Sheet {
         const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
         const existingRangeSimpleCellAddress =
           this.merger.associatedMergedCellAddressMap.get(
-            simpleCellAddress.toStringFormat()
+            simpleCellAddress.toCellId()
           );
 
         if (existingRangeSimpleCellAddress) {

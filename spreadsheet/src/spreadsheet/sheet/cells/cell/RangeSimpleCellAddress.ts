@@ -100,7 +100,7 @@ class RangeSimpleCellAddress {
 
     const filterOutAssociatedMergedCells = (cell: C) => {
       const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
-        cell.simpleCellAddress.toStringFormat()
+        cell.simpleCellAddress.toCellId()
       );
 
       if (

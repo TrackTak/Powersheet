@@ -18,11 +18,11 @@ export interface IRowColFunctions {
 
 export type HeaderGroupId = number;
 
-export type RowColIndex = number;
+export type RowColId = number;
 
 class RowCols {
   scrollBar: ScrollBar;
-  rowColMap: Map<RowColIndex, RowCol>;
+  rowColMap: Map<RowColId, RowCol>;
   totalSize: number;
   frozenLine?: Line;
   functions: IRowColFunctions;

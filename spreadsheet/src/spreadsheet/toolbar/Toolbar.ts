@@ -39,7 +39,6 @@ import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import {
   BorderStyle,
   HorizontalTextAlign,
-  ICellStyle,
   TextWrap,
   VerticalTextAlign,
 } from '../sheet/Data';

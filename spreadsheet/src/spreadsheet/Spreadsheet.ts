@@ -13,10 +13,8 @@ import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
-import Data, { ICellsData, ISheetData, ISpreadsheetData } from './sheet/Data';
-import SimpleCellAddress, {
-  CellId,
-} from './sheet/cells/cell/SimpleCellAddress';
+import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
+import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
@@ -92,48 +90,34 @@ class Spreadsheet {
       return currentData;
     }, this.options.undoRedoLimit);
 
-    if (this.data.spreadsheetData.sheetData.length) {
-      this.data.spreadsheetData.sheetData.forEach((data) => {
-        this.createNewSheet(data);
-      });
-    } else {
-      this.createNewSheet({
+    this.data.spreadsheetData.sheets = {
+      ...this.data.spreadsheetData.sheets,
+      0: {
+        id: 0,
         sheetName: this.getSheetName(),
+        ...this.data.spreadsheetData.sheets?.[0],
+      },
+    };
+
+    for (const key in this.data.spreadsheetData.sheets) {
+      const sheet = this.data.spreadsheetData.sheets[key];
+
+      this.createNewSheet(sheet);
+
+      sheet.cells?.forEach((cellId) => {
+        const cell = this.data.spreadsheetData.cells?.[cellId];
+
+        this.hyperformula?.setCellContents(
+          SimpleCellAddress.cellIdToAddress(cellId),
+          cell?.value
+        );
       });
     }
 
     this.switchSheet(0);
 
-    this.sheets.forEach((sheet) => {
-      const cellsData = this.data.getSheetData(sheet.sheetId).cellsData || {};
-
-      this.data.setCellDataBatch(
-        this.convertCellsDataToCellsMap(cellsData, sheet.sheetId),
-        false
-      );
-    });
-
     this.updateViewport();
   }
-
-  convertCellsDataToCellsMap = (
-    cellsData: ICellsData,
-    sheetId: number = this.activeSheetId
-  ) => {
-    const cellsMap = new Map();
-
-    Object.keys(cellsData).forEach((key) => {
-      const cellId = key as CellId;
-      const cellData = cellsData[cellId];
-
-      cellsMap.set(
-        SimpleCellAddress.cellIdToAddress(sheetId, cellId),
-        cellData
-      );
-    });
-
-    return cellsMap;
-  };
 
   getRegisteredFunctions() {
     return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
@@ -220,14 +204,11 @@ class Spreadsheet {
   }
 
   createNewSheet(data: ISheetData) {
-    const sheetId =
-      this.hyperformula?.getSheetId(data.sheetName) ?? this.totalSheetCount;
+    this.data.addSheetData(data.id, data);
 
-    this.data.addSheetData(sheetId, data);
+    const sheet = new Sheet(this, data.id);
 
-    const sheet = new Sheet(this, sheetId);
-
-    this.sheets.set(sheetId, sheet);
+    this.sheets.set(data.id, sheet);
 
     this.totalSheetCount++;
 

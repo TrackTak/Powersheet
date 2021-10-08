@@ -1,16 +1,11 @@
 import Sheet from './Sheet';
-import SimpleCellAddress, {
-  SimpleCellAddressStringFormat,
-} from './cells/cell/SimpleCellAddress';
+import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { merge } from 'lodash';
 
 class Merger {
-  associatedMergedCellAddressMap: Map<
-    SimpleCellAddressStringFormat,
-    RangeSimpleCellAddress
-  >;
+  associatedMergedCellAddressMap: Map<CellId, RangeSimpleCellAddress>;
   spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
@@ -20,7 +15,7 @@ class Merger {
   }
 
   setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
-    const cellId = simpleCellAddress.addressToCellId();
+    const cellId = simpleCellAddress.toCellId();
     const { mergedCells } = this.spreadsheet.data.getSheetData();
     const mergedCell = mergedCells?.[cellId];
 
@@ -42,7 +37,7 @@ class Merger {
           );
 
           this.associatedMergedCellAddressMap.set(
-            associatedSimpleCellAddress.toStringFormat(),
+            associatedSimpleCellAddress.toCellId(),
             rangeSimpleCellAddress
           );
         }
@@ -52,7 +47,7 @@ class Merger {
 
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const mergedCellId =
-      rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToCellId();
+      rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
     const existingTopLeftCellStyle = this.spreadsheet.data.getCellData(
       rangeSimpleCellAddress.topLeftSimpleCellAddress
     )?.style;
@@ -81,10 +76,10 @@ class Merger {
           ri,
           ci
         );
-        const cellId = simpleCellAddress.addressToCellId();
+        const cellId = simpleCellAddress.toCellId();
 
         if (
-          simpleCellAddress.addressToCellId() !== mergedCellId &&
+          simpleCellAddress.toCellId() !== mergedCellId &&
           sheetData.cellsData?.[cellId]
         ) {
           this.spreadsheet.data.deleteCellData(simpleCellAddress);
@@ -119,7 +114,7 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
-          const cellId = simpleCellAddress.addressToCellId();
+          const cellId = simpleCellAddress.toCellId();
 
           delete mergedCells[cellId];
         }

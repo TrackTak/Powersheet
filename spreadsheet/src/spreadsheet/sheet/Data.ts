@@ -109,7 +109,7 @@ class Data {
 
     delete newSheetData.cellsData?.[simpleCellAddress.addressToCellId()];
 
-    this.setSheetData(newSheetData);
+    this.setSheetData(newSheetData, true, simpleCellAddress.sheet);
   }
 
   deleteSheetData(sheetId: SheetId) {

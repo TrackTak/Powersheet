@@ -364,6 +364,10 @@ class Sheet {
         this.spreadsheet.clipboard.copy();
         break;
       }
+      case e.ctrlKey && 'v': {
+        this.spreadsheet.clipboard.paste();
+        break;
+      }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           this.cellEditor.show(this.selector.selectedCell!);

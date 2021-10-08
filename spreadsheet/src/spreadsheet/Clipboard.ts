@@ -42,48 +42,41 @@ class Clipboard {
       return;
     }
 
-    let pastedData = this.getRange(this.sourceRange, targetRange, true);
+    let rangeData = this.getRange(this.sourceRange, targetRange);
 
     this.spreadsheet.hyperformula?.setCellContents(
       targetRange.topLeftSimpleCellAddress,
-      pastedData
+      rangeData.map((arr) => arr.map((cell) => cell?.value))
     );
 
-    const sheetData = this.spreadsheet.data.getSheetData();
-    const cellsData = pastedData.reduce((all, rowData, rowIndex) => {
-      const colData = rowData.reduce(
-        (allColumnData, currentValue, colIndex) => {
-          this.sourceRange!.topLeftSimpleCellAddress.row +=
-            rowIndex % this.sourceRange!.height();
+    const cellsData = rangeData.reduce((all, rowData, rowIndex) => {
+      const colData = rowData.reduce((cellsData, cellData, colIndex) => {
+        let row = this.sourceRange!.topLeftSimpleCellAddress.row;
+        let col = this.sourceRange!.topLeftSimpleCellAddress.col;
 
-          this.sourceRange!.topLeftSimpleCellAddress.col +=
-            colIndex % this.sourceRange!.width();
+        row += rowIndex % this.sourceRange!.height();
+        col += colIndex % this.sourceRange!.width();
 
-          const sourceCellId =
-            this.sourceRange!.topLeftSimpleCellAddress.addressToCellId();
-          const targetCellId = SimpleCellAddress.rowColToCellId(
-            targetRange.topLeftSimpleCellAddress.row + rowIndex,
-            targetRange.topLeftSimpleCellAddress.col + colIndex
+        const targetCellId = SimpleCellAddress.rowColToCellId(
+          targetRange.topLeftSimpleCellAddress.row + rowIndex,
+          targetRange.topLeftSimpleCellAddress.col + colIndex
+        );
+
+        if (this.isCut) {
+          this.spreadsheet.data.deleteCellData(
+            new SimpleCellAddress(
+              this.sourceRange!.topLeftSimpleCellAddress.sheet,
+              row,
+              col
+            )
           );
+        }
 
-          const sourceCellData = sheetData?.cellsData?.[sourceCellId] ?? {};
-
-          if (this.isCut) {
-            this.spreadsheet.data.deleteCellData(
-              this.sourceRange!.topLeftSimpleCellAddress
-            );
-          }
-
-          return {
-            ...allColumnData,
-            [targetCellId]: {
-              ...sourceCellData,
-              value: currentValue,
-            },
-          };
-        },
-        {}
-      );
+        return {
+          ...cellsData,
+          [targetCellId]: cellData,
+        };
+      }, {});
 
       return {
         ...all,
@@ -95,46 +88,49 @@ class Clipboard {
       this.spreadsheet.convertCellsDataToCellsMap(cellsData)
     );
     this.spreadsheet.updateViewport();
-    this.isCut = false;
+
+    if (this.isCut) {
+      this.sourceRange = null;
+      this.isCut = false;
+    }
   }
 
   private getRange = (
     sourceRange: RangeSimpleCellAddress,
-    targetRange: RangeSimpleCellAddress,
-    offset: boolean
+    targetRange: RangeSimpleCellAddress
   ) => {
     const data = this.spreadsheet.data.getSheetData(
-      targetRange.topLeftSimpleCellAddress.sheet
+      sourceRange.topLeftSimpleCellAddress.sheet
     );
 
     return targetRange.getArrayOfAddresses().map((arr) =>
-      arr.map((address) => {
+      arr.map((targetSimpleCellAddress) => {
         const height = sourceRange.height();
         const width = sourceRange.width();
 
         const row =
-          ((((address.row -
-            (offset ? targetRange : sourceRange).topLeftSimpleCellAddress.row) %
+          ((((targetSimpleCellAddress.row -
+            targetRange.topLeftSimpleCellAddress.row) %
             height) +
             height) %
             height) +
           sourceRange.topLeftSimpleCellAddress.row;
 
         const col =
-          ((((address.col -
-            (offset ? targetRange : sourceRange).topLeftSimpleCellAddress.col) %
+          ((((targetSimpleCellAddress.col -
+            targetRange.topLeftSimpleCellAddress.col) %
             width) +
             width) %
             width) +
           sourceRange.topLeftSimpleCellAddress.col;
 
-        const cellId = new SimpleCellAddress(
-          targetRange.topLeftSimpleCellAddress.sheet,
+        const sourceCellId = new SimpleCellAddress(
+          sourceRange.topLeftSimpleCellAddress.sheet,
           row,
           col
         ).addressToCellId();
 
-        return data.cellsData?.[cellId].value;
+        return data.cellsData?.[sourceCellId];
       })
     );
   };

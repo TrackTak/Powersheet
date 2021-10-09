@@ -155,7 +155,7 @@ class RowCol {
             newSimpleCellAddress,
             cells![simpleCellAddress.toCellId()]
           );
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
         }
       },
       (a, b) => {
@@ -208,7 +208,7 @@ class RowCol {
           );
         }
 
-        this.spreadsheet.data.deleteCellData(simpleCellAddress);
+        this.spreadsheet.data.deleteCell(simpleCellAddress);
       }
     );
   }

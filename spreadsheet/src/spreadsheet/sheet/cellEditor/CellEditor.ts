@@ -78,7 +78,7 @@ class CellEditor {
       });
     } else {
       if (cellData) {
-        this.spreadsheet.data.deleteCellData(simpleCellAddress);
+        this.spreadsheet.data.deleteCell(simpleCellAddress);
       }
     }
   }

@@ -73,7 +73,7 @@ class Merger {
         );
 
         if (simpleCellAddress.toCellId() !== mergedCellId) {
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
         }
       }
     }
@@ -105,7 +105,9 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          delete this.spreadsheet.data.spreadsheetData.mergedCells?.[
+            simpleCellAddress.toCellId()
+          ];
         }
       }
     });

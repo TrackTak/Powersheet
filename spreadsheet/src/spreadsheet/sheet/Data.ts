@@ -139,6 +139,15 @@ class Data {
         id: cellId,
       },
     };
+
+    try {
+      this.spreadsheet.hyperformula?.setCellContents(
+        simpleCellAddress,
+        this.spreadsheetData.cells[cellId]?.value
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   setCellStyle(
@@ -163,10 +172,12 @@ class Data {
     };
   }
 
-  deleteCellData(simpleCellAddress: SimpleCellAddress) {
+  deleteCell(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
 
     this.deleteCellStyle(simpleCellAddress);
+
+    this.spreadsheet.hyperformula?.setCellContents(simpleCellAddress, null);
 
     delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
   }
@@ -174,13 +185,13 @@ class Data {
   deleteCellStyle(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
 
-    delete this.spreadsheetData.cells?.[cellId].style;
+    delete this.spreadsheetData.cells?.[cellId]?.style;
     delete this.spreadsheetData.cellStyles?.[cellId];
   }
 
   setMergedCell(
     simpleCellAddress: SimpleCellAddress,
-    mergedCellData: Omit<IMergedCellData, 'id'>
+    mergedCell: Omit<IMergedCellData, 'id'>
   ) {
     const mergedCellId = simpleCellAddress.toCellId();
 
@@ -190,21 +201,18 @@ class Data {
       Partial<IMergedCellsData>
     >({}, this.spreadsheetData.mergedCells, {
       [mergedCellId]: {
-        ...mergedCellData,
+        ...mergedCell,
         id: mergedCellId,
       },
     });
   }
 
-  setFrozenCell(
-    sheetId: SheetId,
-    frozenCellData?: Omit<IFrozenCellData, 'id'>
-  ) {
+  setFrozenCell(sheetId: SheetId, frozenCell?: Omit<IFrozenCellData, 'id'>) {
     this.spreadsheetData.frozenCells = {
       ...this.spreadsheetData.frozenCells,
       [sheetId]: {
         ...this.spreadsheetData.frozenCells?.[sheetId],
-        ...frozenCellData,
+        ...frozenCell,
         id: sheetId,
       },
     };

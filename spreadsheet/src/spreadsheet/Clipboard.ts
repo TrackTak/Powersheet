@@ -70,7 +70,7 @@ class Clipboard {
             col
           );
 
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
         }
 
         if (cellData?.style) {

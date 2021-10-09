@@ -345,7 +345,7 @@ class Sheet {
         this.selector.selectedCells.forEach((cell) => {
           const simpleCellAddress = cell.simpleCellAddress;
 
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
         });
         break;
       }

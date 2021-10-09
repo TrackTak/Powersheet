@@ -92,29 +92,23 @@ class Spreadsheet {
       return currentData;
     }, this.options.undoRedoLimit);
 
-    this.data.spreadsheetData.sheets = {
-      ...this.data.spreadsheetData.sheets,
-      0: {
-        id: 0,
-        sheetName: this.getSheetName(),
-        ...this.data.spreadsheetData.sheets?.[0],
-      },
-    };
+    this.data.setSheetData(0);
 
     for (const key in this.data.spreadsheetData.sheets) {
-      const sheet = this.data.spreadsheetData.sheets[key];
+      const sheetId = parseInt(key, 10);
+      const sheet = this.data.spreadsheetData.sheets[sheetId];
 
       this.createNewSheet(sheet);
+    }
 
-      for (const key in sheet.cells) {
-        const cellId = key as CellId;
-        const cell = this.data.spreadsheetData.cells?.[cellId];
+    for (const key in this.data.spreadsheetData.cells) {
+      const cellId = key as CellId;
+      const cell = this.data.spreadsheetData.cells?.[cellId];
 
-        this.hyperformula?.setCellContents(
-          SimpleCellAddress.cellIdToAddress(cellId),
-          cell?.value
-        );
-      }
+      this.hyperformula?.setCellContents(
+        SimpleCellAddress.cellIdToAddress(cellId),
+        cell?.value
+      );
     }
 
     this.switchSheet(0);

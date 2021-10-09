@@ -71,10 +71,9 @@ class Merger {
           ri,
           ci
         );
-        const cellId = simpleCellAddress.toCellId();
 
         if (simpleCellAddress.toCellId() !== mergedCellId) {
-          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
       }
     }
@@ -106,9 +105,7 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
-          const cellId = simpleCellAddress.toCellId();
-
-          delete mergedCells[cellId];
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
       }
     });

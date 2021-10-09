@@ -139,7 +139,7 @@ class RowCol {
 
           if (rowCol) {
             this.spreadsheet.data.setRowCol(
-              this.type,
+              this.pluralType,
               new RowColAddress(rowColAddress.sheet, newRowColIndex),
               rowCol
             );
@@ -151,13 +151,11 @@ class RowCol {
       },
       (simpleCellAddress, newSimpleCellAddress) => {
         if (simpleCellAddress[this.type] >= this.index) {
-          this.spreadsheet.data.setCellData(
+          this.spreadsheet.data.setCell(
             newSimpleCellAddress,
             cells![simpleCellAddress.toCellId()]
           );
-          delete this.spreadsheet.data.spreadsheetData.cells?.[
-            simpleCellAddress.toCellId()
-          ];
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
       },
       (a, b) => {
@@ -189,7 +187,7 @@ class RowCol {
 
           if (rowCol) {
             this.spreadsheet.data.setRowCol(
-              this.type,
+              this.pluralType,
               new RowColAddress(rowColAddress.sheet, newRowColIndex),
               rowCol
             );
@@ -204,15 +202,13 @@ class RowCol {
         if (simpleCellAddress[this.type] < this.index) return;
 
         if (simpleCellAddress[this.type] > this.index) {
-          this.spreadsheet.data.setCellData(
+          this.spreadsheet.data.setCell(
             newSimpleCellAddress,
             cells![simpleCellAddress.toCellId()]
           );
         }
 
-        delete this.spreadsheet.data.spreadsheetData.cells?.[
-          simpleCellAddress.toCellId()
-        ];
+        this.spreadsheet.data.deleteCellData(simpleCellAddress);
       }
     );
   }
@@ -231,7 +227,8 @@ class RowCol {
   ) {
     const { frozenCells, mergedCells, cells, ...data } =
       this.spreadsheet.data.spreadsheetData;
-    const rowCol = data.sheets?.[this.sheet.sheetId][`${this.type}s`];
+    const rowCol =
+      data[this.pluralType]?.[this.rowColAddress.toSheetRowColId()];
 
     if (this.rowCols.getIsFrozen(this.index)) {
       this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {

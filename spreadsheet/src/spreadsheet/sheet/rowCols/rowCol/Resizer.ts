@@ -147,7 +147,7 @@ class Resizer {
     this.hideGuideLine();
 
     this.spreadsheet.data.setRowCol(
-      this.rowCols.type,
+      this.rowCols.pluralType,
       new SheetRowColAddress(this.sheet.sheetId, this.currentIndex),
       {
         size: newSize,

@@ -64,13 +64,13 @@ class Clipboard {
         );
 
         if (this.isCut) {
-          const cellId = new SimpleCellAddress(
+          const simpleCellAddress = new SimpleCellAddress(
             this.sourceRange!.topLeftSimpleCellAddress.sheet,
             row,
             col
-          ).toCellId();
+          );
 
-          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+          this.spreadsheet.data.deleteCellData(simpleCellAddress);
         }
 
         if (cellData?.style) {
@@ -86,7 +86,7 @@ class Clipboard {
         }
 
         if (cellData) {
-          this.spreadsheet.data.setCellData(targetSimpleCellAddress, cellData);
+          this.spreadsheet.data.setCell(targetSimpleCellAddress, cellData);
         }
       });
     });

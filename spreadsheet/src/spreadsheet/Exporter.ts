@@ -2,8 +2,7 @@ import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
-import Sheet from './sheet/Sheet';
-import { ISheetData } from './sheet/Data';
+import { SheetId } from './sheet/Sheet';
 import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress, {
   CellId,
@@ -17,21 +16,23 @@ class Export {
     this.spreadsheet = spreadsheet;
   }
 
-  private getWorksheet(sheet: Sheet, data: ISheetData) {
+  private getWorksheet(sheetId: SheetId) {
     const worksheet: WorkSheet = {};
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-      new SimpleCellAddress(sheet.sheetId, 0, 0),
-      new SimpleCellAddress(sheet.sheetId, 0, 0)
+      new SimpleCellAddress(sheetId, 0, 0),
+      new SimpleCellAddress(sheetId, 0, 0)
     );
 
-    for (const key in data.cells) {
+    for (const key in this.spreadsheet.data.spreadsheetData.cells) {
       const cellId = key as CellId;
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
       const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
       const cellStyle =
         this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId];
       const cellString = simpleCellAddress.addressToString();
+      const mergedCell =
+        this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
 
       rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
         simpleCellAddress.row,
@@ -74,15 +75,8 @@ class Export {
       if (cell.value?.charAt(0) === '=') {
         worksheet[cellString].f = cell.value!.slice(1);
       }
-    }
 
-    for (const [cellId, rangeSimpleCellAddress] of sheet.merger
-      .associatedMergedCellAddressMap) {
-      const isTopLeftCell = this.spreadsheet.data.getIsCellAMergedCell(
-        SimpleCellAddress.cellIdToAddress(cellId)
-      );
-
-      if (isTopLeftCell) {
+      if (mergedCell) {
         if (!worksheet['!merges']) {
           worksheet['!merges'] = [];
         }
@@ -143,8 +137,7 @@ class Export {
         const sheetIndex = parseInt(key, 10);
         const sheetData =
           this.spreadsheet.data.spreadsheetData.sheets![sheetIndex];
-        const sheet = this.spreadsheet.sheets.get(sheetData.id)!;
-        const worksheet = this.getWorksheet(sheet, sheetData);
+        const worksheet = this.getWorksheet(sheetData.id);
 
         utils.book_append_sheet(workbook, worksheet, sheetData.sheetName);
       }

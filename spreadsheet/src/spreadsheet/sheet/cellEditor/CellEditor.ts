@@ -72,15 +72,13 @@ class CellEditor {
       ];
 
     if (this.cellEditorEl.textContent) {
-      this.spreadsheet.data.setCellData(simpleCellAddress, {
+      this.spreadsheet.data.setCell(simpleCellAddress, {
         ...cellData,
         value: this.cellEditorEl.textContent,
       });
     } else {
       if (cellData) {
-        delete this.spreadsheet.data.spreadsheetData.cells?.[
-          simpleCellAddress.toCellId()
-        ];
+        this.spreadsheet.data.deleteCellData(simpleCellAddress);
       }
     }
   }

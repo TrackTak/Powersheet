@@ -3,7 +3,7 @@ import { merge } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
-import { RowColId, RowColsType, RowColType } from './rowCols/RowCols';
+import { RowColId, RowColsType } from './rowCols/RowCols';
 import { SheetId } from './Sheet';
 
 export type TextWrap = 'wrap';
@@ -40,19 +40,6 @@ export interface ICellData {
 export interface ISheetData {
   id: SheetId;
   sheetName: string;
-  frozenCell?: SheetId;
-  mergedCells?: {
-    [index: CellId]: CellId;
-  };
-  cells?: {
-    [index: CellId]: CellId;
-  };
-  rows?: {
-    [index: SheetRowColId]: SheetRowColId;
-  };
-  cols?: {
-    [index: SheetRowColId]: SheetRowColId;
-  };
 }
 
 export interface IFrozenCellData {
@@ -129,7 +116,7 @@ class Data {
     return !!mergedCells![simpleCellAddress.toCellId()];
   }
 
-  setSheetData(sheetId: SheetId, sheetData: Partial<ISheetData>) {
+  setSheet(sheetId: SheetId, sheetData?: Partial<ISheetData>) {
     this.spreadsheetData.sheets = {
       ...this.spreadsheetData.sheets,
       [sheetId]: {
@@ -141,19 +128,8 @@ class Data {
     };
   }
 
-  setCellData(
-    simpleCellAddress: SimpleCellAddress,
-    cell: Omit<ICellData, 'id'>
-  ) {
-    const sheetId = simpleCellAddress.sheet;
+  setCell(simpleCellAddress: SimpleCellAddress, cell?: Omit<ICellData, 'id'>) {
     const cellId = simpleCellAddress.toCellId();
-
-    this.setSheetData(sheetId, {
-      cells: {
-        ...this.spreadsheetData.sheets?.[sheetId].cells,
-        [cellId]: cellId,
-      },
-    });
 
     this.spreadsheetData.cells = {
       ...this.spreadsheetData.cells,
@@ -167,11 +143,11 @@ class Data {
 
   setCellStyle(
     simpleCellAddress: SimpleCellAddress,
-    cellStyle: Omit<ICellStyleData, 'id'>
+    cellStyle?: Omit<ICellStyleData, 'id'>
   ) {
     const cellId = simpleCellAddress.toCellId();
 
-    this.setCellData(simpleCellAddress, {
+    this.setCell(simpleCellAddress, {
       [cellId]: {
         style: cellId,
       },
@@ -187,19 +163,26 @@ class Data {
     };
   }
 
+  deleteCellData(simpleCellAddress: SimpleCellAddress) {
+    const cellId = simpleCellAddress.toCellId();
+
+    this.deleteCellStyle(simpleCellAddress);
+
+    delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+  }
+
+  deleteCellStyle(simpleCellAddress: SimpleCellAddress) {
+    const cellId = simpleCellAddress.toCellId();
+
+    delete this.spreadsheetData.cells?.[cellId].style;
+    delete this.spreadsheetData.cellStyles?.[cellId];
+  }
+
   setMergedCell(
     simpleCellAddress: SimpleCellAddress,
     mergedCellData: Omit<IMergedCellData, 'id'>
   ) {
-    const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
-
-    this.setSheetData(sheetId, {
-      mergedCells: {
-        ...this.spreadsheetData.sheets?.[sheetId].mergedCells,
-        [mergedCellId]: mergedCellId,
-      },
-    });
 
     this.spreadsheetData.mergedCells = merge<
       object,
@@ -213,11 +196,10 @@ class Data {
     });
   }
 
-  setFrozenCell(sheetId: SheetId, frozenCellData: Omit<IFrozenCellData, 'id'>) {
-    this.setSheetData(sheetId, {
-      frozenCell: sheetId,
-    });
-
+  setFrozenCell(
+    sheetId: SheetId,
+    frozenCellData?: Omit<IFrozenCellData, 'id'>
+  ) {
     this.spreadsheetData.frozenCells = {
       ...this.spreadsheetData.frozenCells,
       [sheetId]: {
@@ -229,20 +211,11 @@ class Data {
   }
 
   setRowCol(
-    type: RowColType,
+    pluralType: RowColsType,
     rowColAddress: RowColAddress,
-    rowColData: Omit<IRowColData, 'id'>
+    rowColData?: Omit<IRowColData, 'id'>
   ) {
     const sheetRowColId = rowColAddress.toSheetRowColId();
-    const sheetId = rowColAddress.sheet;
-    const pluralType: RowColsType = `${type}s`;
-
-    this.setSheetData(sheetId, {
-      [type]: {
-        ...this.spreadsheetData.sheets?.[sheetId][pluralType],
-        [sheetRowColId]: sheetRowColId,
-      },
-    });
 
     this.spreadsheetData[pluralType] = {
       ...this.spreadsheetData[pluralType],

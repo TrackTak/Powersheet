@@ -157,7 +157,6 @@ FrozenCells.args = {
       0: {
         id: 0,
         sheetName: 'Frozen Cells',
-        frozenCell: 0,
       },
     },
     frozenCells: {
@@ -179,9 +178,6 @@ MergedCells.args = {
       0: {
         id: 0,
         sheetName: 'Merged Cells',
-        mergedCells: {
-          '0_3_1': '0_3_1',
-        },
       },
     },
     mergedCells: {
@@ -209,7 +205,6 @@ DifferentSizeCells.args = {
       0: {
         id: 0,
         sheetName: 'Different Size Cells',
-        rows: { '0_0': '0_0' },
       },
     },
     rows: {
@@ -371,12 +366,6 @@ AllCurrencySymbols.args = {
       0: {
         id: 0,
         sheetName: 'All Currency Symbols',
-        cells: {
-          '0_1_0': '0_1_0',
-          '0_1_1': '0_1_1',
-          '0_3_3': '0_3_3',
-          '0_4_1': '0_4_1',
-        },
       },
     },
     cells: {
@@ -410,14 +399,6 @@ CellsData.args = {
       0: {
         id: 0,
         sheetName: 'Cells Data',
-        cells: {
-          '0_1_0': '0_1_0',
-          '0_1_1': '0_1_1',
-          '0_3_3': '0_3_3',
-          '0_4_1': '0_4_1',
-          '0_4_4': '0_4_4',
-          '0_40_4': '0_40_4',
-        },
       },
     },
     cellStyles: {
@@ -497,19 +478,10 @@ Formulas.args = {
       0: {
         id: 0,
         sheetName: 'Formulas',
-        cells: {
-          '0_0_1': '0_0_1',
-          '0_1_1': '0_1_1',
-          '0_2_1': '0_2_1',
-          '0_2_0': '0_2_0',
-          '0_4_0': '0_4_0',
-          '0_4_1': '0_4_1',
-        },
       },
       1: {
         id: 1,
         sheetName: 'Other',
-        cells: { '1_0_0': '1_0_0' },
       },
     },
     cellStyles: {

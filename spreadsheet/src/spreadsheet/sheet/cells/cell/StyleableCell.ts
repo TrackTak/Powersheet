@@ -310,7 +310,7 @@ class StyleableCell extends Cell {
 
       if (cellHeight > height) {
         this.spreadsheet.data.setRowCol(
-          'row',
+          'rows',
           new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
           {
             size: cellHeight,

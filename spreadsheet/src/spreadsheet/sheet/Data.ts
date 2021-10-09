@@ -113,7 +113,7 @@ class Data {
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
     const mergedCells = this.spreadsheetData.mergedCells;
 
-    return !!mergedCells![simpleCellAddress.toCellId()];
+    return !!mergedCells?.[simpleCellAddress.toCellId()];
   }
 
   setSheet(sheetId: SheetId, sheetData?: Partial<ISheetData>) {

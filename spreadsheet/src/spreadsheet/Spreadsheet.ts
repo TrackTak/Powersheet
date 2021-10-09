@@ -92,7 +92,7 @@ class Spreadsheet {
       return currentData;
     }, this.options.undoRedoLimit);
 
-    this.data.setSheetData(0);
+    this.data.setSheet(0);
 
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
@@ -198,7 +198,7 @@ class Spreadsheet {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data.setSheetData(sheetId, {
+    this.data.setSheet(sheetId, {
       sheetName,
     });
     this.hyperformula?.renameSheet(sheetId, sheetName);
@@ -207,7 +207,7 @@ class Spreadsheet {
   }
 
   createNewSheet(data: ISheetData) {
-    this.data.setSheetData(data.id, data);
+    this.data.setSheet(data.id, data);
     this.hyperformula?.addSheet(data.sheetName);
 
     const sheet = new Sheet(this, data.id);

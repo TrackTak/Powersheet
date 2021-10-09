@@ -140,7 +140,7 @@ class StyleableCell extends Cell {
   }
 
   setTextFormat(textFormatPattern: string) {
-    if (this.text && !this.spreadsheet.options.showFormulas) {
+    if (this.text && !this.spreadsheet.data.spreadsheetData.showFormulas) {
       let text = this.text.text();
 
       try {
@@ -206,7 +206,7 @@ class StyleableCell extends Cell {
       this.spreadsheet.hyperformula?.getCellValue(this.simpleCellAddress) ??
       cellData?.value;
 
-    if (this.spreadsheet.options.showFormulas) {
+    if (this.spreadsheet.data.spreadsheetData.showFormulas) {
       value = cellData?.value;
     }
 

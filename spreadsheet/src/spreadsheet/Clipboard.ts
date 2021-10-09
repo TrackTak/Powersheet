@@ -49,6 +49,9 @@ class Clipboard {
       rangeData.map((arr) => arr.map((cell) => cell?.value))
     );
 
+    this.spreadsheet.pushToHistory();
+    this.spreadsheet.hyperformula?.suspendEvaluation();
+
     rangeData.forEach((rowData, rowIndex) => {
       rowData.forEach((cellData, colIndex) => {
         let row = this.sourceRange!.topLeftSimpleCellAddress.row;
@@ -91,6 +94,7 @@ class Clipboard {
       });
     });
 
+    this.spreadsheet.hyperformula?.resumeEvaluation();
     this.spreadsheet.updateViewport();
 
     if (this.isCut) {

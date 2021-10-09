@@ -72,12 +72,14 @@ class CellEditor {
       ];
 
     if (this.cellEditorEl.textContent) {
+      this.spreadsheet.pushToHistory();
       this.spreadsheet.data.setCell(simpleCellAddress, {
         ...cellData,
         value: this.cellEditorEl.textContent,
       });
     } else {
       if (cellData) {
+        this.spreadsheet.pushToHistory();
         this.spreadsheet.data.deleteCell(simpleCellAddress);
       }
     }

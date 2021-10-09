@@ -180,6 +180,8 @@ class Merger {
     const rangeSimpleCellAddress =
       this.sheet.getMinMaxRangeSimpleCellAddress(selectedCells);
 
+    this.spreadsheet.pushToHistory();
+
     this.removeMergedCells(rangeSimpleCellAddress);
     this.addMergedCells(rangeSimpleCellAddress);
   }
@@ -191,6 +193,8 @@ class Merger {
 
     const rangeSimpleCellAddress =
       this.sheet.getMinMaxRangeSimpleCellAddress(selectedCells);
+
+    this.spreadsheet.pushToHistory();
 
     this.removeMergedCells(rangeSimpleCellAddress);
   }

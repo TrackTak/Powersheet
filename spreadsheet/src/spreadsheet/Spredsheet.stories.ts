@@ -55,7 +55,7 @@ const getSpreadsheet = (params: Partial<ISpreadsheetConstructor>) => {
     return true;
   };
 
-  eventEmitter.on(events.sheet.setData, (_, __, done) => {
+  eventEmitter.on(events.persist.save, (_, done) => {
     // Simulating an async API call that saves the sheet data to
     // a DB
     setTimeout(() => {

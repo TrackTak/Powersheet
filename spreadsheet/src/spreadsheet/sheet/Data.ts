@@ -96,11 +96,11 @@ export interface ISpreadsheetData {
   cells?: ICellsData;
   cellStyles?: ICellStylesData;
   sheets?: ISheetsData;
+  showFormulas?: boolean;
 }
 
 class Data {
   spreadsheetData: ISpreadsheetData;
-  isSaving = false;
 
   constructor(
     public spreadsheet: Spreadsheet,

@@ -183,8 +183,10 @@ class ScrollBar {
 
     this.layerListeningTimeout = setTimeout(() => {
       this.sheet.layer.listening(true);
+      this.spreadsheet.hyperformula?.resumeEvaluation();
     }, 40);
 
+    this.spreadsheet.hyperformula?.suspendEvaluation();
     // Improves performance by ~4fps
     this.sheet.layer.listening(false);
 

@@ -342,6 +342,8 @@ class Sheet {
         break;
       }
       case 'Delete': {
+        this.spreadsheet.pushToHistory();
+
         this.selector.selectedCells.forEach((cell) => {
           const simpleCellAddress = cell.simpleCellAddress;
 

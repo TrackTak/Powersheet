@@ -9,7 +9,6 @@ export interface IOptions {
   height?: number;
   row: IRowColOptions;
   col: IRowColOptions;
-  showFormulas: boolean;
   exportSpreadsheetName: string;
   touchScrollSpeed: number;
   undoRedoLimit: number;
@@ -27,7 +26,6 @@ export const defaultOptions: IOptions = {
     minSize: 60,
     defaultSize: 100,
   },
-  showFormulas: false,
   exportSpreadsheetName: 'Powersheet.xlsx',
   touchScrollSpeed: 1.2,
 };

@@ -576,6 +576,8 @@ class Toolbar {
     const sheet = this.spreadsheet.getActiveSheet()!;
 
     function setStyle<T>(key: keyof ICellStyleData, value: T) {
+      sheet.spreadsheet.pushToHistory();
+
       sheet.selector.selectedCells.forEach((cell) => {
         sheet.spreadsheet.data.setCellStyle(cell.simpleCellAddress, {
           [key]: value,
@@ -584,6 +586,8 @@ class Toolbar {
     }
 
     function deleteStyle(key: keyof ICellStyleData) {
+      sheet.spreadsheet.pushToHistory();
+
       sheet.selector.selectedCells.forEach((cell) => {
         const cellId = cell.simpleCellAddress.toCellId();
 
@@ -597,8 +601,10 @@ class Toolbar {
         break;
       }
       case 'formula': {
-        this.spreadsheet.options.showFormulas =
-          !this.spreadsheet.options.showFormulas;
+        sheet.spreadsheet.pushToHistory();
+
+        this.spreadsheet.data.spreadsheetData.showFormulas =
+          !this.spreadsheet.data.spreadsheetData.showFormulas;
         break;
       }
       case 'alignLeft': {
@@ -701,6 +707,8 @@ class Toolbar {
         break;
       }
       case 'freeze': {
+        sheet.spreadsheet.pushToHistory();
+
         if (this.iconElementsMap.freeze.active) {
           delete this.spreadsheet.data.spreadsheetData.frozenCells;
         } else {
@@ -719,42 +727,62 @@ class Toolbar {
         break;
       }
       case 'borderBottom': {
+        this.spreadsheet.pushToHistory();
+
         this.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
+        this.spreadsheet.pushToHistory();
+
         this.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
+        this.spreadsheet.pushToHistory();
+
         this.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
+        this.spreadsheet.pushToHistory();
+
         this.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
+        this.spreadsheet.pushToHistory();
+
         this.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
+        this.spreadsheet.pushToHistory();
+
         this.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
+        this.spreadsheet.pushToHistory();
+
         this.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderOutside': {
+        this.spreadsheet.pushToHistory();
+
         this.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderAll': {
+        this.spreadsheet.pushToHistory();
+
         this.setAllBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderNone': {
+        this.spreadsheet.pushToHistory();
+
         this.clearBorders(
           sheet.selector.selectedCells.map((cell) => cell.simpleCellAddress)
         );
@@ -809,7 +837,7 @@ class Toolbar {
     );
     this.setActive(
       this.iconElementsMap.formula,
-      this.spreadsheet.options.showFormulas
+      this.spreadsheet.data.spreadsheetData.showFormulas ?? false
     );
     this.setActiveHorizontalIcon(selectedCell);
     this.setActiveVerticalIcon(selectedCell);
@@ -915,7 +943,7 @@ class Toolbar {
   }
 
   setActiveSaveState() {
-    if (this.spreadsheet.data.isSaving) {
+    if (this.spreadsheet.isSaving) {
       this.autosaveElement.text.textContent = 'Saving...';
     } else {
       this.autosaveElement.text.textContent = 'Saved';

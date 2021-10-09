@@ -17,6 +17,7 @@ import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress, {
   CellId,
 } from './sheet/cells/cell/SimpleCellAddress';
+import events from './events';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
@@ -47,6 +48,7 @@ class Spreadsheet {
   bottomBar?: BottomBar;
   activeSheetId = 0;
   totalSheetCount = 0;
+  isSaving = false;
 
   constructor(params: ISpreadsheetConstructor) {
     this.data = new Data(this, params.data);
@@ -84,12 +86,14 @@ class Spreadsheet {
     this.bottomBar?.initialize(this);
     this.clipboard = new Clipboard(this);
 
-    this.history = new Manager((data: ISpreadsheetData) => {
-      const currentData = this.data;
+    this.history = new Manager((data: string) => {
+      const currentData = this.data.spreadsheetData;
 
-      this.data.spreadsheetData = data;
+      this.data.spreadsheetData = JSON.parse(data);
 
-      return currentData;
+      this.setCells();
+
+      return JSON.stringify(currentData);
     }, this.options.undoRedoLimit);
 
     this.data.setSheet(0);
@@ -101,6 +105,16 @@ class Spreadsheet {
       this.createNewSheet(sheet);
     }
 
+    this.setCells();
+
+    this.switchSheet(0);
+
+    this.updateViewport();
+  }
+
+  private setCells() {
+    this.hyperformula?.suspendEvaluation();
+
     for (const key in this.data.spreadsheetData.cells) {
       const cellId = key as CellId;
       const cell = this.data.spreadsheetData.cells?.[cellId];
@@ -111,9 +125,7 @@ class Spreadsheet {
       );
     }
 
-    this.switchSheet(0);
-
-    this.updateViewport();
+    this.hyperformula?.resumeEvaluation();
   }
 
   getRegisteredFunctions() {
@@ -126,18 +138,37 @@ class Spreadsheet {
     this.updateViewport();
   }
 
-  addToHistory(callback: () => any) {
-    const data = JSON.parse(JSON.stringify(this.data));
+  pushToHistory() {
+    const data = JSON.stringify(this.data.spreadsheetData);
 
     this.history.push(data);
 
-    callback();
+    this.persistData();
+
+    this.eventEmitter.emit(events.history.push, this.data.spreadsheetData);
+  }
+
+  persistData() {
+    const done = () => {
+      this.isSaving = false;
+      this.updateViewport();
+    };
+
+    this.isSaving = true;
+
+    this.eventEmitter.emit(
+      events.persist.save,
+      this.data.spreadsheetData,
+      done
+    );
   }
 
   undo() {
     if (!this.history.canUndo) return;
 
     this.history.undo();
+
+    this.persistData();
     this.updateViewport();
   }
 
@@ -145,6 +176,8 @@ class Spreadsheet {
     if (!this.history.canRedo) return;
 
     this.history.redo();
+
+    this.persistData();
     this.updateViewport();
   }
 

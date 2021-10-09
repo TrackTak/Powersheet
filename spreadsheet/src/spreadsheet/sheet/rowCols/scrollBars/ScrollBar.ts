@@ -81,7 +81,7 @@ class ScrollBar {
     for (let i = start; i < end; i++) {
       const rowCollAddress = new RowColAddress(this.sheet.sheetId, i);
       const size =
-        data[this.pluralType]?.[rowCollAddress.toSheetRowColId()].size;
+        data[this.pluralType]?.[rowCollAddress.toSheetRowColId()]?.size;
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize;

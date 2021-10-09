@@ -281,7 +281,7 @@ class Sheet {
       this.cellEditor.show(selectedFirstcell);
     }
 
-    if (this.spreadsheet.data.spreadsheetData.cells?.[cellId].comment) {
+    if (this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.comment) {
       this.comment.show(simpleCellAddress);
     }
   }

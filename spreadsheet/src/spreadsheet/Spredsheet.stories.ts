@@ -210,7 +210,17 @@ DifferentSizeCells.args = {
     rows: {
       '0_0': {
         id: '0_0',
-        size: 250,
+        size: 50,
+      },
+      '0_2': {
+        id: '0_2',
+        size: 100,
+      },
+    },
+    cols: {
+      '0_0': {
+        id: '0_0',
+        size: 200,
       },
     },
   },

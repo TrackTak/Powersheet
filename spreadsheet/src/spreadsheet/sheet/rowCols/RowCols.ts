@@ -117,7 +117,7 @@ class RowCols {
   getIsLastFrozen(index: number) {
     return (
       index ===
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId][
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId]?.[
         this.type
       ]
     );
@@ -125,7 +125,7 @@ class RowCols {
 
   getIsFrozen(index: number) {
     const data = this.spreadsheet.data.spreadsheetData;
-    const frozenCell = data.frozenCells?.[this.sheet.sheetId][this.type];
+    const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
 
     return isNil(frozenCell) ? false : index <= frozenCell;
   }
@@ -198,13 +198,11 @@ class RowCols {
   drawViewport(forceDraw = false) {
     const data = this.spreadsheet.data.spreadsheetData;
 
-    if (data.frozenCells) {
-      const frozenCell = data.frozenCells[this.sheet.sheetId][this.type];
+    const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
 
-      if (!isNil(frozenCell)) {
-        for (let index = 0; index <= frozenCell; index++) {
-          this.draw(index, forceDraw);
-        }
+    if (!isNil(frozenCell)) {
+      for (let index = 0; index <= frozenCell; index++) {
+        this.draw(index, forceDraw);
       }
     }
 

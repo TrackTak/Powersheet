@@ -34,35 +34,33 @@ class Cells {
   drawViewport(forceDraw = false) {
     const data = this.spreadsheet.data.spreadsheetData;
 
-    if (data.frozenCells) {
-      const frozenRow = data.frozenCells[this.sheet.sheetId].row;
-      const frozenCol = data.frozenCells[this.sheet.sheetId].col;
+    const frozenRow = data.frozenCells?.[this.sheet.sheetId]?.row;
+    const frozenCol = data.frozenCells?.[this.sheet.sheetId]?.col;
 
-      if (!isNil(frozenRow)) {
-        for (let ri = 0; ri <= frozenRow; ri++) {
-          for (const ci of this.sheet.cols.rowColMap.keys()) {
-            const simpleCellAddress = new SimpleCellAddress(
-              this.sheet.sheetId,
-              ri,
-              ci
-            );
+    if (!isNil(frozenRow)) {
+      for (let ri = 0; ri <= frozenRow; ri++) {
+        for (const ci of this.sheet.cols.rowColMap.keys()) {
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            ri,
+            ci
+          );
 
-            this.drawCell(simpleCellAddress, forceDraw);
-          }
+          this.drawCell(simpleCellAddress, forceDraw);
         }
       }
+    }
 
-      if (!isNil(frozenCol)) {
-        for (let ci = 0; ci <= frozenCol; ci++) {
-          for (const ri of this.sheet.rows.rowColMap.keys()) {
-            const simpleCellAddress = new SimpleCellAddress(
-              this.sheet.sheetId,
-              ri,
-              ci
-            );
+    if (!isNil(frozenCol)) {
+      for (let ci = 0; ci <= frozenCol; ci++) {
+        for (const ri of this.sheet.rows.rowColMap.keys()) {
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            ri,
+            ci
+          );
 
-            this.drawCell(simpleCellAddress, forceDraw);
-          }
+          this.drawCell(simpleCellAddress, forceDraw);
         }
       }
     }

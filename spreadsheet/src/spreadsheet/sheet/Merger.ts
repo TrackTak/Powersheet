@@ -94,24 +94,6 @@ class Merger {
   removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const mergedCells = this.spreadsheet.data.spreadsheetData.mergedCells;
 
-    this.sheet.cells.cellsMap.forEach((cell, simpleCellAddress) => {
-      if (
-        this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress) &&
-        mergedCells
-      ) {
-        const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
-          rangeSimpleCellAddress,
-          cell.rangeSimpleCellAddress
-        );
-
-        if (areMergedCellsOverlapping) {
-          delete this.spreadsheet.data.spreadsheetData.mergedCells?.[
-            simpleCellAddress.toCellId()
-          ];
-        }
-      }
-    });
-
     if (
       this.spreadsheet.data.getIsCellAMergedCell(
         rangeSimpleCellAddress.topLeftSimpleCellAddress
@@ -141,6 +123,24 @@ class Merger {
         }
       }
     }
+
+    this.sheet.cells.cellsMap.forEach((cell, simpleCellAddress) => {
+      if (
+        this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress) &&
+        mergedCells
+      ) {
+        const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
+          rangeSimpleCellAddress,
+          cell.rangeSimpleCellAddress
+        );
+
+        if (areMergedCellsOverlapping) {
+          delete this.spreadsheet.data.spreadsheetData.mergedCells?.[
+            simpleCellAddress.toCellId()
+          ];
+        }
+      }
+    });
 
     this.spreadsheet.updateViewport();
   }

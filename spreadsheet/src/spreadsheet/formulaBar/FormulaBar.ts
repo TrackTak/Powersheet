@@ -1,4 +1,4 @@
-import { CellId } from '../sheet/CellRenderer';
+import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from './../utils';
 import styles from './FormulaBar.module.scss';
@@ -48,13 +48,17 @@ class FormulaBar {
     sheet?.cellEditor.setTextContent(textContent ?? null);
   };
 
-  updateValue(cellId: CellId) {
+  updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     const sheet = this.spreadsheet.getActiveSheet();
-    const cell = sheet?.cellRenderer.getCellData(cellId);
+    const value = simpleCellAddress
+      ? this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ]?.value
+      : null;
     const cellEditorTextContent =
       sheet?.cellEditor?.cellEditorEl.textContent ?? null;
 
-    this.setTextContent(cell?.value ?? cellEditorTextContent);
+    this.setTextContent(value ?? cellEditorTextContent);
   }
 
   setTextContent(textContent: string | null) {

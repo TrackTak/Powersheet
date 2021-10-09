@@ -6,8 +6,9 @@ import styles from './CellEditor.module.scss';
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
-import { Cell } from '../CellRenderer';
 import HyperFormulaModule from '../../HyperFormula';
+import Cell from '../cells/cell/Cell';
+import { setCaretToEndOfElement } from '../../utils';
 
 export interface ICurrentScroll {
   row: number;
@@ -64,15 +65,22 @@ class CellEditor {
   }
 
   saveContentToCell() {
+    const simpleCellAddress = this.currentCell!.simpleCellAddress;
+    const cellData =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ];
+
     if (this.cellEditorEl.textContent) {
-      this.sheet.cellRenderer.setCellData(this.currentCell!.id(), {
+      this.spreadsheet.pushToHistory();
+      this.spreadsheet.data.setCell(simpleCellAddress, {
+        ...cellData,
         value: this.cellEditorEl.textContent,
       });
     } else {
-      const cell = this.sheet.cellRenderer.getCellData(this.currentCell!.id());
-
-      if (cell) {
-        delete cell.value;
+      if (cellData) {
+        this.spreadsheet.pushToHistory();
+        this.spreadsheet.data.deleteCell(simpleCellAddress);
       }
     }
   }
@@ -138,21 +146,26 @@ class CellEditor {
   show(cell: Cell, setTextContent = true) {
     this.currentCell = cell;
     this.currentScroll = {
-      row: this.sheet.row.scrollBar.scroll,
-      col: this.sheet.col.scrollBar.scroll,
+      row: this.sheet.rows.scrollBar.scroll,
+      col: this.sheet.cols.scrollBar.scroll,
     };
 
-    const id = cell.id();
+    const simpleCellAddress = cell.simpleCellAddress;
 
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(cell.getClientRect());
+    this.setCellEditorElPosition(cell.group.getClientRect());
 
     if (setTextContent) {
       this.setTextContent(
-        this.sheet.cellRenderer.getCellData(id)?.value ?? null
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ]?.value ?? null
       );
+
+      setCaretToEndOfElement(this.cellEditorEl);
+
       this.cellEditorEl.focus();
     }
   }
@@ -176,7 +189,7 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none';
     this.clear();
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   setCellEditorElPosition = (position: IRect) => {
@@ -192,9 +205,13 @@ class CellEditor {
 
   showCellTooltip = () => {
     if (this.currentCell) {
-      const { row, col } = this.currentCell.attrs;
-      const rowText = this.sheet.row.getHeaderText(row.x);
-      const colText = this.sheet.col.getHeaderText(col.x);
+      const { row, col } = this.currentCell.simpleCellAddress;
+      const rowText = this.sheet.rows.rowColMap
+        .get(row)!
+        .getHeaderTextContent();
+      const colText = this.sheet.cols.rowColMap
+        .get(col)!
+        .getHeaderTextContent();
 
       this.cellTooltip.setContent(`${colText}${rowText}`);
       this.cellTooltip.show();

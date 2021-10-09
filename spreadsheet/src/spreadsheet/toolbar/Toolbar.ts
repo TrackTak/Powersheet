@@ -2,13 +2,6 @@ import styles from './Toolbar.module.scss';
 import { delegate, DelegateInstance } from 'tippy.js';
 import { ACPController } from 'a-color-picker';
 import {
-  BorderStyle,
-  HorizontalTextAlign,
-  ICellStyle,
-  TextWrap,
-  VerticalTextAlign,
-} from '../sheet/Sheet';
-import {
   ColorPickerIconName,
   createAutosave,
   createBordersContent,
@@ -39,15 +32,20 @@ import {
   IIconElements,
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
-import { Group } from 'konva/lib/Group';
-import {
-  Cell,
-  CellId,
-  convertFromRowColToCellString,
-  getCellId,
-} from '../sheet/CellRenderer';
 import { sentenceCase } from 'sentence-case';
 import HyperFormulaModule from '../HyperFormula';
+import Cell from '../sheet/cells/cell/Cell';
+import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
+import {
+  BorderStyle,
+  HorizontalTextAlign,
+  ICellStyleData,
+  TextWrap,
+  VerticalTextAlign,
+} from '../sheet/Data';
+import RangeSimpleCellAddress from '../sheet/cells/cell/RangeSimpleCellAddress';
+import SelectedCell from '../sheet/cells/cell/SelectedCell';
+import { SheetId } from '../sheet/Sheet';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -298,7 +296,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false);
 
-        this.spreadsheet.getActiveSheet()?.updateViewport();
+        this.spreadsheet.updateViewport();
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true);
@@ -418,31 +416,34 @@ class Toolbar {
     const sheet = this.spreadsheet.getActiveSheet()!;
 
     if (sheet.selector.selectedCells.length > 1) {
-      const rowRange = sheet.row.convertFromCellsToRange(
-        sheet.selector.selectedCells
-      );
-      const colRange = sheet.col.convertFromCellsToRange(
+      const rangeSimpleCellAddress = sheet.getMinMaxRangeSimpleCellAddress(
         sheet.selector.selectedCells
       );
 
-      const ri = rowRange.y + 1;
-      const ci = colRange.x;
+      rangeSimpleCellAddress.bottomRightSimpleCellAddress.row += 1;
 
-      const cell = sheet.cellRenderer.convertFromCellIdToCell(
-        getCellId(ri, ci)
+      const cell = new Cell(
+        sheet,
+        new SimpleCellAddress(
+          sheet.sheetId,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+        )
       );
+
+      const topLeftString =
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString();
+      const bottomRightString =
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString();
 
       const viewportVector = sheet.getViewportVector();
 
-      const xCellString = convertFromRowColToCellString(rowRange.x, colRange.x);
-      const yCellString = convertFromRowColToCellString(rowRange.y, colRange.y);
-
-      cell.x(cell.x() + viewportVector.x);
-      cell.y(cell.y() + viewportVector.y);
+      cell.group.x(cell.group.x() + viewportVector.x);
+      cell.group.y(cell.group.y() + viewportVector.y);
 
       sheet.cellEditor.show(cell);
       sheet.cellEditor.setTextContent(
-        `=${functionName}(${xCellString}:${yCellString})`
+        `=${functionName}(${topLeftString}:${bottomRightString})`
       );
     } else {
       const selectedCell = sheet.selector.selectedCell!;
@@ -454,82 +455,95 @@ class Toolbar {
 
   private setBorderStyles(
     cells: Cell[],
-    cellsFilter: (value: Group, index: number, array: Group[]) => boolean,
+    cellsFilter: (
+      cell: Cell,
+      rangeSimpleCellAddress: RangeSimpleCellAddress
+    ) => boolean,
     borderType: BorderStyle
   ) {
     const sheet = this.spreadsheet.getActiveSheet()!;
-    const borderCells = cells.filter(cellsFilter);
+    const borderCells = cells.filter((cell) =>
+      cellsFilter(cell, sheet.getMinMaxRangeSimpleCellAddress(cells))
+    );
 
     borderCells.forEach((cell) => {
-      const id = cell.id();
+      const cellId = cell.simpleCellAddress.toCellId();
+      const borders =
+        this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]?.borders ??
+        [];
 
-      sheet.cellRenderer.setBorderStyle(id, borderType);
+      if (borders.indexOf(borderType) === -1) {
+        this.spreadsheet.data.setCellStyle(cell.simpleCellAddress, {
+          borders: [...borders, borderType],
+        });
+      }
     });
   }
 
   setBottomBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const row = sheet.row.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.row.y === row.y,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row ===
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
       'borderBottom'
     );
   }
 
   setRightBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const col = sheet.col.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.col.y === col.y,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col ===
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
       'borderRight'
     );
   }
 
   setTopBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const row = sheet.row.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.row.x === row.x,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row ===
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
       'borderTop'
     );
   }
 
   setLeftBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const col = sheet.col.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.col.x === col.x,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col ===
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
       'borderLeft'
     );
   }
 
   setVerticalBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const col = sheet.col.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.col.x >= col.x && cell.attrs.col.y < col.y,
-      'borderRight'
+      (cell, rangeSimpleCellAddress) => {
+        return (
+          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >
+            rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
+          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <=
+            rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
+        );
+      },
+      'borderLeft'
     );
   }
 
   setHorizontalBorders(cells: Cell[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-    const row = sheet.row.convertFromCellsToRange(cells);
-
     this.setBorderStyles(
       cells,
-      (cell) => cell.attrs.row.x >= row.x && cell.attrs.row.y < row.y,
-      'borderBottom'
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <=
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+      'borderTop'
     );
   }
 
@@ -550,38 +564,36 @@ class Toolbar {
     this.setInsideBorders(cells);
   }
 
-  clearBorders(ids: CellId[]) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
+  clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
+    simpleCellAddresses.forEach((simpleCellAddress) => {
+      const cellId = simpleCellAddress.toCellId();
 
-    ids.forEach((id) => {
-      sheet.cellRenderer.deleteCellStyle(id, 'borders');
-    });
-  }
-
-  private deleteStyleForSelectedCells(key: keyof ICellStyle) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-
-    sheet.selector.selectedCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.cellRenderer.deleteCellStyle(id, key);
-    });
-  }
-
-  private setStyleForSelectedCells<T>(key: keyof ICellStyle, value: T) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-
-    sheet.selector.selectedCells.forEach((cell) => {
-      const id = cell.id();
-
-      sheet.cellRenderer.setCellDataStyle(id, {
-        [key]: value,
-      });
+      delete this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId].borders;
     });
   }
 
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const sheet = this.spreadsheet.getActiveSheet()!;
+
+    function setStyle<T>(key: keyof ICellStyleData, value: T) {
+      sheet.spreadsheet.pushToHistory();
+
+      sheet.selector.selectedCells.forEach((cell) => {
+        sheet.spreadsheet.data.setCellStyle(cell.simpleCellAddress, {
+          [key]: value,
+        });
+      });
+    }
+
+    function deleteStyle(key: keyof ICellStyleData) {
+      sheet.spreadsheet.pushToHistory();
+
+      sheet.selector.selectedCells.forEach((cell) => {
+        const cellId = cell.simpleCellAddress.toCellId();
+
+        delete sheet.spreadsheet.data.spreadsheetData.cellStyles?.[cellId][key];
+      });
+    }
 
     switch (name) {
       case 'functions': {
@@ -589,71 +601,52 @@ class Toolbar {
         break;
       }
       case 'formula': {
-        this.spreadsheet.options.showFormulas =
-          !this.spreadsheet.options.showFormulas;
+        sheet.spreadsheet.pushToHistory();
+
+        this.spreadsheet.data.spreadsheetData.showFormulas =
+          !this.spreadsheet.data.spreadsheetData.showFormulas;
         break;
       }
       case 'alignLeft': {
-        this.setStyleForSelectedCells<HorizontalTextAlign>(
-          'horizontalTextAlign',
-          'left'
-        );
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'left');
         break;
       }
       case 'alignCenter': {
-        this.setStyleForSelectedCells<HorizontalTextAlign>(
-          'horizontalTextAlign',
-          'center'
-        );
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'center');
         break;
       }
       case 'alignRight': {
-        this.setStyleForSelectedCells<HorizontalTextAlign>(
-          'horizontalTextAlign',
-          'right'
-        );
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'right');
         break;
       }
       case 'alignTop': {
-        this.setStyleForSelectedCells<VerticalTextAlign>(
-          'verticalTextAlign',
-          'top'
-        );
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'top');
         break;
       }
       case 'alignMiddle': {
-        this.setStyleForSelectedCells<VerticalTextAlign>(
-          'verticalTextAlign',
-          'middle'
-        );
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'middle');
         break;
       }
       case 'alignBottom': {
-        this.setStyleForSelectedCells<VerticalTextAlign>(
-          'verticalTextAlign',
-          'bottom'
-        );
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'bottom');
         break;
       }
       case 'fontSize': {
-        this.setStyleForSelectedCells<number>('fontSize', value);
+        setStyle<number>('fontSize', value);
         break;
       }
       case 'textWrap': {
         if (this.iconElementsMap.textWrap.active) {
-          this.deleteStyleForSelectedCells('textWrap');
+          deleteStyle('textWrap');
         } else {
-          this.setStyleForSelectedCells<TextWrap>('textWrap', 'wrap');
+          setStyle<TextWrap>('textWrap', 'wrap');
         }
         break;
       }
       case 'textFormatPattern': {
         const format = value as keyof ITextFormatMap;
 
-        this.setStyleForSelectedCells<string>(
-          'textFormatPattern',
-          this.textFormatMap[format]
-        );
+        setStyle<string>('textFormatPattern', this.textFormatMap[format]);
         break;
       }
       case 'backgroundColor': {
@@ -661,10 +654,7 @@ class Toolbar {
 
         const backgroundColor = value;
 
-        this.setStyleForSelectedCells<string>(
-          'backgroundColor',
-          backgroundColor
-        );
+        setStyle<string>('backgroundColor', backgroundColor);
         break;
       }
       case 'fontColor': {
@@ -672,38 +662,38 @@ class Toolbar {
 
         const fontColor = value;
 
-        this.setStyleForSelectedCells<string>('fontColor', fontColor);
+        setStyle<string>('fontColor', fontColor);
         break;
       }
       case 'bold': {
         if (this.iconElementsMap.bold.active) {
-          this.deleteStyleForSelectedCells('bold');
+          deleteStyle('bold');
         } else {
-          this.setStyleForSelectedCells<true>('bold', true);
+          setStyle<true>('bold', true);
         }
         break;
       }
       case 'italic': {
         if (this.iconElementsMap.italic.active) {
-          this.deleteStyleForSelectedCells('italic');
+          deleteStyle('italic');
         } else {
-          this.setStyleForSelectedCells<true>('italic', true);
+          setStyle<true>('italic', true);
         }
         break;
       }
       case 'strikeThrough': {
         if (this.iconElementsMap.strikeThrough.active) {
-          this.deleteStyleForSelectedCells('strikeThrough');
+          deleteStyle('strikeThrough');
         } else {
-          this.setStyleForSelectedCells<true>('strikeThrough', true);
+          setStyle<true>('strikeThrough', true);
         }
         break;
       }
       case 'underline': {
         if (this.iconElementsMap.underline.active) {
-          this.deleteStyleForSelectedCells('underline');
+          deleteStyle('underline');
         } else {
-          this.setStyleForSelectedCells<true>('underline', true);
+          setStyle<true>('underline', true);
         }
         break;
       }
@@ -717,12 +707,18 @@ class Toolbar {
         break;
       }
       case 'freeze': {
-        if (this.iconElementsMap.freeze.active) {
-          delete sheet.getData().frozenCells;
-        } else {
-          const { row, col } = sheet.selector.selectedCell?.attrs;
+        sheet.spreadsheet.pushToHistory();
 
-          sheet.setData({ frozenCells: { row: row.x, col: col.x } });
+        if (this.iconElementsMap.freeze.active) {
+          delete this.spreadsheet.data.spreadsheetData.frozenCells;
+        } else {
+          const simpleCellAddress =
+            sheet.selector.selectedCell!.simpleCellAddress;
+
+          this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
+            row: simpleCellAddress.row,
+            col: simpleCellAddress.col,
+          });
         }
         break;
       }
@@ -731,43 +727,65 @@ class Toolbar {
         break;
       }
       case 'borderBottom': {
+        this.spreadsheet.pushToHistory();
+
         this.setBottomBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderRight': {
+        this.spreadsheet.pushToHistory();
+
         this.setRightBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderTop': {
+        this.spreadsheet.pushToHistory();
+
         this.setTopBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderLeft': {
+        this.spreadsheet.pushToHistory();
+
         this.setLeftBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderVertical': {
+        this.spreadsheet.pushToHistory();
+
         this.setVerticalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderHorizontal': {
+        this.spreadsheet.pushToHistory();
+
         this.setHorizontalBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderInside': {
+        this.spreadsheet.pushToHistory();
+
         this.setInsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderOutside': {
+        this.spreadsheet.pushToHistory();
+
         this.setOutsideBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderAll': {
+        this.spreadsheet.pushToHistory();
+
         this.setAllBorders(sheet.selector.selectedCells);
         break;
       }
       case 'borderNone': {
-        this.clearBorders(sheet.selector.selectedCells.map((x) => x.attrs.id));
+        this.spreadsheet.pushToHistory();
+
+        this.clearBorders(
+          sheet.selector.selectedCells.map((cell) => cell.simpleCellAddress)
+        );
         break;
       }
       case 'undo': {
@@ -780,7 +798,7 @@ class Toolbar {
       }
     }
 
-    sheet.updateViewport();
+    this.spreadsheet.updateViewport();
   };
 
   updateActiveStates = () => {
@@ -789,41 +807,43 @@ class Toolbar {
     if (!sheet) return;
 
     const selectedCells = sheet.selector.selectedCells;
-    const selectedCell = sheet.selector.selectedCell;
-    const selectedFirstCellId = selectedCell!.id();
+    const selectedCell = sheet.selector.selectedCell!;
 
-    this.setActiveColor(selectedFirstCellId, 'backgroundColor');
-    this.setActiveColor(selectedFirstCellId, 'fontColor');
-    this.setActive(this.iconElementsMap.freeze, this.isFreezeActive());
+    this.setActiveColor(selectedCell, 'backgroundColor');
+    this.setActiveColor(selectedCell, 'fontColor');
+    this.setActive(
+      this.iconElementsMap.freeze,
+      this.isFreezeActive(sheet.sheetId)
+    );
     this.setActive(
       this.iconElementsMap.textWrap,
-      this.isActive(selectedFirstCellId, 'textWrap')
+      this.isActive(selectedCell, 'textWrap')
     );
     this.setActive(
       this.iconElementsMap.bold,
-      this.isActive(selectedFirstCellId, 'bold')
+      this.isActive(selectedCell, 'bold')
     );
     this.setActive(
       this.iconElementsMap.italic,
-      this.isActive(selectedFirstCellId, 'italic')
+      this.isActive(selectedCell, 'italic')
     );
     this.setActive(
       this.iconElementsMap.strikeThrough,
-      this.isActive(selectedFirstCellId, 'strikeThrough')
+      this.isActive(selectedCell, 'strikeThrough')
     );
     this.setActive(
       this.iconElementsMap.underline,
-      this.isActive(selectedFirstCellId, 'underline')
+      this.isActive(selectedCell, 'underline')
     );
     this.setActive(
       this.iconElementsMap.formula,
-      this.spreadsheet.options.showFormulas
+      this.spreadsheet.data.spreadsheetData.showFormulas ?? false
     );
-    this.setActiveHorizontalIcon(selectedFirstCellId);
-    this.setActiveVerticalIcon(selectedFirstCellId);
-    this.setActiveFontSize(selectedFirstCellId);
-    this.setActiveTextFormat(selectedFirstCellId);
-    this.setActiveMergedCells(selectedCells, selectedFirstCellId);
+    this.setActiveHorizontalIcon(selectedCell);
+    this.setActiveVerticalIcon(selectedCell);
+    this.setActiveFontSize(selectedCell);
+    this.setActiveTextFormat(selectedCell);
+    this.setActiveMergedCells(selectedCells, selectedCell);
     this.setActiveHistoryIcons(this.spreadsheet.history);
     this.setActiveSaveState();
   };
@@ -890,19 +910,18 @@ class Toolbar {
   }
 
   private setActiveColor(
-    cellId: CellId,
+    selectedCell: SelectedCell,
     colorPickerIconName: ColorPickerIconName
   ) {
     let fill;
 
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const style = this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId];
+
     if (colorPickerIconName === 'backgroundColor') {
-      fill =
-        this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
-          ?.style?.backgroundColor ?? '';
+      fill = style?.backgroundColor ?? '';
     } else {
-      fill =
-        this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
-          ?.style?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
+      fill = style?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
     }
 
     this.colorPickerElementsMap[
@@ -910,10 +929,9 @@ class Toolbar {
     ].colorBar.style.backgroundColor = fill;
   }
 
-  setActiveMergedCells(selectedCells: Cell[], selectedFirstCellId: CellId) {
-    const isMerged = this.spreadsheet
-      .getActiveSheet()!
-      .merger.getIsCellPartOfMerge(selectedFirstCellId);
+  setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
+    const isMerged =
+      selectedCell.getIsCellPartOfMerge() && selectedCells.length === 1;
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false;
@@ -925,17 +943,18 @@ class Toolbar {
   }
 
   setActiveSaveState() {
-    if (this.spreadsheet.getActiveSheet()!.isSaving) {
+    if (this.spreadsheet.isSaving) {
       this.autosaveElement.text.textContent = 'Saving...';
     } else {
       this.autosaveElement.text.textContent = 'Saved';
     }
   }
 
-  setActiveHorizontalIcon(cellId: CellId) {
-    const horizontalTextAlign = this.spreadsheet
-      .getActiveSheet()
-      ?.cellRenderer.getCellData(cellId)?.style?.horizontalTextAlign;
+  setActiveHorizontalIcon(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const horizontalTextAlign =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]
+        ?.horizontalTextAlign;
     const icon = this.iconElementsMap.horizontalTextAlign.icon;
 
     switch (horizontalTextAlign) {
@@ -951,10 +970,11 @@ class Toolbar {
     }
   }
 
-  setActiveVerticalIcon(cellId: CellId) {
-    const verticalTextAlign = this.spreadsheet
-      .getActiveSheet()
-      ?.cellRenderer.getCellData(cellId)?.style?.verticalTextAlign;
+  setActiveVerticalIcon(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const verticalTextAlign =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]
+        ?.verticalTextAlign;
     const icon = this.iconElementsMap.verticalTextAlign.icon;
 
     switch (verticalTextAlign) {
@@ -970,20 +990,21 @@ class Toolbar {
     }
   }
 
-  setActiveFontSize(cellId: CellId) {
-    const fontSize = this.spreadsheet
-      .getActiveSheet()
-      ?.cellRenderer.getCellData(cellId)?.style?.fontSize;
+  setActiveFontSize(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const fontSize =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]?.fontSize;
 
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
     ).toString();
   }
 
-  setActiveTextFormat(cellId: CellId) {
-    const textFormatPattern = this.spreadsheet
-      .getActiveSheet()
-      ?.cellRenderer.getCellData(cellId)?.style?.textFormatPattern;
+  setActiveTextFormat(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const textFormatPattern =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]
+        ?.textFormatPattern;
 
     let textFormat = 'plainText';
 
@@ -1004,13 +1025,16 @@ class Toolbar {
     this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
   }
 
-  isFreezeActive() {
-    return !!this.spreadsheet.getActiveSheet()?.getData().frozenCells;
+  isFreezeActive(sheetId: SheetId) {
+    return !!this.spreadsheet.data.spreadsheetData.frozenCells?.[sheetId];
   }
 
-  isActive(cellId: CellId, key: keyof ICellStyle) {
-    return !!this.spreadsheet.getActiveSheet()?.cellRenderer.getCellData(cellId)
-      ?.style?.[key];
+  isActive(selectedCell: SelectedCell, key: keyof ICellStyleData) {
+    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const style =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId]?.[key];
+
+    return !!style;
   }
 
   setActive(actionElements: IActionElements, active: boolean) {

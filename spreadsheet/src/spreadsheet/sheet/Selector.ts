@@ -1,10 +1,11 @@
 import { Shape } from 'konva/lib/Shape';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
 import events from '../events';
 import Spreadsheet from '../Spreadsheet';
-import { Cell, CellId } from './CellRenderer';
-import Sheet, { getCellRectFromCell } from './Sheet';
+import SelectedCell from './cells/cell/SelectedCell';
+import SimpleCellAddress from './cells/cell/SimpleCellAddress';
+import Sheet from './Sheet';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -17,7 +18,7 @@ interface ISelectionArea {
 }
 
 interface IGroupedCell {
-  cells: Cell[];
+  cells: SelectedCell[];
   rect?: Rect;
 }
 
@@ -30,10 +31,10 @@ interface IGroupedCells {
 
 class Selector {
   isInSelectionMode = false;
-  selectedCell?: Cell;
-  selectedCells: Cell[] = [];
-  selectedCellId: CellId = '0_0';
-  previousSelectedCellId?: CellId;
+  selectedCell?: SelectedCell;
+  selectedCells: SelectedCell[] = [];
+  selectedSimpleCellAddress: SimpleCellAddress;
+  previousSelectedSimpleCellAddress?: SimpleCellAddress;
   groupedCells?: IGroupedCells | null;
   selectionArea?: ISelectionArea | null;
   private spreadsheet: Spreadsheet;
@@ -41,63 +42,45 @@ class Selector {
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
+
+    this.selectedSimpleCellAddress = new SimpleCellAddress(sheet.sheetId, 0, 0);
   }
 
   private renderSelectedCell() {
-    if (this.selectedCellId) {
-      this.selectedCell = this.sheet.cellRenderer.convertFromCellIdToCell(
-        this.selectedCellId
+    if (this.selectedSimpleCellAddress) {
+      this.selectedCell?.destroy();
+
+      this.selectedCell = new SelectedCell(
+        this.sheet,
+        this.selectedSimpleCellAddress
       );
 
-      const rect = this.selectedCell.getClientRect({
-        skipStroke: true,
-      });
+      const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo();
+      const sheetGroup = this.sheet.scrollGroups[stickyGroup].sheetGroup;
 
-      const cellRect = getCellRectFromCell(this.selectedCell);
-
-      const { strokeWidth, stroke } =
-        this.spreadsheet.styles.selectionFirstCell;
-
-      const rectConfig: RectConfig = {
-        ...this.spreadsheet.styles.selectionFirstCell,
-        stroke: undefined,
-      };
-
-      // We must have another Rect for the inside borders
-      // as konva does not allow stroke positioning
-      const innerSelectedCellRect = new Rect({
-        x: strokeWidth! / 2,
-        y: strokeWidth! / 2,
-        width: rect.width - strokeWidth!,
-        height: rect.height - strokeWidth!,
-        stroke,
-        strokeWidth,
-      });
-
-      this.selectedCell.add(innerSelectedCellRect);
-
-      const type = this.sheet.cellRenderer.getStickyGroupTypeFromCell(
-        this.selectedCell
-      );
-
-      const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
-
-      cellRect.setAttrs(rectConfig);
-
-      sheetGroup.add(this.selectedCell);
+      sheetGroup.add(this.selectedCell.group);
     }
   }
 
   private renderSelectionArea() {
     if (this.selectionArea) {
-      const { rows, cols } = this.sheet.getRowColsBetweenVectors(
-        this.selectionArea.start,
-        this.selectionArea.end
-      );
+      Object.keys(this.groupedCells ?? {}).forEach((key) => {
+        const type = key as keyof IGroupedCells;
 
-      this.selectedCells = this.sheet.cellRenderer.convertFromRowColsToCells(
-        rows,
-        cols
+        this.groupedCells?.[type].rect?.destroy();
+      });
+
+      const rangeSimpleCellAddress =
+        this.sheet.convertVectorsToRangeSimpleCellAddress(
+          this.selectionArea.start,
+          this.selectionArea.end
+        );
+
+      this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
+        this.sheet,
+        (simpleCellAddress) => {
+          return new SelectedCell(this.sheet, simpleCellAddress);
+        }
       );
 
       this.groupedCells = {
@@ -116,40 +99,37 @@ class Selector {
       };
 
       this.selectedCells.forEach((cell) => {
-        const stickyType =
-          this.sheet.cellRenderer.getStickyGroupTypeFromCell(cell);
+        const stickyGroup = cell.getStickyGroupCellBelongsTo();
 
-        this.groupedCells![stickyType].cells.push(cell);
+        this.groupedCells![stickyGroup].cells.push(cell);
       });
 
       Object.keys(this.groupedCells).forEach((key) => {
         const type = key as keyof IGroupedCells;
         const cells = this.groupedCells![type].cells;
 
-        if (cells.length) {
-          const topLeftCellClientRect = cells[0].getClientRect({
-            skipStroke: true,
-          });
+        this.groupedCells?.[type].rect?.destroy();
 
-          let minCol = -Infinity;
-          let minRow = -Infinity;
+        if (cells.length) {
+          const topLeftCellClientRect = cells[0].getClientRectWithoutStroke();
+
           let width = 0;
           let height = 0;
 
-          cells.forEach((cell) => {
-            const clientRect = cell.getClientRect({ skipStroke: true });
-            const { col, row } = cell.attrs;
+          const minMaxRangeSimpleCellAddress =
+            this.sheet.getMinMaxRangeSimpleCellAddress(cells);
 
-            if (col.x > minCol) {
-              minCol = col.x;
-              width += clientRect.width;
-            }
+          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+            'row'
+          )) {
+            height += this.sheet.rows.getSize(index);
+          }
 
-            if (row.y > minRow) {
-              minRow = row.y;
-              height += clientRect.height;
-            }
-          });
+          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+            'col'
+          )) {
+            width += this.sheet.cols.getSize(index);
+          }
 
           const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
 
@@ -167,67 +147,52 @@ class Selector {
     }
   }
 
-  destroySelection() {
-    this.selectedCell?.destroy();
-    Object.keys(this.groupedCells ?? {}).forEach((key) => {
-      const type = key as keyof IGroupedCells;
-
-      this.groupedCells?.[type].rect?.destroy();
-    });
-  }
-
   updateSelectedCells() {
-    this.destroySelection();
     this.renderSelectionArea();
     this.renderSelectedCell();
   }
 
-  startSelection(x: number, y: number) {
-    this.previousSelectedCellId = this.selectedCell?.id();
+  startSelection(vector: Vector2d) {
+    this.previousSelectedSimpleCellAddress =
+      this.selectedCell?.simpleCellAddress;
     this.selectionArea = null;
 
-    const { rows, cols } = this.sheet.getRowColsBetweenVectors(
-      {
-        x,
-        y,
-      },
-      {
-        x,
-        y,
-      }
-    );
+    const rangeSimpleCellAddress =
+      this.sheet.convertVectorsToRangeSimpleCellAddress(vector, vector);
 
-    const cell = this.sheet.cellRenderer.convertFromRowColsToCells(
-      rows,
-      cols
+    const cell = rangeSimpleCellAddress.getCellsBetweenRange(
+      this.sheet,
+      (simpleCellAddress) => {
+        return new SelectedCell(this.sheet, simpleCellAddress);
+      }
     )[0];
 
-    const cellClientRect = cell.getClientRect({ skipStroke: true });
+    const rect = cell.getClientRectWithoutStroke();
 
-    if (!this.sheet.cellRenderer.isOnFrozenCol(cell)) {
-      cellClientRect.x -= Math.abs(this.sheet.col.scrollBar.scroll);
+    if (!cell.isOnFrozenCol()) {
+      rect.x -= Math.abs(this.sheet.cols.scrollBar.scroll);
     }
 
-    if (!this.sheet.cellRenderer.isOnFrozenRow(cell)) {
-      cellClientRect.y -= Math.abs(this.sheet.row.scrollBar.scroll);
+    if (!cell.isOnFrozenRow()) {
+      rect.y -= Math.abs(this.sheet.rows.scrollBar.scroll);
     }
 
     this.selectionArea = {
       start: {
-        x: cellClientRect.x + 0.1,
-        y: cellClientRect.y + 0.1,
+        x: rect.x + 0.1,
+        y: rect.y + 0.1,
       },
       end: {
-        x: cellClientRect.x + cellClientRect.width,
-        y: cellClientRect.y + cellClientRect.height,
+        x: rect.x + rect.width,
+        y: rect.y + rect.height,
       },
     };
 
     this.isInSelectionMode = true;
 
-    this.selectedCellId = cell.id();
+    this.selectedSimpleCellAddress = cell.simpleCellAddress;
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(
       events.selector.startSelection,
@@ -238,10 +203,8 @@ class Selector {
 
   moveSelection() {
     if (this.isInSelectionMode) {
-      const { x, y } = this.sheet.shapes.sheet.getRelativePointerPosition();
-      const selectedCellRect = this.selectedCell!.getClientRect({
-        skipStroke: true,
-      });
+      const { x, y } = this.sheet.sheet.getRelativePointerPosition();
+      const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke();
 
       this.selectionArea = {
         start: {
@@ -281,7 +244,10 @@ class Selector {
   }
 
   hasChangedCellSelection() {
-    return this.selectedCell?.id() !== this.previousSelectedCellId;
+    return (
+      this.selectedCell?.simpleCellAddress.toCellId() !==
+      this.previousSelectedSimpleCellAddress?.toCellId()
+    );
   }
 }
 

@@ -1,11 +1,12 @@
 import { DebouncedFunc, throttle } from 'lodash';
-import events from '../../events';
-import { prefix } from '../../utils';
-import Sheet from '../Sheet';
-import { IRowColFunctions, RowColType } from '../RowCol';
+import events from '../../../events';
+import { prefix } from '../../../utils';
+import Sheet from '../../Sheet';
+import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import styles from './ScrollBar.module.scss';
-import Spreadsheet from '../../Spreadsheet';
-import { Vector2d } from 'konva/lib/types';
+import Spreadsheet from '../../../Spreadsheet';
+import ViewportPosition from './ViewportPosition';
+import RowColAddress from '../../cells/cell/RowColAddress';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -14,31 +15,28 @@ class ScrollBar {
   scrollEl: HTMLDivElement;
   scroll = 0;
   totalPreviousCustomSizeDifferences = 0;
-  sheetViewportPosition: Vector2d = {
-    x: 0,
-    y: 0,
-  };
-  previousSheetViewportPosition: Vector2d = {
-    x: 0,
-    y: 0,
-  };
+  sheetViewportPosition = new ViewportPosition();
+  previousSheetViewportPosition = new ViewportPosition();
   previousTouchMovePosition: number = 0;
-  private scrollType: ScrollBarType;
-  private throttledScroll: DebouncedFunc<(e: Event) => void>;
-  private spreadsheet: Spreadsheet;
+  scrollType: ScrollBarType;
+  throttledScroll: DebouncedFunc<(e: Event) => void>;
+  spreadsheet: Spreadsheet;
+  sheet: Sheet;
+  type: RowColType;
+  isCol: boolean;
+  functions: IRowColFunctions;
+  layerListeningTimeout?: NodeJS.Timeout;
+  pluralType: RowColsType;
 
-  constructor(
-    private sheet: Sheet,
-    private type: RowColType,
-    private isCol: boolean,
-    private functions: IRowColFunctions
-  ) {
-    this.sheet = sheet;
-    this.type = type;
+  constructor(public rowCols: RowCols) {
+    this.rowCols = rowCols;
+    this.sheet = this.rowCols.sheet;
+    this.type = this.rowCols.type;
+    this.pluralType = this.rowCols.pluralType;
     this.spreadsheet = this.sheet.spreadsheet;
-    this.isCol = isCol;
+    this.isCol = this.rowCols.isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
-    this.functions = functions;
+    this.functions = this.rowCols.functions;
 
     this.scrollBarEl = document.createElement('div');
     this.scrollEl = document.createElement('div');
@@ -74,14 +72,16 @@ class ScrollBar {
   }
 
   private getNewScrollAmount(start: number, end: number) {
-    const data = this.sheet.getData();
+    const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let newScrollAmount = 0;
     let totalCustomSizeDifferencs = 0;
 
     for (let i = start; i < end; i++) {
-      const size = data[this.type]?.sizes?.[i];
+      const rowCollAddress = new RowColAddress(this.sheet.sheetId, i);
+      const size =
+        data[this.pluralType]?.[rowCollAddress.toSheetRowColId()]?.size;
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize;
@@ -101,13 +101,12 @@ class ScrollBar {
     const xIndex = this.sheetViewportPosition.x;
     const stageSize = this.sheet.stage[this.functions.size]();
 
-    const yIndex = this.sheet[this.type].calculateSheetViewportEndPosition(
+    const yIndex = this.rowCols.calculateSheetViewportEndPosition(
       stageSize,
       xIndex
     );
 
-    // Add 1 to make it inclusive
-    return yIndex + 1;
+    return yIndex;
   }
 
   setYIndex() {
@@ -167,8 +166,10 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.destroyOutOfViewportItems();
-    this.drawViewportItems();
+    this.rowCols.destroyOutOfViewportItems();
+    this.sheet.cells.destroyOutOfViewportItems();
+    this.rowCols.drawViewport();
+    this.sheet.cells.drawViewport();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();
@@ -176,43 +177,25 @@ class ScrollBar {
       this.sheet.cellEditor.hideCellTooltip();
     }
 
+    if (this.layerListeningTimeout) {
+      clearTimeout(this.layerListeningTimeout);
+    }
+
+    this.layerListeningTimeout = setTimeout(() => {
+      this.sheet.layer.listening(true);
+      this.spreadsheet.hyperformula?.resumeEvaluation();
+    }, 40);
+
+    this.spreadsheet.hyperformula?.suspendEvaluation();
+    // Improves performance by ~4fps
+    this.sheet.layer.listening(false);
+
     this.spreadsheet.eventEmitter.emit(
       events.scroll[this.scrollType],
       e,
       newScroll
     );
   };
-
-  private drawViewportItems() {
-    this.sheet[this.type].drawViewport();
-    this.sheet.cellRenderer.drawViewport();
-  }
-
-  private destroyOutOfViewportItems() {
-    for (const [key, rowCol] of this.sheet[this.type].rowColMap) {
-      if (this.sheet.isShapeOutsideOfViewport(rowCol)) {
-        rowCol.destroy();
-
-        this.sheet[this.type].rowColMap.delete(key);
-      }
-    }
-
-    for (const [key, header] of this.sheet[this.type].headerGroupMap) {
-      if (this.sheet.isShapeOutsideOfViewport(header)) {
-        header.destroy();
-
-        this.sheet[this.type].headerGroupMap.delete(key);
-      }
-    }
-
-    for (const [key, cell] of this.sheet.cellRenderer.cellsMap) {
-      if (this.sheet.isShapeOutsideOfViewport(cell)) {
-        cell.destroy();
-
-        this.sheet.cellRenderer.cellsMap.delete(key);
-      }
-    }
-  }
 
   destroy() {
     this.scrollBarEl.removeEventListener('scroll', this.throttledScroll);

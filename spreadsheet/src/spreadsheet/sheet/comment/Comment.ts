@@ -7,7 +7,8 @@ import {
   createSuccessButton,
   createTextarea,
 } from './commentHtmlHelpers';
-import { CellId } from '../CellRenderer';
+import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
+import Spreadsheet from '../../Spreadsheet';
 
 class Comment {
   textarea: HTMLTextAreaElement;
@@ -16,9 +17,11 @@ class Comment {
   successButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
   container: Instance<Props>;
+  spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
+    this.spreadsheet = this.sheet.spreadsheet;
     this.content = createContent();
     this.textarea = createTextarea();
     this.buttonContainer = createButtonContainer();
@@ -58,13 +61,14 @@ class Comment {
   };
 
   successButtonOnClick = () => {
-    const id = this.sheet.selector.selectedCell!.id();
+    const simpleCellAddress =
+      this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.cellRenderer.setCellData(id, {
+    this.spreadsheet.data.setCell(simpleCellAddress, {
       comment: this.textarea.value,
     });
 
-    this.sheet.updateViewport();
+    this.spreadsheet.updateViewport();
     this.hide();
   };
 
@@ -78,12 +82,15 @@ class Comment {
     this.textarea.value = '';
   }
 
-  show(cellId: CellId) {
+  show(simpleCellAddress: SimpleCellAddress) {
     // unmount forces position to update
     this.container.unmount();
     this.container.show();
 
-    const comment = this.sheet.cellRenderer.getCellData(cellId)?.comment;
+    const comment =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ].comment;
 
     if (comment) {
       this.textarea.value = comment;

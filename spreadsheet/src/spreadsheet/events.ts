@@ -12,6 +12,9 @@ const events = {
   cellEditor: {
     change: 'ce-change',
   },
+  history: {
+    push: 'hp-push',
+  },
   resize: {
     row: {
       start: 'rr-start',
@@ -28,13 +31,13 @@ const events = {
     add: 'm-add',
     unMerge: 'm-unMerge',
   },
+  persist: {
+    save: 'p-save',
+  },
   selector: {
     startSelection: 's-startSelection',
     moveSelection: 's-moveSelection',
     endSelection: 's-endSelection',
-  },
-  sheet: {
-    setData: 's-setData',
   },
 };
 

@@ -51,14 +51,14 @@
     }
   },
   "peerDependencies": {
-    "hyperformula": "^1.1.0"
+    "eventemitter3": "^4.0.7",
+    "hyperformula": "^1.2.0"
   },
   "optionalDependencies": {
     "a-color-picker": "^1.2.1",
     "xlsx": "^0.17.2"
   },
   "dependencies": {
-    "eventemitter3": "^4.0.7",
     "konva": "^8.1.1",
     "lodash": "^4.17.21",
     "numfmt": "^2.1.0",

@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
-import { cloneDeep, isNil, merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import { defaultOptions, IOptions } from './options';
-import Sheet, { ISheetData, SheetId } from './sheet/Sheet';
+import Sheet, { SheetId } from './sheet/Sheet';
 import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
@@ -13,15 +13,16 @@ import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
-
-export interface ISpreadsheetData {
-  exportSpreadsheetName?: string;
-  sheetData: ISheetData[];
-}
+import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
+import SimpleCellAddress, {
+  CellId,
+} from './sheet/cells/cell/SimpleCellAddress';
+import events from './events';
 
 export interface ISpreadsheetConstructor {
+  eventEmitter: EventEmitter;
+  options?: IOptions;
   styles?: Partial<IStyles>;
-  options: IOptions;
   data?: Partial<ISpreadsheetData>;
   hyperformula?: HyperFormula;
   toolbar?: Toolbar;
@@ -37,7 +38,7 @@ class Spreadsheet {
   styles: IStyles;
   eventEmitter: EventEmitter;
   options: IOptions;
-  data: ISpreadsheetData;
+  data: Data;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -45,15 +46,14 @@ class Spreadsheet {
   clipboard: Clipboard;
   history: any;
   bottomBar?: BottomBar;
-  activeSheetId?: number;
+  activeSheetId = 0;
   totalSheetCount = 0;
+  isSaving = false;
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = {
-      sheetData: [],
-      ...params.data,
-    };
+    this.data = new Data(this, params.data);
     this.hyperformula = params.hyperformula;
+    this.eventEmitter = params.eventEmitter;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
     this.toolbar = params.toolbar;
@@ -61,7 +61,6 @@ class Spreadsheet {
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
     this.sheets = new Map();
-    this.eventEmitter = new EventEmitter();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
@@ -87,35 +86,46 @@ class Spreadsheet {
     this.bottomBar?.initialize(this);
     this.clipboard = new Clipboard(this);
 
-    this.history = new Manager((data: ISpreadsheetData) => {
-      const currentData = this.data;
+    this.history = new Manager((data: string) => {
+      const currentData = this.data.spreadsheetData;
 
-      this.data = data;
+      this.data.spreadsheetData = JSON.parse(data);
 
-      return currentData;
+      this.setCells();
+
+      return JSON.stringify(currentData);
     }, this.options.undoRedoLimit);
 
-    if (this.data.sheetData.length) {
-      this.data.sheetData.forEach((data) => {
-        this.createNewSheet(data);
-      });
-    } else {
-      this.createNewSheet({
-        sheetName: this.getSheetName(),
-      });
+    this.data.setSheet(0);
+
+    for (const key in this.data.spreadsheetData.sheets) {
+      const sheetId = parseInt(key, 10);
+      const sheet = this.data.spreadsheetData.sheets[sheetId];
+
+      this.createNewSheet(sheet);
     }
+
+    this.setCells();
 
     this.switchSheet(0);
 
-    this.sheets.forEach((sheet) => {
-      const data = sheet.getData().cellsData || {};
-
-      Object.keys(data).forEach((id) => {
-        sheet.cellRenderer.setHyperformulaCellData(id, data[id].value);
-      });
-    });
-
     this.updateViewport();
+  }
+
+  private setCells() {
+    this.hyperformula?.suspendEvaluation();
+
+    for (const key in this.data.spreadsheetData.cells) {
+      const cellId = key as CellId;
+      const cell = this.data.spreadsheetData.cells?.[cellId];
+
+      this.hyperformula?.setCellContents(
+        SimpleCellAddress.cellIdToAddress(cellId),
+        cell?.value
+      );
+    }
+
+    this.hyperformula?.resumeEvaluation();
   }
 
   getRegisteredFunctions() {
@@ -128,16 +138,37 @@ class Spreadsheet {
     this.updateViewport();
   }
 
-  addToHistory() {
-    const data = cloneDeep(this.data);
+  pushToHistory() {
+    const data = JSON.stringify(this.data.spreadsheetData);
 
     this.history.push(data);
+
+    this.persistData();
+
+    this.eventEmitter.emit(events.history.push, this.data.spreadsheetData);
+  }
+
+  persistData() {
+    const done = () => {
+      this.isSaving = false;
+      this.updateViewport();
+    };
+
+    this.isSaving = true;
+
+    this.eventEmitter.emit(
+      events.persist.save,
+      this.data.spreadsheetData,
+      done
+    );
   }
 
   undo() {
     if (!this.history.canUndo) return;
 
     this.history.undo();
+
+    this.persistData();
     this.updateViewport();
   }
 
@@ -145,6 +176,8 @@ class Spreadsheet {
     if (!this.history.canRedo) return;
 
     this.history.redo();
+
+    this.persistData();
     this.updateViewport();
   }
 
@@ -153,9 +186,7 @@ class Spreadsheet {
   }
 
   getActiveSheet() {
-    return isNil(this.activeSheetId)
-      ? null
-      : this.sheets.get(this.activeSheetId);
+    return this.sheets.get(this.activeSheetId);
   }
 
   updateViewport() {
@@ -187,9 +218,11 @@ class Spreadsheet {
 
     sheet.destroy();
 
-    this.sheets.delete(sheetId);
+    delete this.data.spreadsheetData.sheets;
 
-    delete this.data.sheetData[sheetId];
+    this.hyperformula?.removeSheet(sheetId);
+
+    this.sheets.delete(sheetId);
 
     this.updateViewport();
   }
@@ -201,24 +234,21 @@ class Spreadsheet {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data.sheetData[sheetId].sheetName = sheetName;
-
+    this.data.setSheet(sheetId, {
+      sheetName,
+    });
     this.hyperformula?.renameSheet(sheetId, sheetName);
 
     this.updateViewport();
   }
 
   createNewSheet(data: ISheetData) {
+    this.data.setSheet(data.id, data);
     this.hyperformula?.addSheet(data.sheetName);
 
-    const sheetId =
-      this.hyperformula?.getSheetId(data.sheetName) ?? this.totalSheetCount;
+    const sheet = new Sheet(this, data.id);
 
-    this.data.sheetData[sheetId] = data;
-
-    const sheet = new Sheet(this, sheetId);
-
-    this.sheets.set(sheetId, sheet);
+    this.sheets.set(data.id, sheet);
 
     this.totalSheetCount++;
 

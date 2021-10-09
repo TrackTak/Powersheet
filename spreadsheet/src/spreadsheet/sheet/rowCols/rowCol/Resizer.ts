@@ -34,6 +34,7 @@ class Resizer {
 
     this.resizeMarker.on('mouseover', this.resizeMarkerOnMouseOver);
     this.resizeMarker.on('mouseout', this.resizeMarkerOnMouseOut);
+    this.resizeMarker.on('dragstart', this.resizeLineDragStart);
     this.resizeMarker.on('dragmove', this.resizeLineDragMove);
     this.resizeMarker.on('dragend', this.resizeLineDragEnd);
 
@@ -51,10 +52,11 @@ class Resizer {
   }
 
   destroy() {
-    this.resizeMarker.off('dragmove', this.resizeLineDragMove);
-    this.resizeMarker.off('dragend', this.resizeLineDragEnd);
     this.resizeMarker.off('mouseover', this.resizeMarkerOnMouseOver);
     this.resizeMarker.off('mouseout', this.resizeMarkerOnMouseOut);
+    this.resizeMarker.off('dragstart', this.resizeLineDragStart);
+    this.resizeMarker.off('dragmove', this.resizeLineDragMove);
+    this.resizeMarker.off('dragend', this.resizeLineDragEnd);
   }
 
   private getPosition() {
@@ -106,6 +108,10 @@ class Resizer {
     this.resetCursor();
 
     this.hideResizeMarker();
+  };
+
+  resizeLineDragStart = () => {
+    this.spreadsheet.pushToHistory();
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {

@@ -225,6 +225,8 @@ class RowCol {
     ) => void,
     comparer?: (a: string, b: string) => number
   ) {
+    this.spreadsheet.pushToHistory();
+
     const { frozenCells, mergedCells, cells, ...data } =
       this.spreadsheet.data.spreadsheetData;
     const rowCol =

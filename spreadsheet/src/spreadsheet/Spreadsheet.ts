@@ -126,9 +126,12 @@ class Spreadsheet {
     this.updateViewport();
   }
 
-  addToHistory() {
-    // const data = cloneDeep(this.data);
-    // this.history.push(data);
+  addToHistory(callback: () => any) {
+    const data = JSON.parse(JSON.stringify(this.data));
+
+    this.history.push(data);
+
+    callback();
   }
 
   undo() {

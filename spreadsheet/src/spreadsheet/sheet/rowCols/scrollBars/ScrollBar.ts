@@ -2,10 +2,11 @@ import { DebouncedFunc, throttle } from 'lodash';
 import events from '../../../events';
 import { prefix } from '../../../utils';
 import Sheet from '../../Sheet';
-import RowCols, { IRowColFunctions, RowColType } from '../RowCols';
+import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
 import ViewportPosition from './ViewportPosition';
+import RowColAddress from '../../cells/cell/RowColAddress';
 
 export type ScrollBarType = 'horizontal' | 'vertical';
 
@@ -25,11 +26,13 @@ class ScrollBar {
   isCol: boolean;
   functions: IRowColFunctions;
   layerListeningTimeout?: NodeJS.Timeout;
+  pluralType: RowColsType;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
     this.sheet = this.rowCols.sheet;
     this.type = this.rowCols.type;
+    this.pluralType = this.rowCols.pluralType;
     this.spreadsheet = this.sheet.spreadsheet;
     this.isCol = this.rowCols.isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
@@ -69,14 +72,16 @@ class ScrollBar {
   }
 
   private getNewScrollAmount(start: number, end: number) {
-    const data = this.spreadsheet.data.getSheetData();
+    const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let newScrollAmount = 0;
     let totalCustomSizeDifferencs = 0;
 
     for (let i = start; i < end; i++) {
-      const size = data[this.type]?.sizes?.[i];
+      const rowCollAddress = new RowColAddress(this.sheet.sheetId, i);
+      const size =
+        data[this.pluralType]?.[rowCollAddress.toSheetRowColId()].size;
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize;

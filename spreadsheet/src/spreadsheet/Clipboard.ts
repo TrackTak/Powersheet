@@ -49,44 +49,48 @@ class Clipboard {
       rangeData.map((arr) => arr.map((cell) => cell?.value))
     );
 
-    const cellsData = rangeData.reduce((all, rowData, rowIndex) => {
-      const colData = rowData.reduce((cellsData, cellData, colIndex) => {
+    rangeData.forEach((rowData, rowIndex) => {
+      rowData.forEach((cellData, colIndex) => {
         let row = this.sourceRange!.topLeftSimpleCellAddress.row;
         let col = this.sourceRange!.topLeftSimpleCellAddress.col;
 
         row += rowIndex % this.sourceRange!.height();
         col += colIndex % this.sourceRange!.width();
 
-        const targetCellId = SimpleCellAddress.rowColToCellId(
+        const targetSimpleCellAddress = new SimpleCellAddress(
+          targetRange.topLeftSimpleCellAddress.sheet,
           targetRange.topLeftSimpleCellAddress.row + rowIndex,
           targetRange.topLeftSimpleCellAddress.col + colIndex
         );
 
         if (this.isCut) {
-          this.spreadsheet.data.deleteCellData(
-            new SimpleCellAddress(
-              this.sourceRange!.topLeftSimpleCellAddress.sheet,
-              row,
-              col
-            )
-          );
+          const cellId = new SimpleCellAddress(
+            this.sourceRange!.topLeftSimpleCellAddress.sheet,
+            row,
+            col
+          ).toCellId();
+
+          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
         }
 
-        return {
-          ...cellsData,
-          [targetCellId]: cellData,
-        };
-      }, {});
+        if (cellData?.style) {
+          const cellStyle =
+            this.spreadsheet.data.spreadsheetData.cellStyles?.[cellData.style];
 
-      return {
-        ...all,
-        ...colData,
-      };
-    }, {});
+          if (cellStyle) {
+            this.spreadsheet.data.setCellStyle(
+              targetSimpleCellAddress,
+              cellStyle
+            );
+          }
+        }
 
-    this.spreadsheet.data.setCellDataBatch(
-      this.spreadsheet.convertCellsDataToCellsMap(cellsData)
-    );
+        if (cellData) {
+          this.spreadsheet.data.setCellData(targetSimpleCellAddress, cellData);
+        }
+      });
+    });
+
     this.spreadsheet.updateViewport();
 
     if (this.isCut) {
@@ -99,10 +103,6 @@ class Clipboard {
     sourceRange: RangeSimpleCellAddress,
     targetRange: RangeSimpleCellAddress
   ) => {
-    const data = this.spreadsheet.data.getSheetData(
-      sourceRange.topLeftSimpleCellAddress.sheet
-    );
-
     return targetRange.getArrayOfAddresses().map((arr) =>
       arr.map((targetSimpleCellAddress) => {
         const height = sourceRange.height();
@@ -130,7 +130,7 @@ class Clipboard {
           col
         ).toCellId();
 
-        return data.cellsData?.[sourceCellId];
+        return this.spreadsheet.data.spreadsheetData.cells?.[sourceCellId];
       })
     );
   };

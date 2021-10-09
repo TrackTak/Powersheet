@@ -157,7 +157,7 @@ FrozenCells.args = {
       0: {
         id: 0,
         sheetName: 'Frozen Cells',
-        frozenCells: 0,
+        frozenCell: 0,
       },
     },
     frozenCells: {
@@ -179,28 +179,22 @@ MergedCells.args = {
       0: {
         id: 0,
         sheetName: 'Merged Cells',
-        mergedCells: [0],
+        mergedCells: {
+          '0_3_1': '0_3_1',
+        },
       },
     },
     mergedCells: {
-      0: {
-        id: 0,
-        mergedRow: 0,
-        mergedCol: 0,
-      },
-    },
-    mergedRows: {
-      0: {
-        id: 0,
-        x: 3,
-        y: 5,
-      },
-    },
-    mergedCols: {
-      0: {
-        id: 0,
-        x: 1,
-        y: 1,
+      '0_3_1': {
+        id: '0_3_1',
+        row: {
+          x: 3,
+          y: 5,
+        },
+        col: {
+          x: 1,
+          y: 1,
+        },
       },
     },
   },
@@ -215,12 +209,12 @@ DifferentSizeCells.args = {
       0: {
         id: 0,
         sheetName: 'Different Size Cells',
-        rowSizes: [0],
+        rows: { '0_0': '0_0' },
       },
     },
-    rowSizes: {
-      0: {
-        id: 0,
+    rows: {
+      '0_0': {
+        id: '0_0',
         size: 250,
       },
     },
@@ -377,7 +371,12 @@ AllCurrencySymbols.args = {
       0: {
         id: 0,
         sheetName: 'All Currency Symbols',
-        cells: ['0_1_0', '0_1_1', '0_3_3', '0_4_1'],
+        cells: {
+          '0_1_0': '0_1_0',
+          '0_1_1': '0_1_1',
+          '0_3_3': '0_3_3',
+          '0_4_1': '0_4_1',
+        },
       },
     },
     cells: {
@@ -411,7 +410,14 @@ CellsData.args = {
       0: {
         id: 0,
         sheetName: 'Cells Data',
-        cells: ['0_1_0', '0_1_1', '0_3_3', '0_4_1', '0_4_4', '0_40_4'],
+        cells: {
+          '0_1_0': '0_1_0',
+          '0_1_1': '0_1_1',
+          '0_3_3': '0_3_3',
+          '0_4_1': '0_4_1',
+          '0_4_4': '0_4_4',
+          '0_40_4': '0_40_4',
+        },
       },
     },
     cellStyles: {
@@ -491,12 +497,19 @@ Formulas.args = {
       0: {
         id: 0,
         sheetName: 'Formulas',
-        cells: ['0_0_1', '0_1_1', '0_2_1', '0_2_0', '0_4_0', '0_4_1'],
+        cells: {
+          '0_0_1': '0_0_1',
+          '0_1_1': '0_1_1',
+          '0_2_1': '0_2_1',
+          '0_2_0': '0_2_0',
+          '0_4_0': '0_4_0',
+          '0_4_1': '0_4_1',
+        },
       },
       1: {
         id: 1,
         sheetName: 'Other',
-        cells: ['1_0_0'],
+        cells: { '1_0_0': '1_0_0' },
       },
     },
     cellStyles: {

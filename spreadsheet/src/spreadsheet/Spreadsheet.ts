@@ -14,7 +14,9 @@ import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
 import HyperFormulaModule from './HyperFormula';
 import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+} from './sheet/cells/cell/SimpleCellAddress';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
@@ -104,14 +106,15 @@ class Spreadsheet {
 
       this.createNewSheet(sheet);
 
-      sheet.cells?.forEach((cellId) => {
+      for (const key in sheet.cells) {
+        const cellId = key as CellId;
         const cell = this.data.spreadsheetData.cells?.[cellId];
 
         this.hyperformula?.setCellContents(
           SimpleCellAddress.cellIdToAddress(cellId),
           cell?.value
         );
-      });
+      }
     }
 
     this.switchSheet(0);
@@ -185,8 +188,11 @@ class Spreadsheet {
 
     sheet.destroy();
 
+    delete this.data.spreadsheetData.sheets;
+
+    this.hyperformula?.removeSheet(sheetId);
+
     this.sheets.delete(sheetId);
-    this.data.deleteSheetData(sheetId);
 
     this.updateViewport();
   }
@@ -198,13 +204,17 @@ class Spreadsheet {
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data.renameSheetData(sheetId, sheetName);
+    this.data.setSheetData(sheetId, {
+      sheetName,
+    });
+    this.hyperformula?.renameSheet(sheetId, sheetName);
 
     this.updateViewport();
   }
 
   createNewSheet(data: ISheetData) {
-    this.data.addSheetData(data.id, data);
+    this.data.setSheetData(data.id, data);
+    this.hyperformula?.addSheet(data.sheetName);
 
     const sheet = new Sheet(this, data.id);
 

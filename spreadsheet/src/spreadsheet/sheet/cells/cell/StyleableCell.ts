@@ -14,7 +14,7 @@ import {
   TextWrap,
   VerticalTextAlign,
 } from '../../Data';
-import { merge } from 'lodash';
+import RowColAddress from './RowColAddress';
 
 class StyleableCell extends Cell {
   text?: Text;
@@ -85,8 +85,9 @@ class StyleableCell extends Cell {
 
   setBold(bold: boolean) {
     const italic =
-      this.spreadsheet.data.getCellData(this.simpleCellAddress)?.style
-        ?.italic ?? false;
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[
+        this.simpleCellAddress.toCellId()
+      ]?.italic ?? false;
     const fontStyle = new FontStyle(this.text, bold, italic);
 
     fontStyle.setStyle();
@@ -94,16 +95,19 @@ class StyleableCell extends Cell {
 
   setItalic(italic: boolean) {
     const bold =
-      this.spreadsheet.data.getCellData(this.simpleCellAddress)?.style?.bold ??
-      false;
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[
+        this.simpleCellAddress.toCellId()
+      ]?.bold ?? false;
     const fontStyle = new FontStyle(this.text, bold, italic);
 
     fontStyle.setStyle();
   }
 
   setStrikeThrough(strikeThrough: boolean) {
-    const underline = this.spreadsheet.data.getCellData(this.simpleCellAddress)
-      ?.style?.underline;
+    const underline =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[
+        this.simpleCellAddress.toCellId()
+      ]?.underline ?? false;
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough,
@@ -114,9 +118,10 @@ class StyleableCell extends Cell {
   }
 
   setUnderline(underline: boolean) {
-    const strikeThrough = this.spreadsheet.data.getCellData(
-      this.simpleCellAddress
-    )?.style?.strikeThrough;
+    const strikeThrough =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[
+        this.simpleCellAddress.toCellId()
+      ]?.strikeThrough ?? false;
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough,
@@ -188,9 +193,15 @@ class StyleableCell extends Cell {
   }
 
   draw() {
-    const cellData = this.spreadsheet.data.getCellData(this.simpleCellAddress);
+    const cellData =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        this.simpleCellAddress.toCellId()
+      ];
+    const style =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[
+        this.simpleCellAddress.toCellId()
+      ];
 
-    const style = cellData?.style;
     let value =
       this.spreadsheet.hyperformula?.getCellValue(this.simpleCellAddress) ??
       cellData?.value;
@@ -298,14 +309,14 @@ class StyleableCell extends Cell {
       const cellHeight = this.getClientRectWithoutStroke().height;
 
       if (cellHeight > height) {
-        const sheetData = merge({}, this.spreadsheet.data.getSheetData(), {
-          row: {
-            sizes: {
-              [this.simpleCellAddress.row]: cellHeight,
-            },
-          },
-        });
-        this.spreadsheet.data.setSheetData(sheetData);
+        this.spreadsheet.data.setRowCol(
+          'row',
+          new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
+          {
+            size: cellHeight,
+          }
+        );
+
         this.spreadsheet.updateViewport();
       }
     }

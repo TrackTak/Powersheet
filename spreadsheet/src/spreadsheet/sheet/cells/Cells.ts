@@ -32,11 +32,11 @@ class Cells {
 
   // forceDraw is turned off for scrolling for performance
   drawViewport(forceDraw = false) {
-    const data = this.spreadsheet.data.getSheetData();
+    const data = this.spreadsheet.data.spreadsheetData;
 
     if (data.frozenCells) {
-      const frozenRow = data.frozenCells.row;
-      const frozenCol = data.frozenCells.col;
+      const frozenRow = data.frozenCells[this.sheet.sheetId].row;
+      const frozenCol = data.frozenCells[this.sheet.sheetId].col;
 
       if (!isNil(frozenRow)) {
         for (let ri = 0; ri <= frozenRow; ri++) {
@@ -85,7 +85,10 @@ class Cells {
     forceDraw: boolean
   ) => {
     const cellAlreadyExists = !!this.cellsMap.get(simpleCellAddress);
-    const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
+    const cellData =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ];
     const hasCellData = !!(
       cellData || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
     );

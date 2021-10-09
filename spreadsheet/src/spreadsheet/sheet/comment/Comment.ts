@@ -65,7 +65,6 @@ class Comment {
       this.sheet.selector.selectedCell!.simpleCellAddress;
 
     this.spreadsheet.data.setCellData(simpleCellAddress, {
-      ...this.spreadsheet.data.getCellData(simpleCellAddress),
       comment: this.textarea.value,
     });
 
@@ -89,7 +88,9 @@ class Comment {
     this.container.show();
 
     const comment =
-      this.spreadsheet.data.getCellData(simpleCellAddress)?.comment;
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ].comment;
 
     if (comment) {
       this.textarea.value = comment;

@@ -66,7 +66,10 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress;
-    const cellData = this.spreadsheet.data.getCellData(simpleCellAddress);
+    const cellData =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ];
 
     if (this.cellEditorEl.textContent) {
       this.spreadsheet.data.setCellData(simpleCellAddress, {
@@ -75,7 +78,9 @@ class CellEditor {
       });
     } else {
       if (cellData) {
-        this.spreadsheet.data.deleteCellDataValue(simpleCellAddress);
+        delete this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ];
       }
     }
   }
@@ -154,7 +159,9 @@ class CellEditor {
 
     if (setTextContent) {
       this.setTextContent(
-        this.spreadsheet.data.getCellData(simpleCellAddress)?.value ?? null
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ]?.value ?? null
       );
 
       setCaretToEndOfElement(this.cellEditorEl);

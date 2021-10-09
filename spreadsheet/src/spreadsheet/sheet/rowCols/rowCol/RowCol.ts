@@ -2,12 +2,13 @@ import { Group } from 'konva/lib/Group';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { isNil, merge } from 'lodash';
+import { isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import { centerRectTwoInRectOne } from '../../../utils';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
-import RowCols, { IRowColFunctions, RowColType } from '../RowCols';
+import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
+import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 
 class RowCol {
   spreadsheet: Spreadsheet;
@@ -21,10 +22,12 @@ class RowCol {
   xyFrozenLine?: Line;
   sheet: Sheet;
   type: RowColType;
+  pluralType: RowColsType;
   isCol: boolean;
   oppositeType: RowColType;
   functions: IRowColFunctions;
   oppositeFunctions: IRowColFunctions;
+  rowColAddress: RowColAddress;
 
   constructor(public rowCols: RowCols, public index: number) {
     this.rowCols = rowCols;
@@ -32,10 +35,12 @@ class RowCol {
     this.sheet = rowCols.sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.type = rowCols.type;
+    this.pluralType = rowCols.pluralType;
     this.isCol = rowCols.isCol;
     this.oppositeType = rowCols.oppositeType;
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
+    this.rowColAddress = new RowColAddress(this.sheet.sheetId, this.index);
 
     this.headerGroup = new Group({
       [this.functions.axis]: this.rowCols.getAxis(this.index),
@@ -114,7 +119,7 @@ class RowCol {
   }
 
   insert(amount: number) {
-    const { cellsData, ...data } = this.spreadsheet.data.getSheetData();
+    const { cells, ...data } = this.spreadsheet.data.spreadsheetData;
     const modifyCallback = (value: number, amount: number) => {
       return value + amount;
     };
@@ -124,25 +129,35 @@ class RowCol {
       'addColumns',
       'addRows',
       modifyCallback,
-      (sizeIndex) => {
-        const sizes = data[this.type]?.sizes!;
-        const size = sizes[sizeIndex];
+      (rowColAddress) => {
+        const rowColIndex = rowColAddress.rowCol;
+        const rowColId = rowColAddress.toSheetRowColId();
+        const rowCol = data[this.pluralType]?.[rowColId];
 
-        if (sizeIndex >= this.index) {
-          const newIndex = modifyCallback(sizeIndex, amount);
+        if (rowColIndex >= this.index) {
+          const newRowColIndex = modifyCallback(rowColIndex, amount);
 
-          sizes[newIndex] = size;
-
-          delete sizes[sizeIndex];
+          if (rowCol) {
+            this.spreadsheet.data.setRowCol(
+              this.type,
+              new RowColAddress(rowColAddress.sheet, newRowColIndex),
+              rowCol
+            );
+          }
+          delete this.spreadsheet.data.spreadsheetData[this.pluralType]?.[
+            rowColId
+          ];
         }
       },
       (simpleCellAddress, newSimpleCellAddress) => {
         if (simpleCellAddress[this.type] >= this.index) {
           this.spreadsheet.data.setCellData(
             newSimpleCellAddress,
-            cellsData![simpleCellAddress.toCellId()]
+            cells![simpleCellAddress.toCellId()]
           );
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          delete this.spreadsheet.data.spreadsheetData.cells?.[
+            simpleCellAddress.toCellId()
+          ];
         }
       },
       (a, b) => {
@@ -152,7 +167,7 @@ class RowCol {
   }
 
   delete(amount: number) {
-    const { cellsData, ...data } = this.spreadsheet.data.getSheetData();
+    const { cells, ...data } = this.spreadsheet.data.spreadsheetData;
     const modifyCallback = (value: number, amount: number) => {
       return value - amount;
     };
@@ -162,19 +177,28 @@ class RowCol {
       'removeColumns',
       'removeRows',
       modifyCallback,
-      (sizeIndex) => {
-        const sizes = data[this.type]?.sizes!;
-        const size = sizes[sizeIndex];
+      (rowColAddress) => {
+        const rowColIndex = rowColAddress.rowCol;
+        const rowColId = rowColAddress.toSheetRowColId();
+        const rowCol = data[this.pluralType]?.[rowColId];
 
-        if (sizeIndex < this.index) return;
+        if (rowColIndex < this.index) return;
 
-        if (sizeIndex > this.index) {
-          const newIndex = modifyCallback(sizeIndex, amount);
+        if (rowColIndex > this.index) {
+          const newRowColIndex = modifyCallback(rowColIndex, amount);
 
-          sizes[newIndex] = size;
+          if (rowCol) {
+            this.spreadsheet.data.setRowCol(
+              this.type,
+              new RowColAddress(rowColAddress.sheet, newRowColIndex),
+              rowCol
+            );
+          }
         }
 
-        delete sizes[sizeIndex];
+        delete this.spreadsheet.data.spreadsheetData[this.pluralType]?.[
+          rowColId
+        ];
       },
       (simpleCellAddress, newSimpleCellAddress) => {
         if (simpleCellAddress[this.type] < this.index) return;
@@ -182,11 +206,13 @@ class RowCol {
         if (simpleCellAddress[this.type] > this.index) {
           this.spreadsheet.data.setCellData(
             newSimpleCellAddress,
-            cellsData![simpleCellAddress.toCellId()]
+            cells![simpleCellAddress.toCellId()]
           );
         }
 
-        this.spreadsheet.data.deleteCellData(simpleCellAddress);
+        delete this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ];
       }
     );
   }
@@ -196,34 +222,30 @@ class RowCol {
     hyperformulaColumnFunctionName: 'addColumns' | 'removeColumns',
     hyperformulaRowFunctionName: 'addRows' | 'removeRows',
     modifyCallback: (value: number, amount: number) => number,
-    sizesCallback: (sizeIndex: number) => void,
+    rowColCallback: (rowColAddress: RowColAddress) => void,
     cellsDataCallback: (
       simpleCellAddress: SimpleCellAddress,
       newSimpleCellAddress: SimpleCellAddress
     ) => void,
     comparer?: (a: string, b: string) => number
   ) {
-    const { frozenCells, mergedCells, cellsData, ...data } =
-      this.spreadsheet.data.getSheetData();
-    const sizes = data[this.type]?.sizes!;
+    const { frozenCells, mergedCells, cells, ...data } =
+      this.spreadsheet.data.spreadsheetData;
+    const rowCol = data.sheets?.[this.sheet.sheetId][`${this.type}s`];
 
     if (this.rowCols.getIsFrozen(this.index)) {
-      this.spreadsheet.data.setSheetData({
-        ...this.spreadsheet.data.getSheetData(),
-        frozenCells: {
-          ...frozenCells,
-          [this.type]: amount,
-        },
+      this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {
+        [this.type]: amount,
       });
     }
 
-    if (data[this.type]?.sizes) {
-      Object.keys(sizes)
+    if (rowCol) {
+      Object.keys(rowCol)
         .sort(comparer)
         .forEach((key) => {
-          const sizeIndex = parseInt(key, 10);
+          const sheetRowColId = key as SheetRowColId;
 
-          sizesCallback(sizeIndex);
+          rowColCallback(RowColAddress.sheetRowColIdToAddress(sheetRowColId));
         });
     }
 
@@ -249,14 +271,12 @@ class RowCol {
         });
     }
 
-    if (cellsData) {
-      Object.keys(cellsData)
+    if (cells) {
+      Object.keys(cells)
         .sort(comparer)
-        .forEach((cellId) => {
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
-            this.sheet.sheetId,
-            cellId as CellId
-          );
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
           const newSimpleCellAddress = new SimpleCellAddress(
             this.sheet.sheetId,
             this.isCol
@@ -360,7 +380,8 @@ class RowCol {
   }
 
   private drawGridLine() {
-    const { frozenCells } = this.spreadsheet.data.getSheetData();
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
     const frozenRow = frozenCells?.row;
     const frozenCol = frozenCells?.col;
     const frozenCell = frozenCells?.[this.type];

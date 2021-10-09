@@ -51,7 +51,9 @@ class FormulaBar {
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     const sheet = this.spreadsheet.getActiveSheet();
     const value = simpleCellAddress
-      ? this.spreadsheet.data.getCellData(simpleCellAddress)?.value
+      ? this.spreadsheet.data.spreadsheetData.cells?.[
+          simpleCellAddress.toCellId()
+        ]?.value
       : null;
     const cellEditorTextContent =
       sheet?.cellEditor?.cellEditorEl.textContent ?? null;

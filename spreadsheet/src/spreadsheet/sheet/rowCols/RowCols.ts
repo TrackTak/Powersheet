@@ -8,8 +8,10 @@ import { isNil } from 'lodash';
 import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
+import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
 
 export type RowColType = 'row' | 'col';
+export type RowColsType = 'rows' | 'cols';
 
 export interface IRowColFunctions {
   axis: 'y' | 'x';
@@ -31,9 +33,11 @@ class RowCols {
   isCol: boolean;
   spreadsheet: Spreadsheet;
   resizer: Resizer;
+  pluralType: RowColsType;
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
+    this.pluralType = `${this.type}s`;
     this.isCol = this.type === 'col';
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
@@ -72,14 +76,18 @@ class RowCols {
   }
 
   getAxis(index: number) {
-    const data = this.spreadsheet.data.getSheetData();
+    const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
 
     let totalPreviousCustomSizeDifferences =
       this.scrollBar.totalPreviousCustomSizeDifferences;
 
     for (let i = this.scrollBar.sheetViewportPosition.x; i < index; i++) {
-      const size = data[this.type]?.sizes?.[i];
+      const sheetRowColId = new RowColAddress(
+        this.sheet.sheetId,
+        i
+      ).toSheetRowColId();
+      const size = data[this.pluralType]?.[sheetRowColId]?.size;
 
       if (size) {
         totalPreviousCustomSizeDifferences += size - defaultSize;
@@ -95,21 +103,29 @@ class RowCols {
   }
 
   getSize(index: number) {
-    return (
-      this.spreadsheet.data.getSheetData()[this.type]?.sizes?.[index] ??
-      this.spreadsheet.options[this.type].defaultSize
-    );
+    const sheetRowColId = new RowColAddress(
+      this.sheet.sheetId,
+      index
+    ).toSheetRowColId();
+    const size =
+      this.spreadsheet.data.spreadsheetData[this.pluralType]?.[sheetRowColId]
+        ?.size;
+
+    return size ?? this.spreadsheet.options[this.type].defaultSize;
   }
 
   getIsLastFrozen(index: number) {
     return (
-      index === this.spreadsheet.data.getSheetData().frozenCells?.[this.type]
+      index ===
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId][
+        this.type
+      ]
     );
   }
 
   getIsFrozen(index: number) {
-    const data = this.spreadsheet.data.getSheetData();
-    const frozenCell = data.frozenCells?.[this.type];
+    const data = this.spreadsheet.data.spreadsheetData;
+    const frozenCell = data.frozenCells?.[this.sheet.sheetId][this.type];
 
     return isNil(frozenCell) ? false : index <= frozenCell;
   }
@@ -146,13 +162,14 @@ class RowCols {
   };
 
   getTotalSize() {
-    const sizes = Object.keys(
-      this.spreadsheet.data.getSheetData()[this.type]?.sizes ?? {}
+    const rowCols = Object.keys(
+      this.spreadsheet.data.spreadsheetData[this.pluralType] ?? {}
     );
 
-    const totalSizeDifference = sizes.reduce((currentSize, key) => {
-      const index = parseInt(key, 10);
-      const size = this.getSize(index);
+    const totalSizeDifference = rowCols.reduce((currentSize, key) => {
+      const sheetRowColId = key as SheetRowColId;
+      const rowColAddress = RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+      const size = this.getSize(rowColAddress.rowCol);
 
       return (
         size - this.spreadsheet.options[this.type].defaultSize + currentSize
@@ -179,10 +196,10 @@ class RowCols {
 
   // forceDraw is turned off for scrolling for performance
   drawViewport(forceDraw = false) {
-    const data = this.spreadsheet.data.getSheetData();
+    const data = this.spreadsheet.data.spreadsheetData;
 
     if (data.frozenCells) {
-      const frozenCell = data.frozenCells[this.type];
+      const frozenCell = data.frozenCells[this.sheet.sheetId][this.type];
 
       if (!isNil(frozenCell)) {
         for (let index = 0; index <= frozenCell; index++) {
@@ -204,8 +221,8 @@ class RowCols {
   }
 
   *getSizeForFrozenCell() {
-    const { frozenCells } = this.spreadsheet.data.getSheetData();
-    const frozenCell = frozenCells?.[this.type];
+    const { frozenCells } = this.spreadsheet.data.spreadsheetData;
+    const frozenCell = frozenCells?.[this.sheet.sheetId]?.[this.type];
 
     if (isNil(frozenCell)) return null;
 

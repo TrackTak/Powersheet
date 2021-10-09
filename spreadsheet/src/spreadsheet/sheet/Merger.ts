@@ -2,7 +2,6 @@ import Sheet from './Sheet';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
-import { merge } from 'lodash';
 
 class Merger {
   associatedMergedCellAddressMap: Map<CellId, RangeSimpleCellAddress>;
@@ -16,8 +15,8 @@ class Merger {
 
   setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
-    const { mergedCells } = this.spreadsheet.data.getSheetData();
-    const mergedCell = mergedCells?.[cellId];
+    const mergedCell =
+      this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
 
     if (mergedCell) {
       const sheetId = this.sheet.sheetId;
@@ -48,26 +47,22 @@ class Merger {
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const mergedCellId =
       rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
-    const existingTopLeftCellStyle = this.spreadsheet.data.getCellData(
-      rangeSimpleCellAddress.topLeftSimpleCellAddress
-    )?.style;
+    const existingTopLeftCellStyle =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[mergedCellId];
 
-    const sheetData = merge({}, this.spreadsheet.data.getSheetData(), {
-      mergedCells: {
-        [mergedCellId]: {
-          row: {
-            x: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
-            y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-          },
-          col: {
-            x: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
-            y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
-          },
+    this.spreadsheet.data.setMergedCell(
+      rangeSimpleCellAddress.topLeftSimpleCellAddress,
+      {
+        row: {
+          x: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
+          y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
         },
-      },
-    });
-
-    this.spreadsheet.data.setSheetData(sheetData);
+        col: {
+          x: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
+          y: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
+        },
+      }
+    );
 
     for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
@@ -78,17 +73,14 @@ class Merger {
         );
         const cellId = simpleCellAddress.toCellId();
 
-        if (
-          simpleCellAddress.toCellId() !== mergedCellId &&
-          sheetData.cellsData?.[cellId]
-        ) {
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+        if (simpleCellAddress.toCellId() !== mergedCellId) {
+          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
         }
       }
     }
 
     if (existingTopLeftCellStyle) {
-      this.spreadsheet.data.setCellDataStyle(
+      this.spreadsheet.data.setCellStyle(
         rangeSimpleCellAddress.topLeftSimpleCellAddress,
         existingTopLeftCellStyle
       );
@@ -101,7 +93,7 @@ class Merger {
   }
 
   removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const { mergedCells } = this.spreadsheet.data.getSheetData();
+    const mergedCells = this.spreadsheet.data.spreadsheetData.mergedCells;
 
     this.sheet.cells.cellsMap.forEach((cell, simpleCellAddress) => {
       if (
@@ -126,9 +118,10 @@ class Merger {
         rangeSimpleCellAddress.topLeftSimpleCellAddress
       )
     ) {
-      const style = this.spreadsheet.data.getCellData(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress
-      )?.style;
+      const style =
+        this.spreadsheet.data.spreadsheetData.cellStyles?.[
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+        ];
 
       if (style) {
         for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
@@ -141,7 +134,7 @@ class Merger {
               ci
             );
 
-            this.spreadsheet.data.setCellDataStyle(
+            this.spreadsheet.data.setCellStyle(
               associatedSimpleCellAddress,
               style
             );

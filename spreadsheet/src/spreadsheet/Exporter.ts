@@ -8,6 +8,7 @@ import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress, {
   CellId,
 } from './sheet/cells/cell/SimpleCellAddress';
+import { SheetRowColId } from './sheet/cells/cell/RowColAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;
@@ -18,20 +19,18 @@ class Export {
 
   private getWorksheet(sheet: Sheet, data: ISheetData) {
     const worksheet: WorkSheet = {};
-    const cellsData = data.cellsData ?? {};
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
       new SimpleCellAddress(sheet.sheetId, 0, 0),
       new SimpleCellAddress(sheet.sheetId, 0, 0)
     );
 
-    for (const key in cellsData) {
+    for (const key in data.cells) {
       const cellId = key as CellId;
-      const cell = cellsData[cellId];
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
-        sheet.sheetId,
-        cellId
-      );
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+      const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+      const cellStyle =
+        this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId];
       const cellString = simpleCellAddress.addressToString();
 
       rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
@@ -54,7 +53,7 @@ class Export {
 
       let type;
 
-      const textFormatPattern = cell.style?.textFormatPattern;
+      const textFormatPattern = cellStyle?.textFormatPattern;
 
       if (isNil(cell.value) && isNil(textFormatPattern)) {
         type = 'z';
@@ -77,10 +76,10 @@ class Export {
       }
     }
 
-    for (const [simpleCellAddressFormat, rangeSimpleCellAddress] of sheet.merger
+    for (const [cellId, rangeSimpleCellAddress] of sheet.merger
       .associatedMergedCellAddressMap) {
       const isTopLeftCell = this.spreadsheet.data.getIsCellAMergedCell(
-        SimpleCellAddress.stringFormatToAddress(simpleCellAddressFormat)
+        SimpleCellAddress.cellIdToAddress(cellId)
       );
 
       if (isTopLeftCell) {
@@ -105,31 +104,33 @@ class Export {
       '!ref'
     ] = `${rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()}:${rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()}`;
 
-    const cols: ColInfo[] = [];
-    const rows: RowInfo[] = [];
-    const colSizes = data.col?.sizes ?? {};
-    const rowSizes = data.row?.sizes ?? {};
+    const colInfos: ColInfo[] = [];
+    const rowInfos: RowInfo[] = [];
+    const cols = this.spreadsheet.data.spreadsheetData.cols ?? {};
+    const rows = this.spreadsheet.data.spreadsheetData.rows ?? {};
 
-    Object.keys(colSizes).forEach((key) => {
+    Object.keys(cols).forEach((key) => {
+      const sheetRowColId = key as SheetRowColId;
       const index = parseInt(key, 10);
-      const value = colSizes[index];
+      const value = cols[sheetRowColId];
 
-      cols[index] = {
-        wpx: value,
+      colInfos[index] = {
+        wpx: value.size,
       };
     });
 
-    Object.keys(rowSizes).forEach((key) => {
+    Object.keys(rows).forEach((key) => {
+      const sheetRowColId = key as SheetRowColId;
       const index = parseInt(key, 10);
-      const value = rowSizes[index];
+      const value = rows[sheetRowColId];
 
-      rows[index] = {
-        hpx: value,
+      rowInfos[index] = {
+        hpx: value.size,
       };
     });
 
-    worksheet['!cols'] = cols;
-    worksheet['!rows'] = rows;
+    worksheet['!cols'] = colInfos;
+    worksheet['!rows'] = rowInfos;
 
     return worksheet;
   }
@@ -137,15 +138,17 @@ class Export {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new();
 
-    this.spreadsheet.data.spreadsheetData.sheetData.forEach((data) => {
-      const sheet = Array.from(this.spreadsheet.sheets.values()).find(
-        (x) => x.spreadsheet.data.getSheetData().sheetName === data.sheetName
-      )!;
+    Object.keys(this.spreadsheet.data.spreadsheetData.sheets ?? {}).forEach(
+      (key) => {
+        const sheetIndex = parseInt(key, 10);
+        const sheetData =
+          this.spreadsheet.data.spreadsheetData.sheets![sheetIndex];
+        const sheet = this.spreadsheet.sheets.get(sheetData.id)!;
+        const worksheet = this.getWorksheet(sheet, sheetData);
 
-      const worksheet = this.getWorksheet(sheet, data);
-
-      utils.book_append_sheet(workbook, worksheet, data.sheetName);
-    });
+        utils.book_append_sheet(workbook, worksheet, sheetData.sheetName);
+      }
+    );
 
     return workbook;
   }

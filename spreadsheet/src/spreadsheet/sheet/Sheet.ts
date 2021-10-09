@@ -275,12 +275,13 @@ class Sheet {
   private setCellOnAction() {
     const selectedFirstcell = this.selector.selectedCell!;
     const simpleCellAddress = selectedFirstcell.simpleCellAddress;
+    const cellId = simpleCellAddress.toCellId();
 
     if (this.hasDoubleClickedOnCell()) {
       this.cellEditor.show(selectedFirstcell);
     }
 
-    if (this.spreadsheet.data.getCellData(simpleCellAddress)?.comment) {
+    if (this.spreadsheet.data.spreadsheetData.cells?.[cellId].comment) {
       this.comment.show(simpleCellAddress);
     }
   }
@@ -344,7 +345,9 @@ class Sheet {
         this.selector.selectedCells.forEach((cell) => {
           const simpleCellAddress = cell.simpleCellAddress;
 
-          this.spreadsheet.data.deleteCellData(simpleCellAddress);
+          delete this.spreadsheet.data.spreadsheetData.cells?.[
+            simpleCellAddress.toCellId()
+          ];
         });
         break;
       }
@@ -517,13 +520,12 @@ class Sheet {
   }
 
   updateFrozenBackgrounds() {
-    const frozenCells = this.spreadsheet.data.getSheetData().frozenCells;
     const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
     const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
     const xyStickyFrozenBackground =
       this.scrollGroups.xySticky.frozenBackground;
 
-    if (frozenCells && this.rows.frozenLine && this.cols.frozenLine) {
+    if (this.rows.frozenLine && this.cols.frozenLine) {
       const colClientRect = this.cols.frozenLine.getClientRect({
         skipStroke: true,
       });

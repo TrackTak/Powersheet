@@ -5,7 +5,7 @@ import events from '../../../events';
 import Sheet from '../../Sheet';
 import Spreadsheet from '../../../Spreadsheet';
 import RowCols from '../RowCols';
-import { merge } from 'lodash';
+import SheetRowColAddress from '../../cells/cell/RowColAddress';
 
 class Resizer {
   resizeMarker: Rect;
@@ -146,15 +146,14 @@ class Resizer {
     this.hideResizeMarker();
     this.hideGuideLine();
 
-    const newSheetData = merge({}, this.spreadsheet.data.getSheetData(), {
-      [this.rowCols.type]: {
-        sizes: {
-          [this.currentIndex!]: newSize,
-        },
-      },
-    });
+    this.spreadsheet.data.setRowCol(
+      this.rowCols.type,
+      new SheetRowColAddress(this.sheet.sheetId, this.currentIndex),
+      {
+        size: newSize,
+      }
+    );
 
-    this.spreadsheet.data.setSheetData(newSheetData);
     this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(

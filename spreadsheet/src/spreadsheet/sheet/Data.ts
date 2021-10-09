@@ -1,8 +1,9 @@
-import { isNil } from 'lodash';
-import events from '../events';
+import { Vector2d } from 'konva/lib/types';
+import { merge } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
+import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
-import { RowColId } from './rowCols/RowCols';
+import { RowColId, RowColsType, RowColType } from './rowCols/RowCols';
 import { SheetId } from './Sheet';
 
 export type TextWrap = 'wrap';
@@ -13,12 +14,6 @@ export type BorderStyle =
   | 'borderTop'
   | 'borderRight'
   | 'borderBottom';
-
-export type FrozenCellId = number;
-export type MergedRowId = number;
-export type MergedColId = number;
-export type MergedCellId = number;
-export type SizeId = number;
 
 export interface ICellStyleData {
   id: CellId;
@@ -45,52 +40,44 @@ export interface ICellData {
 export interface ISheetData {
   id: SheetId;
   sheetName: string;
-  frozenCells?: FrozenCellId;
-  mergedCells?: MergedCellId[];
-  rowSizes?: SizeId[];
-  colSizes?: SizeId[];
-  cells?: CellId[];
+  frozenCell?: SheetId;
+  mergedCells?: {
+    [index: CellId]: CellId;
+  };
+  cells?: {
+    [index: CellId]: CellId;
+  };
+  rows?: {
+    [index: SheetRowColId]: SheetRowColId;
+  };
+  cols?: {
+    [index: SheetRowColId]: SheetRowColId;
+  };
 }
 
 export interface IFrozenCellData {
-  id: FrozenCellId;
+  id: SheetId;
   row?: RowColId;
   col?: RowColId;
 }
 
-export interface IMergedRowData {
-  id: MergedRowId;
-  x: number;
-  y: number;
-}
-
-export interface IMergedColData {
-  id: MergedColId;
-  x: number;
-  y: number;
-}
-
 export interface IMergedCellData {
-  id: MergedCellId;
-  mergedRow: MergedRowId;
-  mergedCol: MergedColId;
+  id: CellId;
+  row: Vector2d;
+  col: Vector2d;
 }
 
-export interface ISizeData {
-  id: SizeId;
+export interface IRowColData {
+  id: SheetRowColId;
   size: number;
 }
 
-export interface IMergedRowsData {
-  [index: MergedRowId]: IMergedRowData;
+export interface IRow {
+  [index: SheetRowColId]: IRowColData;
 }
 
-export interface IMergedColsData {
-  [index: MergedColId]: IMergedColData;
-}
-
-export interface ISizesData {
-  [index: SizeId]: ISizeData;
+export interface ICol {
+  [index: SheetRowColId]: IRowColData;
 }
 
 export interface ICellsData {
@@ -110,17 +97,15 @@ export interface IFrozenCellsData {
 }
 
 export interface IMergedCellsData {
-  [index: MergedCellId]: IMergedCellData;
+  [index: CellId]: IMergedCellData;
 }
 
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string;
   frozenCells?: IFrozenCellsData;
   mergedCells?: IMergedCellsData;
-  mergedRows?: IMergedRowsData;
-  mergedCols?: IMergedColsData;
-  rowSizes?: ISizesData;
-  colSizes?: ISizesData;
+  rows?: IRow;
+  cols?: ICol;
   cells?: ICellsData;
   cellStyles?: ICellStylesData;
   sheets?: ISheetsData;
@@ -139,221 +124,134 @@ class Data {
   }
 
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
-    const data = this.getSheetData();
+    const mergedCells = this.spreadsheetData.mergedCells;
 
-    return !!data.mergedCells?.[simpleCellAddress.toCellId()];
+    return !!mergedCells![simpleCellAddress.toCellId()];
   }
 
-  getSheetData(sheetId = this.spreadsheet.activeSheetId!): ISheetData {
-    return this.spreadsheetData.sheetData[sheetId];
-  }
-
-  getCellData(simpleCellAddress: SimpleCellAddress) {
-    return this.getSheetData(simpleCellAddress.sheet).cellsData?.[
-      simpleCellAddress.toCellId()
-    ];
-  }
-
-  deleteCellData(simpleCellAddress: SimpleCellAddress) {
-    const newSheetData = this.getSheetData(simpleCellAddress.sheet);
-
-    delete newSheetData.cellsData?.[simpleCellAddress.toCellId()];
-
-    this.setSheetData(newSheetData, true, simpleCellAddress.sheet);
-  }
-
-  deleteSheetData(sheetId: SheetId) {
-    const newSpreadshetData = {
-      ...this.spreadsheetData,
-    };
-
-    delete newSpreadshetData.sheetData[sheetId];
-
-    this.setSpreadsheetData(newSpreadshetData);
-
-    this.spreadsheet.hyperformula?.removeSheet(sheetId);
-  }
-
-  renameSheetData(sheetId: SheetId, sheetName: string) {
-    this.setSheetData(
-      {
-        ...this.getSheetData(sheetId),
-        sheetName,
+  setSheetData(sheetId: SheetId, sheetData: Partial<ISheetData>) {
+    this.spreadsheetData.sheets = {
+      ...this.spreadsheetData.sheets,
+      [sheetId]: {
+        sheetName: this.spreadsheet.getSheetName(),
+        ...this.spreadsheetData.sheets?.[sheetId],
+        ...sheetData,
+        id: sheetId,
       },
-      true,
-      sheetId
-    );
-
-    this.spreadsheet.hyperformula?.renameSheet(sheetId, sheetName);
-  }
-
-  addSheetData(sheetId: SheetId, data: ISheetData) {
-    this.spreadsheet.hyperformula?.addSheet(data.sheetName);
-
-    this.setSheetData(data, true, sheetId);
-  }
-
-  setSpreadsheetData(data: ISpreadsheetData, addToHistory: boolean = true) {
-    if (addToHistory) {
-      this.spreadsheet.addToHistory();
-    }
-
-    this.spreadsheetData = data;
-  }
-
-  setSheetData(
-    data: ISheetData,
-    addToHistory: boolean = true,
-    sheetId = this.spreadsheet.activeSheetId!
-  ) {
-    if (data.frozenCells) {
-      const frozenCells = data.frozenCells;
-
-      if (!isNil(frozenCells.row)) {
-        if (frozenCells.row < 0) {
-          delete frozenCells.row;
-        }
-      }
-
-      if (!isNil(frozenCells.col)) {
-        if (frozenCells.col < 0) {
-          delete frozenCells.col;
-        }
-      }
-
-      if (isNil(frozenCells.row) && isNil(frozenCells.col)) {
-        delete data.frozenCells;
-      }
-    }
-
-    if (data.mergedCells) {
-      Object.keys(data.mergedCells).forEach((topLeftCellId) => {
-        const mergedCell = data.mergedCells![topLeftCellId as CellId];
-
-        if (mergedCell.col.x < 0) {
-          mergedCell.col.x = 0;
-        }
-
-        if (mergedCell.row.x < 0) {
-          mergedCell.row.x = 0;
-        }
-
-        const newTopLeftCellId = SimpleCellAddress.rowColToCellId(
-          mergedCell.row.x,
-          mergedCell.col.x
-        );
-
-        delete data.mergedCells![topLeftCellId as CellId];
-
-        data.mergedCells![newTopLeftCellId] = mergedCell;
-
-        if (
-          mergedCell.col.x >= mergedCell.col.y &&
-          mergedCell.row.x >= mergedCell.row.y
-        ) {
-          delete data.mergedCells![newTopLeftCellId];
-        }
-      });
-    }
-
-    const newSpreadshetData = {
-      ...this.spreadsheetData,
-      sheetData: [...this.spreadsheetData.sheetData],
     };
-
-    newSpreadshetData.sheetData[sheetId] = data;
-
-    this.setSpreadsheetData(newSpreadshetData, addToHistory);
-
-    const done = () => {
-      this.isSaving = false;
-      this.spreadsheet.updateViewport();
-    };
-
-    this.isSaving = true;
-
-    this.spreadsheet.eventEmitter.emit(events.sheet.setData, this, data, done);
-  }
-
-  setCellDataBatch(
-    cellsData: Map<SimpleCellAddress, ICellData>,
-    addToHistory: boolean = true
-  ) {
-    if (addToHistory) {
-      this.spreadsheet.addToHistory();
-    }
-    this.spreadsheet.hyperformula?.suspendEvaluation();
-
-    cellsData.forEach((cellData, simpleCellAddress) => {
-      this.setCellData(simpleCellAddress, cellData, false);
-    });
-
-    this.spreadsheet.hyperformula?.resumeEvaluation();
   }
 
   setCellData(
     simpleCellAddress: SimpleCellAddress,
-    cellData: ICellData,
-    addToHistory: boolean = true
+    cell: Omit<ICellData, 'id'>
   ) {
-    const data = this.getSheetData(simpleCellAddress.sheet);
+    const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
-    const updatedData: ISheetData = {
-      ...data,
-      cellsData: {
-        ...data.cellsData,
-        [cellId]: cellData,
+    this.setSheetData(sheetId, {
+      cells: {
+        ...this.spreadsheetData.sheets?.[sheetId].cells,
+        [cellId]: cellId,
+      },
+    });
+
+    this.spreadsheetData.cells = {
+      ...this.spreadsheetData.cells,
+      [cellId]: {
+        ...this.spreadsheetData.cells?.[cellId],
+        ...cell,
+        id: cellId,
       },
     };
-
-    this.setSheetData(updatedData, addToHistory, simpleCellAddress.sheet);
-
-    try {
-      this.spreadsheet.hyperformula?.setCellContents(
-        simpleCellAddress,
-        cellData.value
-      );
-    } catch (e) {
-      console.error(e);
-    }
   }
 
-  setCellDataStyle(simpleCellAddress: SimpleCellAddress, style: ICellStyle) {
-    const cellData = this.getCellData(simpleCellAddress);
+  setCellStyle(
+    simpleCellAddress: SimpleCellAddress,
+    cellStyle: Omit<ICellStyleData, 'id'>
+  ) {
+    const cellId = simpleCellAddress.toCellId();
 
     this.setCellData(simpleCellAddress, {
-      ...cellData,
-      style: {
-        ...cellData?.style,
-        ...style,
+      [cellId]: {
+        style: cellId,
+      },
+    });
+
+    this.spreadsheetData.cellStyles = {
+      ...this.spreadsheetData.cellStyles,
+      [cellId]: {
+        ...this.spreadsheetData.cellStyles?.[cellId],
+        ...cellStyle,
+        id: cellId,
+      },
+    };
+  }
+
+  setMergedCell(
+    simpleCellAddress: SimpleCellAddress,
+    mergedCellData: Omit<IMergedCellData, 'id'>
+  ) {
+    const sheetId = simpleCellAddress.sheet;
+    const mergedCellId = simpleCellAddress.toCellId();
+
+    this.setSheetData(sheetId, {
+      mergedCells: {
+        ...this.spreadsheetData.sheets?.[sheetId].mergedCells,
+        [mergedCellId]: mergedCellId,
+      },
+    });
+
+    this.spreadsheetData.mergedCells = merge<
+      object,
+      IMergedCellsData | undefined,
+      Partial<IMergedCellsData>
+    >({}, this.spreadsheetData.mergedCells, {
+      [mergedCellId]: {
+        ...mergedCellData,
+        id: mergedCellId,
       },
     });
   }
 
-  deleteCellDataStyle(
-    simpleCellAddress: SimpleCellAddress,
-    key: keyof ICellStyle
-  ) {
-    const cellData = this.getCellData(simpleCellAddress);
+  setFrozenCell(sheetId: SheetId, frozenCellData: Omit<IFrozenCellData, 'id'>) {
+    this.setSheetData(sheetId, {
+      frozenCell: sheetId,
+    });
 
-    if (cellData) {
-      delete cellData.style?.[key];
-
-      this.setCellData(simpleCellAddress, cellData);
-    }
+    this.spreadsheetData.frozenCells = {
+      ...this.spreadsheetData.frozenCells,
+      [sheetId]: {
+        ...this.spreadsheetData.frozenCells?.[sheetId],
+        ...frozenCellData,
+        id: sheetId,
+      },
+    };
   }
 
-  deleteCellDataValue(simpleCellAddress: SimpleCellAddress) {
-    const cellData = this.getCellData(simpleCellAddress);
+  setRowCol(
+    type: RowColType,
+    rowColAddress: RowColAddress,
+    rowColData: Omit<IRowColData, 'id'>
+  ) {
+    const sheetRowColId = rowColAddress.toSheetRowColId();
+    const sheetId = rowColAddress.sheet;
+    const pluralType: RowColsType = `${type}s`;
 
-    if (cellData) {
-      delete cellData.value;
+    this.setSheetData(sheetId, {
+      [type]: {
+        ...this.spreadsheetData.sheets?.[sheetId][pluralType],
+        [sheetRowColId]: sheetRowColId,
+      },
+    });
 
-      this.spreadsheet.hyperformula?.setCellContents(simpleCellAddress, null);
-
-      this.setCellData(simpleCellAddress, cellData);
-    }
+    this.spreadsheetData[pluralType] = {
+      ...this.spreadsheetData[pluralType],
+      [sheetRowColId]: {
+        ...this.spreadsheetData[pluralType]?.[sheetRowColId],
+        ...rowColData,
+        id: sheetRowColId,
+      },
+    };
   }
 }
 

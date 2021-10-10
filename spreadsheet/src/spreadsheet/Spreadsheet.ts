@@ -98,6 +98,13 @@ class Spreadsheet {
 
     this.data.setSheet(0);
 
+    // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
+      once: true,
+    });
+  }
+
+  onDOMContentLoaded = () => {
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
       const sheet = this.data.spreadsheetData.sheets[sheetId];
@@ -110,6 +117,10 @@ class Spreadsheet {
     this.switchSheet(0);
 
     this.updateViewport();
+  };
+
+  destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 
   private setCells() {
@@ -218,7 +229,7 @@ class Spreadsheet {
 
     sheet.destroy();
 
-    delete this.data.spreadsheetData.sheets;
+    delete this.data.spreadsheetData.sheets?.[sheetId];
 
     this.hyperformula?.removeSheet(sheetId);
 

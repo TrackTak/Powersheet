@@ -47,8 +47,8 @@ class Merger {
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const mergedCellId =
       rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
-    const existingTopLeftCellStyle =
-      this.spreadsheet.data.spreadsheetData.cellStyles?.[mergedCellId];
+    const existingTopLeftCell =
+      this.spreadsheet.data.spreadsheetData.cells?.[mergedCellId];
 
     this.spreadsheet.data.setMergedCell(
       rangeSimpleCellAddress.topLeftSimpleCellAddress,
@@ -78,10 +78,10 @@ class Merger {
       }
     }
 
-    if (existingTopLeftCellStyle) {
-      this.spreadsheet.data.setCellStyle(
+    if (existingTopLeftCell) {
+      this.spreadsheet.data.setCell(
         rangeSimpleCellAddress.topLeftSimpleCellAddress,
-        existingTopLeftCellStyle
+        existingTopLeftCell
       );
     }
 
@@ -99,12 +99,12 @@ class Merger {
         rangeSimpleCellAddress.topLeftSimpleCellAddress
       )
     ) {
-      const style =
-        this.spreadsheet.data.spreadsheetData.cellStyles?.[
+      const cell =
+        this.spreadsheet.data.spreadsheetData.cells?.[
           rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
         ];
 
-      if (style) {
+      if (cell) {
         for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
           for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom(
             'col'
@@ -115,10 +115,7 @@ class Merger {
               ci
             );
 
-            this.spreadsheet.data.setCellStyle(
-              associatedSimpleCellAddress,
-              style
-            );
+            this.spreadsheet.data.setCell(associatedSimpleCellAddress, cell);
           }
         }
       }

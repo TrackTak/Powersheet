@@ -157,6 +157,7 @@ FrozenCells.args = {
       0: {
         id: 0,
         sheetName: 'Frozen Cells',
+        frozenCell: 0,
       },
     },
     frozenCells: {
@@ -178,6 +179,9 @@ MergedCells.args = {
       0: {
         id: 0,
         sheetName: 'Merged Cells',
+        mergedCells: {
+          '0_3_1': '0_3_1',
+        },
       },
     },
     mergedCells: {
@@ -205,6 +209,8 @@ DifferentSizeCells.args = {
       0: {
         id: 0,
         sheetName: 'Different Size Cells',
+        rows: { '0_0': '0_0', '0_2': '0_2' },
+        cols: { '0_0': '0_0' },
       },
     },
     rows: {
@@ -376,6 +382,12 @@ AllCurrencySymbols.args = {
       0: {
         id: 0,
         sheetName: 'All Currency Symbols',
+        cells: {
+          '0_1_0': '0_1_0',
+          '0_1_1': '0_1_1',
+          '0_3_3': '0_3_3',
+          '0_4_1': '0_4_1',
+        },
       },
     },
     cells: {
@@ -409,11 +421,20 @@ CellsData.args = {
       0: {
         id: 0,
         sheetName: 'Cells Data',
+        cells: {
+          '0_1_0': '0_1_0',
+          '0_1_1': '0_1_1',
+          '0_3_3': '0_3_3',
+          '0_4_1': '0_4_1',
+          '0_4_4': '0_4_4',
+          '0_40_4': '0_40_4',
+        },
       },
     },
-    cellStyles: {
+    cells: {
       '0_1_0': {
         id: '0_1_0',
+        value: 'HI!',
         horizontalTextAlign: 'right',
         verticalTextAlign: 'bottom',
         backgroundColor: 'red',
@@ -421,6 +442,9 @@ CellsData.args = {
       },
       '0_1_1': {
         id: '0_1_1',
+        comment: 'Powersheet is the best',
+        value:
+          'A very long piece of text that should wrap to the next line on the word.',
         horizontalTextAlign: 'center',
         verticalTextAlign: 'middle',
         bold: true,
@@ -434,6 +458,7 @@ CellsData.args = {
       },
       '0_4_1': {
         id: '0_4_1',
+        value: 'Some value',
         underline: true,
         strikeThrough: true,
         fontSize: 14,
@@ -441,27 +466,8 @@ CellsData.args = {
       },
       '0_4_4': {
         id: '0_4_4',
-        textFormatPattern: '0.00%',
-      },
-    },
-    cells: {
-      '0_1_0': {
-        id: '0_1_0',
-        value: 'HI!',
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        comment: 'Powersheet is the best',
-        value:
-          'A very long piece of text that should wrap to the next line on the word.',
-      },
-      '0_4_1': {
-        id: '0_4_1',
-        value: 'Some value',
-      },
-      '0_4_4': {
-        id: '0_4_4',
         value: '0.05',
+        textFormatPattern: '0.00%',
       },
       '0_40_4': {
         id: '0_40_4',
@@ -480,50 +486,40 @@ Formulas.args = {
       0: {
         id: 0,
         sheetName: 'Formulas',
+        cells: {
+          '0_0_1': '0_0_1',
+          '0_1_1': '0_1_1',
+          '0_2_1': '0_2_1',
+          '0_2_0': '0_2_0',
+          '0_4_0': '0_4_0',
+          '0_4_1': '0_4_1',
+        },
       },
       1: {
         id: 1,
         sheetName: 'Other',
-      },
-    },
-    cellStyles: {
-      '0_0_1': {
-        id: '0_0_1',
-        textFormatPattern: '#,##0.00',
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        textFormatPattern: '#,##0.00',
-      },
-      '0_2_1': {
-        id: '0_2_1',
-        textFormatPattern: '#,##0.00',
-      },
-      '0_4_1': {
-        id: '0_4_1',
-        textFormatPattern: '#,##0.00',
-      },
-      '1_0_0': {
-        id: '1_0_0',
-        textFormatPattern: '#,##0.00',
+        cells: { '1_0_0': '1_0_0' },
       },
     },
     cells: {
       '0_0_1': {
         id: '0_0_1',
         value: '5',
+        textFormatPattern: '#,##0.00',
       },
       '0_1_1': {
         id: '0_1_1',
         value: '2',
-      },
-      '0_2_1': {
-        id: '0_2_1',
-        value: '=SUM(B1, B2)',
+        textFormatPattern: '#,##0.00',
       },
       '0_2_0': {
         id: '0_2_0',
         value: 'SUM',
+      },
+      '0_2_1': {
+        id: '0_2_1',
+        value: '=SUM(B1, B2)',
+        textFormatPattern: '#,##0.00',
       },
       '0_4_0': {
         id: '0_4_0',
@@ -532,10 +528,12 @@ Formulas.args = {
       '0_4_1': {
         id: '0_4_1',
         value: "='Other'!A1 * 30",
+        textFormatPattern: '#,##0.00',
       },
       '1_0_0': {
         id: '1_0_0',
         value: '100',
+        textFormatPattern: '#,##0.00',
       },
     },
   },

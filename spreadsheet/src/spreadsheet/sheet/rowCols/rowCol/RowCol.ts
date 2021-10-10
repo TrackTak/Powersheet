@@ -119,8 +119,7 @@ class RowCol {
   }
 
   insert(amount: number) {
-    const { cells, cellStyles, ...data } =
-      this.spreadsheet.data.spreadsheetData;
+    const { cells, ...data } = this.spreadsheet.data.spreadsheetData;
     const modifyCallback = (value: number, amount: number) => {
       return value + amount;
     };
@@ -154,18 +153,12 @@ class RowCol {
         if (simpleCellAddress[this.type] >= this.index) {
           const cellId = simpleCellAddress.toCellId();
           const cell = cells?.[cellId];
-          const cellStyle = cellStyles?.[cellId];
 
           if (cell) {
             this.spreadsheet.data.setCell(newSimpleCellAddress, cell);
           }
 
-          if (cellStyle) {
-            this.spreadsheet.data.setCellStyle(newSimpleCellAddress, cellStyle);
-          }
-
           this.spreadsheet.data.deleteCell(simpleCellAddress);
-          this.spreadsheet.data.deleteCellStyle(simpleCellAddress);
         }
       },
       (a, b) => {
@@ -175,8 +168,7 @@ class RowCol {
   }
 
   delete(amount: number) {
-    const { cells, cellStyles, ...data } =
-      this.spreadsheet.data.spreadsheetData;
+    const { cells, ...data } = this.spreadsheet.data.spreadsheetData;
     const modifyCallback = (value: number, amount: number) => {
       return value - amount;
     };
@@ -215,19 +207,13 @@ class RowCol {
         if (simpleCellAddress[this.type] > this.index) {
           const cellId = simpleCellAddress.toCellId();
           const cell = cells?.[cellId];
-          const cellStyle = cellStyles?.[cellId];
 
           if (cell) {
             this.spreadsheet.data.setCell(newSimpleCellAddress, cell);
           }
-
-          if (cellStyle) {
-            this.spreadsheet.data.setCellStyle(newSimpleCellAddress, cellStyle);
-          }
         }
 
         this.spreadsheet.data.deleteCell(simpleCellAddress);
-        this.spreadsheet.data.deleteCellStyle(simpleCellAddress);
       }
     );
   }

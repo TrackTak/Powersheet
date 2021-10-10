@@ -28,8 +28,6 @@ class Export {
       const cellId = key as CellId;
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
       const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
-      const cellStyle =
-        this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId];
       const cellString = simpleCellAddress.addressToString();
       const mergedCell =
         this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
@@ -54,7 +52,7 @@ class Export {
 
       let type;
 
-      const textFormatPattern = cellStyle?.textFormatPattern;
+      const textFormatPattern = cell?.textFormatPattern;
 
       if (isNil(cell.value) && isNil(textFormatPattern)) {
         type = 'z';

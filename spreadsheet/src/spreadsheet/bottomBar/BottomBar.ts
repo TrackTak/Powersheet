@@ -64,10 +64,7 @@ class BottomBar {
     this.content.classList.add(styles.content, `${bottomBarPrefix}-content`);
 
     this.tabContainer = document.createElement('div');
-    this.tabContainer.classList.add(
-      styles.tabContainer,
-      `${bottomBarPrefix}-tab-container`
-    );
+    this.tabContainer.classList.add(`${bottomBarPrefix}-tab-container`);
 
     this.sheetSelectionButtonContainer = document.createElement('div');
     this.sheetSelectionButtonContainer.classList.add(
@@ -244,17 +241,14 @@ class BottomBar {
 
   createNewSheetButtonOnClick = () => {
     const sheetName = this.spreadsheet.getSheetName();
+    const id = this.spreadsheet.sheets.size;
 
     this.spreadsheet.createNewSheet({
-      id: this.spreadsheet.sheets.size,
+      id,
       sheetName,
     });
 
-    const sheetId =
-      this.spreadsheet.hyperformula!.getSheetId(sheetName) ??
-      this.spreadsheet.totalSheetCount;
-
-    this.spreadsheet.switchSheet(sheetId);
+    this.spreadsheet.switchSheet(id);
   };
 
   destroy() {

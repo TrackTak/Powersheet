@@ -15,8 +15,10 @@ export type BorderStyle =
   | 'borderRight'
   | 'borderBottom';
 
-export interface ICellStyleData {
+export interface ICellData {
   id: CellId;
+  value?: string;
+  comment?: string;
   borders?: BorderStyle[];
   backgroundColor?: string;
   fontColor?: string;
@@ -30,15 +32,23 @@ export interface ICellStyleData {
   horizontalTextAlign?: HorizontalTextAlign;
   verticalTextAlign?: VerticalTextAlign;
 }
-export interface ICellData {
-  id: CellId;
-  value?: string;
-  comment?: string;
-}
 
 export interface ISheetData {
   id: SheetId;
   sheetName: string;
+  frozenCell?: SheetId;
+  mergedCells?: {
+    [index: CellId]: CellId;
+  };
+  cells?: {
+    [index: CellId]: CellId;
+  };
+  rows?: {
+    [index: SheetRowColId]: SheetRowColId;
+  };
+  cols?: {
+    [index: SheetRowColId]: SheetRowColId;
+  };
 }
 
 export interface IFrozenCellData {
@@ -70,10 +80,6 @@ export interface ICellsData {
   [index: CellId]: ICellData;
 }
 
-export interface ICellStylesData {
-  [index: CellId]: ICellStyleData;
-}
-
 export interface ISheetsData {
   [index: SheetId]: ISheetData;
 }
@@ -93,7 +99,6 @@ export interface ISpreadsheetData {
   rows?: IRow;
   cols?: ICol;
   cells?: ICellsData;
-  cellStyles?: ICellStylesData;
   sheets?: ISheetsData;
   showFormulas?: boolean;
 }
@@ -149,36 +154,12 @@ class Data {
     }
   }
 
-  setCellStyle(
-    simpleCellAddress: SimpleCellAddress,
-    cellStyle?: Omit<ICellStyleData, 'id'>
-  ) {
-    const cellId = simpleCellAddress.toCellId();
-
-    this.spreadsheetData.cellStyles = {
-      ...this.spreadsheetData.cellStyles,
-      [cellId]: {
-        ...this.spreadsheetData.cellStyles?.[cellId],
-        ...cellStyle,
-        id: cellId,
-      },
-    };
-  }
-
   deleteCell(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
-
-    this.deleteCellStyle(simpleCellAddress);
 
     this.spreadsheet.hyperformula?.setCellContents(simpleCellAddress, null);
 
     delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
-  }
-
-  deleteCellStyle(simpleCellAddress: SimpleCellAddress) {
-    const cellId = simpleCellAddress.toCellId();
-
-    delete this.spreadsheetData.cellStyles?.[cellId];
   }
 
   setMergedCell(

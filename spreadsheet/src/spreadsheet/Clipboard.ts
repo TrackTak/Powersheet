@@ -45,7 +45,6 @@ class Clipboard {
     let rangeData = this.getRange(this.sourceRange, targetRange);
 
     this.spreadsheet.pushToHistory();
-    this.spreadsheet.hyperformula?.suspendEvaluation();
 
     rangeData.forEach((rowData, rowIndex) => {
       rowData.forEach((sourceSimpleCellAddress, colIndex) => {
@@ -70,29 +69,11 @@ class Clipboard {
             col
           );
 
-          this.spreadsheet.data.deleteCellStyle(simpleCellAddress);
           this.spreadsheet.data.deleteCell(simpleCellAddress);
         }
 
         const data = this.spreadsheet.data.spreadsheetData;
         const cell = data.cells?.[cellId];
-        const cellStyle = data.cellStyles?.[cellId];
-
-        this.spreadsheet.hyperformula?.setCellContents(
-          targetRange.topLeftSimpleCellAddress,
-          cell?.value
-        );
-
-        if (cellStyle) {
-          this.spreadsheet.data.setCellStyle(
-            targetSimpleCellAddress,
-            cellStyle
-          );
-        } else {
-          delete this.spreadsheet.data.spreadsheetData.cellStyles?.[
-            targetSimpleCellAddress.toCellId()
-          ];
-        }
 
         if (cell) {
           this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
@@ -104,7 +85,17 @@ class Clipboard {
       });
     });
 
-    this.spreadsheet.hyperformula?.resumeEvaluation();
+    this.spreadsheet.hyperformula?.setCellContents(
+      targetRange.topLeftSimpleCellAddress,
+      rangeData.map((simpleCellAddresses) => {
+        return simpleCellAddresses.map((simpleCellAddress) => {
+          const cellId = simpleCellAddress.toCellId();
+
+          return this.spreadsheet.data.spreadsheetData.cells?.[cellId].value;
+        });
+      })
+    );
+
     this.spreadsheet.updateViewport();
 
     if (this.isCut) {

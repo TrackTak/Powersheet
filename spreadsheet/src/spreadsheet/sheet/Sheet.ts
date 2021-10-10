@@ -156,15 +156,8 @@ class Sheet {
 
     this.cellEditor = new CellEditor(this);
 
-    // once is StoryBook ug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
-      once: true,
-    });
-  }
-
-  onDOMContentLoaded = () => {
     this.updateSize();
-  };
+  }
 
   private updateSize() {
     this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
@@ -499,7 +492,6 @@ class Sheet {
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
 
     window.removeEventListener('resize', this.throttledResize);
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
 
     this.sheetEl.remove();
     this.stage.destroy();

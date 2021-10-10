@@ -1,7 +1,8 @@
 {
-  "name": "spreadsheet",
+  "name": "@powersheet/powersheet",
   "version": "1.0.0",
   "description": "Powersheet app.",
+  "author": "TRACKTAK LTD",
   "source": "src/index.ts",
   "exports": "./dist/index.modern.js",
   "main": "./dist/index.cjs",
@@ -77,7 +78,6 @@
     "@storybook/addon-links": "^6.3.6",
     "@storybook/html": "^6.3.6",
     "@storybook/preset-scss": "^1.0.3",
-    "@types/xlsx": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "ava": "^3.12.1",

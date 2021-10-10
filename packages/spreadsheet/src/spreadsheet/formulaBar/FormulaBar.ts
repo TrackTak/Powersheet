@@ -1,6 +1,6 @@
 import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
-import { prefix } from './../utils';
+import { prefix } from '../utils';
 import styles from './FormulaBar.module.scss';
 import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
 
@@ -19,8 +19,11 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const { editorArea, editableContentContainer, editableContent } =
-      createFormulaEditorArea();
+    const {
+      editorArea,
+      editableContentContainer,
+      editableContent,
+    } = createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 

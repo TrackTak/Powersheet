@@ -4,7 +4,8 @@
   "license": "",
   "workspaces": [
     "packages/**",
-    "landingPage"
+    "website",
+    "site"
   ],
   "scripts": {
     "clean": "lerna clean",

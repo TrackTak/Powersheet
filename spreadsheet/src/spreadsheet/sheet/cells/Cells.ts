@@ -82,13 +82,15 @@ class Cells {
     simpleCellAddress: SimpleCellAddress,
     forceDraw: boolean
   ) => {
+    const cellId = simpleCellAddress.toCellId();
     const cellAlreadyExists = !!this.cellsMap.get(simpleCellAddress);
-    const cellData =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ];
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+    const cellStyle =
+      this.spreadsheet.data.spreadsheetData.cellStyles?.[cellId];
     const hasCellData = !!(
-      cellData || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
+      cell ||
+      cellStyle ||
+      this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
     );
 
     return (forceDraw || !cellAlreadyExists) && hasCellData;

@@ -32,7 +32,6 @@ export interface ICellStyleData {
 }
 export interface ICellData {
   id: CellId;
-  style?: CellId;
   value?: string;
   comment?: string;
 }
@@ -156,12 +155,6 @@ class Data {
   ) {
     const cellId = simpleCellAddress.toCellId();
 
-    this.setCell(simpleCellAddress, {
-      [cellId]: {
-        style: cellId,
-      },
-    });
-
     this.spreadsheetData.cellStyles = {
       ...this.spreadsheetData.cellStyles,
       [cellId]: {
@@ -185,7 +178,6 @@ class Data {
   deleteCellStyle(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
 
-    delete this.spreadsheetData.cells?.[cellId]?.style;
     delete this.spreadsheetData.cellStyles?.[cellId];
   }
 

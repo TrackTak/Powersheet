@@ -447,28 +447,20 @@ CellsData.args = {
     cells: {
       '0_1_0': {
         id: '0_1_0',
-        style: '0_1_0',
         value: 'HI!',
       },
       '0_1_1': {
         id: '0_1_1',
-        style: '0_1_1',
         comment: 'Powersheet is the best',
         value:
           'A very long piece of text that should wrap to the next line on the word.',
       },
-      '0_3_3': {
-        id: '0_3_3',
-        style: '0_3_3',
-      },
       '0_4_1': {
         id: '0_4_1',
-        style: '0_4_1',
         value: 'Some value',
       },
       '0_4_4': {
         id: '0_4_4',
-        style: '0_4_4',
         value: '0.05',
       },
       '0_40_4': {

@@ -124,19 +124,17 @@ class Spreadsheet {
   }
 
   private setCells() {
-    this.hyperformula?.suspendEvaluation();
+    this.hyperformula?.batch(() => {
+      for (const key in this.data.spreadsheetData.cells) {
+        const cellId = key as CellId;
+        const cell = this.data.spreadsheetData.cells?.[cellId];
 
-    for (const key in this.data.spreadsheetData.cells) {
-      const cellId = key as CellId;
-      const cell = this.data.spreadsheetData.cells?.[cellId];
-
-      this.hyperformula?.setCellContents(
-        SimpleCellAddress.cellIdToAddress(cellId),
-        cell?.value
-      );
-    }
-
-    this.hyperformula?.resumeEvaluation();
+        this.hyperformula?.setCellContents(
+          SimpleCellAddress.cellIdToAddress(cellId),
+          cell?.value
+        );
+      }
+    });
   }
 
   getRegisteredFunctions() {
@@ -229,9 +227,7 @@ class Spreadsheet {
 
     sheet.destroy();
 
-    delete this.data.spreadsheetData.sheets?.[sheetId];
-
-    this.hyperformula?.removeSheet(sheetId);
+    this.data.deleteSheet(sheetId);
 
     this.sheets.delete(sheetId);
 

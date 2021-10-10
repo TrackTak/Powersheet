@@ -64,26 +64,28 @@ class Merger {
       }
     );
 
-    for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-      for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-        const simpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
-          ri,
-          ci
-        );
+    this.spreadsheet.hyperformula?.batch(() => {
+      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            ri,
+            ci
+          );
 
-        if (simpleCellAddress.toCellId() !== mergedCellId) {
-          this.spreadsheet.data.deleteCell(simpleCellAddress);
+          if (simpleCellAddress.toCellId() !== mergedCellId) {
+            this.spreadsheet.data.deleteCell(simpleCellAddress);
+          }
         }
       }
-    }
 
-    if (existingTopLeftCell) {
-      this.spreadsheet.data.setCell(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress,
-        existingTopLeftCell
-      );
-    }
+      if (existingTopLeftCell) {
+        this.spreadsheet.data.setCell(
+          rangeSimpleCellAddress.topLeftSimpleCellAddress,
+          existingTopLeftCell
+        );
+      }
+    });
 
     this.sheet.selector.selectedSimpleCellAddress =
       rangeSimpleCellAddress.topLeftSimpleCellAddress;
@@ -105,19 +107,23 @@ class Merger {
         ];
 
       if (cell) {
-        for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-          for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom(
-            'col'
+        this.spreadsheet.hyperformula?.batch(() => {
+          for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom(
+            'row'
           )) {
-            const associatedSimpleCellAddress = new SimpleCellAddress(
-              rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet,
-              ri,
-              ci
-            );
+            for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom(
+              'col'
+            )) {
+              const associatedSimpleCellAddress = new SimpleCellAddress(
+                rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet,
+                ri,
+                ci
+              );
 
-            this.spreadsheet.data.setCell(associatedSimpleCellAddress, cell);
+              this.spreadsheet.data.setCell(associatedSimpleCellAddress, cell);
+            }
           }
-        }
+        });
       }
     }
 
@@ -132,9 +138,7 @@ class Merger {
         );
 
         if (areMergedCellsOverlapping) {
-          delete this.spreadsheet.data.spreadsheetData.mergedCells?.[
-            simpleCellAddress.toCellId()
-          ];
+          this.spreadsheet.data.deleteMergedCell(simpleCellAddress);
         }
       }
     });

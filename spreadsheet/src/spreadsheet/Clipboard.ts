@@ -78,23 +78,15 @@ class Clipboard {
         if (cell) {
           this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
         } else {
-          delete this.spreadsheet.data.spreadsheetData.cells?.[
-            targetSimpleCellAddress.toCellId()
-          ];
+          this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
         }
+
+        this.spreadsheet.hyperformula?.setCellContents(
+          targetSimpleCellAddress,
+          cell?.value
+        );
       });
     });
-
-    this.spreadsheet.hyperformula?.setCellContents(
-      targetRange.topLeftSimpleCellAddress,
-      rangeData.map((simpleCellAddresses) => {
-        return simpleCellAddresses.map((simpleCellAddress) => {
-          const cellId = simpleCellAddress.toCellId();
-
-          return this.spreadsheet.data.spreadsheetData.cells?.[cellId].value;
-        });
-      })
-    );
 
     this.spreadsheet.updateViewport();
 

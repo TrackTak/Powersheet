@@ -709,7 +709,7 @@ class Toolbar {
         sheet.spreadsheet.pushToHistory();
 
         if (this.iconElementsMap.freeze.active) {
-          delete this.spreadsheet.data.spreadsheetData.frozenCells;
+          this.spreadsheet.data.deleteFrozenCell(sheet.sheetId);
         } else {
           const simpleCellAddress =
             sheet.selector.selectedCell!.simpleCellAddress;

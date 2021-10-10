@@ -132,8 +132,54 @@ class Data {
     };
   }
 
+  deleteSheet(sheetId: SheetId) {
+    const sheet = this.spreadsheetData.sheets?.[sheetId];
+
+    this.spreadsheet.hyperformula?.removeSheet(sheetId);
+
+    this.deleteFrozenCell(sheetId);
+
+    for (const key in sheet?.cells) {
+      const cellId = key as CellId;
+
+      this.deleteCell(SimpleCellAddress.cellIdToAddress(cellId));
+    }
+
+    for (const key in sheet?.mergedCells) {
+      const cellId = key as CellId;
+
+      this.deleteMergedCell(SimpleCellAddress.cellIdToAddress(cellId));
+    }
+
+    for (const key in sheet?.cols) {
+      const sheetRowColId = key as SheetRowColId;
+      const sheetRowColAddress =
+        RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+
+      this.deleteRowCol('cols', sheetRowColAddress);
+    }
+
+    for (const key in sheet?.rows) {
+      const sheetRowColId = key as SheetRowColId;
+      const sheetRowColAddress =
+        RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+
+      this.deleteRowCol('rows', sheetRowColAddress);
+    }
+
+    delete this.spreadsheetData.sheets?.[sheetId];
+  }
+
   setCell(simpleCellAddress: SimpleCellAddress, cell?: Omit<ICellData, 'id'>) {
+    const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
+
+    this.setSheet(sheetId, {
+      cells: {
+        ...this.spreadsheetData.sheets?.[sheetId].cells,
+        [cellId]: cellId,
+      },
+    });
 
     this.spreadsheetData.cells = {
       ...this.spreadsheetData.cells,
@@ -145,28 +191,52 @@ class Data {
     };
 
     try {
-      this.spreadsheet.hyperformula?.setCellContents(
-        simpleCellAddress,
-        this.spreadsheetData.cells[cellId]?.value
-      );
+      if (
+        this.spreadsheet.hyperformula?.isItPossibleToSetCellContents(
+          simpleCellAddress
+        )
+      ) {
+        this.spreadsheet.hyperformula?.setCellContents(
+          simpleCellAddress,
+          this.spreadsheetData.cells[cellId]?.value
+        );
+      }
     } catch (e) {
       console.error(e);
     }
   }
 
   deleteCell(simpleCellAddress: SimpleCellAddress) {
+    const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
-    this.spreadsheet.hyperformula?.setCellContents(simpleCellAddress, null);
-
-    delete this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+    if (
+      this.spreadsheet.hyperformula?.isItPossibleToSetCellContents(
+        simpleCellAddress
+      )
+    ) {
+      this.spreadsheet.hyperformula?.setCellContents(
+        simpleCellAddress,
+        undefined
+      );
+    }
+    delete this.spreadsheetData.cells?.[cellId];
+    delete this.spreadsheetData.sheets?.[sheetId]?.cells?.[cellId];
   }
 
   setMergedCell(
     simpleCellAddress: SimpleCellAddress,
     mergedCell: Omit<IMergedCellData, 'id'>
   ) {
+    const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
+
+    this.setSheet(sheetId, {
+      mergedCells: {
+        ...this.spreadsheetData.sheets?.[sheetId].mergedCells,
+        [mergedCellId]: mergedCellId,
+      },
+    });
 
     this.spreadsheetData.mergedCells = merge<
       object,
@@ -180,7 +250,19 @@ class Data {
     });
   }
 
+  deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
+    const sheetId = simpleCellAddress.sheet;
+    const mergedCellId = simpleCellAddress.toCellId();
+
+    delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId];
+    delete this.spreadsheetData.mergedCells?.[mergedCellId];
+  }
+
   setFrozenCell(sheetId: SheetId, frozenCell?: Omit<IFrozenCellData, 'id'>) {
+    this.setSheet(sheetId, {
+      frozenCell: sheetId,
+    });
+
     this.spreadsheetData.frozenCells = {
       ...this.spreadsheetData.frozenCells,
       [sheetId]: {
@@ -191,12 +273,25 @@ class Data {
     };
   }
 
+  deleteFrozenCell(sheetId: SheetId) {
+    delete this.spreadsheetData.sheets?.[sheetId].frozenCell;
+    delete this.spreadsheetData.frozenCells?.[sheetId];
+  }
+
   setRowCol(
     pluralType: RowColsType,
     rowColAddress: RowColAddress,
     rowColData?: Omit<IRowColData, 'id'>
   ) {
+    const sheetId = rowColAddress.sheet;
     const sheetRowColId = rowColAddress.toSheetRowColId();
+
+    this.setSheet(sheetId, {
+      [pluralType]: {
+        ...this.spreadsheetData.sheets?.[sheetId]?.[pluralType],
+        [sheetRowColId]: sheetRowColId,
+      },
+    });
 
     this.spreadsheetData[pluralType] = {
       ...this.spreadsheetData[pluralType],
@@ -206,6 +301,16 @@ class Data {
         id: sheetRowColId,
       },
     };
+  }
+
+  deleteRowCol(pluralType: RowColsType, rowColAddress: RowColAddress) {
+    const sheetId = rowColAddress.sheet;
+    const sheetRowColId = rowColAddress.toSheetRowColId();
+
+    delete this.spreadsheetData.sheets?.[sheetId]?.[pluralType]?.[
+      sheetRowColId
+    ];
+    delete this.spreadsheetData?.[pluralType]?.[sheetRowColId];
   }
 }
 

@@ -144,9 +144,7 @@ class RowCol {
               rowCol
             );
           }
-          delete this.spreadsheet.data.spreadsheetData[this.pluralType]?.[
-            rowColId
-          ];
+          this.spreadsheet.data.deleteRowCol(this.pluralType, rowColAddress);
         }
       },
       (simpleCellAddress, newSimpleCellAddress) => {
@@ -196,10 +194,7 @@ class RowCol {
             );
           }
         }
-
-        delete this.spreadsheet.data.spreadsheetData[this.pluralType]?.[
-          rowColId
-        ];
+        this.spreadsheet.data.deleteRowCol(this.pluralType, rowColAddress);
       },
       (simpleCellAddress, newSimpleCellAddress) => {
         if (simpleCellAddress[this.type] < this.index) return;

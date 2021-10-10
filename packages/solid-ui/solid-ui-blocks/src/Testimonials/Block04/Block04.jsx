@@ -1,12 +1,11 @@
 import React, { useState } from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import { Container, Flex, Box, css } from 'theme-ui'
 import { FaDotCircle } from 'react-icons/fa'
 import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
 import ListItem from '@solid-ui-components/ListItem'
 import ContentText from '@solid-ui-components/ContentText'
-import getImage from '@solid-ui-components/utils/getImage'
+import ContentImages from '@solid-ui-components/ContentImages'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
 
 const styles = {
@@ -33,6 +32,19 @@ const styles = {
     },
     '&.active': {
       color: `alpha`
+    }
+  },
+  avatar: {
+    borderTopColor: `omegaLighter`,
+    borderTopWidth: 30,
+    borderTopStyle: `solid`,
+    bg: `omegaLighter`,
+    borderRadius: `lg`,
+    mx: `auto`,
+    mb: [4, 0],
+    mt: [5, 0],
+    img: {
+      borderRadius: `lg`
     }
   }
 }
@@ -66,27 +78,11 @@ const TestimonialsBlock04 = ({ content: { text, collection }, reverse }) => {
                     textAlign: `center`
                   }}
                 >
-                  {avatar?.src && (
-                    <Reveal effect='fadeInLeft'>
-                      <Img
-                        image={getImage(avatar.src)}
-                        alt={avatar.alt}
-                        css={css({
-                          borderTopColor: `omegaLighter`,
-                          borderTopWidth: 30,
-                          borderTopStyle: `solid`,
-                          bg: `omegaLighter`,
-                          borderRadius: `lg`,
-                          mx: `auto`,
-                          mb: [4, 0],
-                          mt: [5, 0],
-                          img: {
-                            borderRadius: `lg`
-                          }
-                        })}
-                      />
-                    </Reveal>
-                  )}
+                  <ContentImages
+                    content={{ images: [avatar] }}
+                    sx={styles.avatar}
+                    imageEffect='fadeIn'
+                  />
                 </Box>
                 <Box sx={{ flexBasis: `3/5`, textAlign: [`center`, `left`] }}>
                   <Flex

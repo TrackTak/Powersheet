@@ -1,12 +1,10 @@
 import React from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import { Container, Flex, Box, css } from 'theme-ui'
 import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
-
 import ContentText from '@solid-ui-components/ContentText'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentContainer from '@solid-ui-components/ContentContainer'
-import getImage from '@solid-ui-components/utils/getImage'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
 
 const styles = {
@@ -56,10 +54,10 @@ const TeamsBlock02 = ({ content: { text, collection } }) => (
               variant='cards.primary'
               sx={{ textAlign: `center`, height: `100%`, p: 2 }}
             >
-              <Img
-                image={getImage(avatar?.src)}
-                alt={avatar?.alt}
-                css={css(styles.avatar)}
+              <ContentImages
+                content={{ images: [avatar] }}
+                sx={styles.avatar}
+                imageEffect='fadeIn'
               />
               <Flex sx={{ flexDirection: `column` }} p='3' px='3'>
                 <ContentText content={text} />

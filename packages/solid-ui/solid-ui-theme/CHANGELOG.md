@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.2.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-theme@3.1.0...@elegantstack/solid-ui-theme@3.2.0) (2021-09-07)
+
+
+### Features
+
+* upgrade Gatsby and dependencies ([d59a731](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/d59a731107925db1a03367d9a24d7c40dae622e6))
+
+
+
+
 ## [3.1.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-theme@3.0.0...@elegantstack/solid-ui-theme@3.1.0) (2021-05-19)
 
 

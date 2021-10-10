@@ -70,7 +70,7 @@ const ContentForm = ({ id, form: { action, fields, buttons } = {} }) => {
   }
 
   const onSubmit = e => {
-    handleSubmit(e, { values: formValues[formId], action })
+    handleSubmit(e, { action })
   }
 
   return (

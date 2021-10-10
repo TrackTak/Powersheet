@@ -18,6 +18,7 @@ module.exports = async ({ page, actions }, pluginOptions) => {
   createPage({
     ...page,
     context: {
+      ...page.context,
       ...pageContextOptions
     }
   })

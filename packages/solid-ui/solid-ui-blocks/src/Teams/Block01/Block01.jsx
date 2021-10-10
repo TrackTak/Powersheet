@@ -1,12 +1,11 @@
 import React from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import { Container, Box, Flex, css } from 'theme-ui'
 import Divider from '@solid-ui-components/Divider'
 import Reveal from '@solid-ui-components/Reveal'
 import ContentText from '@solid-ui-components/ContentText'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentButtons from '@solid-ui-components/ContentButtons'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
-import getImage from '@solid-ui-components/utils/getImage'
 
 const TeamsBlock01 = ({
   content: { container, text, images, buttons, collection }
@@ -28,7 +27,7 @@ const TeamsBlock01 = ({
         <Reveal effect='fadeInDown'>
           {images?.[0]?.src && (
             <>
-              <Img image={getImage(images[0].src)} alt={images?.[0]?.alt} />
+              <ContentImages content={{ images }} />
               <Divider space={3} />
             </>
           )}
@@ -62,18 +61,17 @@ const TeamsBlock01 = ({
                   delay={1 + 0.2 * (index + 1)}
                   css={css({ p: 2, boxSizing: 'content-box' })}
                 >
-                  <Img
-                    image={getImage(avatar?.src)}
-                    alt={avatar?.alt}
-                    css={css({
+                  <ContentImages
+                    content={{ images: [avatar] }}
+                    imageEffect='fadeIn'
+                    sx={{
                       size: 100,
                       mx: `auto`,
                       img: {
                         bg: `omegaLight`,
-                        borderRadius: `full`,
-                        p: 1
+                        borderRadius: `full`
                       }
-                    })}
+                    }}
                   />
                   {text?.[0] && (
                     <Reveal delay={1.6 + 0.2 * (index + 1)}>

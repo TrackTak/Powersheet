@@ -1,14 +1,13 @@
 import React from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import { Container, Flex, Box, css } from 'theme-ui'
 import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
 import ContentText from '@solid-ui-components/ContentText'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentContainer from '@solid-ui-components/ContentContainer'
 import { ImQuotesRight } from 'react-icons/im'
 import { AiFillStar } from 'react-icons/ai'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
-import getImage from '@solid-ui-components/utils/getImage'
 
 const styles = {
   avatar: {
@@ -45,11 +44,11 @@ const TestimonialsBlock01 = ({ content: { text, collection } }) => (
               variant='cards.paper'
               sx={{ textAlign: `center` }}
             >
-              <Img
-                image={getImage(avatar?.src)}
-                alt={avatar?.alt}
+              <ContentImages
+                content={{ images: [avatar] }}
+                sx={styles.avatar}
                 objectPosition='top center'
-                css={css(styles.avatar)}
+                imageEffect='fadeIn'
               />
               <ImQuotesRight css={css({ size: `icon.xs`, color: `alpha` })} />
               <ContentText content={text} />

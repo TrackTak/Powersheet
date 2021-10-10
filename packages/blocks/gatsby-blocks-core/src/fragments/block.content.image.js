@@ -13,13 +13,17 @@ export const query = graphql`
       left
       right
     }
+    width
+    maxWidth
     src {
-      ... on ImageSharp {
-        __typename
-        ImageSharp: gatsbyImageData(
+      extension
+      publicURL
+      childImageSharp {
+        gatsbyImageData(
           placeholder: TRACED_SVG
           transformOptions: { cropFocus: NORTH }
           outputPixelDensities: [0.5, 1]
+          quality: 90
         )
       }
     }

@@ -1,5 +1,4 @@
 import React from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import { Container, Flex, Box, css } from 'theme-ui'
 import { ImQuotesRight } from 'react-icons/im'
 import { AiFillStar } from 'react-icons/ai'
@@ -7,10 +6,10 @@ import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
 import Tabs from '@solid-ui-components/Tabs'
 import ContentText from '@solid-ui-components/ContentText'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentContainer from '@solid-ui-components/ContentContainer'
 import ContentButtons from '@solid-ui-components/ContentButtons'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
-import getImage from '@solid-ui-components/utils/getImage'
 
 const styles = {
   avatar: {
@@ -19,7 +18,8 @@ const styles = {
     borderTopWidth: `xl`,
     borderTopStyle: `solid`,
     borderRadius: `lg`,
-    boxSizing: `content-box`
+    boxSizing: `content-box`,
+    verticalAlign: `baseline`
   }
 }
 
@@ -64,13 +64,11 @@ const TestimonialsBlock03 = ({
                 }}
               >
                 <Box sx={{ width: 150 }}>
-                  <Reveal effect='fadeInRotate'>
-                    <Img
-                      image={getImage(avatar?.src)}
-                      alt={avatar?.alt}
-                      css={css(styles.avatar)}
-                    />
-                  </Reveal>
+                  <ContentImages
+                    content={{ images: [avatar] }}
+                    sx={styles.avatar}
+                    imageEffect='fadeInRotate'
+                  />
                 </Box>
                 <Box sx={{ flex: [`100%`, 1], ml: [0, 4] }}>
                   <Reveal effect='fadeInUp'>

@@ -1,13 +1,12 @@
 import React from 'react'
 import { Link as GLink } from 'gatsby'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
 import Sticky from 'react-sticky-el'
 import { Container, Box, Flex, css } from 'theme-ui'
 import Reveal from '@solid-ui-components/Reveal'
 import Drawer from '@solid-ui-components/Drawer'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentButtons from '@solid-ui-components/ContentButtons'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
-import getImage from '@solid-ui-components/utils/getImage'
 
 const styles = {
   wrapper: {
@@ -68,10 +67,10 @@ const HeaderBlock01 = ({ content: { images, collection }, menuJustify }) => {
             <Flex sx={styles.header}>
               <Box sx={styles.logoContainer}>
                 <GLink to='/'>
-                  <Img
-                    image={getImage(images?.[0]?.src)}
-                    style={{ verticalAlign: `middle` }}
-                    alt={images?.[0]?.alt}
+                  <ContentImages
+                    content={{ images }}
+                    sx={styles.image}
+                    imageEffect='fadeIn'
                   />
                 </GLink>
               </Box>

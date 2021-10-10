@@ -1,13 +1,12 @@
 import React from 'react'
-import { GatsbyImage as Img } from 'gatsby-plugin-image'
-import { Container, Flex, Box, Badge, Link, css } from 'theme-ui'
+import { Container, Flex, Box, Badge, Link } from 'theme-ui'
 import ContentContainer from '@solid-ui-components/ContentContainer'
 import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
 import ContentText from '@solid-ui-components/ContentText'
+import ContentImages from '@solid-ui-components/ContentImages'
 import ContentButtons from '@solid-ui-components/ContentButtons'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
-import getImage from '@solid-ui-components/utils/getImage'
 
 import { FaRegClock } from 'react-icons/fa'
 
@@ -96,10 +95,10 @@ const BlogBlock01 = ({ content: { text, collection, buttons } }) => (
                     {/* Image */}
                     <Box sx={{ flex: [0, 1], m: 2, mb: [null, null, null, 0] }}>
                       <Box sx={styles.imageWrapper}>
-                        <Img
-                          image={getImage(images?.[0]?.src)}
-                          alt={images?.[0]?.alt}
-                          css={css(styles.image)}
+                        <ContentImages
+                          content={{ images }}
+                          sx={styles.image}
+                          imageEffect='fadeIn'
                         />
                       </Box>
                     </Box>
@@ -132,10 +131,10 @@ const BlogBlock01 = ({ content: { text, collection, buttons } }) => (
                       {/* Footer */}
                       <Box sx={{ variant: `text.small` }}>
                         <Flex sx={styles.footerWrapper}>
-                          <Img
-                            image={getImage(avatar?.src)}
-                            alt={avatar?.alt}
-                            css={css(styles.avatar)}
+                          <ContentImages
+                            content={{ images: [avatar] }}
+                            sx={styles.avatar}
+                            imageEffect='fadeIn'
                           />
                           <Flex sx={styles.postInfo}>
                             {/* Author */}

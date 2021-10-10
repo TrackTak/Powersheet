@@ -72,13 +72,15 @@ type BlockContentButton {
 ############################################
 
 type BlockContentImage {
-  src: ImageSharp @fileByRelativePath @reduce(to: "id") @link(by: "parent.id")
+  src: File @fileByRelativePath
   position: BlockContentImagePosition
   effects: [String]
   alt: String
   radius: String
   shadow: String
   border: String
+  width: String
+  maxWidth: String
 }
 
 type BlockContentImagePosition {

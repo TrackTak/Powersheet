@@ -3,6 +3,53 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.5.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-components@3.4.0...@elegantstack/solid-ui-components@3.5.0) (2021-09-07)
+
+
+### Features
+
+* upgrade Gatsby and dependencies ([d59a731](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/d59a731107925db1a03367d9a24d7c40dae622e6))
+
+
+### Bug Fixes
+
+* **solid-ui-components:** fix map marker position ([ebc99cc](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/ebc99ccde39b84b8b3e32c719a0213cdf09b2c62))
+
+
+
+
+## [3.4.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-components@3.3.0...@elegantstack/solid-ui-components@3.4.0) (2021-08-19)
+
+
+### Bug Fixes
+
+* **soli-ui-components:** fix hidden fields getting ignored in form handling ([a224f4e](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/a224f4ec41a288c67e34921be9463400724fdc1f))
+
+
+
+
+## [3.3.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-components@3.2.0...@elegantstack/solid-ui-components@3.3.0) (2021-08-01)
+
+
+### Features
+
+* update Gatsby and dependencies ([95b3b72](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/95b3b7234b39eb66e5957f9acc0d10519b400941))
+
+
+
+
+## [3.2.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-components@3.1.0...@elegantstack/solid-ui-components@3.2.0) (2021-06-17)
+
+
+### Features
+
+* upgrade gatsby and other dependencies ([941b5ea](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/941b5ea131271f222c557d9ab3b38da5a8140d2d))
+* **gatsby-blocks-core, solid-ui-components:** add SVG support to ContentImages ([b4c6e39](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/b4c6e39d59d88758be36fe971f20424a4b6ad680))
+* **solid-ui-components:** add support for mailto in URLs ([3c3e84c](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/3c3e84c6659080b8190bda36f22311da4a7d12b2))
+
+
+
+
 ## [3.1.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-components@3.0.0...@elegantstack/solid-ui-components@3.1.0) (2021-05-19)
 
 

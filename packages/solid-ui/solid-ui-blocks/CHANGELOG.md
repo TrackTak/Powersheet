@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.2.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-blocks@3.1.0...@elegantstack/solid-ui-blocks@3.2.0) (2021-06-17)
+
+
+### Features
+
+* **solid-ui-blocks:** add WithRecentPosts HOC for connecting Blog block to FlexiBlog data layer ([d19ec69](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/d19ec69409a67aeafba838169d58c4d7cc5aa858))
+
+
+### Refactor
+
+* **solid-ui-blocks:** replace GatsbyImage with ContentImages component in blocks ([baf1957](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/baf19572165e88503291ff29a1a68b01c6f99b5c))
+
+
+
+
 ## [3.1.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/solid-ui-blocks@3.0.0...@elegantstack/solid-ui-blocks@3.1.0) (2021-05-19)
 
 

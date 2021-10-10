@@ -6,12 +6,13 @@ import VideoButton from '@solid-ui-components/VideoButton'
 
 const isValidHttpUrl = link => {
   let url
+  const protocols = ['http:', 'https:', 'mailto:']
   try {
     url = new URL(link)
   } catch (_) {
     return false
   }
-  return url.protocol === 'http:' || url.protocol === 'https:'
+  return protocols.includes(url.protocol)
 }
 
 const buildLinkProps = ({

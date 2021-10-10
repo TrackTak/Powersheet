@@ -3,6 +3,51 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.5.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/gatsby-blocks-core@3.4.1...@elegantstack/gatsby-blocks-core@3.5.0) (2021-09-07)
+
+
+### Features
+
+* upgrade Gatsby and dependencies ([d59a731](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/d59a731107925db1a03367d9a24d7c40dae622e6))
+
+
+
+
+### [3.4.1](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/gatsby-blocks-core@3.4.0...@elegantstack/gatsby-blocks-core@3.4.1) (2021-08-03)
+
+
+### Bug Fixes
+
+* **gatsby-blocks-core:** fix pageContext getting overwritten in onCreatePage ([757d73c](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/757d73cce5d9d83a6b625c73091472c6b5b5fa9c))
+
+
+
+## [3.4.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/gatsby-blocks-core@3.3.0...@elegantstack/gatsby-blocks-core@3.4.0) (2021-08-01)
+
+
+### Features
+
+* update Gatsby and dependencies ([95b3b72](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/95b3b7234b39eb66e5957f9acc0d10519b400941))
+
+
+
+
+## [3.3.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/gatsby-blocks-core@3.2.0...@elegantstack/gatsby-blocks-core@3.3.0) (2021-06-17)
+
+
+### Features
+
+* upgrade gatsby and other dependencies ([941b5ea](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/941b5ea131271f222c557d9ab3b38da5a8140d2d))
+* **gatsby-blocks-core, solid-ui-components:** add SVG support to ContentImages ([b4c6e39](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/b4c6e39d59d88758be36fe971f20424a4b6ad680))
+
+
+### Bug Fixes
+
+* **gatsby-blocks-core:** disable extension warning for gatsby-transformer-sharp ([a58400b](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/commit/a58400bc5d1291bab988be6c1d417c441b3ccdb2))
+
+
+
+
 ## [3.2.0](https://gitlab.com/alimoosavi15/gatsby-theme-flexiblog/compare/@elegantstack/gatsby-blocks-core@3.1.0...@elegantstack/gatsby-blocks-core@3.2.0) (2021-05-19)
 
 

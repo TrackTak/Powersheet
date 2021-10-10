@@ -15,13 +15,13 @@ module.exports = options => {
       options
     },
     'gatsby-plugin-image',
+    'gatsby-plugin-sharp',
     {
-      resolve: 'gatsby-plugin-sharp',
+      resolve: 'gatsby-transformer-sharp',
       options: {
-        defaultQuality: 100
+        checkSupportedExtensions: false
       }
-    },
-    'gatsby-transformer-sharp'
+    }
   ]
 
   // Resolve local paths

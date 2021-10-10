@@ -3,7 +3,8 @@
   "private": true,
   "license": "",
   "workspaces": [
-    "packages/**"
+    "packages/**",
+    "website"
   ],
   "scripts": {
     "clean": "lerna clean",

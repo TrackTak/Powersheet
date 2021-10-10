@@ -1,18 +1,13 @@
 {
   "text": [
     {
-      "text": "Advanced Platform",
-      "color": "omegaDarker",
-      "variant": "h4"
-    },
-    {
-      "text": "Take your team collaboration to the next level",
+      "text": "A Lightning Fast Spreadsheet for Businesses",
       "color": "white",
       "variant": "h1"
     },
     {
-      "text": "Hassle-free platform and specialists to help you with your marketing campaigns.",
-      "color": "omegaDarker",
+      "text": "Pure javascript using HTML5 canvas with full formula support that clones Excel functionality. Try it out here →",
+      "color": "white",
       "variant": "medium"
     }
   ],

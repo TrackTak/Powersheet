@@ -1,5 +1,5 @@
 import { Vector2d } from 'konva/lib/types';
-import { merge } from 'lodash';
+import { isNil, merge } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
@@ -271,6 +271,20 @@ class Data {
         id: sheetId,
       },
     };
+
+    const frozenCells = this.spreadsheetData.frozenCells?.[sheetId];
+
+    if (!isNil(frozenCells?.col) && frozenCells?.col < 0) {
+      delete frozenCells?.col;
+    }
+
+    if (!isNil(frozenCells?.row) && frozenCells?.row < 0) {
+      delete frozenCells?.row;
+    }
+
+    if (isNil(frozenCells?.col) && isNil(frozenCells?.row)) {
+      this.deleteFrozenCell(sheetId);
+    }
   }
 
   deleteFrozenCell(sheetId: SheetId) {

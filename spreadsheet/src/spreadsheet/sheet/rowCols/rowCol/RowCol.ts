@@ -227,14 +227,17 @@ class RowCol {
   ) {
     this.spreadsheet.pushToHistory();
 
-    const { frozenCells, mergedCells, cells, ...data } =
+    const { mergedCells, cells, ...data } =
       this.spreadsheet.data.spreadsheetData;
     const rowCol =
       data[this.pluralType]?.[this.rowColAddress.toSheetRowColId()];
 
     if (this.rowCols.getIsFrozen(this.index)) {
+      const existingFrozenCells =
+        this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+
       this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {
-        [this.type]: amount,
+        [this.type]: modifyCallback(existingFrozenCells![this.type]!, amount),
       });
     }
 
@@ -254,7 +257,7 @@ class RowCol {
         .forEach((topLeftCellId) => {
           const mergedCell = mergedCells[topLeftCellId as CellId];
 
-          if (mergedCell[this.type].x > this.index) {
+          if (mergedCell[this.type].x >= this.index) {
             mergedCell[this.type].x = modifyCallback(
               mergedCell[this.type].x,
               amount

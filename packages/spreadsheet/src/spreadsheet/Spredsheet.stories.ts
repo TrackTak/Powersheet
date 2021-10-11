@@ -23,10 +23,9 @@ export default {
   title: 'Spreadsheet',
 } as Meta;
 
-// TODO: Fix to be optional styles + options
 interface IArgs {
-  options: IOptions;
-  styles: IStyles;
+  options?: Partial<IOptions>;
+  styles?: Partial<IStyles>;
   data?: Partial<ISpreadsheetData>;
 }
 
@@ -139,19 +138,11 @@ const Template: Story<IArgs> = (args) => {
   return buildSpreadsheetWithHyperformula(args);
 };
 
-const defaultStoryArgs: IArgs = {
-  options: defaultOptions,
-  styles: defaultStyles,
-};
-
 export const Default = Template.bind({});
-
-Default.args = defaultStoryArgs;
 
 export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -173,7 +164,6 @@ FrozenCells.args = {
 export const MergedCells = Template.bind({});
 
 MergedCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -203,7 +193,6 @@ MergedCells.args = {
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -259,7 +248,6 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
 export const MillionRows = MillionRowsTemplate.bind({});
 
 MillionRows.args = {
-  ...defaultStoryArgs,
   styles: {
     ...defaultStyles,
     row: {
@@ -283,7 +271,6 @@ MillionRows.args = {
 export const CustomStyles = Template.bind({});
 
 CustomStyles.args = {
-  ...defaultStoryArgs,
   styles: {
     ...defaultStyles,
     row: {
@@ -316,7 +303,6 @@ export const NoHyperformula = NoHyperformulaTemplate.bind({});
 export const CustomSizeSpreadsheet = Template.bind({});
 
 CustomSizeSpreadsheet.args = {
-  ...defaultStoryArgs,
   options: {
     ...defaultOptions,
     width: 500,
@@ -332,7 +318,6 @@ const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
 
 const MultipleSpreadsheetsTemplate: Story = () => {
   const firstSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
     data: {
       sheets: {
         0: {
@@ -344,7 +329,6 @@ const MultipleSpreadsheetsTemplate: Story = () => {
   };
 
   const secondSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
     data: {
       sheets: {
         0: {
@@ -376,7 +360,6 @@ export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({});
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
 
 AllCurrencySymbols.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -414,7 +397,6 @@ AllCurrencySymbols.args = {
 export const CellsData = Template.bind({});
 
 CellsData.args = {
-  ...defaultStoryArgs,
   data: {
     exportSpreadsheetName: 'Cells Datas.xlsx',
     sheets: {
@@ -480,7 +462,6 @@ CellsData.args = {
 export const Formulas = Template.bind({});
 
 Formulas.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {

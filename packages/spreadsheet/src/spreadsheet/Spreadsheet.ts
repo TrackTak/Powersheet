@@ -21,7 +21,7 @@ import events from './events';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
-  options?: IOptions;
+  options?: Partial<IOptions>;
   styles?: Partial<IStyles>;
   data?: Partial<ISpreadsheetData>;
   hyperformula?: HyperFormula;
@@ -52,10 +52,10 @@ class Spreadsheet {
 
   constructor(params: ISpreadsheetConstructor) {
     this.data = new Data(this, params.data);
-    this.hyperformula = params.hyperformula;
-    this.eventEmitter = params.eventEmitter;
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
+    this.hyperformula = params.hyperformula;
+    this.eventEmitter = params.eventEmitter;
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;

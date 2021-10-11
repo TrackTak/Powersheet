@@ -3,30 +3,13 @@
     {
       "text": "A Lightning Fast Spreadsheet for Businesses",
       "color": "white",
-      "variant": "h1"
+      "variant": "h1",
+      "space": 3
     },
     {
-      "text": "Pure javascript using HTML5 canvas with full formula support that clones Excel functionality. Try it out here →",
+      "text": "Written in pure javascript using HTML5 canvas with full formula support.",
       "color": "white",
-      "variant": "medium"
-    }
-  ],
-  "images": [
-    {
-      "src": "../../../assets/flexiblocks/homepage/saas-v2/hero-small.png",
-      "alt": "alt text",
-      "radius": "lg",
-      "shadow": "default",
-      "border": "lg",
-      "effects": ["fadeInDown"]
-    }
-  ],
-  "buttons": [
-    {
-      "text": "Get Started Now",
-      "type": "MODAL",
-      "link": "authentication",
-      "variant": "white"
+      "variant": "headingText"
     }
   ]
 }

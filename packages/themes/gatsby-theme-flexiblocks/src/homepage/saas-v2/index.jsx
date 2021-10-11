@@ -39,13 +39,12 @@ const IndexPage = props => {
       <ModalSimple content={content['advertisement']} />
       {/* Blocks */}
       <Header content={content['header-light']} menuJustify='space-between' />
-      <Divider space='5' />
+      <Divider space='4' />
       <Container variant='full' sx={styles.heroContainer}>
         <Hero content={content['hero']} reverse />
       </Container>
-      <Divider space='5' />
-      <Divider space='5' />
-      <Divider space='5' />
+      <Divider space='4' />
+      <Divider space='4' />
       <Container variant='wide' sx={styles.tabsContainer}>
         <Tabs space={5}>
           <FeatureOne content={content['tab-feature-one']} />

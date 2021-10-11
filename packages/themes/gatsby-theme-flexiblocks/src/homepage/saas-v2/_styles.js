@@ -14,11 +14,9 @@ export default {
     '::before': {
       content: `" "`,
       width: `110%`,
-      height: `1000px`,
+      height: `1210px`,
       position: `absolute`,
       top: `-200px`,
-      right: [0, null, null, `35%`],
-      transform: [`none`, null, null, `skew(-23deg, 0deg) rotate(-10deg)`],
       zIndex: -1,
       borderRadius: `xl`,
       background: t => `radial-gradient(
@@ -28,20 +26,6 @@ export default {
         )`,
       backgroundSize: `100%`,
       backgroundPosition: `650px bottom`
-    },
-    '::after': {
-      content: `" "`,
-      position: `absolute`,
-      top: `50%`,
-      left: `50%`,
-      transform: `translate(-50%, -45%)`,
-      zIndex: -1,
-      size: 'full',
-      maxWidth: 600,
-      maxHeight: 600,
-      background: `url(${circle}) no-repeat center center`,
-      backgroundSize: `contain`,
-      opacity: 0.1
     }
   },
   featuresContainer: {

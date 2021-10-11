@@ -9,14 +9,14 @@ export default {
   h1: {
     ...heading,
     fontSize: [6, 7],
-    maxWidth: 650,
+    maxWidth: 900,
     mx: `auto`,
     mb: 4
   },
   h2: {
     ...heading,
     fontSize: 6,
-    maxWidth: 650,
+    maxWidth: 800,
     mx: `auto`,
     mb: 4
   },
@@ -37,6 +37,12 @@ export default {
     ...heading,
     fontSize: 2,
     mb: 0
+  },
+  headingText: {
+    fontSize: 3,
+    mb: 4,
+    ml: 'auto',
+    mr: 'auto'
   },
   medium: {
     fontSize: 3,

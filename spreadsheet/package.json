@@ -40,7 +40,8 @@
     "reset-hard": "git clean -dfx && git reset --hard && yarn",
     "prepare-release": "run-s reset-hard test cov:check doc:html version doc:publish",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "deploy-storybook": "storybook-to-aws-s3 --bucket-path=storybook.powersheet.io/"
   },
   "engines": {
     "node": ">=10"
@@ -76,6 +77,7 @@
     "@storybook/addon-links": "^6.3.6",
     "@storybook/html": "^6.3.6",
     "@storybook/preset-scss": "^1.0.3",
+    "@storybook/storybook-deployer": "^2.8.10",
     "@types/xlsx": "^0.0.36",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",

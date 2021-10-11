@@ -6,7 +6,7 @@
       "variant": "h4"
     },
     {
-      "text": "Features cloned from Excel & GSheets",
+      "text": "Functionality cloned from Excel & GSheets",
       "variant": "h2"
     }
   ],
@@ -22,7 +22,7 @@
           "variant": "h5"
         },
         {
-          "text": "Powersheet is faster than all of the existing solutions as we use the canvas API to draw objects instead of a DOM."
+          "text": "Faster than all of the existing solutions as we use the HTML5 canvas API to draw objects instead of a DOM."
         }
       ],
       "icon": {
@@ -37,7 +37,7 @@
       },
       "text": [
         {
-          "text": "Formulas (=A1)",
+          "text": "Formulas",
           "color": "omegaDarker",
           "variant": "h5"
         },
@@ -77,12 +77,12 @@
       },
       "text": [
         {
-          "text": "Support",
+          "text": "Mobile Support",
           "color": "omegaDarker",
           "variant": "h5"
         },
         {
-          "text": "Powersheet is used by our parent company tracktak.com which means you can expect continous support."
+          "text": "Full native mobile support with touch event listeners, including responsive design for any layout."
         }
       ],
       "icon": {

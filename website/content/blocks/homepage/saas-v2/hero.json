@@ -11,5 +11,14 @@
       "color": "white",
       "variant": "headingText"
     }
+  ],
+  "buttons": [
+    {
+      "text": "Fullscreen Demo",
+      "type": "PAGE",
+      "link": "http://192.168.1.102:6006",
+      "target": "_blank",
+      "variant": "white"
+    }
   ]
 }

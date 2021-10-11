@@ -14,7 +14,7 @@ export default {
     '::before': {
       content: `" "`,
       width: `110%`,
-      height: `1210px`,
+      height: `1310px`,
       position: `absolute`,
       top: `-200px`,
       zIndex: -1,

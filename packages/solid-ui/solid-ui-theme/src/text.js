@@ -40,7 +40,7 @@ export default {
   },
   headingText: {
     fontSize: 3,
-    mb: 4,
+    mb: 2,
     ml: 'auto',
     mr: 'auto'
   },

@@ -9,10 +9,10 @@ import ModalSimple from '@solid-ui-blocks/Modal/Block02'
 import Header from '@solid-ui-blocks/Header/Block01'
 import Tabs from '@solid-ui-components/Tabs'
 import Hero from '@solid-ui-blocks/Hero/Block01'
+import Features from '@solid-ui-blocks/Features/Block06'
 import FeatureOne from '@solid-ui-blocks/FeaturesWithPhoto/Block02'
 import FeatureTwo from '@solid-ui-blocks/FeaturesWithPhoto/Block05'
 import FeatureThree from '@solid-ui-blocks/FeaturesWithPhoto/Block01'
-import Features from '@solid-ui-blocks/Features/Block02'
 import Screenshot from '@solid-ui-blocks/FeaturesWithPhoto/Block03'
 import Process from '@solid-ui-blocks/Features/Block03'
 import Testimonials from '@solid-ui-blocks/Testimonials/Block03'
@@ -45,6 +45,7 @@ const IndexPage = props => {
       </Container>
       <Divider space='4' />
       <Divider space='4' />
+      <Features content={content['features-one']} />
       <Container variant='wide' sx={styles.tabsContainer}>
         <Tabs space={5}>
           <FeatureOne content={content['tab-feature-one']} />
@@ -67,9 +68,6 @@ const IndexPage = props => {
       <Divider space='5' />
       <Process content={content['process']} />
       <Divider space='5' />
-      <Container variant='full' sx={styles.featuresContainer}>
-        <Features content={content['features']} />
-      </Container>
       <Divider space='5' />
       <Container variant='full' sx={styles.socialProofContainer}>
         <Divider space='5' />

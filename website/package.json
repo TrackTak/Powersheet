@@ -7,14 +7,16 @@
     "start": "gatsby develop",
     "build": "gatsby build",
     "clean": "gatsby clean",
-    "serve": "gatsby serve"
+    "serve": "gatsby serve",
+    "deploy": "gatsby-plugin-s3 deploy"
   },
   "dependencies": {
     "@elegantstack/gatsby-theme-flexiblocks": "*",
-    "@powersheet/spreadsheet": "*",
     "@gatsbyjs/reach-router": "^1.3.6",
+    "@powersheet/spreadsheet": "*",
     "gatsby": "^3.14.2",
     "gatsby-link": "^3.14.0",
+    "gatsby-plugin-s3": "^0.3.8",
     "gatsby-react-router-scroll": "^4.14.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"

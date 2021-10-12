@@ -5,7 +5,6 @@ import styles from './CellEditor.module.scss';
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
-import HyperFormulaModule from '../../HyperFormula';
 import Cell from '../cells/cell/Cell';
 import { setCaretToEndOfElement } from '../../utils';
 
@@ -47,20 +46,24 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
 
-    if (HyperFormulaModule) {
+    this.cellEditorContainerEl.style.display = 'none';
+
+    this.setFormulaHelper();
+  }
+
+  private async setFormulaHelper() {
+    const hyperformula = await this.spreadsheet.getHyperformula();
+
+    if (hyperformula) {
       this.formulaHelper = new FormulaHelper(
-        HyperFormulaModule?.default.getRegisteredFunctionNames('enGB'),
+        hyperformula.HyperFormula.getRegisteredFunctionNames('enGB'),
         this.onItemClick
       );
-    }
 
-    if (this.formulaHelper) {
       this.cellEditorContainerEl.appendChild(
         this.formulaHelper.formulaHelperEl
       );
     }
-
-    this.cellEditorContainerEl.style.display = 'none';
   }
 
   saveContentToCell() {

@@ -5,6 +5,8 @@ import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
+import 'tippy.js/dist/tippy.css';
+import './tippy.scss';
 import styles from './Spreadsheet.module.scss';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
@@ -197,6 +199,19 @@ class Spreadsheet {
 
   getActiveSheet() {
     return this.sheets.get(this.activeSheetId);
+  }
+
+  async getHyperformula() {
+    try {
+      const hyperformula = await import('hyperformula');
+
+      return hyperformula;
+    } catch (error) {
+      console.info(
+        `Hyperformula is not installed. This is fine if you don't need formulas to work.`
+      );
+      return null;
+    }
   }
 
   updateViewport() {

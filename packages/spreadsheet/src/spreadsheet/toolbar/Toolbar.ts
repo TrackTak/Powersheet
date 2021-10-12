@@ -33,7 +33,6 @@ import {
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
 import { sentenceCase } from 'sentence-case';
-import HyperFormulaModule from '../HyperFormula';
 import Cell from '../sheet/cells/cell/Cell';
 import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
 import {
@@ -236,21 +235,7 @@ class Toolbar {
           break;
         }
         case 'functions': {
-          if (HyperFormulaModule) {
-            const { dropdownContent, registeredFunctionButtons } =
-              createFunctionDropdownContent(
-                HyperFormulaModule?.default
-                  .getRegisteredFunctionNames('enGB')
-                  .sort((a, b) => a.localeCompare(b))
-              );
-
-            this.setDropdownIconContent(name, dropdownContent, true);
-
-            this.functionElements = {
-              registeredFunctionButtons,
-            };
-          }
-
+          this.setFunctionElements(name);
           break;
         }
         default: {
@@ -410,6 +395,25 @@ class Toolbar {
         }
       }
     );
+  }
+
+  private async setFunctionElements(name: DropdownIconName) {
+    const hyperformula = await this.spreadsheet.getHyperformula();
+
+    if (hyperformula) {
+      const { dropdownContent, registeredFunctionButtons } =
+        createFunctionDropdownContent(
+          hyperformula.HyperFormula.getRegisteredFunctionNames('enGB').sort(
+            (a, b) => a.localeCompare(b)
+          )
+        );
+
+      this.setDropdownIconContent(name, dropdownContent, true);
+
+      this.functionElements = {
+        registeredFunctionButtons,
+      };
+    }
   }
 
   setFunction(functionName: string) {

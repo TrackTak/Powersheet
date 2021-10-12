@@ -64,7 +64,6 @@
     }
   },
   "peerDependencies": {
-    "eventemitter3": "^4.0.7",
     "hyperformula": "^1.2.0"
   },
   "optionalDependencies": {
@@ -77,6 +76,7 @@
     "numfmt": "^2.1.0",
     "sass": "^1.36.0",
     "sentence-case": "^3.0.4",
+    "tiny-typed-emitter": "^2.1.0",
     "tippy.js": "^6.3.1",
     "undo-redo-manager": "^1.0.0"
   },

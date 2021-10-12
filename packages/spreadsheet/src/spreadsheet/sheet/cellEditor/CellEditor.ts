@@ -1,5 +1,4 @@
 import { IRect } from 'konva/lib/types';
-import events from '../../events';
 import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
@@ -110,7 +109,7 @@ class CellEditor {
 
     this.cellEditorEl.textContent = textContent;
     this.spreadsheet.formulaBar?.setTextContent(textContent);
-    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
+    this.spreadsheet.eventEmitter.emit('cellEditorChange', value);
   }
 
   onKeyDown = (e: KeyboardEvent) => {

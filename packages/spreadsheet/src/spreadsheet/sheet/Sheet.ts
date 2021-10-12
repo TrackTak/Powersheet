@@ -15,7 +15,6 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import { DebouncedFunc, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
-import events from '../events';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
@@ -189,7 +188,7 @@ class Sheet {
     this.cols.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0);
     this.rows.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY);
 
-    this.spreadsheet.eventEmitter.emit(events.scrollWheel.scroll, e);
+    this.spreadsheet.eventEmitter.emit('scrollVerticalWheel', e);
   };
 
   sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {

@@ -3,7 +3,6 @@ import { defaultOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
-import events from './events';
 import { ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
@@ -14,8 +13,8 @@ import getHyperformulaConfig from './getHyperformulaConfig';
 import BottomBar from './bottomBar/BottomBar';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
-import EventEmitter from 'eventemitter3';
 import { merge, throttle } from 'lodash';
+import { PowersheetEvents } from './PowersheetEmitter';
 
 export default {
   title: 'Spreadsheet',
@@ -25,38 +24,37 @@ const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
 };
 
-const getSpreadsheet = (params: Partial<ISpreadsheetConstructor>) => {
+const getSpreadsheet = (params: ISpreadsheetConstructor) => {
   TouchEmulator.stop();
 
-  const eventEmitter = new EventEmitter();
+  const spreadsheet = new Spreadsheet({
+    ...params,
+  });
 
-  const oldEmit = eventEmitter.emit;
+  const oldEmit = spreadsheet.eventEmitter.emit;
 
   // Throttling storybooks action log so that it doesn't
   // reduce FPS by 10-15~ on resize and scroll
   const throttledEventLog = throttle(eventLog, 250);
 
-  eventEmitter.emit = function <
-    T extends EventEmitter.EventNames<string | symbol>
-  >(event: T, ...args: any[]) {
+  spreadsheet.eventEmitter.emit = function <U extends keyof PowersheetEvents>(
+    event: U,
+    ...args: Parameters<PowersheetEvents[U]>
+  ) {
     throttledEventLog(event.toString(), ...args);
 
-    oldEmit.call(eventEmitter, event, ...args);
+    // @ts-ignore
+    oldEmit.call(spreadsheet.eventEmitter, event, ...args);
 
     return true;
   };
 
-  eventEmitter.on(events.persist.save, (_, done) => {
+  spreadsheet.eventEmitter.on('persistData', (_, done) => {
     // Simulating an async API call that saves the sheet data to
     // a DB
     setTimeout(() => {
       done();
     }, 500);
-  });
-
-  const spreadsheet = new Spreadsheet({
-    eventEmitter,
-    ...params,
   });
 
   return spreadsheet;

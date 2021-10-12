@@ -1,5 +1,4 @@
 import { DebouncedFunc, throttle } from 'lodash';
-import events from '../../../events';
 import { prefix } from '../../../utils';
 import Sheet from '../../Sheet';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
@@ -189,7 +188,7 @@ class ScrollBar {
     this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
-      events.scroll[this.scrollType],
+      this.isCol ? 'scrollHorizontal' : 'scrollVertical',
       e,
       newScroll
     );

@@ -1,4 +1,3 @@
-import EventEmitter from 'eventemitter3';
 import { isNil, merge } from 'lodash';
 import { defaultOptions, IConfigOptions, IOptions } from './options';
 import Sheet, { SheetId } from './sheet/Sheet';
@@ -17,10 +16,9 @@ import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress, {
   CellId,
 } from './sheet/cells/cell/SimpleCellAddress';
-import events from './events';
+import PowersheetEmitter from './PowersheetEmitter';
 
 export interface ISpreadsheetConstructor {
-  eventEmitter: EventEmitter;
   options?: IConfigOptions;
   styles?: IConfigStyles;
   data?: ISpreadsheetData;
@@ -36,7 +34,7 @@ class Spreadsheet {
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   styles: IStyles;
-  eventEmitter: EventEmitter;
+  eventEmitter: PowersheetEmitter;
   options: IOptions;
   data: Data;
   toolbar?: Toolbar;
@@ -54,8 +52,8 @@ class Spreadsheet {
     this.data = new Data(this, params.data);
     this.options = merge({}, defaultOptions, params.options);
     this.styles = merge({}, defaultStyles, params.styles);
+    this.eventEmitter = new PowersheetEmitter();
     this.hyperformula = params.hyperformula;
-    this.eventEmitter = params.eventEmitter;
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
@@ -116,6 +114,8 @@ class Spreadsheet {
 
     this.switchSheet(0);
 
+    this.isSaving = false;
+
     this.updateViewport();
   };
 
@@ -154,7 +154,7 @@ class Spreadsheet {
 
     this.persistData();
 
-    this.eventEmitter.emit(events.history.push, this.data.spreadsheetData);
+    this.eventEmitter.emit('historyPush', this.data.spreadsheetData);
   }
 
   persistData() {
@@ -165,11 +165,7 @@ class Spreadsheet {
 
     this.isSaving = true;
 
-    this.eventEmitter.emit(
-      events.persist.save,
-      this.data.spreadsheetData,
-      done
-    );
+    this.eventEmitter.emit('persistData', this.data.spreadsheetData, done);
   }
 
   undo() {

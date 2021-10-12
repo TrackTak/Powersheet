@@ -1,7 +1,6 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
-import events from '../../../events';
 import Sheet from '../../Sheet';
 import Spreadsheet from '../../../Spreadsheet';
 import RowCols from '../RowCols';
@@ -110,8 +109,13 @@ class Resizer {
     this.hideResizeMarker();
   };
 
-  resizeLineDragStart = () => {
+  resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
     this.spreadsheet.pushToHistory();
+
+    this.spreadsheet.eventEmitter.emit(
+      this.rowCols.isCol ? 'resizeColStart' : 'resizeRowStart',
+      e
+    );
   };
 
   resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
@@ -139,7 +143,7 @@ class Resizer {
     this.showGuideLine();
 
     this.spreadsheet.eventEmitter.emit(
-      events.resize[this.rowCols.type].move,
+      this.rowCols.isCol ? 'resizeColMove' : 'resizeRowMove',
       e,
       newAxis
     );
@@ -163,9 +167,8 @@ class Resizer {
     this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(
-      events.resize[this.rowCols.type].end,
+      this.rowCols.isCol ? 'resizeColEnd' : 'resizeRowEnd',
       e,
-      this.currentIndex,
       newSize
     );
   };

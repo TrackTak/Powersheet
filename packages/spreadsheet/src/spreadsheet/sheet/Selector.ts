@@ -1,7 +1,6 @@
 import { Shape } from 'konva/lib/Shape';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Vector2d } from 'konva/lib/types';
-import events from '../events';
 import Spreadsheet from '../Spreadsheet';
 import SelectedCell from './cells/cell/SelectedCell';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
@@ -12,7 +11,7 @@ export interface ISelectedRowCols {
   cols: Shape[];
 }
 
-interface ISelectionArea {
+export interface ISelectionArea {
   start: Vector2d;
   end: Vector2d;
 }
@@ -194,11 +193,7 @@ class Selector {
 
     this.spreadsheet.updateViewport();
 
-    this.spreadsheet.eventEmitter.emit(
-      events.selector.startSelection,
-      this.sheet,
-      this.selectionArea
-    );
+    this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea);
   }
 
   moveSelection() {
@@ -221,10 +216,7 @@ class Selector {
       this.updateSelectedCells();
       this.spreadsheet.toolbar?.updateActiveStates();
 
-      this.spreadsheet.eventEmitter.emit(
-        events.selector.moveSelection,
-        this.selectionArea
-      );
+      this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea);
     }
   }
 
@@ -240,7 +232,7 @@ class Selector {
       }
     });
 
-    this.spreadsheet.eventEmitter.emit(events.selector.endSelection);
+    this.spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!);
   }
 
   hasChangedCellSelection() {

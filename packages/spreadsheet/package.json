@@ -61,14 +61,17 @@
   "peerDependenciesMeta": {
     "hyperformula": {
       "optional": true
+    },
+    "xlsx": {
+      "optional": true
     }
   },
   "peerDependencies": {
-    "hyperformula": "^1.2.0"
+    "hyperformula": "^1.2.0",
+    "xlsx": "^0.17.2"
   },
   "optionalDependencies": {
-    "a-color-picker": "^1.2.1",
-    "xlsx": "^0.17.2"
+    "a-color-picker": "^1.2.1"
   },
   "dependencies": {
     "konva": "^8.1.1",
@@ -96,6 +99,7 @@
     "babel-loader": "^8.2.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "xlsx": "^0.17.2",
     "codecov": "^3.5.0",
     "cspell": "^4.1.0",
     "css-loader": "5.2.6",

@@ -1,8 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import { isNil, merge } from 'lodash';
-import { defaultOptions, IOptions } from './options';
+import { defaultOptions, IConfigOptions, IOptions } from './options';
 import Sheet, { SheetId } from './sheet/Sheet';
-import { defaultStyles, IStyles } from './styles';
+import { defaultStyles, IConfigStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
@@ -21,9 +21,9 @@ import events from './events';
 
 export interface ISpreadsheetConstructor {
   eventEmitter: EventEmitter;
-  options?: Partial<IOptions>;
-  styles?: Partial<IStyles>;
-  data?: Partial<ISpreadsheetData>;
+  options?: IConfigOptions;
+  styles?: IConfigStyles;
+  data?: ISpreadsheetData;
   hyperformula?: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;

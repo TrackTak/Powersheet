@@ -1,7 +1,7 @@
 {
   "name": "@powersheet/spreadsheet",
   "version": "1.0.0",
-  "description": "Powersheet app.",
+  "description": "A Lightning Fast Spreadsheet for Businesses",
   "author": "TRACKTAK LTD",
   "source": "src/index.ts",
   "exports": "./dist/index.modern.js",
@@ -9,7 +9,18 @@
   "module": "./dist/index.module.js",
   "unpkg": "./dist/index.umd.js",
   "types": "dist/index.d.ts",
-  "keywords": [],
+  "repository": "git://github.com/trackTak/powersheet.git",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "keywords": [
+    "spreadsheet",
+    "excel",
+    "table",
+    "formulas",
+    "grid",
+    "sheets"
+  ],
   "scripts": {
     "build:tsc:": "run-p build:tsc:*",
     "build:tsc:main": "tsc -p tsconfig.json",

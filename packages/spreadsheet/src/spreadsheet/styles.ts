@@ -1,6 +1,7 @@
 import { LineConfig } from 'konva/lib/shapes/Line';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { TextConfig } from 'konva/lib/shapes/Text';
+import { NestedPartial } from './types';
 
 export interface IRowHeaderRectConfig extends RectConfig {
   width: number;
@@ -25,13 +26,15 @@ export interface ICellConfig {
   text: TextConfig;
 }
 
+interface IRectConfig extends RectConfig {}
+
 export interface IRowColConfig {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   resizeMarker: LineConfig;
   gridLine: LineConfig;
   frozenLine: LineConfig;
-  headerRect: RectConfig;
+  headerRect: IRectConfig;
   headerText: TextConfig;
 }
 
@@ -44,6 +47,8 @@ export interface IStyles {
   row: IRowColConfig;
   cell: ICellConfig;
 }
+
+export interface IConfigStyles extends NestedPartial<IStyles> {}
 
 const resizeMarkerSize = 7;
 const resizeHitStrokeWidth = 15;

@@ -1,9 +1,8 @@
 import { Story, Meta } from '@storybook/html';
-import { defaultOptions, IOptions } from './options';
+import { defaultOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
-import { defaultStyles, IStyles } from './styles';
 import events from './events';
 import { ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
@@ -17,17 +16,10 @@ import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import EventEmitter from 'eventemitter3';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData } from './sheet/Data';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
-
-interface IArgs {
-  options?: Partial<IOptions>;
-  styles?: Partial<IStyles>;
-  data?: Partial<ISpreadsheetData>;
-}
 
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
@@ -78,7 +70,7 @@ const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
   });
 };
 
-const buildOnlySpreadsheet = (args: IArgs) => {
+const buildOnlySpreadsheet = (args: Partial<ISpreadsheetConstructor>) => {
   const options = args.options;
   const styles = args.styles;
   const data = args.data;
@@ -93,7 +85,7 @@ const buildOnlySpreadsheet = (args: IArgs) => {
 };
 
 const buildSpreadsheetWithEverything = (
-  args: IArgs,
+  args: Partial<ISpreadsheetConstructor>,
   hyperformula?: HyperFormula
 ) => {
   const options = args.options;
@@ -124,7 +116,7 @@ const buildSpreadsheetWithEverything = (
 };
 
 const buildSpreadsheetWithHyperformula = (
-  args: IArgs,
+  args: Partial<ISpreadsheetConstructor>,
   config?: Partial<ConfigParams>
 ) => {
   const hyperformula = getHyperformulaInstance({
@@ -134,7 +126,7 @@ const buildSpreadsheetWithHyperformula = (
   return buildSpreadsheetWithEverything(args, hyperformula);
 };
 
-const Template: Story<IArgs> = (args) => {
+const Template: Story<Partial<ISpreadsheetConstructor>> = (args) => {
   return buildSpreadsheetWithHyperformula(args);
 };
 
@@ -221,7 +213,7 @@ DifferentSizeCells.args = {
   },
 };
 
-const MobileTemplate: Story<IArgs> = (args) => {
+const MobileTemplate: Story<Partial<ISpreadsheetConstructor>> = (args) => {
   const spreadsheet = buildSpreadsheetWithHyperformula(args);
 
   TouchEmulator.start();
@@ -231,7 +223,7 @@ const MobileTemplate: Story<IArgs> = (args) => {
 
 export const Mobile = MobileTemplate.bind({});
 
-const MillionRowsTemplate: Story<IArgs> = (args) => {
+const MillionRowsTemplate: Story<Partial<ISpreadsheetConstructor>> = (args) => {
   const newArgs = merge({}, args, {
     options: {
       row: {
@@ -249,11 +241,8 @@ export const MillionRows = MillionRowsTemplate.bind({});
 
 MillionRows.args = {
   styles: {
-    ...defaultStyles,
     row: {
-      ...defaultStyles.row,
       headerRect: {
-        ...defaultStyles.row.headerRect,
         width: 50,
       },
     },
@@ -272,29 +261,27 @@ export const CustomStyles = Template.bind({});
 
 CustomStyles.args = {
   styles: {
-    ...defaultStyles,
     row: {
-      ...defaultStyles.row,
       gridLine: {
-        ...defaultStyles.row.gridLine,
         stroke: '#add8e6',
       },
     },
     selection: {
-      ...defaultStyles.cell,
       fill: 'orange',
       opacity: 0.3,
     },
   },
 };
 
-const OnlySpreadsheet: Story<IArgs> = (args) => {
+const OnlySpreadsheet: Story<Partial<ISpreadsheetConstructor>> = (args) => {
   return buildOnlySpreadsheet(args);
 };
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
 
-const NoHyperformulaTemplate: Story<IArgs> = (args) => {
+const NoHyperformulaTemplate: Story<Partial<ISpreadsheetConstructor>> = (
+  args
+) => {
   return buildSpreadsheetWithEverything(args);
 };
 
@@ -310,14 +297,16 @@ CustomSizeSpreadsheet.args = {
   },
 };
 
-const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
+const AllCurrencySymbolsTemplate: Story<Partial<ISpreadsheetConstructor>> = (
+  args
+) => {
   return buildSpreadsheetWithHyperformula(args, {
     currencySymbol: Object.values(currencySymbolMap),
   });
 };
 
 const MultipleSpreadsheetsTemplate: Story = () => {
-  const firstSpreadsheetArgs: IArgs = {
+  const firstSpreadsheetArgs = {
     data: {
       sheets: {
         0: {
@@ -328,7 +317,7 @@ const MultipleSpreadsheetsTemplate: Story = () => {
     },
   };
 
-  const secondSpreadsheetArgs: IArgs = {
+  const secondSpreadsheetArgs = {
     data: {
       sheets: {
         0: {

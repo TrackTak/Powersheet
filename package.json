@@ -1,7 +1,7 @@
 {
   "name": "elegantstack",
   "private": true,
-  "license": "",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "workspaces": [
     "packages/**",
     "website"

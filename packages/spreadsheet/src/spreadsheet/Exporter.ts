@@ -1,4 +1,4 @@
-import { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
+import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';

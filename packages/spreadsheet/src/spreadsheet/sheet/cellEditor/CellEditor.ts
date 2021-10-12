@@ -49,7 +49,7 @@ class CellEditor {
 
     if (HyperFormulaModule) {
       this.formulaHelper = new FormulaHelper(
-        this.spreadsheet.getRegisteredFunctions()!,
+        HyperFormulaModule?.default.getRegisteredFunctionNames('enGB'),
         this.onItemClick
       );
     }

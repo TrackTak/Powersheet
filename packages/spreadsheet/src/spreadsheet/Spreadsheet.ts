@@ -11,7 +11,6 @@ import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import type { HyperFormula } from 'hyperformula';
-import HyperFormulaModule from './HyperFormula';
 import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress, {
   CellId,
@@ -151,10 +150,6 @@ class Spreadsheet {
     this.styles = merge({}, defaultStyles, styles);
 
     this.updateViewport();
-  }
-
-  getRegisteredFunctions() {
-    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
   }
 
   pushToHistory() {

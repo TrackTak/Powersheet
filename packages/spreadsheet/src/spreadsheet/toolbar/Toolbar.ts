@@ -239,8 +239,8 @@ class Toolbar {
           if (HyperFormulaModule) {
             const { dropdownContent, registeredFunctionButtons } =
               createFunctionDropdownContent(
-                this.spreadsheet
-                  .getRegisteredFunctions()!
+                HyperFormulaModule?.default
+                  .getRegisteredFunctionNames('enGB')
                   .sort((a, b) => a.localeCompare(b))
               );
 

@@ -10,6 +10,7 @@
   "unpkg": "./dist/index.umd.js",
   "types": "dist/index.d.ts",
   "repository": "git://github.com/trackTak/powersheet.git",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
   },

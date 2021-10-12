@@ -2,6 +2,7 @@
   "name": "@powersheet/website",
   "private": true,
   "version": "3.6.0",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "scripts": {
     "develop": "gatsby develop",
     "start": "gatsby develop",

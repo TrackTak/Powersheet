@@ -1,9 +1,11 @@
-import { bottomBarPrefix } from './BottomBar';
+import { prefix } from '../utils';
 import styles from './BottomBar.module.scss';
 
 export type SelectSheetsIcon = 'hamburger';
 
 export type AddSheetIcon = 'add';
+
+export const bottomBarPrefix = `${prefix}-bottom-bar`;
 
 export const createSheetTab = () => {
   const sheetTabContainer = document.createElement('div');

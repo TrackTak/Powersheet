@@ -78,5 +78,4 @@ yarn-error.log
 .firebase/
 
 # spreadsheet
-/spreadsheet/dist
-/spreadsheet/*.tsbuildinfo
+dist

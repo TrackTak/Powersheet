@@ -1,5 +1,7 @@
-import { rightClickMenuPrefix } from './RightClickMenu';
+import { prefix } from '../../utils';
 import styles from './RightClickMenu.module.scss';
+
+export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
 export type ButtonName =
   | 'comment'

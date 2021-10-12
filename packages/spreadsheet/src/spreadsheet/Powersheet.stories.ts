@@ -1,5 +1,5 @@
 import { Story, Meta } from '@storybook/html';
-import { defaultOptions } from './options';
+import { defaultOptions, IOptions } from './options';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
@@ -15,21 +15,45 @@ import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
 import { PowersheetEvents } from './PowersheetEmitter';
+import { ISpreadsheetData } from './sheet/Data';
+import { IStyles } from './styles';
+import { NestedPartial } from './types';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
 
+interface IArgs {
+  data?: ISpreadsheetData;
+  options?: NestedPartial<IOptions>;
+  styles?: NestedPartial<IStyles>;
+}
+
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
 };
 
-const getSpreadsheet = (params: ISpreadsheetConstructor) => {
+const getSpreadsheet = (
+  { options, styles, data }: IArgs,
+  params?: ISpreadsheetConstructor
+) => {
   TouchEmulator.stop();
 
   const spreadsheet = new Spreadsheet({
     ...params,
   });
+
+  if (data) {
+    spreadsheet.setData(data);
+  }
+
+  if (options) {
+    spreadsheet.setOptions(options);
+  }
+
+  if (styles) {
+    spreadsheet.setStyles(styles);
+  }
 
   const oldEmit = spreadsheet.eventEmitter.emit;
 
@@ -68,38 +92,23 @@ const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
   });
 };
 
-const buildOnlySpreadsheet = (args: Partial<ISpreadsheetConstructor>) => {
-  const options = args.options;
-  const styles = args.styles;
-  const data = args.data;
-
-  const spreadsheet = getSpreadsheet({
-    options,
-    styles,
-    data,
-  });
+const buildOnlySpreadsheet = (args: IArgs) => {
+  const spreadsheet = getSpreadsheet(args);
 
   return spreadsheet.spreadsheetEl;
 };
 
 const buildSpreadsheetWithEverything = (
-  args: Partial<ISpreadsheetConstructor>,
+  args: IArgs,
   hyperformula?: HyperFormula
 ) => {
-  const options = args.options;
-  const styles = args.styles;
-  const data = args.data;
-
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
   const exporter = new Exporter();
   const bottomBar = new BottomBar();
 
-  const spreadsheet = getSpreadsheet({
+  const spreadsheet = getSpreadsheet(args, {
     hyperformula,
-    options,
-    styles,
-    data,
     toolbar,
     formulaBar,
     bottomBar,
@@ -114,7 +123,7 @@ const buildSpreadsheetWithEverything = (
 };
 
 const buildSpreadsheetWithHyperformula = (
-  args: Partial<ISpreadsheetConstructor>,
+  args: IArgs,
   config?: Partial<ConfigParams>
 ) => {
   const hyperformula = getHyperformulaInstance({
@@ -124,7 +133,7 @@ const buildSpreadsheetWithHyperformula = (
   return buildSpreadsheetWithEverything(args, hyperformula);
 };
 
-const Template: Story<Partial<ISpreadsheetConstructor>> = (args) => {
+const Template: Story<IArgs> = (args) => {
   return buildSpreadsheetWithHyperformula(args);
 };
 
@@ -211,7 +220,7 @@ DifferentSizeCells.args = {
   },
 };
 
-const MobileTemplate: Story<Partial<ISpreadsheetConstructor>> = (args) => {
+const MobileTemplate: Story<IArgs> = (args) => {
   const spreadsheet = buildSpreadsheetWithHyperformula(args);
 
   TouchEmulator.start();
@@ -221,7 +230,7 @@ const MobileTemplate: Story<Partial<ISpreadsheetConstructor>> = (args) => {
 
 export const Mobile = MobileTemplate.bind({});
 
-const MillionRowsTemplate: Story<Partial<ISpreadsheetConstructor>> = (args) => {
+const MillionRowsTemplate: Story<IArgs> = (args) => {
   const newArgs = merge({}, args, {
     options: {
       row: {
@@ -271,15 +280,13 @@ CustomStyles.args = {
   },
 };
 
-const OnlySpreadsheet: Story<Partial<ISpreadsheetConstructor>> = (args) => {
+const OnlySpreadsheet: Story<IArgs> = (args) => {
   return buildOnlySpreadsheet(args);
 };
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
 
-const NoHyperformulaTemplate: Story<Partial<ISpreadsheetConstructor>> = (
-  args
-) => {
+const NoHyperformulaTemplate: Story<IArgs> = (args) => {
   return buildSpreadsheetWithEverything(args);
 };
 
@@ -295,9 +302,7 @@ CustomSizeSpreadsheet.args = {
   },
 };
 
-const AllCurrencySymbolsTemplate: Story<Partial<ISpreadsheetConstructor>> = (
-  args
-) => {
+const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
   return buildSpreadsheetWithHyperformula(args, {
     currencySymbol: Object.values(currencySymbolMap),
   });

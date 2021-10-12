@@ -1,5 +1,3 @@
-import { NestedPartial } from './types';
-
 export interface IRowColOptions {
   amount: number;
   minSize: number;
@@ -15,8 +13,6 @@ export interface IOptions {
   touchScrollSpeed: number;
   undoRedoLimit: number;
 }
-
-export interface IConfigOptions extends NestedPartial<IOptions> {}
 
 export const defaultOptions: IOptions = {
   undoRedoLimit: 20,

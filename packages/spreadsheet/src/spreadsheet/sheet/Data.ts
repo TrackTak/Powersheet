@@ -104,14 +104,10 @@ export interface ISpreadsheetData {
 }
 
 class Data {
-  spreadsheetData: ISpreadsheetData;
+  spreadsheetData: ISpreadsheetData = {};
 
-  constructor(
-    public spreadsheet: Spreadsheet,
-    spreadsheetData?: Partial<ISpreadsheetData>
-  ) {
+  constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
-    this.spreadsheetData = spreadsheetData ?? {};
   }
 
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {

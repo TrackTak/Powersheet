@@ -1,7 +1,6 @@
 import { LineConfig } from 'konva/lib/shapes/Line';
 import { RectConfig } from 'konva/lib/shapes/Rect';
 import { TextConfig } from 'konva/lib/shapes/Text';
-import { NestedPartial } from './types';
 
 export interface IRowHeaderRectConfig extends RectConfig {
   width: number;
@@ -47,8 +46,6 @@ export interface IStyles {
   row: IRowColConfig;
   cell: ICellConfig;
 }
-
-export interface IConfigStyles extends NestedPartial<IStyles> {}
 
 const resizeMarkerSize = 7;
 const resizeHitStrokeWidth = 15;

@@ -1,7 +1,7 @@
 import { isNil, merge } from 'lodash';
-import { defaultOptions, IConfigOptions, IOptions } from './options';
+import { defaultOptions, IOptions } from './options';
 import Sheet, { SheetId } from './sheet/Sheet';
-import { defaultStyles, IConfigStyles, IStyles } from './styles';
+import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
@@ -17,11 +17,9 @@ import SimpleCellAddress, {
   CellId,
 } from './sheet/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
+import { NestedPartial } from './types';
 
 export interface ISpreadsheetConstructor {
-  options?: IConfigOptions;
-  styles?: IConfigStyles;
-  data?: ISpreadsheetData;
   hyperformula?: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
@@ -49,9 +47,9 @@ class Spreadsheet {
   isSaving = false;
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = new Data(this, params.data);
-    this.options = merge({}, defaultOptions, params.options);
-    this.styles = merge({}, defaultStyles, params.styles);
+    this.data = new Data(this);
+    this.options = defaultOptions;
+    this.styles = defaultStyles;
     this.eventEmitter = new PowersheetEmitter();
     this.hyperformula = params.hyperformula;
     this.toolbar = params.toolbar;
@@ -102,7 +100,7 @@ class Spreadsheet {
     });
   }
 
-  onDOMContentLoaded = () => {
+  private onDOMContentLoaded = () => {
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
       const sheet = this.data.spreadsheetData.sheets[sheetId];
@@ -137,14 +135,26 @@ class Spreadsheet {
     });
   }
 
-  getRegisteredFunctions() {
-    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
-  }
-
-  setOptions(options: IOptions) {
-    this.options = options;
+  setData(data: ISpreadsheetData) {
+    this.data.spreadsheetData = merge({}, this.data.spreadsheetData, data);
 
     this.updateViewport();
+  }
+
+  setOptions(options: NestedPartial<IOptions>) {
+    this.options = merge({}, defaultOptions, options);
+
+    this.updateViewport();
+  }
+
+  setStyles(styles: NestedPartial<IStyles>) {
+    this.styles = merge({}, defaultStyles, styles);
+
+    this.updateViewport();
+  }
+
+  getRegisteredFunctions() {
+    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
   }
 
   pushToHistory() {

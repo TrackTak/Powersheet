@@ -1,23 +1,25 @@
 import { Story, Meta } from '@storybook/html';
-import { defaultOptions, IOptions } from './options';
+import { defaultOptions, IOptions } from './spreadsheet/options';
 import 'tippy.js/dist/tippy.css';
-import './tippy.scss';
-import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
+import './spreadsheet/tippy.scss';
+import Spreadsheet, {
+  ISpreadsheetConstructor,
+} from './spreadsheet/Spreadsheet';
 import { ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
-import Toolbar from './toolbar/Toolbar';
-import FormulaBar from './formulaBar/FormulaBar';
-import Exporter from './Exporter';
-import getHyperformulaConfig from './getHyperformulaConfig';
-import BottomBar from './bottomBar/BottomBar';
+import Toolbar from './spreadsheet/toolbar/Toolbar';
+import FormulaBar from './spreadsheet/formulaBar/FormulaBar';
+import Exporter from './spreadsheet/Exporter';
+import getHyperformulaConfig from './spreadsheet/getHyperformulaConfig';
+import BottomBar from './spreadsheet/bottomBar/BottomBar';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { PowersheetEvents } from './PowersheetEmitter';
-import { ISpreadsheetData } from './sheet/Data';
-import { IStyles } from './styles';
-import { NestedPartial } from './types';
+import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
+import { ISpreadsheetData } from './spreadsheet/sheet/Data';
+import { IStyles } from './spreadsheet/styles';
+import { NestedPartial } from './spreadsheet/types';
 
 export default {
   title: 'Spreadsheet',

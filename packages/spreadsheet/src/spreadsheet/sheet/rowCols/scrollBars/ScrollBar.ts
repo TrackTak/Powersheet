@@ -24,7 +24,7 @@ class ScrollBar {
   type: RowColType;
   isCol: boolean;
   functions: IRowColFunctions;
-  layerListeningTimeout?: number;
+  layerListeningTimeout?: NodeJS.Timeout;
   pluralType: RowColsType;
 
   constructor(public rowCols: RowCols) {

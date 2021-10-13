@@ -5,7 +5,7 @@ import FormulaBar from './spreadsheet/formulaBar/FormulaBar';
 import Exporter from './spreadsheet/Exporter';
 import BottomBar from './spreadsheet/bottomBar/BottomBar';
 
-export default {
+export {
   defaultOptions,
   Spreadsheet,
   Toolbar,

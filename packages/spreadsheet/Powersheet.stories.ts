@@ -5,9 +5,20 @@ import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { Spreadsheet } from '@powersheet/spreadsheet';
-
-debugger;
+import {
+  defaultOptions,
+  BottomBar,
+  Exporter,
+  FormulaBar,
+  Spreadsheet,
+  Toolbar,
+} from '@powersheet/spreadsheet';
+import { ISpreadsheetData } from './dist/spreadsheet/sheet/Data';
+import { NestedPartial } from './dist/spreadsheet/types';
+import { IOptions } from './dist/spreadsheet/options';
+import { IStyles } from './dist/spreadsheet/styles';
+import { ISpreadsheetConstructor } from './dist/spreadsheet/Spreadsheet';
+import { PowersheetEvents } from './dist/spreadsheet/PowersheetEmitter';
 
 export default {
   title: 'Spreadsheet',

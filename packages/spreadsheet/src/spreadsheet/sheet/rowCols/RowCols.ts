@@ -236,7 +236,7 @@ class RowCols {
   }
 
   getTopBottomIndexFromPosition(position: Vector2d) {
-    let sheetViewportStartYIndex = this.scrollBar.sheetViewportPosition.x;
+    const sheetViewportStartYIndex = this.scrollBar.sheetViewportPosition.x;
 
     let topIndex = null;
     let bottomIndex = null;

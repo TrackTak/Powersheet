@@ -25,15 +25,13 @@ export interface ICellConfig {
   text: TextConfig;
 }
 
-interface IRectConfig extends RectConfig {}
-
 export interface IRowColConfig {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
   resizeMarker: LineConfig;
   gridLine: LineConfig;
   frozenLine: LineConfig;
-  headerRect: IRectConfig;
+  headerRect: RectConfig;
   headerText: TextConfig;
 }
 

@@ -16,7 +16,7 @@ class ScrollBar {
   totalPreviousCustomSizeDifferences = 0;
   sheetViewportPosition = new ViewportPosition();
   previousSheetViewportPosition = new ViewportPosition();
-  previousTouchMovePosition: number = 0;
+  previousTouchMovePosition = 0;
   scrollType: ScrollBarType;
   throttledScroll: DebouncedFunc<(e: Event) => void>;
   spreadsheet: Spreadsheet;

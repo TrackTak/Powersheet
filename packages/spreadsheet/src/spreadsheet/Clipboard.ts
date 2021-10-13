@@ -5,7 +5,7 @@ import Spreadsheet from './Spreadsheet';
 
 class Clipboard {
   private sourceRange: RangeSimpleCellAddress | null = null;
-  private isCut: boolean = false;
+  private isCut = false;
 
   constructor(private spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
@@ -42,7 +42,7 @@ class Clipboard {
       return;
     }
 
-    let rangeData = this.getRange(this.sourceRange, targetRange);
+    const rangeData = this.getRange(this.sourceRange, targetRange);
 
     this.spreadsheet.pushToHistory();
 
@@ -133,7 +133,7 @@ class Clipboard {
   };
 
   private getCellRangeForSelection(
-    expandSelectionForPaste: boolean = false
+    expandSelectionForPaste = false
   ): RangeSimpleCellAddress | null {
     const selectedCells =
       this.spreadsheet.getActiveSheet()?.selector.selectedCells;

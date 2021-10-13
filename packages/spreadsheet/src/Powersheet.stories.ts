@@ -18,7 +18,7 @@ import {
   BottomBar,
 } from '.';
 import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
-import { ConfigParams } from 'hyperformula';
+import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 
 export default {
   title: 'Spreadsheet',
@@ -34,9 +34,19 @@ const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
 };
 
+const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
+  return HyperFormula.buildEmpty({
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    // We use our own undo/redo instead
+    undoLimit: 0,
+    licenseKey: 'gpl-v3',
+  });
+};
+
 const getSpreadsheet = (
   { options, styles, data }: IArgs,
-  params?: ISpreadsheetConstructor
+  params: ISpreadsheetConstructor
 ) => {
   TouchEmulator.stop();
 
@@ -85,15 +95,17 @@ const getSpreadsheet = (
   return spreadsheet;
 };
 
-const buildOnlySpreadsheet = (args: IArgs) => {
-  const spreadsheet = getSpreadsheet(args);
+const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
+  const spreadsheet = getSpreadsheet(args, {
+    hyperformula,
+  });
 
   return spreadsheet.spreadsheetEl;
 };
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  hyperformulaConfig?: Partial<ConfigParams>
+  hyperformula: HyperFormula
 ) => {
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
@@ -101,11 +113,11 @@ const buildSpreadsheetWithEverything = (
   const bottomBar = new BottomBar();
 
   const spreadsheet = getSpreadsheet(args, {
+    hyperformula,
     toolbar,
     formulaBar,
     bottomBar,
     exporter,
-    hyperformulaConfig,
   });
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
@@ -116,7 +128,7 @@ const buildSpreadsheetWithEverything = (
 };
 
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args);
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
 };
 
 export const Default = Template.bind({});
@@ -203,7 +215,10 @@ DifferentSizeCells.args = {
 };
 
 const MobileTemplate: Story<IArgs> = (args) => {
-  const spreadsheet = buildSpreadsheetWithEverything(args);
+  const spreadsheet = buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance()
+  );
 
   TouchEmulator.start();
 
@@ -221,9 +236,12 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     },
   });
 
-  return buildSpreadsheetWithEverything(newArgs, {
-    maxRows: newArgs.options.row.amount,
-  });
+  return buildSpreadsheetWithEverything(
+    newArgs,
+    getHyperformulaInstance({
+      maxRows: newArgs.options.row.amount,
+    })
+  );
 };
 
 export const MillionRows = MillionRowsTemplate.bind({});
@@ -263,7 +281,7 @@ CustomStyles.args = {
 };
 
 const OnlySpreadsheet: Story<IArgs> = (args) => {
-  return buildOnlySpreadsheet(args);
+  return buildOnlySpreadsheet(args, getHyperformulaInstance());
 };
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
@@ -279,9 +297,12 @@ CustomSizeSpreadsheet.args = {
 };
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args, {
-    currencySymbol: Object.values(currencySymbolMap),
-  });
+  return buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance({
+      currencySymbol: Object.values(currencySymbolMap),
+    })
+  );
 };
 
 const MultipleSpreadsheetsTemplate: Story = () => {
@@ -307,10 +328,15 @@ const MultipleSpreadsheetsTemplate: Story = () => {
     },
   };
 
-  const firstSpreadsheetEl =
-    buildSpreadsheetWithEverything(firstSpreadsheetArgs);
+  const hyperformula = getHyperformulaInstance();
+
+  const firstSpreadsheetEl = buildSpreadsheetWithEverything(
+    firstSpreadsheetArgs,
+    hyperformula
+  );
   const secondSpreadsheetEl = buildSpreadsheetWithEverything(
-    secondSpreadsheetArgs
+    secondSpreadsheetArgs,
+    hyperformula
   );
 
   const containerEl = document.createElement('div');

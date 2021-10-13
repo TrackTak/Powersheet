@@ -12,7 +12,7 @@ import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
-import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
+import { HyperFormula } from 'hyperformula';
 import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress, {
   CellId,
@@ -21,7 +21,7 @@ import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
 
 export interface ISpreadsheetConstructor {
-  hyperformulaConfig?: Partial<ConfigParams>;
+  hyperformula: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -52,13 +52,7 @@ class Spreadsheet {
     this.options = defaultOptions;
     this.styles = defaultStyles;
     this.eventEmitter = new PowersheetEmitter();
-    this.hyperformula = HyperFormula.buildEmpty({
-      ...params.hyperformulaConfig,
-      chooseAddressMappingPolicy: new AlwaysSparse(),
-      // We use our own undo/redo instead
-      undoLimit: 0,
-      licenseKey: 'gpl-v3',
-    });
+
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;

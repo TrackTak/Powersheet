@@ -61,7 +61,8 @@
     }
   },
   "peerDependencies": {
-    "xlsx": "^0.17.2"
+    "xlsx": "^0.17.2",
+    "hyperformula": "^1.2.0"
   },
   "optionalDependencies": {
     "a-color-picker": "^1.2.1"
@@ -74,7 +75,6 @@
     "sentence-case": "^3.0.4",
     "tiny-typed-emitter": "^2.1.0",
     "tippy.js": "^6.3.1",
-    "hyperformula": "^1.2.0",
     "undo-redo-manager": "^1.0.0"
   },
   "devDependencies": {

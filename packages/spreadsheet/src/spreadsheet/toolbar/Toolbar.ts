@@ -45,6 +45,7 @@ import {
 import RangeSimpleCellAddress from '../sheet/cells/cell/RangeSimpleCellAddress';
 import SelectedCell from '../sheet/cells/cell/SelectedCell';
 import { SheetId } from '../sheet/Sheet';
+import { HyperFormula } from 'hyperformula';
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[];
@@ -235,7 +236,18 @@ class Toolbar {
           break;
         }
         case 'functions': {
-          this.setFunctionElements(name);
+          const { dropdownContent, registeredFunctionButtons } =
+            createFunctionDropdownContent(
+              HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
+                a.localeCompare(b)
+              )
+            );
+
+          this.setDropdownIconContent(name, dropdownContent, true);
+
+          this.functionElements = {
+            registeredFunctionButtons,
+          };
           break;
         }
         default: {
@@ -395,25 +407,6 @@ class Toolbar {
         }
       }
     );
-  }
-
-  private async setFunctionElements(name: DropdownIconName) {
-    const hyperformula = await this.spreadsheet.getHyperformula();
-
-    if (hyperformula) {
-      const { dropdownContent, registeredFunctionButtons } =
-        createFunctionDropdownContent(
-          hyperformula.HyperFormula.getRegisteredFunctionNames('enGB').sort(
-            (a, b) => a.localeCompare(b)
-          )
-        );
-
-      this.setDropdownIconContent(name, dropdownContent, true);
-
-      this.functionElements = {
-        registeredFunctionButtons,
-      };
-    }
   }
 
   setFunction(functionName: string) {

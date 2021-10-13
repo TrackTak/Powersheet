@@ -7,6 +7,7 @@ import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
 import { setCaretToEndOfElement } from '../../utils';
+import { HyperFormula } from 'hyperformula';
 
 export interface ICurrentScroll {
   row: number;
@@ -48,22 +49,12 @@ class CellEditor {
 
     this.cellEditorContainerEl.style.display = 'none';
 
-    this.setFormulaHelper();
-  }
+    this.formulaHelper = new FormulaHelper(
+      HyperFormula.getRegisteredFunctionNames('enGB'),
+      this.onItemClick
+    );
 
-  private async setFormulaHelper() {
-    const hyperformula = await this.spreadsheet.getHyperformula();
-
-    if (hyperformula) {
-      this.formulaHelper = new FormulaHelper(
-        hyperformula.HyperFormula.getRegisteredFunctionNames('enGB'),
-        this.onItemClick
-      );
-
-      this.cellEditorContainerEl.appendChild(
-        this.formulaHelper.formulaHelperEl
-      );
-    }
+    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
   }
 
   saveContentToCell() {

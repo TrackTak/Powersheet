@@ -1,24 +1,24 @@
 import { Story, Meta } from '@storybook/html';
-import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
+import { ISpreadsheetData } from './spreadsheet/sheet/Data';
+import { IOptions } from './spreadsheet/options';
+import { IStyles } from './spreadsheet/styles';
+import { NestedPartial } from './spreadsheet/types';
+import { ISpreadsheetConstructor } from './spreadsheet/Spreadsheet';
 import {
   defaultOptions,
-  BottomBar,
-  Exporter,
-  FormulaBar,
   Spreadsheet,
   Toolbar,
-} from '@powersheet/spreadsheet';
-import { ISpreadsheetData } from './dist/spreadsheet/sheet/Data';
-import { NestedPartial } from './dist/spreadsheet/types';
-import { IOptions } from './dist/spreadsheet/options';
-import { IStyles } from './dist/spreadsheet/styles';
-import { ISpreadsheetConstructor } from './dist/spreadsheet/Spreadsheet';
-import { PowersheetEvents } from './dist/spreadsheet/PowersheetEmitter';
+  FormulaBar,
+  Exporter,
+  BottomBar,
+} from '.';
+import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
+import { ConfigParams } from 'hyperformula';
 
 export default {
   title: 'Spreadsheet',
@@ -85,16 +85,6 @@ const getSpreadsheet = (
   return spreadsheet;
 };
 
-const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
-  return HyperFormula.buildEmpty({
-    ...config,
-    chooseAddressMappingPolicy: new AlwaysSparse(),
-    // We use our own undo/redo instead
-    undoLimit: 0,
-    licenseKey: 'gpl-v3',
-  });
-};
-
 const buildOnlySpreadsheet = (args: IArgs) => {
   const spreadsheet = getSpreadsheet(args);
 
@@ -103,7 +93,7 @@ const buildOnlySpreadsheet = (args: IArgs) => {
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  hyperformula?: HyperFormula
+  hyperformulaConfig?: Partial<ConfigParams>
 ) => {
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
@@ -111,11 +101,11 @@ const buildSpreadsheetWithEverything = (
   const bottomBar = new BottomBar();
 
   const spreadsheet = getSpreadsheet(args, {
-    hyperformula,
     toolbar,
     formulaBar,
     bottomBar,
     exporter,
+    hyperformulaConfig,
   });
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
@@ -125,19 +115,8 @@ const buildSpreadsheetWithEverything = (
   return spreadsheet.spreadsheetEl;
 };
 
-const buildSpreadsheetWithHyperformula = (
-  args: IArgs,
-  config?: Partial<ConfigParams>
-) => {
-  const hyperformula = getHyperformulaInstance({
-    ...config,
-  });
-
-  return buildSpreadsheetWithEverything(args, hyperformula);
-};
-
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithHyperformula(args);
+  return buildSpreadsheetWithEverything(args);
 };
 
 export const Default = Template.bind({});
@@ -224,7 +203,7 @@ DifferentSizeCells.args = {
 };
 
 const MobileTemplate: Story<IArgs> = (args) => {
-  const spreadsheet = buildSpreadsheetWithHyperformula(args);
+  const spreadsheet = buildSpreadsheetWithEverything(args);
 
   TouchEmulator.start();
 
@@ -242,7 +221,7 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     },
   });
 
-  return buildSpreadsheetWithHyperformula(newArgs, {
+  return buildSpreadsheetWithEverything(newArgs, {
     maxRows: newArgs.options.row.amount,
   });
 };
@@ -289,12 +268,6 @@ const OnlySpreadsheet: Story<IArgs> = (args) => {
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
 
-const NoHyperformulaTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args);
-};
-
-export const NoHyperformula = NoHyperformulaTemplate.bind({});
-
 export const CustomSizeSpreadsheet = Template.bind({});
 
 CustomSizeSpreadsheet.args = {
@@ -306,7 +279,7 @@ CustomSizeSpreadsheet.args = {
 };
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithHyperformula(args, {
+  return buildSpreadsheetWithEverything(args, {
     currencySymbol: Object.values(currencySymbolMap),
   });
 };
@@ -335,8 +308,8 @@ const MultipleSpreadsheetsTemplate: Story = () => {
   };
 
   const firstSpreadsheetEl =
-    buildSpreadsheetWithHyperformula(firstSpreadsheetArgs);
-  const secondSpreadsheetEl = buildSpreadsheetWithHyperformula(
+    buildSpreadsheetWithEverything(firstSpreadsheetArgs);
+  const secondSpreadsheetEl = buildSpreadsheetWithEverything(
     secondSpreadsheetArgs
   );
 

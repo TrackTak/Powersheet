@@ -101,7 +101,7 @@ class Spreadsheet {
     });
   }
 
-  private onDOMContentLoaded = () => {
+  initialize() {
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
       const sheet = this.data.spreadsheetData.sheets[sheetId];
@@ -116,6 +116,10 @@ class Spreadsheet {
     this.isSaving = false;
 
     this.updateViewport();
+  }
+
+  private onDOMContentLoaded = () => {
+    this.initialize();
   };
 
   destroy() {
@@ -137,7 +141,7 @@ class Spreadsheet {
   }
 
   setData(data: ISpreadsheetData) {
-    this.data.spreadsheetData = merge({}, this.data.spreadsheetData, data);
+    this.data.spreadsheetData = data;
 
     this.updateViewport();
   }

@@ -1,14 +1,13 @@
 import { IRect } from 'konva/lib/types';
-import events from '../../events';
 import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
-import HyperFormulaModule from '../../HyperFormula';
 import Cell from '../cells/cell/Cell';
 import { setCaretToEndOfElement } from '../../utils';
+import { HyperFormula } from 'hyperformula';
 
 export interface ICurrentScroll {
   row: number;
@@ -48,20 +47,14 @@ class CellEditor {
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
 
-    if (HyperFormulaModule) {
-      this.formulaHelper = new FormulaHelper(
-        this.spreadsheet.getRegisteredFunctions()!,
-        this.onItemClick
-      );
-    }
-
-    if (this.formulaHelper) {
-      this.cellEditorContainerEl.appendChild(
-        this.formulaHelper.formulaHelperEl
-      );
-    }
-
     this.cellEditorContainerEl.style.display = 'none';
+
+    this.formulaHelper = new FormulaHelper(
+      HyperFormula.getRegisteredFunctionNames('enGB'),
+      this.onItemClick
+    );
+
+    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl);
   }
 
   saveContentToCell() {
@@ -70,17 +63,20 @@ class CellEditor {
       this.spreadsheet.data.spreadsheetData.cells?.[
         simpleCellAddress.toCellId()
       ];
+    const textContent = this.cellEditorEl.textContent;
 
-    if (this.cellEditorEl.textContent) {
-      this.spreadsheet.pushToHistory();
-      this.spreadsheet.data.setCell(simpleCellAddress, {
-        ...cellData,
-        value: this.cellEditorEl.textContent,
+    if (textContent) {
+      this.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.data.setCell(simpleCellAddress, {
+          ...cellData,
+          value: textContent,
+        });
       });
     } else {
       if (cellData) {
-        this.spreadsheet.pushToHistory();
-        this.spreadsheet.data.deleteCell(simpleCellAddress);
+        this.spreadsheet.pushToHistory(() => {
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
+        });
       }
     }
   }
@@ -110,7 +106,7 @@ class CellEditor {
 
     this.cellEditorEl.textContent = textContent;
     this.spreadsheet.formulaBar?.setTextContent(textContent);
-    this.spreadsheet.eventEmitter.emit(events.cellEditor.change, value);
+    this.spreadsheet.eventEmitter.emit('cellEditorChange', value);
   }
 
   onKeyDown = (e: KeyboardEvent) => {

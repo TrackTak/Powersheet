@@ -1,12 +1,13 @@
-import { prefix } from '../../utils';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
 import Sheet from '../Sheet';
 import { createGroup } from '../../htmlElementHelpers';
-import { createButtonContent, ButtonName } from './rightClickMenuHtmlHelpers';
+import {
+  createButtonContent,
+  ButtonName,
+  rightClickMenuPrefix,
+} from './rightClickMenuHtmlHelpers';
 import Spreadsheet from '../../Spreadsheet';
-
-export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
 
 export interface IRightClickMenuActionGroups {
   elements: HTMLElement[];

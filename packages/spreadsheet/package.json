@@ -1,28 +1,39 @@
 {
-  "name": "@powersheet/spreadsheet",
+  "name": "@tracktak/powersheet",
   "version": "1.0.0",
-  "description": "Powersheet app.",
+  "description": "A Lightning Fast Spreadsheet for Businesses",
   "author": "TRACKTAK LTD",
   "source": "src/index.ts",
   "exports": "./dist/index.modern.js",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.module.js",
-  "unpkg": "./dist/index.umd.js",
   "types": "dist/index.d.ts",
-  "keywords": [],
+  "repository": "git://github.com/trackTak/powersheet.git",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "keywords": [
+    "spreadsheet",
+    "excel",
+    "table",
+    "formulas",
+    "grid",
+    "sheets"
+  ],
   "scripts": {
+    "copy-icons": "copyfiles -f \"./src/spreadsheet/icons.svg\" ./dist/",
     "build:tsc:": "run-p build:tsc:*",
     "build:tsc:main": "tsc -p tsconfig.json",
     "build:tsc:module": "tsc -p tsconfig.module.json",
-    "build": "microbundle src/index.ts --css-modules true",
-    "watch:build": "microbundle watch src/index.ts --css-modules true",
+    "build": "microbundle src/index.ts -f modern,esm,cjs --no-compress",
+    "watch:build": "microbundle watch src/index.ts -f modern,esm,cjs",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:lint": "eslint src --ext .ts --fix",
     "test": "run-s build:tsc test:*",
     "test:lint": "eslint src --ext .ts",
     "test:prettier": "prettier \"src/**/*.ts\" --list-different",
-    "test:spelling": "cspell \"{README.md,.github/*.md,src/**/*.ts}\"",
     "test:unit": "nyc --silent ava",
     "check-cli": "run-s test diff-integration-tests check-integration-tests",
     "check-integration-tests": "run-s check-integration-test:*",
@@ -37,9 +48,7 @@
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --out dist/docs",
     "doc:json": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --json dist/docs/typedoc.json",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d dist/docs",
-    "version": "standard-version",
-    "reset-hard": "git clean -dfx && git reset --hard && yarn",
-    "prepare-release": "run-s reset-hard test cov:check doc:html version doc:publish",
+    "prepublishOnly": "run-s build copy-icons",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook -o ./public"
   },
@@ -48,17 +57,16 @@
     "yarn": ">=1.19.2"
   },
   "peerDependenciesMeta": {
-    "hyperformula": {
+    "xlsx": {
       "optional": true
     }
   },
   "peerDependencies": {
-    "eventemitter3": "^4.0.7",
-    "hyperformula": "^1.2.0"
+    "hyperformula": "^1.2.0",
+    "xlsx": "^0.17.2"
   },
   "optionalDependencies": {
-    "a-color-picker": "^1.2.1",
-    "xlsx": "^0.17.2"
+    "a-color-picker": "^1.2.1"
   },
   "dependencies": {
     "konva": "^8.1.1",
@@ -66,13 +74,12 @@
     "numfmt": "^2.1.0",
     "sass": "^1.36.0",
     "sentence-case": "^3.0.4",
+    "tiny-typed-emitter": "^2.1.0",
     "tippy.js": "^6.3.1",
     "undo-redo-manager": "^1.0.0"
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
-    "@typescript-eslint/eslint-plugin": "^4.0.1",
-    "@typescript-eslint/parser": "^4.0.1",
     "@babel/core": "^7.14.8",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@storybook/addon-actions": "^6.3.6",
@@ -80,12 +87,12 @@
     "@storybook/addon-links": "^6.3.6",
     "@storybook/html": "^6.3.6",
     "@storybook/preset-scss": "^1.0.3",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
     "ava": "^3.12.1",
     "babel-loader": "^8.2.2",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
     "codecov": "^3.5.0",
-    "cspell": "^4.1.0",
+    "copyfiles": "^2.4.1",
     "css-loader": "5.2.6",
     "currency-symbol-map": "^5.0.1",
     "cz-conventional-changelog": "^3.3.0",
@@ -102,12 +109,14 @@
     "nyc": "^15.1.0",
     "open-cli": "^6.0.1",
     "prettier": "^2.1.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "sass-loader": "10",
-    "standard-version": "^9.0.0",
     "style-loader": "2.0.0",
     "ts-node": "^9.0.0",
     "typedoc": "^0.19.0",
-    "typescript": "^4.0.2"
+    "typescript": "^4.0.2",
+    "xlsx": "^0.17.2"
   },
   "files": [
     "build/main",

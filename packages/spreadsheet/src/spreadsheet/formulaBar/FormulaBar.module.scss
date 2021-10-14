@@ -1,23 +1,15 @@
 .formulaBar {
   position: relative;
   background: #fff;
-}
-
-.editorArea {
-  border: 1px solid #d9dbe4;
-  padding: 5px;
+  font-size: 15px;
 }
 
 .editableContentContainer {
   display: flex;
-  align-items: center;
+  padding: 3px 0 3px 5px;
 }
 
 .editableContent {
   outline: none;
-  flex: 1 1;
-}
-
-.iconContainer {
-  margin: 0 5px 0 0;
+  margin-left: 10px;
 }

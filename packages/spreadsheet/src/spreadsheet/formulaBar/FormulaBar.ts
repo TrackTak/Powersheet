@@ -89,6 +89,7 @@ class FormulaBar {
   };
 
   destroy() {
+    this.formulaBarEl.remove();
     this.editableContent.removeEventListener('input', this.onInput);
     this.editableContent.removeEventListener('keydown', this.onKeyDown);
   }

@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -15,7 +15,7 @@ export default {
     },
   ],
   env: { es6: true },
-  ignorePatterns: ['node_modules', 'build', 'coverage'],
+  ignorePatterns: ['node_modules', 'build', 'coverage', '.eslintrc.js'],
   plugins: ['import', 'eslint-comments', 'functional'],
   extends: [
     'eslint:recommended',
@@ -39,5 +39,20 @@ export default {
       'error',
       { ignoreDeclarationSort: true, ignoreCase: true },
     ],
+    'import/order': 'off',
+    'sort-imports': 'off',
+    'functional/prefer-type-literal': 'off',
+    'functional/prefer-readonly-type': 'off',
+    'functional/no-class': 'off',
+    'functional/no-this-expression': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    'functional/no-loop-statement': 'off',
+    'functional/immutable-data': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
+    'functional/no-return-void': 'off',
+    'functional/no-let': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/ban-types': 'off',
+    'functional/functional-parameters': 'off',
   },
 };

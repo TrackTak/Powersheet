@@ -1,4 +1,3 @@
-import EventEmitter from 'eventemitter3';
 import { isNil, merge } from 'lodash';
 import { defaultOptions, IOptions } from './options';
 import Sheet, { SheetId } from './sheet/Sheet';
@@ -6,25 +5,23 @@ import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
 import { prefix } from './utils';
+import 'tippy.js/dist/tippy.css';
+import './tippy.scss';
 import styles from './Spreadsheet.module.scss';
 import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
-import type { HyperFormula } from 'hyperformula';
-import HyperFormulaModule from './HyperFormula';
+import { HyperFormula } from 'hyperformula';
 import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
 import SimpleCellAddress, {
   CellId,
 } from './sheet/cells/cell/SimpleCellAddress';
-import events from './events';
+import PowersheetEmitter from './PowersheetEmitter';
+import { NestedPartial } from './types';
 
 export interface ISpreadsheetConstructor {
-  eventEmitter: EventEmitter;
-  options?: IOptions;
-  styles?: Partial<IStyles>;
-  data?: Partial<ISpreadsheetData>;
-  hyperformula?: HyperFormula;
+  hyperformula: HyperFormula;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
@@ -36,7 +33,7 @@ class Spreadsheet {
   sheetsEl: HTMLDivElement;
   sheets: Map<SheetId, Sheet>;
   styles: IStyles;
-  eventEmitter: EventEmitter;
+  eventEmitter: PowersheetEmitter;
   options: IOptions;
   data: Data;
   toolbar?: Toolbar;
@@ -51,11 +48,11 @@ class Spreadsheet {
   isSaving = false;
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = new Data(this, params.data);
-    this.hyperformula = params.hyperformula;
-    this.eventEmitter = params.eventEmitter;
-    this.options = merge({}, defaultOptions, params.options);
-    this.styles = merge({}, defaultStyles, params.styles);
+    this.data = new Data(this);
+    this.options = defaultOptions;
+    this.styles = defaultStyles;
+    this.eventEmitter = new PowersheetEmitter();
+
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
@@ -104,7 +101,7 @@ class Spreadsheet {
     });
   }
 
-  onDOMContentLoaded = () => {
+  initialize() {
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
       const sheet = this.data.spreadsheetData.sheets[sheetId];
@@ -116,11 +113,25 @@ class Spreadsheet {
 
     this.switchSheet(0);
 
+    this.isSaving = false;
+
     this.updateViewport();
+  }
+
+  private onDOMContentLoaded = () => {
+    this.initialize();
   };
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+
+    this.spreadsheetEl.remove();
+
+    this.toolbar?.destroy();
+    this.formulaBar?.destroy();
+    this.bottomBar?.destroy();
+
+    this.sheets.forEach((sheet) => sheet.destroy());
   }
 
   private setCells() {
@@ -137,39 +148,47 @@ class Spreadsheet {
     });
   }
 
-  getRegisteredFunctions() {
-    return HyperFormulaModule?.default.getRegisteredFunctionNames('enGB');
-  }
-
-  setOptions(options: IOptions) {
-    this.options = options;
+  setData(data: ISpreadsheetData) {
+    this.data.spreadsheetData = data;
 
     this.updateViewport();
   }
 
-  pushToHistory() {
+  setOptions(options: NestedPartial<IOptions>) {
+    this.options = merge({}, defaultOptions, options);
+
+    this.updateViewport();
+  }
+
+  setStyles(styles: NestedPartial<IStyles>) {
+    this.styles = merge({}, defaultStyles, styles);
+
+    this.updateViewport();
+  }
+
+  pushToHistory(callback?: () => void) {
     const data = JSON.stringify(this.data.spreadsheetData);
 
     this.history.push(data);
 
-    this.persistData();
+    this.eventEmitter.emit('historyPush', this.data.spreadsheetData);
 
-    this.eventEmitter.emit(events.history.push, this.data.spreadsheetData);
+    if (callback) {
+      callback();
+    }
+
+    this.persistData();
   }
 
   persistData() {
     const done = () => {
       this.isSaving = false;
-      this.updateViewport();
+      this.toolbar?.updateActiveStates();
     };
 
     this.isSaving = true;
 
-    this.eventEmitter.emit(
-      events.persist.save,
-      this.data.spreadsheetData,
-      done
-    );
+    this.eventEmitter.emit('persistData', this.data.spreadsheetData, done);
   }
 
   undo() {

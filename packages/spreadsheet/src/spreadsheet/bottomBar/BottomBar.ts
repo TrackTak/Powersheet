@@ -3,15 +3,13 @@ import {
   createSheetTab,
   createSheetSelectionDropdownButton,
   createSheetTabDropdownContent,
+  bottomBarPrefix,
 } from './bottomBarHtmlElementHelpers';
 import styles from './BottomBar.module.scss';
-import { prefix } from '../utils';
 import tippy, { Instance, Props } from 'tippy.js';
 import { createIconButton, IIconElements } from '../htmlElementHelpers';
 import { SheetId } from '../sheet/Sheet';
 import Spreadsheet from '../Spreadsheet';
-
-export const bottomBarPrefix = `${prefix}-bottom-bar`;
 
 interface ISheetTabElements {
   sheetTabContainer: HTMLDivElement;
@@ -252,6 +250,7 @@ class BottomBar {
   };
 
   destroy() {
+    this.bottomBarEl.remove();
     this.createNewSheetButtonElements.button.removeEventListener(
       'click',
       this.createNewSheetButtonOnClick

@@ -87,7 +87,7 @@ const createDropdownActionElement = (
   name: DropdownName,
   element: HTMLElement,
   classNamePrefix: string,
-  createArrow: boolean = false
+  createArrow = false
 ) => {
   const tooltip = createTooltip(name, classNamePrefix);
 
@@ -111,7 +111,7 @@ const createDropdownActionElement = (
 export const createDropdownButton = (
   name: DropdownButtonName,
   classNamePrefix: string,
-  createArrow: boolean = false
+  createArrow = false
 ) => {
   const buttonContainer = createButtonContainer(classNamePrefix);
   const button = document.createElement('button');
@@ -143,7 +143,7 @@ export const createDropdownButton = (
 export const createDropdownIconButton = (
   name: DropdownIconName,
   classNamePrefix: string,
-  createArrow: boolean = false
+  createArrow = false
 ) => {
   const iconButtonValues = createIconButton(name, classNamePrefix);
 

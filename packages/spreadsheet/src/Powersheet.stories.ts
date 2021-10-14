@@ -1,61 +1,90 @@
 import { Story, Meta } from '@storybook/html';
-import { defaultOptions, IOptions } from './options';
-import 'tippy.js/dist/tippy.css';
-import './tippy.scss';
-import Spreadsheet, { ISpreadsheetConstructor } from './Spreadsheet';
-import { defaultStyles, IStyles } from './styles';
-import events from './events';
-import { ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
-import Toolbar from './toolbar/Toolbar';
-import FormulaBar from './formulaBar/FormulaBar';
-import Exporter from './Exporter';
-import getHyperformulaConfig from './getHyperformulaConfig';
-import BottomBar from './bottomBar/BottomBar';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
-import EventEmitter from 'eventemitter3';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData } from './sheet/Data';
+import { ISpreadsheetData } from './spreadsheet/sheet/Data';
+import { IOptions } from './spreadsheet/options';
+import { IStyles } from './spreadsheet/styles';
+import { NestedPartial } from './spreadsheet/types';
+import { ISpreadsheetConstructor } from './spreadsheet/Spreadsheet';
+import {
+  defaultOptions,
+  Spreadsheet,
+  Toolbar,
+  FormulaBar,
+  Exporter,
+  BottomBar,
+} from '.';
+import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
+import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 
 export default {
   title: 'Spreadsheet',
 } as Meta;
 
-// TODO: Fix to be optional styles + options
 interface IArgs {
-  options: IOptions;
-  styles: IStyles;
-  data?: Partial<ISpreadsheetData>;
+  data?: ISpreadsheetData;
+  options?: NestedPartial<IOptions>;
+  styles?: NestedPartial<IStyles>;
 }
 
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
 };
 
-const getSpreadsheet = (params: Partial<ISpreadsheetConstructor>) => {
+const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
+  return HyperFormula.buildEmpty({
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    // We use our own undo/redo instead
+    undoLimit: 0,
+    licenseKey: 'gpl-v3',
+  });
+};
+
+const getSpreadsheet = (
+  { options, styles, data }: IArgs,
+  params: ISpreadsheetConstructor
+) => {
   TouchEmulator.stop();
 
-  const eventEmitter = new EventEmitter();
+  const spreadsheet = new Spreadsheet({
+    ...params,
+  });
 
-  const oldEmit = eventEmitter.emit;
+  if (data) {
+    spreadsheet.setData(data);
+  }
+
+  if (options) {
+    spreadsheet.setOptions(options);
+  }
+
+  if (styles) {
+    spreadsheet.setStyles(styles);
+  }
+
+  const oldEmit = spreadsheet.eventEmitter.emit;
 
   // Throttling storybooks action log so that it doesn't
   // reduce FPS by 10-15~ on resize and scroll
   const throttledEventLog = throttle(eventLog, 250);
 
-  eventEmitter.emit = function <
-    T extends EventEmitter.EventNames<string | symbol>
-  >(event: T, ...args: any[]) {
+  spreadsheet.eventEmitter.emit = function <U extends keyof PowersheetEvents>(
+    event: U,
+    ...args: Parameters<PowersheetEvents[U]>
+  ) {
     throttledEventLog(event.toString(), ...args);
 
-    oldEmit.call(eventEmitter, event, ...args);
+    // @ts-ignore
+    oldEmit.call(spreadsheet.eventEmitter, event, ...args);
 
     return true;
   };
 
-  eventEmitter.on(events.persist.save, (_, done) => {
+  spreadsheet.eventEmitter.on('persistData', (_, done) => {
     // Simulating an async API call that saves the sheet data to
     // a DB
     setTimeout(() => {
@@ -63,31 +92,12 @@ const getSpreadsheet = (params: Partial<ISpreadsheetConstructor>) => {
     }, 500);
   });
 
-  const spreadsheet = new Spreadsheet({
-    eventEmitter,
-    ...params,
-  });
-
   return spreadsheet;
 };
 
-const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
-  return HyperFormula.buildEmpty({
-    ...getHyperformulaConfig(),
-    ...config,
-    licenseKey: 'gpl-v3',
-  });
-};
-
-const buildOnlySpreadsheet = (args: IArgs) => {
-  const options = args.options;
-  const styles = args.styles;
-  const data = args.data;
-
-  const spreadsheet = getSpreadsheet({
-    options,
-    styles,
-    data,
+const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
+  const spreadsheet = getSpreadsheet(args, {
+    hyperformula,
   });
 
   return spreadsheet.spreadsheetEl;
@@ -95,22 +105,15 @@ const buildOnlySpreadsheet = (args: IArgs) => {
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  hyperformula?: HyperFormula
+  hyperformula: HyperFormula
 ) => {
-  const options = args.options;
-  const styles = args.styles;
-  const data = args.data;
-
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
   const exporter = new Exporter();
   const bottomBar = new BottomBar();
 
-  const spreadsheet = getSpreadsheet({
+  const spreadsheet = getSpreadsheet(args, {
     hyperformula,
-    options,
-    styles,
-    data,
     toolbar,
     formulaBar,
     bottomBar,
@@ -124,34 +127,15 @@ const buildSpreadsheetWithEverything = (
   return spreadsheet.spreadsheetEl;
 };
 
-const buildSpreadsheetWithHyperformula = (
-  args: IArgs,
-  config?: Partial<ConfigParams>
-) => {
-  const hyperformula = getHyperformulaInstance({
-    ...config,
-  });
-
-  return buildSpreadsheetWithEverything(args, hyperformula);
-};
-
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithHyperformula(args);
-};
-
-const defaultStoryArgs: IArgs = {
-  options: defaultOptions,
-  styles: defaultStyles,
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
 };
 
 export const Default = Template.bind({});
 
-Default.args = defaultStoryArgs;
-
 export const FrozenCells = Template.bind({});
 
 FrozenCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -173,7 +157,6 @@ FrozenCells.args = {
 export const MergedCells = Template.bind({});
 
 MergedCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -203,7 +186,6 @@ MergedCells.args = {
 export const DifferentSizeCells = Template.bind({});
 
 DifferentSizeCells.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -233,7 +215,10 @@ DifferentSizeCells.args = {
 };
 
 const MobileTemplate: Story<IArgs> = (args) => {
-  const spreadsheet = buildSpreadsheetWithHyperformula(args);
+  const spreadsheet = buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance()
+  );
 
   TouchEmulator.start();
 
@@ -251,21 +236,20 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     },
   });
 
-  return buildSpreadsheetWithHyperformula(newArgs, {
-    maxRows: newArgs.options.row.amount,
-  });
+  return buildSpreadsheetWithEverything(
+    newArgs,
+    getHyperformulaInstance({
+      maxRows: newArgs.options.row.amount,
+    })
+  );
 };
 
 export const MillionRows = MillionRowsTemplate.bind({});
 
 MillionRows.args = {
-  ...defaultStoryArgs,
   styles: {
-    ...defaultStyles,
     row: {
-      ...defaultStyles.row,
       headerRect: {
-        ...defaultStyles.row.headerRect,
         width: 50,
       },
     },
@@ -283,18 +267,13 @@ MillionRows.args = {
 export const CustomStyles = Template.bind({});
 
 CustomStyles.args = {
-  ...defaultStoryArgs,
   styles: {
-    ...defaultStyles,
     row: {
-      ...defaultStyles.row,
       gridLine: {
-        ...defaultStyles.row.gridLine,
         stroke: '#add8e6',
       },
     },
     selection: {
-      ...defaultStyles.cell,
       fill: 'orange',
       opacity: 0.3,
     },
@@ -302,21 +281,14 @@ CustomStyles.args = {
 };
 
 const OnlySpreadsheet: Story<IArgs> = (args) => {
-  return buildOnlySpreadsheet(args);
+  return buildOnlySpreadsheet(args, getHyperformulaInstance());
 };
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
 
-const NoHyperformulaTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args);
-};
-
-export const NoHyperformula = NoHyperformulaTemplate.bind({});
-
 export const CustomSizeSpreadsheet = Template.bind({});
 
 CustomSizeSpreadsheet.args = {
-  ...defaultStoryArgs,
   options: {
     ...defaultOptions,
     width: 500,
@@ -325,14 +297,16 @@ CustomSizeSpreadsheet.args = {
 };
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithHyperformula(args, {
-    currencySymbol: Object.values(currencySymbolMap),
-  });
+  return buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance({
+      currencySymbol: Object.values(currencySymbolMap),
+    })
+  );
 };
 
 const MultipleSpreadsheetsTemplate: Story = () => {
-  const firstSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
+  const firstSpreadsheetArgs = {
     data: {
       sheets: {
         0: {
@@ -343,8 +317,7 @@ const MultipleSpreadsheetsTemplate: Story = () => {
     },
   };
 
-  const secondSpreadsheetArgs: IArgs = {
-    ...defaultStoryArgs,
+  const secondSpreadsheetArgs = {
     data: {
       sheets: {
         0: {
@@ -355,10 +328,15 @@ const MultipleSpreadsheetsTemplate: Story = () => {
     },
   };
 
-  const firstSpreadsheetEl =
-    buildSpreadsheetWithHyperformula(firstSpreadsheetArgs);
-  const secondSpreadsheetEl = buildSpreadsheetWithHyperformula(
-    secondSpreadsheetArgs
+  const hyperformula = getHyperformulaInstance();
+
+  const firstSpreadsheetEl = buildSpreadsheetWithEverything(
+    firstSpreadsheetArgs,
+    hyperformula
+  );
+  const secondSpreadsheetEl = buildSpreadsheetWithEverything(
+    secondSpreadsheetArgs,
+    hyperformula
   );
 
   const containerEl = document.createElement('div');
@@ -376,7 +354,6 @@ export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({});
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
 
 AllCurrencySymbols.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {
@@ -414,7 +391,6 @@ AllCurrencySymbols.args = {
 export const CellsData = Template.bind({});
 
 CellsData.args = {
-  ...defaultStoryArgs,
   data: {
     exportSpreadsheetName: 'Cells Datas.xlsx',
     sheets: {
@@ -480,7 +456,6 @@ CellsData.args = {
 export const Formulas = Template.bind({});
 
 Formulas.args = {
-  ...defaultStoryArgs,
   data: {
     sheets: {
       0: {

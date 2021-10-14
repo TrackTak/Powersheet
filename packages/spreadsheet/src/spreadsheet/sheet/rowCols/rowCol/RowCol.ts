@@ -225,84 +225,86 @@ class RowCol {
     ) => void,
     comparer?: (a: string, b: string) => number
   ) {
-    this.spreadsheet.pushToHistory();
+    this.spreadsheet.pushToHistory(() => {
+      const { mergedCells, cells, ...data } =
+        this.spreadsheet.data.spreadsheetData;
+      const rowCol =
+        data[this.pluralType]?.[this.rowColAddress.toSheetRowColId()];
 
-    const { mergedCells, cells, ...data } =
-      this.spreadsheet.data.spreadsheetData;
-    const rowCol =
-      data[this.pluralType]?.[this.rowColAddress.toSheetRowColId()];
+      if (this.rowCols.getIsFrozen(this.index)) {
+        const existingFrozenCells =
+          this.spreadsheet.data.spreadsheetData.frozenCells?.[
+            this.sheet.sheetId
+          ];
 
-    if (this.rowCols.getIsFrozen(this.index)) {
-      const existingFrozenCells =
-        this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
-
-      this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {
-        [this.type]: modifyCallback(existingFrozenCells![this.type]!, amount),
-      });
-    }
-
-    if (rowCol) {
-      Object.keys(rowCol)
-        .sort(comparer)
-        .forEach((key) => {
-          const sheetRowColId = key as SheetRowColId;
-
-          rowColCallback(RowColAddress.sheetRowColIdToAddress(sheetRowColId));
+        this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {
+          [this.type]: modifyCallback(existingFrozenCells![this.type]!, amount),
         });
-    }
+      }
 
-    if (mergedCells) {
-      Object.keys(mergedCells)
-        .sort(comparer)
-        .forEach((topLeftCellId) => {
-          const mergedCell = mergedCells[topLeftCellId as CellId];
+      if (rowCol) {
+        Object.keys(rowCol)
+          .sort(comparer)
+          .forEach((key) => {
+            const sheetRowColId = key as SheetRowColId;
 
-          if (mergedCell[this.type].x >= this.index) {
-            mergedCell[this.type].x = modifyCallback(
-              mergedCell[this.type].x,
-              amount
+            rowColCallback(RowColAddress.sheetRowColIdToAddress(sheetRowColId));
+          });
+      }
+
+      if (mergedCells) {
+        Object.keys(mergedCells)
+          .sort(comparer)
+          .forEach((topLeftCellId) => {
+            const mergedCell = mergedCells[topLeftCellId as CellId];
+
+            if (mergedCell[this.type].x >= this.index) {
+              mergedCell[this.type].x = modifyCallback(
+                mergedCell[this.type].x,
+                amount
+              );
+            }
+
+            if (mergedCell[this.type].y >= this.index) {
+              mergedCell[this.type].y = modifyCallback(
+                mergedCell[this.type].y,
+                amount
+              );
+            }
+          });
+      }
+
+      if (cells) {
+        Object.keys(cells)
+          .sort(comparer)
+          .forEach((key) => {
+            const cellId = key as CellId;
+            const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+            const newSimpleCellAddress = new SimpleCellAddress(
+              this.sheet.sheetId,
+              this.isCol
+                ? simpleCellAddress.row
+                : modifyCallback(simpleCellAddress.row, amount),
+              this.isCol
+                ? modifyCallback(simpleCellAddress.col, amount)
+                : simpleCellAddress.col
             );
-          }
+            cellsDataCallback(simpleCellAddress, newSimpleCellAddress);
+          });
+      }
 
-          if (mergedCell[this.type].y >= this.index) {
-            mergedCell[this.type].y = modifyCallback(
-              mergedCell[this.type].y,
-              amount
-            );
-          }
-        });
-    }
-
-    if (cells) {
-      Object.keys(cells)
-        .sort(comparer)
-        .forEach((key) => {
-          const cellId = key as CellId;
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
-            this.isCol
-              ? simpleCellAddress.row
-              : modifyCallback(simpleCellAddress.row, amount),
-            this.isCol
-              ? modifyCallback(simpleCellAddress.col, amount)
-              : simpleCellAddress.col
-          );
-          cellsDataCallback(simpleCellAddress, newSimpleCellAddress);
-        });
-    }
-
-    if (this.isCol) {
-      this.spreadsheet.hyperformula?.[hyperformulaColumnFunctionName](
-        this.sheet.sheetId,
-        [this.index, amount]
-      );
-    } else {
-      this.spreadsheet.hyperformula?.[hyperformulaRowFunctionName](
-        this.sheet.sheetId,
-        [this.index, amount]
-      );
-    }
+      if (this.isCol) {
+        this.spreadsheet.hyperformula?.[hyperformulaColumnFunctionName](
+          this.sheet.sheetId,
+          [this.index, amount]
+        );
+      } else {
+        this.spreadsheet.hyperformula?.[hyperformulaRowFunctionName](
+          this.sheet.sheetId,
+          [this.index, amount]
+        );
+      }
+    });
 
     this.spreadsheet.updateViewport();
   }

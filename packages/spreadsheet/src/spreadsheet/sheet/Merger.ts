@@ -181,10 +181,10 @@ class Merger {
     const rangeSimpleCellAddress =
       this.sheet.getMinMaxRangeSimpleCellAddress(selectedCells);
 
-    this.spreadsheet.pushToHistory();
-
-    this.removeMergedCells(rangeSimpleCellAddress);
-    this.addMergedCells(rangeSimpleCellAddress);
+    this.spreadsheet.pushToHistory(() => {
+      this.removeMergedCells(rangeSimpleCellAddress);
+      this.addMergedCells(rangeSimpleCellAddress);
+    });
   }
 
   unMergeSelectedCells() {
@@ -195,9 +195,9 @@ class Merger {
     const rangeSimpleCellAddress =
       this.sheet.getMinMaxRangeSimpleCellAddress(selectedCells);
 
-    this.spreadsheet.pushToHistory();
-
-    this.removeMergedCells(rangeSimpleCellAddress);
+    this.spreadsheet.pushToHistory(() => {
+      this.removeMergedCells(rangeSimpleCellAddress);
+    });
   }
 }
 

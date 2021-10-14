@@ -1,5 +1,4 @@
 import { DebouncedFunc, throttle } from 'lodash';
-import events from '../../../events';
 import { prefix } from '../../../utils';
 import Sheet from '../../Sheet';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
@@ -17,7 +16,7 @@ class ScrollBar {
   totalPreviousCustomSizeDifferences = 0;
   sheetViewportPosition = new ViewportPosition();
   previousSheetViewportPosition = new ViewportPosition();
-  previousTouchMovePosition: number = 0;
+  previousTouchMovePosition = 0;
   scrollType: ScrollBarType;
   throttledScroll: DebouncedFunc<(e: Event) => void>;
   spreadsheet: Spreadsheet;
@@ -189,7 +188,7 @@ class ScrollBar {
     this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
-      events.scroll[this.scrollType],
+      this.isCol ? 'scrollHorizontal' : 'scrollVertical',
       e,
       newScroll
     );

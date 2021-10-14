@@ -164,6 +164,7 @@ class Resizer {
       }
     );
 
+    this.spreadsheet.persistData();
     this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit(

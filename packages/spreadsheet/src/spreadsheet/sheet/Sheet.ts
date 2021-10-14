@@ -334,13 +334,13 @@ class Sheet {
         break;
       }
       case 'Delete': {
-        this.spreadsheet.pushToHistory();
+        this.spreadsheet.pushToHistory(() => {
+          this.spreadsheet.hyperformula?.batch(() => {
+            this.selector.selectedCells.forEach((cell) => {
+              const simpleCellAddress = cell.simpleCellAddress;
 
-        this.spreadsheet.hyperformula?.batch(() => {
-          this.selector.selectedCells.forEach((cell) => {
-            const simpleCellAddress = cell.simpleCellAddress;
-
-            this.spreadsheet.data.deleteCell(simpleCellAddress);
+              this.spreadsheet.data.deleteCell(simpleCellAddress);
+            });
           });
         });
         break;

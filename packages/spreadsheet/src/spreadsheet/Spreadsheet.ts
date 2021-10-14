@@ -158,20 +158,24 @@ class Spreadsheet {
     this.updateViewport();
   }
 
-  pushToHistory() {
+  pushToHistory(callback?: () => void) {
     const data = JSON.stringify(this.data.spreadsheetData);
 
     this.history.push(data);
 
-    this.persistData();
-
     this.eventEmitter.emit('historyPush', this.data.spreadsheetData);
+
+    if (callback) {
+      callback();
+    }
+
+    this.persistData();
   }
 
   persistData() {
     const done = () => {
       this.isSaving = false;
-      this.updateViewport();
+      this.toolbar?.updateActiveStates();
     };
 
     this.isSaving = true;

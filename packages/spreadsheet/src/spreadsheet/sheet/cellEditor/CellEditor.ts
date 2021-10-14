@@ -63,17 +63,20 @@ class CellEditor {
       this.spreadsheet.data.spreadsheetData.cells?.[
         simpleCellAddress.toCellId()
       ];
+    const textContent = this.cellEditorEl.textContent;
 
-    if (this.cellEditorEl.textContent) {
-      this.spreadsheet.pushToHistory();
-      this.spreadsheet.data.setCell(simpleCellAddress, {
-        ...cellData,
-        value: this.cellEditorEl.textContent,
+    if (textContent) {
+      this.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.data.setCell(simpleCellAddress, {
+          ...cellData,
+          value: textContent,
+        });
       });
     } else {
       if (cellData) {
-        this.spreadsheet.pushToHistory();
-        this.spreadsheet.data.deleteCell(simpleCellAddress);
+        this.spreadsheet.pushToHistory(() => {
+          this.spreadsheet.data.deleteCell(simpleCellAddress);
+        });
       }
     }
   }

@@ -44,47 +44,47 @@ class Clipboard {
 
     const rangeData = this.getRange(this.sourceRange, targetRange);
 
-    this.spreadsheet.pushToHistory();
+    this.spreadsheet.pushToHistory(() => {
+      rangeData.forEach((rowData, rowIndex) => {
+        rowData.forEach((sourceSimpleCellAddress, colIndex) => {
+          const cellId = sourceSimpleCellAddress.toCellId();
 
-    rangeData.forEach((rowData, rowIndex) => {
-      rowData.forEach((sourceSimpleCellAddress, colIndex) => {
-        const cellId = sourceSimpleCellAddress.toCellId();
+          let row = this.sourceRange!.topLeftSimpleCellAddress.row;
+          let col = this.sourceRange!.topLeftSimpleCellAddress.col;
 
-        let row = this.sourceRange!.topLeftSimpleCellAddress.row;
-        let col = this.sourceRange!.topLeftSimpleCellAddress.col;
+          row += rowIndex % this.sourceRange!.height();
+          col += colIndex % this.sourceRange!.width();
 
-        row += rowIndex % this.sourceRange!.height();
-        col += colIndex % this.sourceRange!.width();
-
-        const targetSimpleCellAddress = new SimpleCellAddress(
-          targetRange.topLeftSimpleCellAddress.sheet,
-          targetRange.topLeftSimpleCellAddress.row + rowIndex,
-          targetRange.topLeftSimpleCellAddress.col + colIndex
-        );
-
-        if (this.isCut) {
-          const simpleCellAddress = new SimpleCellAddress(
-            this.sourceRange!.topLeftSimpleCellAddress.sheet,
-            row,
-            col
+          const targetSimpleCellAddress = new SimpleCellAddress(
+            targetRange.topLeftSimpleCellAddress.sheet,
+            targetRange.topLeftSimpleCellAddress.row + rowIndex,
+            targetRange.topLeftSimpleCellAddress.col + colIndex
           );
 
-          this.spreadsheet.data.deleteCell(simpleCellAddress);
-        }
+          if (this.isCut) {
+            const simpleCellAddress = new SimpleCellAddress(
+              this.sourceRange!.topLeftSimpleCellAddress.sheet,
+              row,
+              col
+            );
 
-        const data = this.spreadsheet.data.spreadsheetData;
-        const cell = data.cells?.[cellId];
+            this.spreadsheet.data.deleteCell(simpleCellAddress);
+          }
 
-        if (cell) {
-          this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
-        } else {
-          this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
-        }
+          const data = this.spreadsheet.data.spreadsheetData;
+          const cell = data.cells?.[cellId];
 
-        this.spreadsheet.hyperformula?.setCellContents(
-          targetSimpleCellAddress,
-          cell?.value
-        );
+          if (cell) {
+            this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
+          } else {
+            this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
+          }
+
+          this.spreadsheet.hyperformula?.setCellContents(
+            targetSimpleCellAddress,
+            cell?.value
+          );
+        });
       });
     });
 

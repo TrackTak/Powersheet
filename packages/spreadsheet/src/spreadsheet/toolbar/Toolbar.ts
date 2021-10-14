@@ -572,22 +572,22 @@ class Toolbar {
     const sheet = this.spreadsheet.getActiveSheet()!;
 
     function setStyle<T>(key: keyof ICellData, value: T) {
-      sheet.spreadsheet.pushToHistory();
-
-      sheet.selector.selectedCells.forEach((cell) => {
-        sheet.spreadsheet.data.setCell(cell.simpleCellAddress, {
-          [key]: value,
+      sheet.spreadsheet.pushToHistory(() => {
+        sheet.selector.selectedCells.forEach((cell) => {
+          sheet.spreadsheet.data.setCell(cell.simpleCellAddress, {
+            [key]: value,
+          });
         });
       });
     }
 
     function deleteStyle(key: keyof ICellData) {
-      sheet.spreadsheet.pushToHistory();
+      sheet.spreadsheet.pushToHistory(() => {
+        sheet.selector.selectedCells.forEach((cell) => {
+          const cellId = cell.simpleCellAddress.toCellId();
 
-      sheet.selector.selectedCells.forEach((cell) => {
-        const cellId = cell.simpleCellAddress.toCellId();
-
-        delete sheet.spreadsheet.data.spreadsheetData.cells?.[cellId][key];
+          delete sheet.spreadsheet.data.spreadsheetData.cells?.[cellId][key];
+        });
       });
     }
 
@@ -597,10 +597,10 @@ class Toolbar {
         break;
       }
       case 'formula': {
-        sheet.spreadsheet.pushToHistory();
-
-        this.spreadsheet.data.spreadsheetData.showFormulas =
-          !this.spreadsheet.data.spreadsheetData.showFormulas;
+        sheet.spreadsheet.pushToHistory(() => {
+          this.spreadsheet.data.spreadsheetData.showFormulas =
+            !this.spreadsheet.data.spreadsheetData.showFormulas;
+        });
         break;
       }
       case 'alignLeft': {
@@ -703,19 +703,19 @@ class Toolbar {
         break;
       }
       case 'freeze': {
-        sheet.spreadsheet.pushToHistory();
+        sheet.spreadsheet.pushToHistory(() => {
+          if (this.iconElementsMap.freeze.active) {
+            this.spreadsheet.data.deleteFrozenCell(sheet.sheetId);
+          } else {
+            const simpleCellAddress =
+              sheet.selector.selectedCell!.simpleCellAddress;
 
-        if (this.iconElementsMap.freeze.active) {
-          this.spreadsheet.data.deleteFrozenCell(sheet.sheetId);
-        } else {
-          const simpleCellAddress =
-            sheet.selector.selectedCell!.simpleCellAddress;
-
-          this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
-            row: simpleCellAddress.row,
-            col: simpleCellAddress.col,
-          });
-        }
+            this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
+              row: simpleCellAddress.row,
+              col: simpleCellAddress.col,
+            });
+          }
+        });
         break;
       }
       case 'export': {
@@ -723,65 +723,65 @@ class Toolbar {
         break;
       }
       case 'borderBottom': {
-        this.spreadsheet.pushToHistory();
-
-        this.setBottomBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setBottomBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderRight': {
-        this.spreadsheet.pushToHistory();
-
-        this.setRightBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setRightBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderTop': {
-        this.spreadsheet.pushToHistory();
-
-        this.setTopBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setTopBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderLeft': {
-        this.spreadsheet.pushToHistory();
-
-        this.setLeftBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setLeftBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderVertical': {
-        this.spreadsheet.pushToHistory();
-
-        this.setVerticalBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setVerticalBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderHorizontal': {
-        this.spreadsheet.pushToHistory();
-
-        this.setHorizontalBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setHorizontalBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderInside': {
-        this.spreadsheet.pushToHistory();
-
-        this.setInsideBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setInsideBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderOutside': {
-        this.spreadsheet.pushToHistory();
-
-        this.setOutsideBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setOutsideBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderAll': {
-        this.spreadsheet.pushToHistory();
-
-        this.setAllBorders(sheet.selector.selectedCells);
+        this.spreadsheet.pushToHistory(() => {
+          this.setAllBorders(sheet.selector.selectedCells);
+        });
         break;
       }
       case 'borderNone': {
-        this.spreadsheet.pushToHistory();
-
-        this.clearBorders(
-          sheet.selector.selectedCells.map((cell) => cell.simpleCellAddress)
-        );
+        this.spreadsheet.pushToHistory(() => {
+          this.clearBorders(
+            sheet.selector.selectedCells.map((cell) => cell.simpleCellAddress)
+          );
+        });
         break;
       }
       case 'undo': {

@@ -50,7 +50,8 @@
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d dist/docs",
     "prepublishOnly": "run-s build copy-icons",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook -o ./public"
+    "build-storybook": "build-storybook",
+    "deploy-storybook": "storybook-to-aws-s3 --bucket-path=storybook.powersheet.io/"
   },
   "engines": {
     "node": ">=10",
@@ -87,6 +88,7 @@
     "@storybook/addon-links": "^6.3.6",
     "@storybook/html": "^6.3.6",
     "@storybook/preset-scss": "^1.0.3",
+    "@storybook/storybook-deployer": "^2.8.10",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "ava": "^3.12.1",

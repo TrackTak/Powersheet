@@ -124,6 +124,14 @@ class Spreadsheet {
 
   destroy() {
     window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
+
+    this.spreadsheetEl.remove();
+
+    this.toolbar?.destroy();
+    this.formulaBar?.destroy();
+    this.bottomBar?.destroy();
+
+    this.sheets.forEach((sheet) => sheet.destroy());
   }
 
   private setCells() {

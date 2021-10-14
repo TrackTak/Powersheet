@@ -12,10 +12,7 @@ export const createFormulaEditorArea = () => {
 
   iconContainer.classList.add(styles.iconContainer);
 
-  editorArea.classList.add(
-    styles.editorArea,
-    `${formulaBarPrefix}-editor-area`
-  );
+  editorArea.classList.add(`${formulaBarPrefix}-editor-area`);
 
   editableContentContainer.classList.add(
     styles.editableContentContainer,

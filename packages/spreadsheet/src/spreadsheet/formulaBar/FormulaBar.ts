@@ -19,8 +19,11 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const { editorArea, editableContentContainer, editableContent } =
-      createFormulaEditorArea();
+    const {
+      editorArea,
+      editableContentContainer,
+      editableContent,
+    } = createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
@@ -86,6 +89,7 @@ class FormulaBar {
   };
 
   destroy() {
+    this.formulaBarEl.remove();
     this.editableContent.removeEventListener('input', this.onInput);
     this.editableContent.removeEventListener('keydown', this.onKeyDown);
   }

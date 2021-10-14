@@ -250,6 +250,7 @@ class BottomBar {
   };
 
   destroy() {
+    this.bottomBarEl.remove();
     this.createNewSheetButtonElements.button.removeEventListener(
       'click',
       this.createNewSheetButtonOnClick

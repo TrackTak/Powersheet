@@ -9,6 +9,12 @@ module.exports = {
         createDemoPages: true,
         colorMode: true
       }
+    },
+    {
+      resolve: `gatsby-plugin-s3`,
+      options: {
+        bucketName: 'powersheet.io'
+      }
     }
   ],
   // Customize your site metadata

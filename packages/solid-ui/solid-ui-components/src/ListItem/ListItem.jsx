@@ -7,7 +7,6 @@ const ListItem = ({
   icon,
   iconProps,
   text,
-  description,
   compact,
   vertical,
   center,
@@ -18,8 +17,7 @@ const ListItem = ({
       flexDirection: vertical ? 'column' : 'row',
       alignItems: center ? `center` : `flex-start`,
       textAlign: center && vertical ? `center` : `unset`,
-      justifyContent: middle ? `center` : `unset`,
-      '& + &': { mt: description ? (compact ? 3 : 4) : 2 }
+      justifyContent: middle ? `center` : `unset`
     }}
   >
     {icon?.src && (

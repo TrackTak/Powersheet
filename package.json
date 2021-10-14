@@ -1,10 +1,9 @@
 {
   "name": "elegantstack",
   "private": true,
-  "license": "",
   "workspaces": [
     "packages/**",
-    "landingPage"
+    "website"
   ],
   "scripts": {
     "clean": "lerna clean",

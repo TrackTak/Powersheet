@@ -3,57 +3,52 @@ import { Container, Flex, Box, css } from 'theme-ui'
 import ContentText from '@solid-ui-components/ContentText'
 import Reveal from '@solid-ui-components/Reveal'
 import Divider from '@solid-ui-components/Divider'
-import ContentImages from '@solid-ui-components/ContentImages'
 import QuickSignupForm from '@solid-ui-components/QuickSignupForm'
 import ContentButtons from '@solid-ui-components/ContentButtons'
 import WithDefaultContent from '@solid-ui-blocks/WithDefaultContent'
 
-const HeroBlock01 = ({
-  content: { text = [], images, buttons, form },
-  reverse
-}) => (
+const HeroBlock01 = ({ content: { text = [], buttons, form }, reverse }) => (
   <Container>
     <Flex
       sx={{
-        alignItems: [null, null, null, `center`],
-        flexDirection: [
-          reverse ? `column-reverse` : `column`,
-          null,
-          null,
-          reverse ? `row-reverse` : `row`
-        ]
+        flexDirection: [reverse ? `column-reverse` : `column`]
       }}
     >
       <Box
         sx={{
-          flexBasis: [null, null, null, `3/5`],
-          [reverse ? 'ml' : 'mr']: [null, null, null, 5],
           position: `relative`,
           textAlign: `center`
         }}
       >
-        <ContentImages
-          content={{ images }}
-          loading='eager'
-          reverse={reverse}
-          imagePosition='center'
-        />
+        <iframe
+          title='Powersheet Demo'
+          src='http://192.168.1.102:6006/?path=/story/spreadsheet--default'
+          height={700}
+          width='100%'
+          style={{
+            border: 'none',
+            borderRadius: '4px'
+          }}
+        ></iframe>
       </Box>
       <Box
         sx={{
           flexBasis: `2/5`,
-          textAlign: [`center`, null, null, `left`]
+          textAlign: `center`
         }}
       >
         <Reveal effect='fadeInDown'>
-          <ContentText content={text} />
+          <Box
+            sx={{
+              margin: '0 auto',
+              maxWidth: 900
+            }}
+          >
+            <ContentText content={text} />
+          </Box>
         </Reveal>
         {buttons && (
-          <Reveal
-            effect='fadeInRight'
-            delay={1}
-            css={css({ mb: [4, null, null, 0] })}
-          >
+          <Reveal effect='fadeInRight' delay={1} css={css({ mb: 4 })}>
             {buttons && (
               <>
                 <Divider space={3} />
@@ -63,11 +58,7 @@ const HeroBlock01 = ({
           </Reveal>
         )}
         {form && (
-          <Reveal
-            effect='fadeInRight'
-            delay={1}
-            css={css({ mb: [4, null, null, 0] })}
-          >
+          <Reveal effect='fadeInRight' delay={1} css={css({ mb: [4] })}>
             <QuickSignupForm {...form} space={3} />
           </Reveal>
         )}

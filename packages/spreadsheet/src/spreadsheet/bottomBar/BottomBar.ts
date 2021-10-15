@@ -242,6 +242,8 @@ class BottomBar {
     });
 
     this.spreadsheet.switchSheet(id);
+
+    this.spreadsheet.sheets.get(id)!.updateSize();
   };
 
   destroy() {

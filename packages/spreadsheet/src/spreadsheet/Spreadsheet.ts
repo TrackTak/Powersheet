@@ -102,27 +102,37 @@ class Spreadsheet {
     });
   }
 
-  initialize() {
-    this.isInitialized = true;
+  private initialize() {
+    if (!this.isInitialized) {
+      this.isInitialized = true;
 
-    for (const key in this.data.spreadsheetData.sheets) {
-      const sheetId = parseInt(key, 10);
-      const sheet = this.data.spreadsheetData.sheets[sheetId];
+      for (const key in this.data.spreadsheetData.sheets) {
+        const sheetId = parseInt(key, 10);
+        const sheet = this.data.spreadsheetData.sheets[sheetId];
 
-      this.createNewSheet(sheet);
+        this.createNewSheet(sheet);
+      }
+
+      this.setCells();
+
+      this.switchSheet(0);
+
+      this.isSaving = false;
+
+      this.updateViewport();
+
+      if (document.readyState === 'complete') {
+        this.updateSheetSizes();
+      }
     }
+  }
 
-    this.setCells();
-
-    this.switchSheet(0);
-
-    this.isSaving = false;
-
-    this.updateViewport();
+  private updateSheetSizes() {
+    this.sheets.forEach((sheet) => sheet.updateSize());
   }
 
   private onDOMContentLoaded = () => {
-    this.initialize();
+    this.updateSheetSizes();
   };
 
   destroy() {
@@ -153,6 +163,8 @@ class Spreadsheet {
 
   setData(data: ISpreadsheetData) {
     this.data.spreadsheetData = data;
+
+    this.initialize();
 
     this.updateViewport();
   }

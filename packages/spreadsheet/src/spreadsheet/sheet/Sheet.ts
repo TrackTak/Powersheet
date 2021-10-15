@@ -154,11 +154,9 @@ class Sheet {
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
     this.cellEditor = new CellEditor(this);
-
-    this.updateSize();
   }
 
-  private updateSize() {
+  updateSize() {
     this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
     this.stage.height(this.spreadsheet.sheetsEl.offsetHeight);
 

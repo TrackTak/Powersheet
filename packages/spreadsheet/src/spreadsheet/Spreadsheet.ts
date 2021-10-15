@@ -46,6 +46,7 @@ class Spreadsheet {
   activeSheetId = 0;
   totalSheetCount = 0;
   isSaving = false;
+  isInitialized = false;
 
   constructor(params: ISpreadsheetConstructor) {
     this.data = new Data(this);
@@ -102,6 +103,8 @@ class Spreadsheet {
   }
 
   initialize() {
+    this.isInitialized = true;
+
     for (const key in this.data.spreadsheetData.sheets) {
       const sheetId = parseInt(key, 10);
       const sheet = this.data.spreadsheetData.sheets[sheetId];

@@ -12,10 +12,7 @@ export const createSheetTab = () => {
   const sheetTab = document.createElement('div');
   const nameContainer = document.createElement('span');
 
-  sheetTabContainer.classList.add(
-    styles.sheetTabContainer,
-    `${bottomBarPrefix}-sheet-tab-container`
-  );
+  sheetTabContainer.classList.add(`${bottomBarPrefix}-sheet-tab-container`);
   sheetTab.classList.add(styles.sheetTab, `${bottomBarPrefix}-sheet-tab`);
   nameContainer.classList.add(
     styles.nameContainer,

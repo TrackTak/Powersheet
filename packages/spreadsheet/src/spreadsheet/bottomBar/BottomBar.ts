@@ -161,15 +161,11 @@ class BottomBar {
       { once: true }
     );
 
-    sheetTab.addEventListener(
-      'contextmenu',
-      (e) => {
-        e.preventDefault();
+    sheetTab.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
 
-        sheetTabDropdown.show();
-      },
-      { once: true }
-    );
+      sheetTabDropdown.show();
+    });
 
     deleteSheetButton.addEventListener(
       'click',

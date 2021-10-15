@@ -165,7 +165,7 @@ export const defaultStyles: IStyles = {
     text: {
       type: 'cellText',
       fontFamily,
-      fontSize: 14,
+      fontSize: 12,
       fill: 'black',
       align: 'left',
       verticalAlign: 'middle',

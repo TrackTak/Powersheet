@@ -19,9 +19,6 @@ import {
 } from '.';
 import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
 import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
-import realExampleDataJSON from './realExampleData.json';
-
-const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
 export default {
   title: 'Spreadsheet',
@@ -165,9 +162,21 @@ MergedCells.args = {
       0: {
         id: 0,
         sheetName: 'Merged Cells',
+        cells: {
+          '0_3_1': '0_3_1',
+        },
         mergedCells: {
           '0_3_1': '0_3_1',
         },
+      },
+    },
+    cells: {
+      '0_3_1': {
+        value: 'Merged Cell',
+        fontSize: 14,
+        id: '0_3_1',
+        bold: true,
+        horizontalTextAlign: 'center',
       },
     },
     mergedCells: {
@@ -515,10 +524,4 @@ Formulas.args = {
       },
     },
   },
-};
-
-export const RealExample = Template.bind({});
-
-RealExample.args = {
-  data: realExampleData,
 };

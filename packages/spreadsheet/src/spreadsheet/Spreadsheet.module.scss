@@ -9,4 +9,6 @@
 
 .sheets {
   flex: 1;
+  /* Fixes bottombar height when overflow for scroll */
+  min-height: 0;
 }

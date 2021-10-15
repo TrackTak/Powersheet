@@ -151,7 +151,7 @@ class Sheet {
     this.spreadsheet.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
-    this.rows.scrollBar.scrollBarEl.style.bottom = `${18}px`;
+    this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
     this.cellEditor = new CellEditor(this);
 

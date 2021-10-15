@@ -2,12 +2,12 @@
 
 .bottomBar {
   padding: 0 25px;
-  height: 40px;
   user-select: none;
   background: #f5f6f7;
   box-shadow: 0 -1px 3px -1px rgb(169 164 164);
   font-family: 'Nunito Sans', Arial;
   display: flex;
+  overflow-x: auto;
 }
 
 .content {
@@ -44,6 +44,7 @@ img {
   color: #80868b;
   letter-spacing: 0.025rem;
   border-right: 1px solid #e8eaed;
+  white-space: nowrap;
 
   &:global(.active) {
     background-color: #fff;
@@ -108,12 +109,11 @@ img {
   overflow: auto;
 }
 
-.scrollSliderContainer {
+.tabContainer {
   display: flex;
-  flex-direction: row;
   margin-left: 10px;
 
-  > .sheetTabContainer:first-of-type {
+  & > :first-of-type {
     border-left: 1px solid #e8eaed;
   }
 }

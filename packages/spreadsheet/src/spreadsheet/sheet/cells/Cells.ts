@@ -1,12 +1,12 @@
 import { isNil } from 'lodash';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from './cell/Cell';
-import SimpleCellAddress from './cell/SimpleCellAddress';
+import SimpleCellAddress, { CellId } from './cell/SimpleCellAddress';
 import StyleableCell from './cell/StyleableCell';
 import Sheet from '../Sheet';
 
 class Cells {
-  cellsMap: Map<SimpleCellAddress, Cell>;
+  cellsMap: Map<CellId, Cell>;
   private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
@@ -83,7 +83,7 @@ class Cells {
     forceDraw: boolean
   ) => {
     const cellId = simpleCellAddress.toCellId();
-    const cellAlreadyExists = !!this.cellsMap.get(simpleCellAddress);
+    const cellAlreadyExists = !!this.cellsMap.get(cellId);
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
     const hasCellData = !!(
       cell || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
@@ -95,13 +95,14 @@ class Cells {
   drawCell(simpleCellAddress: SimpleCellAddress, forceDraw: boolean) {
     if (!this.getShouldDraw(simpleCellAddress, forceDraw)) return;
 
-    const existingCell = this.sheet.cells.cellsMap.get(simpleCellAddress);
+    const cellId = simpleCellAddress.toCellId();
+    const existingCell = this.sheet.cells.cellsMap.get(cellId);
 
     existingCell?.destroy();
 
     const cell = new StyleableCell(this.sheet, simpleCellAddress);
 
-    this.sheet.cells.cellsMap.set(simpleCellAddress, cell);
+    this.sheet.cells.cellsMap.set(cellId, cell);
   }
 
   updateViewport() {

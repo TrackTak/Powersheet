@@ -105,7 +105,7 @@ class ScrollBar {
       xIndex
     );
 
-    return yIndex;
+    return yIndex - 1;
   }
 
   setYIndex() {

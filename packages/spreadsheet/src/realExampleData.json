@@ -7397,7 +7397,6 @@
     "0_33_12": { "textFormatPattern": "#,##0.##", "id": "0_33_12" },
     "0_35_0": { "bold": true, "id": "0_35_0" },
     "0_35_1": { "textFormatPattern": "0.00%", "id": "0_35_1" },
-    "0_66_1": { "fontColor": "#43cea2", "id": "0_66_1" },
     "1_0_0": {
       "value": "=FIN(\"financialStatements\")",
       "id": "1_0_0",

@@ -324,7 +324,7 @@ class Sheet {
     );
   }
 
-  keyHandler = (e: KeyboardEvent) => {
+  keyHandler = async (e: KeyboardEvent) => {
     e.stopPropagation();
 
     switch (e.key) {
@@ -352,11 +352,11 @@ class Sheet {
         break;
       }
       case e.ctrlKey && 'x': {
-        this.spreadsheet.clipboard.cut();
+        await this.spreadsheet.clipboard.cut();
         break;
       }
       case e.ctrlKey && 'c': {
-        this.spreadsheet.clipboard.copy();
+        await this.spreadsheet.clipboard.copy();
         break;
       }
       case e.ctrlKey && 'v': {

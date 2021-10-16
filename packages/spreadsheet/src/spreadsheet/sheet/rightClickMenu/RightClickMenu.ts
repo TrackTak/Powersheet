@@ -83,12 +83,12 @@ class RightClickMenu {
     buttons.insertRow.addEventListener('click', this.insertRowOnClick);
     buttons.insertColumn.addEventListener('click', this.insertColOnClick);
 
-    buttons.cut.addEventListener('click', () => {
-      this.spreadsheet.clipboard.cut();
+    buttons.cut.addEventListener('click', async () => {
+      await this.spreadsheet.clipboard.cut();
     });
 
-    buttons.copy.addEventListener('click', () => {
-      this.spreadsheet.clipboard.copy();
+    buttons.copy.addEventListener('click', async () => {
+      await this.spreadsheet.clipboard.copy();
     });
 
     buttons.paste.addEventListener('click', () => {

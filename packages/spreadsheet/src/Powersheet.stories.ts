@@ -19,6 +19,9 @@ import {
 } from '.';
 import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
 import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
+import realExampleDataJSON from './realExampleData.json';
+
+const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
 export default {
   title: 'Spreadsheet',
@@ -65,6 +68,8 @@ const getSpreadsheet = (
   if (styles) {
     spreadsheet.setStyles(styles);
   }
+
+  spreadsheet.initialize();
 
   const oldEmit = spreadsheet.eventEmitter.emit;
 
@@ -524,4 +529,10 @@ Formulas.args = {
       },
     },
   },
+};
+
+export const RealExample = Template.bind({});
+
+RealExample.args = {
+  data: realExampleData,
 };

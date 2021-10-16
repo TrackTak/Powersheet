@@ -58,6 +58,7 @@ class Spreadsheet {
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
+    this.hyperformula = params.hyperformula;
     this.sheets = new Map();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
@@ -102,7 +103,7 @@ class Spreadsheet {
     });
   }
 
-  private initialize() {
+  initialize() {
     if (!this.isInitialized) {
       this.isInitialized = true;
 
@@ -163,8 +164,6 @@ class Spreadsheet {
 
   setData(data: ISpreadsheetData) {
     this.data.spreadsheetData = data;
-
-    this.initialize();
 
     this.updateViewport();
   }

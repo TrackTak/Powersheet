@@ -1,8 +1,6 @@
 import { isEmpty } from 'lodash';
 import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
-import SimpleCellAddress, {
-  CellId,
-} from './sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
 import Spreadsheet from './Spreadsheet';
 
 class Clipboard {

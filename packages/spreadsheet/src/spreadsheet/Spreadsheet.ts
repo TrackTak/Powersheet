@@ -39,7 +39,7 @@ class Spreadsheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
-  hyperformula?: HyperFormula;
+  hyperformula: HyperFormula;
   clipboard: Clipboard;
   history: any;
   bottomBar?: BottomBar;
@@ -149,12 +149,12 @@ class Spreadsheet {
   }
 
   private setCells() {
-    this.hyperformula?.batch(() => {
+    this.hyperformula.batch(() => {
       for (const key in this.data.spreadsheetData.cells) {
         const cellId = key as CellId;
         const cell = this.data.spreadsheetData.cells?.[cellId];
 
-        this.hyperformula?.setCellContents(
+        this.hyperformula.setCellContents(
           SimpleCellAddress.cellIdToAddress(cellId),
           cell?.value
         );
@@ -277,14 +277,14 @@ class Spreadsheet {
     this.data.setSheet(sheetId, {
       sheetName,
     });
-    this.hyperformula?.renameSheet(sheetId, sheetName);
+    this.hyperformula.renameSheet(sheetId, sheetName);
 
     this.updateViewport();
   }
 
   createNewSheet(data: ISheetData) {
     this.data.setSheet(data.id, data);
-    this.hyperformula?.addSheet(data.sheetName);
+    this.hyperformula.addSheet(data.sheetName);
 
     const sheet = new Sheet(this, data.id);
 

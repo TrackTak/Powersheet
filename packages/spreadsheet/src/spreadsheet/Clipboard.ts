@@ -1,6 +1,8 @@
 import { isEmpty } from 'lodash';
 import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+} from './sheet/cells/cell/SimpleCellAddress';
 import Spreadsheet from './Spreadsheet';
 
 class Clipboard {
@@ -17,7 +19,7 @@ class Clipboard {
       return;
     }
     this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula?.cut({
+    this.spreadsheet.hyperformula.cut({
       start: cellRange.topLeftSimpleCellAddress,
       end: cellRange.bottomRightSimpleCellAddress,
     });
@@ -30,7 +32,7 @@ class Clipboard {
       return;
     }
     this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula?.copy({
+    this.spreadsheet.hyperformula.copy({
       start: cellRange.topLeftSimpleCellAddress,
       end: cellRange.bottomRightSimpleCellAddress,
     });
@@ -42,48 +44,57 @@ class Clipboard {
       return;
     }
 
-    const rangeData = this.getRange(this.sourceRange, targetRange);
+    const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
+      {
+        start: this.sourceRange.topLeftSimpleCellAddress,
+        end: this.sourceRange.bottomRightSimpleCellAddress,
+      },
+      {
+        start: targetRange.topLeftSimpleCellAddress,
+        end: targetRange.bottomRightSimpleCellAddress,
+      },
+      true
+    );
 
     this.spreadsheet.pushToHistory(() => {
-      rangeData.forEach((rowData, rowIndex) => {
-        rowData.forEach((sourceSimpleCellAddress, colIndex) => {
-          const cellId = sourceSimpleCellAddress.toCellId();
+      this.spreadsheet.hyperformula.batch(() => {
+        rangeData.forEach((rowData, rowIndex) => {
+          rowData.forEach((_, colIndex) => {
+            let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
 
-          let row = this.sourceRange!.topLeftSimpleCellAddress.row;
-          let col = this.sourceRange!.topLeftSimpleCellAddress.col;
+            row += rowIndex % this.sourceRange!.height();
+            col += colIndex % this.sourceRange!.width();
 
-          row += rowIndex % this.sourceRange!.height();
-          col += colIndex % this.sourceRange!.width();
-
-          const targetSimpleCellAddress = new SimpleCellAddress(
-            targetRange.topLeftSimpleCellAddress.sheet,
-            targetRange.topLeftSimpleCellAddress.row + rowIndex,
-            targetRange.topLeftSimpleCellAddress.col + colIndex
-          );
-
-          if (this.isCut) {
-            const simpleCellAddress = new SimpleCellAddress(
+            const soureSimpleCellAddress = new SimpleCellAddress(
               this.sourceRange!.topLeftSimpleCellAddress.sheet,
               row,
               col
             );
 
-            this.spreadsheet.data.deleteCell(simpleCellAddress);
-          }
+            const targetSimpleCellAddress = new SimpleCellAddress(
+              targetRange.topLeftSimpleCellAddress.sheet,
+              targetRange.topLeftSimpleCellAddress.row + rowIndex,
+              targetRange.topLeftSimpleCellAddress.col + colIndex
+            );
 
-          const data = this.spreadsheet.data.spreadsheetData;
-          const cell = data.cells?.[cellId];
+            const data = this.spreadsheet.data.spreadsheetData;
+            const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
 
-          if (cell) {
-            this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
-          } else {
-            this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
-          }
+            if (cell) {
+              this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
+            } else {
+              this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
+            }
 
-          this.spreadsheet.hyperformula?.setCellContents(
-            targetSimpleCellAddress,
-            cell?.value
-          );
+            this.spreadsheet.hyperformula.setCellContents(
+              targetSimpleCellAddress,
+              cell?.value
+            );
+
+            if (this.isCut) {
+              this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
+            }
+          });
         });
       });
     });
@@ -95,42 +106,6 @@ class Clipboard {
       this.isCut = false;
     }
   }
-
-  private getRange = (
-    sourceRange: RangeSimpleCellAddress,
-    targetRange: RangeSimpleCellAddress
-  ) => {
-    return targetRange.getArrayOfAddresses().map((arr) =>
-      arr.map((targetSimpleCellAddress) => {
-        const height = sourceRange.height();
-        const width = sourceRange.width();
-
-        const row =
-          ((((targetSimpleCellAddress.row -
-            targetRange.topLeftSimpleCellAddress.row) %
-            height) +
-            height) %
-            height) +
-          sourceRange.topLeftSimpleCellAddress.row;
-
-        const col =
-          ((((targetSimpleCellAddress.col -
-            targetRange.topLeftSimpleCellAddress.col) %
-            width) +
-            width) %
-            width) +
-          sourceRange.topLeftSimpleCellAddress.col;
-
-        const sourceSimpleCellAddress = new SimpleCellAddress(
-          sourceRange.topLeftSimpleCellAddress.sheet,
-          row,
-          col
-        );
-
-        return sourceSimpleCellAddress;
-      })
-    );
-  };
 
   private getCellRangeForSelection(
     expandSelectionForPaste = false

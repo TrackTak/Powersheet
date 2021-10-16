@@ -64,7 +64,7 @@ class Merger {
       }
     );
 
-    this.spreadsheet.hyperformula?.batch(() => {
+    this.spreadsheet.hyperformula.batch(() => {
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
         for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
           const simpleCellAddress = new SimpleCellAddress(
@@ -107,7 +107,7 @@ class Merger {
         ];
 
       if (cell) {
-        this.spreadsheet.hyperformula?.batch(() => {
+        this.spreadsheet.hyperformula.batch(() => {
           for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
           )) {

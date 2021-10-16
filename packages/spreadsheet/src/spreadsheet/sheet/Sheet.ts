@@ -333,7 +333,7 @@ class Sheet {
       }
       case 'Delete': {
         this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.hyperformula?.batch(() => {
+          this.spreadsheet.hyperformula.batch(() => {
             this.selector.selectedCells.forEach((cell) => {
               const simpleCellAddress = cell.simpleCellAddress;
 

@@ -6,8 +6,8 @@ import {
   createTooltip,
   DropdownIconName,
 } from '../htmlElementHelpers';
+import { ITextPatternFormats } from '../options';
 import { prefix } from '../utils';
-import { ITextFormatMap } from './Toolbar';
 import styles from './Toolbar.module.scss';
 
 export const toolbarPrefix = `${prefix}-toolbar`;
@@ -79,10 +79,6 @@ export const toggleIconNames = <const>[
   'formula',
 ];
 
-export const fontSizeArray = <const>[
-  6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 36,
-];
-
 export type IconElementsName =
   | DropdownIconName
   | InnerDropdownIconName
@@ -90,7 +86,7 @@ export type IconElementsName =
   | 'autosave';
 
 export type FontSizes = {
-  [index in typeof fontSizeArray[number]]: HTMLButtonElement;
+  [index: number]: HTMLButtonElement;
 };
 
 export const createToolbarIconButton = (name: IconElementsName) =>
@@ -226,13 +222,13 @@ export const createHorizontalTextAlignContent = () => {
   return { dropdownContent, aligns };
 };
 
-export const createTextFormatContent = (textFormatMap: ITextFormatMap) => {
+export const createTextFormatContent = (textFormatMap: ITextPatternFormats) => {
   const dropdownContent = createDropdownContent(
     toolbarPrefix,
     styles.textFormats
   );
 
-  const createTextFormatButton = (textFormat: keyof ITextFormatMap) => {
+  const createTextFormatButton = (textFormat: string) => {
     const textFormatButton = document.createElement('button');
 
     textFormatButton.textContent = sentenceCase(textFormat);
@@ -249,8 +245,7 @@ export const createTextFormatContent = (textFormatMap: ITextFormatMap) => {
   const textFormats: Record<string, HTMLButtonElement> = {};
 
   Object.keys(textFormatMap).forEach((key) => {
-    const textFormat = key as keyof ITextFormatMap;
-    const textFormatButton = createTextFormatButton(textFormat);
+    const textFormatButton = createTextFormatButton(key);
 
     textFormats[key] = textFormatButton;
     dropdownContent.appendChild(textFormatButton);
@@ -259,7 +254,7 @@ export const createTextFormatContent = (textFormatMap: ITextFormatMap) => {
   return { dropdownContent, textFormats };
 };
 
-export const createFontSizeContent = () => {
+export const createFontSizeContent = (fontSizes: number[]) => {
   const dropdownContent = createDropdownContent(
     toolbarPrefix,
     styles.fontSizes
@@ -279,17 +274,17 @@ export const createFontSizeContent = () => {
     return fontSizeButton;
   };
 
-  const fontSizes: FontSizes = {} as FontSizes;
+  const fontSizeMap: FontSizes = {};
 
-  fontSizeArray.forEach((fontSize) => {
+  fontSizes.forEach((fontSize) => {
     const fontSizeButton = createFontSizeButton(fontSize);
 
-    fontSizes[fontSize] = fontSizeButton;
+    fontSizeMap[fontSize] = fontSizeButton;
 
     dropdownContent.appendChild(fontSizeButton);
   });
 
-  return { dropdownContent, fontSizes };
+  return { dropdownContent, fontSizes: fontSizeMap };
 };
 
 export const createFunctionDropdownContent = (

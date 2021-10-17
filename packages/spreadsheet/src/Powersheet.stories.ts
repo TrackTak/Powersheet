@@ -172,6 +172,7 @@ MergedCells.args = {
         },
         mergedCells: {
           '0_3_1': '0_3_1',
+          '0_7_1': '0_7_1',
         },
       },
     },
@@ -194,6 +195,17 @@ MergedCells.args = {
         col: {
           x: 1,
           y: 1,
+        },
+      },
+      '0_7_1': {
+        id: '0_7_1',
+        row: {
+          x: 7,
+          y: 9,
+        },
+        col: {
+          x: 1,
+          y: 20,
         },
       },
     },
@@ -294,6 +306,50 @@ CustomStyles.args = {
       fill: 'orange',
       opacity: 0.3,
     },
+  },
+};
+
+export const CustomOptions = Template.bind({});
+
+CustomOptions.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'Custom Options',
+        cells: {
+          '0_0_1': '0_0_1',
+          '0_1_1': '0_1_1',
+          '0_2_1': '0_2_1',
+        },
+      },
+    },
+    cells: {
+      '0_0_1': {
+        id: '0_0_1',
+        value: '20000000',
+        textFormatPattern: '$#,##0.##',
+      },
+      '0_1_1': {
+        id: '0_1_1',
+        value: '20000000',
+        textFormatPattern: '#,###.##,,',
+      },
+      '0_2_1': {
+        id: '0_2_1',
+        value: '20000000',
+        textFormatPattern: '$#,###.##,,',
+        fontSize: 32,
+      },
+    },
+  },
+  options: {
+    textPatternFormats: {
+      currency: '$#,##0.##',
+      million: '#,###.##,,',
+      'million-currency': '$#,###.##,,',
+    },
+    fontSizes: [4, 32],
   },
 };
 

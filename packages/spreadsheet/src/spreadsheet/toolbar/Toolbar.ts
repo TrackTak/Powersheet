@@ -52,12 +52,6 @@ export interface IToolbarActionGroups {
   className?: string;
 }
 
-interface IDropdownElements {
-  arrowContainer?: HTMLSpanElement;
-  arrowIcon?: HTMLElement;
-  dropdownContent: HTMLDivElement;
-}
-
 interface IColorPickerElements {
   picker: ACPController;
   colorPicker: HTMLDivElement;
@@ -84,22 +78,15 @@ interface IAutosaveElement {
   text: HTMLDivElement;
 }
 
-export interface ITextFormatMap {
-  plainText: string;
-  number: string;
-  percent: string;
-}
-
 class Toolbar {
   toolbarEl!: HTMLDivElement;
   iconElementsMap!: Record<IconElementsName, IIconElements>;
   buttonElementsMap!: Record<DropdownButtonName, IButtonElements>;
-  dropdownMap!: Record<DropdownName, IDropdownElements>;
+  dropdownMap!: Record<DropdownName, HTMLDivElement>;
   colorPickerElementsMap!: Record<ColorPickerIconName, IColorPickerElements>;
   borderElements!: IBorderElements;
   fontSizeElements!: IFontSizeElements;
   textFormatElements!: ITextFormatElements;
-  textFormatMap!: ITextFormatMap;
   functionElements?: IFunctionElements;
   autosaveElement!: IAutosaveElement;
   toolbarActionGroups!: IToolbarActionGroups[];
@@ -113,45 +100,24 @@ class Toolbar {
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
 
     this.iconElementsMap = {} as Record<string, IIconElements>;
-    this.dropdownMap = {} as Record<DropdownName, IDropdownElements>;
+    this.dropdownMap = {} as Record<DropdownName, HTMLDivElement>;
     this.colorPickerElementsMap = {} as Record<
       ColorPickerIconName,
       IColorPickerElements
     >;
     this.borderElements = {} as IBorderElements;
     this.textFormatElements = {} as ITextFormatElements;
-    this.textFormatMap = {
-      plainText: '',
-      number: '#,##0.00',
-      percent: '0.00%',
-    };
     this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
-    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
-      createFontSizeContent();
-    const { dropdownContent: textFormatDropdownContent, textFormats } =
-      createTextFormatContent(this.textFormatMap);
-
-    this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
-    this.setDropdownButtonContent(
-      'textFormatPattern',
-      textFormatDropdownContent,
-      true
-    );
+    this.setDropdownButton('textFormatPattern', true);
+    this.setDropdownButton('fontSize', true);
 
     const { text, autosave } = createAutosave();
 
     this.iconElementsMap.autosave = autosave;
     this.autosaveElement = {
       text,
-    };
-    this.fontSizeElements = {
-      fontSizes,
-    };
-
-    this.textFormatElements = {
-      textFormats,
     };
 
     toggleIconNames.forEach((name) => {
@@ -186,7 +152,9 @@ class Toolbar {
             secondBordersRow,
           } = createBordersContent();
 
-          this.setDropdownIconContent(name, dropdownContent, true);
+          this.setDropdownIconButton(name, true);
+
+          this.dropdownMap.borders = dropdownContent;
 
           this.borderElements = {
             borderGroups,
@@ -211,7 +179,9 @@ class Toolbar {
           const { dropdownContent, aligns } =
             createHorizontalTextAlignContent();
 
-          this.setDropdownIconContent(name, dropdownContent, true);
+          this.setDropdownIconButton(name, true);
+
+          this.dropdownMap.horizontalTextAlign = dropdownContent;
 
           Object.keys(aligns).forEach((key) => {
             const name = key as HorizontalTextAlignName;
@@ -225,7 +195,9 @@ class Toolbar {
         case 'verticalTextAlign': {
           const { dropdownContent, aligns } = createVerticalTextAlignContent();
 
-          this.setDropdownIconContent(name, dropdownContent, true);
+          this.setDropdownIconButton(name, true);
+
+          this.dropdownMap.verticalTextAlign = dropdownContent;
 
           Object.keys(aligns).forEach((key) => {
             const name = key as VerticalTextAlignName;
@@ -243,7 +215,9 @@ class Toolbar {
               )
             );
 
-          this.setDropdownIconContent(name, dropdownContent, true);
+          this.setDropdownIconButton(name, true);
+
+          this.dropdownMap.functions = dropdownContent;
 
           this.functionElements = {
             registeredFunctionButtons,
@@ -306,7 +280,7 @@ class Toolbar {
 
         setDropdownActive(e as HTMLButtonElement, true);
 
-        return this.dropdownMap[name].dropdownContent;
+        return this.dropdownMap[name];
       },
     });
 
@@ -378,35 +352,15 @@ class Toolbar {
       }
     });
 
-    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
-      const fontSize = parseInt(key, 10);
+    this.dropdownMap.functions?.addEventListener('click', (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
 
-      this.fontSizeElements.fontSizes[fontSize].addEventListener(
-        'click',
-        () => {
-          this.setValue('fontSize', fontSize);
-        }
-      );
-    });
+      if (target?.matches('button')) {
+        const functionName = target.dataset.function;
 
-    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
-      this.textFormatElements.textFormats[key].addEventListener('click', () => {
-        this.setValue('textFormatPattern', key);
-      });
-    });
-
-    this.dropdownMap.functions?.dropdownContent.addEventListener(
-      'click',
-      (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-
-        if (target?.matches('button')) {
-          const functionName = target.dataset.function;
-
-          this.setValue('functions', functionName);
-        }
+        this.setValue('functions', functionName);
       }
-    );
+    });
   }
 
   setFunction(functionName: string) {
@@ -640,9 +594,12 @@ class Toolbar {
         break;
       }
       case 'textFormatPattern': {
-        const format = value as keyof ITextFormatMap;
+        const format = value;
 
-        setStyle<string>('textFormatPattern', this.textFormatMap[format]);
+        setStyle<string>(
+          'textFormatPattern',
+          this.spreadsheet.options.textPatternFormats[format]
+        );
         break;
       }
       case 'backgroundColor': {
@@ -797,6 +754,53 @@ class Toolbar {
     this.spreadsheet.updateViewport();
   };
 
+  private setTextFormatPatterns() {
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent(this.spreadsheet.options.textPatternFormats);
+
+    this.dropdownMap.textFormatPattern = textFormatDropdownContent;
+
+    this.textFormatElements = {
+      textFormats,
+    };
+
+    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
+      this.textFormatElements.textFormats[key].addEventListener(
+        'click',
+        () => {
+          this.setValue('textFormatPattern', key);
+        },
+        { once: true }
+      );
+    });
+  }
+
+  private setFontSizes() {
+    const sortedFontSizes = this.spreadsheet.options.fontSizes.sort(
+      (a, b) => a - b
+    );
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent(sortedFontSizes);
+
+    this.dropdownMap.fontSize = fontSizeDropdownContent;
+
+    this.fontSizeElements = {
+      fontSizes,
+    };
+
+    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
+      const fontSize = parseInt(key, 10);
+
+      this.fontSizeElements.fontSizes[fontSize].addEventListener(
+        'click',
+        () => {
+          this.setValue('fontSize', fontSize);
+        },
+        { once: true }
+      );
+    });
+  }
+
   updateActiveStates = () => {
     const sheet = this.spreadsheet.getActiveSheet()!;
 
@@ -804,6 +808,9 @@ class Toolbar {
 
     const selectedCells = sheet.selector.selectedCells;
     const selectedCell = sheet.selector.selectedCell!;
+
+    this.setTextFormatPatterns();
+    this.setFontSizes();
 
     this.setActiveColor(selectedCell, 'backgroundColor');
     this.setActiveColor(selectedCell, 'fontColor');
@@ -849,30 +856,18 @@ class Toolbar {
     this.tooltip.destroy();
   }
 
-  setDropdownIconContent(
-    name: DropdownIconName,
-    dropdownContent: HTMLDivElement,
-    createArrow?: boolean
-  ) {
+  setDropdownIconButton(name: DropdownIconName, createArrow?: boolean) {
     const { iconButtonValues, arrowIconValues, tooltip } =
       createDropdownIconButton(name, toolbarPrefix, createArrow);
 
     this.iconElementsMap[name] = {
       ...iconButtonValues,
-      tooltip,
-    };
-
-    this.dropdownMap[name] = {
-      dropdownContent,
       ...arrowIconValues,
+      tooltip,
     };
   }
 
-  setDropdownButtonContent(
-    name: DropdownButtonName,
-    dropdownContent: HTMLDivElement,
-    createArrow?: boolean
-  ) {
+  setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
     const { buttonContainer, button, text, arrowIconValues, tooltip } =
       createDropdownButton(name, toolbarPrefix, createArrow);
 
@@ -881,10 +876,6 @@ class Toolbar {
       button,
       text,
       tooltip,
-    };
-
-    this.dropdownMap[name] = {
-      dropdownContent,
       ...arrowIconValues,
     };
   }
@@ -892,7 +883,9 @@ class Toolbar {
   setDropdownColorPicker(name: ColorPickerIconName) {
     const { dropdownContent, colorPicker, picker } = createColorPickerContent();
 
-    this.setDropdownIconContent(name, dropdownContent);
+    this.setDropdownIconButton(name);
+
+    this.dropdownMap[name] = dropdownContent;
 
     const colorBar = createColorBar(picker);
 
@@ -926,8 +919,10 @@ class Toolbar {
   }
 
   setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
+    const sheet = this.spreadsheet.getActiveSheet()!;
     const isMerged =
-      selectedCell.getIsCellPartOfMerge() && selectedCells.length === 1;
+      sheet.merger.getIsCellPartOfMerge(selectedCell.simpleCellAddress) &&
+      selectedCells.length === 1;
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false;
@@ -1002,8 +997,8 @@ class Toolbar {
 
     let textFormat = 'plainText';
 
-    Object.keys(this.textFormatMap).forEach((key) => {
-      const value = this.textFormatMap[key as keyof ITextFormatMap];
+    Object.keys(this.spreadsheet.options.textPatternFormats).forEach((key) => {
+      const value = this.spreadsheet.options.textPatternFormats[key];
 
       if (textFormatPattern === value) {
         textFormat = key;

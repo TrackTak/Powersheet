@@ -16,6 +16,8 @@ export interface IActionElements {
   button: HTMLButtonElement;
   tooltip?: HTMLSpanElement;
   active?: boolean;
+  arrowContainer?: HTMLSpanElement;
+  arrowIcon?: HTMLElement;
 }
 
 export interface IButtonElements extends IActionElements {

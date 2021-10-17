@@ -16,6 +16,7 @@ export interface IOptions {
   width?: number;
   height?: number;
   textPatternFormats: ITextPatternFormats;
+  fontSizes: number[];
   row: IRowColOptions;
   col: IRowColOptions;
   exportSpreadsheetName: string;
@@ -40,6 +41,7 @@ export const defaultOptions: IOptions = {
     number: '#,##0.00',
     percent: '0.00%',
   },
+  fontSizes: [6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 36],
   exportSpreadsheetName: 'Powersheet.xlsx',
   touchScrollSpeed: 1.2,
 };

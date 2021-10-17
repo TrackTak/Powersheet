@@ -79,10 +79,6 @@ export const toggleIconNames = <const>[
   'formula',
 ];
 
-export const fontSizeArray = <const>[
-  6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 36,
-];
-
 export type IconElementsName =
   | DropdownIconName
   | InnerDropdownIconName
@@ -90,7 +86,7 @@ export type IconElementsName =
   | 'autosave';
 
 export type FontSizes = {
-  [index in typeof fontSizeArray[number]]: HTMLButtonElement;
+  [index: number]: HTMLButtonElement;
 };
 
 export const createToolbarIconButton = (name: IconElementsName) =>
@@ -258,7 +254,7 @@ export const createTextFormatContent = (textFormatMap: ITextPatternFormats) => {
   return { dropdownContent, textFormats };
 };
 
-export const createFontSizeContent = () => {
+export const createFontSizeContent = (fontSizes: number[]) => {
   const dropdownContent = createDropdownContent(
     toolbarPrefix,
     styles.fontSizes
@@ -278,17 +274,17 @@ export const createFontSizeContent = () => {
     return fontSizeButton;
   };
 
-  const fontSizes: FontSizes = {} as FontSizes;
+  const fontSizeMap: FontSizes = {};
 
-  fontSizeArray.forEach((fontSize) => {
+  fontSizes.forEach((fontSize) => {
     const fontSizeButton = createFontSizeButton(fontSize);
 
-    fontSizes[fontSize] = fontSizeButton;
+    fontSizeMap[fontSize] = fontSizeButton;
 
     dropdownContent.appendChild(fontSizeButton);
   });
 
-  return { dropdownContent, fontSizes };
+  return { dropdownContent, fontSizes: fontSizeMap };
 };
 
 export const createFunctionDropdownContent = (

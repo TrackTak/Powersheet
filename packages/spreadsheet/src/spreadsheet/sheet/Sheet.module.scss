@@ -4,3 +4,11 @@
   overflow: hidden;
   outline: none;
 }
+
+.innerSheet {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  pointer-events: none;
+  overflow: hidden;
+}

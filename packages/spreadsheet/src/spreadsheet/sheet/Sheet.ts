@@ -52,6 +52,7 @@ export interface ICustomSizes {
 class Sheet {
   scrollGroups!: IScrollGroups;
   sheetEl: HTMLDivElement;
+  innerSheetEl: HTMLDivElement;
   stage: Stage;
   layer: Layer;
   sheet: Rect;
@@ -97,6 +98,16 @@ class Sheet {
     this.stage = new Stage({
       container: this.sheetEl,
     });
+
+    this.innerSheetEl = document.createElement('div');
+    this.innerSheetEl.classList.add(`${prefix}-inner-sheet`, styles.innerSheet);
+
+    const { x, y } = this.getViewportVector();
+
+    this.innerSheetEl.style.left = `${x}px`;
+    this.innerSheetEl.style.top = `${y}px`;
+
+    this.sheetEl.appendChild(this.innerSheetEl);
 
     this.layer = new Layer();
 

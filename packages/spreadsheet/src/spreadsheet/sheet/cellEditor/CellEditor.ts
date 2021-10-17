@@ -42,7 +42,7 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5],
     });
-    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl);
+    this.sheet.innerSheetEl.appendChild(this.cellEditorContainerEl);
 
     this.cellEditorEl.addEventListener('input', this.onInput);
     this.cellEditorEl.addEventListener('keydown', this.onKeyDown);
@@ -151,7 +151,14 @@ class CellEditor {
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(cell.group.getClientRect());
+    const rect = cell.group.getClientRect();
+
+    const { x, y } = this.sheet.getViewportVector();
+
+    rect.x -= x;
+    rect.y -= y;
+
+    this.setCellEditorElPosition(rect);
 
     if (setTextContent) {
       this.setTextContent(

@@ -1,3 +1,4 @@
+import { SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
 import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
@@ -11,29 +12,55 @@ class Clipboard {
     this.spreadsheet = spreadsheet;
   }
 
-  cut() {
-    const cellRange = this.getCellRangeForSelection();
-    if (!cellRange) {
-      return;
-    }
-    this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula?.cut({
-      start: cellRange.topLeftSimpleCellAddress,
-      end: cellRange.bottomRightSimpleCellAddress,
+  private async writeToClipboard(source: SimpleCellRange) {
+    const rangeData = this.spreadsheet.hyperformula.getRangeSerialized(source);
+
+    let clipboardText = '';
+
+    rangeData.forEach((rowData) => {
+      rowData.forEach((value) => {
+        clipboardText += value ?? '';
+      });
     });
-    this.isCut = true;
+
+    await navigator.clipboard.writeText(clipboardText);
   }
 
-  copy() {
+  async cut() {
     const cellRange = this.getCellRangeForSelection();
     if (!cellRange) {
       return;
     }
+
     this.sourceRange = cellRange;
-    this.spreadsheet.hyperformula?.copy({
+
+    const source = {
       start: cellRange.topLeftSimpleCellAddress,
       end: cellRange.bottomRightSimpleCellAddress,
-    });
+    };
+
+    this.spreadsheet.hyperformula.cut(source);
+    this.isCut = true;
+
+    await this.writeToClipboard(source);
+  }
+
+  async copy() {
+    const cellRange = this.getCellRangeForSelection();
+    if (!cellRange) {
+      return;
+    }
+
+    this.sourceRange = cellRange;
+
+    const source = {
+      start: cellRange.topLeftSimpleCellAddress,
+      end: cellRange.bottomRightSimpleCellAddress,
+    };
+
+    this.spreadsheet.hyperformula.copy(source);
+
+    await this.writeToClipboard(source);
   }
 
   paste() {
@@ -42,18 +69,31 @@ class Clipboard {
       return;
     }
 
-    const rangeData = this.getRange(this.sourceRange, targetRange);
+    const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
+      {
+        start: this.sourceRange.topLeftSimpleCellAddress,
+        end: this.sourceRange.bottomRightSimpleCellAddress,
+      },
+      {
+        start: targetRange.topLeftSimpleCellAddress,
+        end: targetRange.bottomRightSimpleCellAddress,
+      },
+      true
+    );
 
     this.spreadsheet.pushToHistory(() => {
       rangeData.forEach((rowData, rowIndex) => {
-        rowData.forEach((sourceSimpleCellAddress, colIndex) => {
-          const cellId = sourceSimpleCellAddress.toCellId();
-
-          let row = this.sourceRange!.topLeftSimpleCellAddress.row;
-          let col = this.sourceRange!.topLeftSimpleCellAddress.col;
+        rowData.forEach((_, colIndex) => {
+          let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
 
           row += rowIndex % this.sourceRange!.height();
           col += colIndex % this.sourceRange!.width();
+
+          const soureSimpleCellAddress = new SimpleCellAddress(
+            this.sourceRange!.topLeftSimpleCellAddress.sheet,
+            row,
+            col
+          );
 
           const targetSimpleCellAddress = new SimpleCellAddress(
             targetRange.topLeftSimpleCellAddress.sheet,
@@ -61,18 +101,8 @@ class Clipboard {
             targetRange.topLeftSimpleCellAddress.col + colIndex
           );
 
-          if (this.isCut) {
-            const simpleCellAddress = new SimpleCellAddress(
-              this.sourceRange!.topLeftSimpleCellAddress.sheet,
-              row,
-              col
-            );
-
-            this.spreadsheet.data.deleteCell(simpleCellAddress);
-          }
-
           const data = this.spreadsheet.data.spreadsheetData;
-          const cell = data.cells?.[cellId];
+          const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
 
           if (cell) {
             this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
@@ -80,10 +110,9 @@ class Clipboard {
             this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
           }
 
-          this.spreadsheet.hyperformula?.setCellContents(
-            targetSimpleCellAddress,
-            cell?.value
-          );
+          if (this.isCut) {
+            this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
+          }
         });
       });
     });
@@ -95,42 +124,6 @@ class Clipboard {
       this.isCut = false;
     }
   }
-
-  private getRange = (
-    sourceRange: RangeSimpleCellAddress,
-    targetRange: RangeSimpleCellAddress
-  ) => {
-    return targetRange.getArrayOfAddresses().map((arr) =>
-      arr.map((targetSimpleCellAddress) => {
-        const height = sourceRange.height();
-        const width = sourceRange.width();
-
-        const row =
-          ((((targetSimpleCellAddress.row -
-            targetRange.topLeftSimpleCellAddress.row) %
-            height) +
-            height) %
-            height) +
-          sourceRange.topLeftSimpleCellAddress.row;
-
-        const col =
-          ((((targetSimpleCellAddress.col -
-            targetRange.topLeftSimpleCellAddress.col) %
-            width) +
-            width) %
-            width) +
-          sourceRange.topLeftSimpleCellAddress.col;
-
-        const sourceSimpleCellAddress = new SimpleCellAddress(
-          sourceRange.topLeftSimpleCellAddress.sheet,
-          row,
-          col
-        );
-
-        return sourceSimpleCellAddress;
-      })
-    );
-  };
 
   private getCellRangeForSelection(
     expandSelectionForPaste = false

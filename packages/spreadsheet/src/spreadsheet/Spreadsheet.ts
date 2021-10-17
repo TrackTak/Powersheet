@@ -39,13 +39,14 @@ class Spreadsheet {
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
   exporter?: Exporter;
-  hyperformula?: HyperFormula;
+  hyperformula: HyperFormula;
   clipboard: Clipboard;
   history: any;
   bottomBar?: BottomBar;
   activeSheetId = 0;
   totalSheetCount = 0;
   isSaving = false;
+  isInitialized = false;
 
   constructor(params: ISpreadsheetConstructor) {
     this.data = new Data(this);
@@ -57,6 +58,7 @@ class Spreadsheet {
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
+    this.hyperformula = params.hyperformula;
     this.sheets = new Map();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
@@ -102,24 +104,36 @@ class Spreadsheet {
   }
 
   initialize() {
-    for (const key in this.data.spreadsheetData.sheets) {
-      const sheetId = parseInt(key, 10);
-      const sheet = this.data.spreadsheetData.sheets[sheetId];
+    if (!this.isInitialized) {
+      this.isInitialized = true;
 
-      this.createNewSheet(sheet);
+      for (const key in this.data.spreadsheetData.sheets) {
+        const sheetId = parseInt(key, 10);
+        const sheet = this.data.spreadsheetData.sheets[sheetId];
+
+        this.createNewSheet(sheet);
+      }
+
+      this.setCells();
+
+      this.switchSheet(0);
+
+      this.isSaving = false;
+
+      this.updateViewport();
+
+      if (document.readyState === 'complete') {
+        this.updateSheetSizes();
+      }
     }
+  }
 
-    this.setCells();
-
-    this.switchSheet(0);
-
-    this.isSaving = false;
-
-    this.updateViewport();
+  private updateSheetSizes() {
+    this.sheets.forEach((sheet) => sheet.updateSize());
   }
 
   private onDOMContentLoaded = () => {
-    this.initialize();
+    this.updateSheetSizes();
   };
 
   destroy() {
@@ -135,12 +149,12 @@ class Spreadsheet {
   }
 
   private setCells() {
-    this.hyperformula?.batch(() => {
+    this.hyperformula.batch(() => {
       for (const key in this.data.spreadsheetData.cells) {
         const cellId = key as CellId;
         const cell = this.data.spreadsheetData.cells?.[cellId];
 
-        this.hyperformula?.setCellContents(
+        this.hyperformula.setCellContents(
           SimpleCellAddress.cellIdToAddress(cellId),
           cell?.value
         );
@@ -263,14 +277,14 @@ class Spreadsheet {
     this.data.setSheet(sheetId, {
       sheetName,
     });
-    this.hyperformula?.renameSheet(sheetId, sheetName);
+    this.hyperformula.renameSheet(sheetId, sheetName);
 
     this.updateViewport();
   }
 
   createNewSheet(data: ISheetData) {
     this.data.setSheet(data.id, data);
-    this.hyperformula?.addSheet(data.sheetName);
+    this.hyperformula.addSheet(data.sheetName);
 
     const sheet = new Sheet(this, data.id);
 

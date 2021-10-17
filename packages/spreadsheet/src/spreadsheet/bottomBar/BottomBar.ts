@@ -28,7 +28,6 @@ class BottomBar {
   sheetSelectionDropdownContent!: HTMLDivElement;
   createNewSheetButtonElements!: IIconElements;
   tabContainer!: HTMLDivElement;
-  scrollSliderContainer!: HTMLDivElement;
   sheetTabElementsMap!: Map<SheetId, ISheetTabElements>;
   private spreadsheet!: Spreadsheet;
 
@@ -62,7 +61,10 @@ class BottomBar {
     this.content.classList.add(styles.content, `${bottomBarPrefix}-content`);
 
     this.tabContainer = document.createElement('div');
-    this.tabContainer.classList.add(`${bottomBarPrefix}-tab-container`);
+    this.tabContainer.classList.add(
+      styles.tabContainer,
+      `${bottomBarPrefix}-tab-container`
+    );
 
     this.sheetSelectionButtonContainer = document.createElement('div');
     this.sheetSelectionButtonContainer.classList.add(
@@ -83,16 +85,9 @@ class BottomBar {
       content: this.sheetSelectionDropdownContent,
     });
 
-    this.scrollSliderContainer = document.createElement('div');
-    this.scrollSliderContainer.classList.add(
-      styles.scrollSliderContainer,
-      `${bottomBarPrefix}-scroll-slider-container`
-    );
-
     this.sheetSelectionButtonContainer.appendChild(
       this.sheetSelectionButton.button
     );
-    this.tabContainer.appendChild(this.scrollSliderContainer);
     this.content.appendChild(this.createNewSheetButtonElements.buttonContainer);
     this.content.appendChild(this.sheetSelectionButtonContainer);
     this.bottomBarEl.appendChild(this.content);
@@ -111,7 +106,7 @@ class BottomBar {
     }
 
     sheetSelectionDropdownButton.textContent =
-      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName;
+      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!;
 
     const switchSheet = () => {
       this.spreadsheet.switchSheet(sheetId);
@@ -166,15 +161,11 @@ class BottomBar {
       { once: true }
     );
 
-    sheetTab.addEventListener(
-      'contextmenu',
-      (e) => {
-        e.preventDefault();
+    sheetTab.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
 
-        sheetTabDropdown.show();
-      },
-      { once: true }
-    );
+      sheetTabDropdown.show();
+    });
 
     deleteSheetButton.addEventListener(
       'click',
@@ -208,9 +199,9 @@ class BottomBar {
     );
 
     nameContainer.textContent =
-      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName;
+      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!;
 
-    this.scrollSliderContainer.appendChild(sheetTabContainer);
+    this.tabContainer.appendChild(sheetTabContainer);
     this.sheetSelectionDropdownContent.appendChild(
       sheetSelectionDropdownButton
     );
@@ -225,7 +216,7 @@ class BottomBar {
   }
 
   updateSheetTabs() {
-    this.scrollSliderContainer.innerHTML = '';
+    this.tabContainer.innerHTML = '';
     this.sheetSelectionDropdownContent.innerHTML = '';
 
     this.spreadsheet.sheets.forEach((sheet) => {
@@ -247,6 +238,8 @@ class BottomBar {
     });
 
     this.spreadsheet.switchSheet(id);
+
+    this.spreadsheet.sheets.get(id)!.updateSize();
   };
 
   destroy() {

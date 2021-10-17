@@ -15,6 +15,7 @@ import {
   VerticalTextAlign,
 } from '../../Data';
 import RowColAddress from './RowColAddress';
+import { CellValue } from 'hyperformula';
 
 class StyleableCell extends Cell {
   text?: Text;
@@ -198,9 +199,8 @@ class StyleableCell extends Cell {
         this.simpleCellAddress.toCellId()
       ];
 
-    let value =
-      this.spreadsheet.hyperformula?.getCellValue(this.simpleCellAddress) ??
-      cell?.value;
+    let value: CellValue | undefined =
+      this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
 
     if (this.spreadsheet.data.spreadsheetData.showFormulas) {
       value = cell?.value;

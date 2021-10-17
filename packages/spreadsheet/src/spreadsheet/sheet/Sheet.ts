@@ -151,14 +151,12 @@ class Sheet {
     this.spreadsheet.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
-    this.rows.scrollBar.scrollBarEl.style.bottom = `${18}px`;
+    this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
     this.cellEditor = new CellEditor(this);
-
-    this.updateSize();
   }
 
-  private updateSize() {
+  updateSize() {
     this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
     this.stage.height(this.spreadsheet.sheetsEl.offsetHeight);
 
@@ -326,7 +324,7 @@ class Sheet {
     );
   }
 
-  keyHandler = (e: KeyboardEvent) => {
+  keyHandler = async (e: KeyboardEvent) => {
     e.stopPropagation();
 
     switch (e.key) {
@@ -335,7 +333,7 @@ class Sheet {
       }
       case 'Delete': {
         this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.hyperformula?.batch(() => {
+          this.spreadsheet.hyperformula.batch(() => {
             this.selector.selectedCells.forEach((cell) => {
               const simpleCellAddress = cell.simpleCellAddress;
 
@@ -354,11 +352,11 @@ class Sheet {
         break;
       }
       case e.ctrlKey && 'x': {
-        this.spreadsheet.clipboard.cut();
+        await this.spreadsheet.clipboard.cut();
         break;
       }
       case e.ctrlKey && 'c': {
-        this.spreadsheet.clipboard.copy();
+        await this.spreadsheet.clipboard.copy();
         break;
       }
       case e.ctrlKey && 'v': {

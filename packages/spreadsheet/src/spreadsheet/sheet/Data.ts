@@ -1,5 +1,5 @@
 import { Vector2d } from 'konva/lib/types';
-import { isNil, merge } from 'lodash';
+import { isNil } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
@@ -35,7 +35,7 @@ export interface ICellData {
 
 export interface ISheetData {
   id: SheetId;
-  sheetName: string;
+  sheetName?: string;
   frozenCell?: SheetId;
   mergedCells?: {
     [index: CellId]: CellId;
@@ -117,21 +117,22 @@ class Data {
   }
 
   setSheet(sheetId: SheetId, sheetData?: Partial<ISheetData>) {
-    this.spreadsheetData.sheets = {
-      ...this.spreadsheetData.sheets,
-      [sheetId]: {
-        sheetName: this.spreadsheet.getSheetName(),
-        ...this.spreadsheetData.sheets?.[sheetId],
-        ...sheetData,
-        id: sheetId,
-      },
+    if (!this.spreadsheetData.sheets) {
+      this.spreadsheetData.sheets = {};
+    }
+
+    this.spreadsheetData.sheets[sheetId] = {
+      sheetName: this.spreadsheet.getSheetName(),
+      ...this.spreadsheetData.sheets?.[sheetId],
+      ...sheetData,
+      id: sheetId,
     };
   }
 
   deleteSheet(sheetId: SheetId) {
     const sheet = this.spreadsheetData.sheets?.[sheetId];
 
-    this.spreadsheet.hyperformula?.removeSheet(sheetId);
+    this.spreadsheet.hyperformula.removeSheet(sheetId);
 
     this.deleteFrozenCell(sheetId);
 
@@ -166,52 +167,58 @@ class Data {
     delete this.spreadsheetData.sheets?.[sheetId];
   }
 
-  setCell(simpleCellAddress: SimpleCellAddress, cell?: Omit<ICellData, 'id'>) {
+  setCell(
+    simpleCellAddress: SimpleCellAddress,
+    cell?: Omit<ICellData, 'id'>,
+    setHyperformula = true
+  ) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
-    this.setSheet(sheetId, {
-      cells: {
-        ...this.spreadsheetData.sheets?.[sheetId].cells,
-        [cellId]: cellId,
-      },
-    });
+    if (!this.spreadsheetData.cells) {
+      this.spreadsheetData.cells = {};
+    }
 
-    this.spreadsheetData.cells = {
-      ...this.spreadsheetData.cells,
-      [cellId]: {
-        ...this.spreadsheetData.cells?.[cellId],
-        ...cell,
-        id: cellId,
-      },
+    if (!this.spreadsheetData.sheets![sheetId].cells) {
+      this.spreadsheetData.sheets![sheetId].cells = {};
+    }
+
+    this.spreadsheetData.sheets![sheetId].cells![cellId] = cellId;
+
+    this.spreadsheetData.cells[cellId] = {
+      ...this.spreadsheetData.cells?.[cellId],
+      ...cell,
+      id: cellId,
     };
 
     try {
       if (
-        this.spreadsheet.hyperformula?.isItPossibleToSetCellContents(
+        this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
           simpleCellAddress
-        )
+        ) &&
+        setHyperformula
       ) {
-        this.spreadsheet.hyperformula?.setCellContents(
+        this.spreadsheet.hyperformula.setCellContents(
           simpleCellAddress,
           this.spreadsheetData.cells[cellId]?.value
         );
       }
     } catch (e) {
-      console.error(e);
+      console.error(e, simpleCellAddress);
     }
   }
 
-  deleteCell(simpleCellAddress: SimpleCellAddress) {
+  deleteCell(simpleCellAddress: SimpleCellAddress, setHyperformula = true) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
     if (
-      this.spreadsheet.hyperformula?.isItPossibleToSetCellContents(
+      this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
         simpleCellAddress
-      )
+      ) &&
+      setHyperformula
     ) {
-      this.spreadsheet.hyperformula?.setCellContents(
+      this.spreadsheet.hyperformula.setCellContents(
         simpleCellAddress,
         undefined
       );
@@ -227,23 +234,29 @@ class Data {
     const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
 
-    this.setSheet(sheetId, {
-      mergedCells: {
-        ...this.spreadsheetData.sheets?.[sheetId].mergedCells,
-        [mergedCellId]: mergedCellId,
-      },
-    });
+    if (!this.spreadsheetData.mergedCells) {
+      this.spreadsheetData.mergedCells = {};
+    }
 
-    this.spreadsheetData.mergedCells = merge<
-      object,
-      IMergedCellsData | undefined,
-      Partial<IMergedCellsData>
-    >({}, this.spreadsheetData.mergedCells, {
-      [mergedCellId]: {
-        ...mergedCell,
-        id: mergedCellId,
+    if (!this.spreadsheetData.sheets![sheetId].mergedCells) {
+      this.spreadsheetData.sheets![sheetId].mergedCells = {};
+    }
+
+    this.spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
+      mergedCellId;
+
+    this.spreadsheetData.mergedCells[mergedCellId] = {
+      ...this.spreadsheetData.mergedCells[mergedCellId],
+      row: {
+        ...this.spreadsheetData.mergedCells[mergedCellId]?.row,
+        ...mergedCell.row,
       },
-    });
+      col: {
+        ...this.spreadsheetData.mergedCells[mergedCellId]?.col,
+        ...mergedCell.col,
+      },
+      id: mergedCellId,
+    };
   }
 
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
@@ -255,17 +268,16 @@ class Data {
   }
 
   setFrozenCell(sheetId: SheetId, frozenCell?: Omit<IFrozenCellData, 'id'>) {
-    this.setSheet(sheetId, {
-      frozenCell: sheetId,
-    });
+    if (!this.spreadsheetData.frozenCells) {
+      this.spreadsheetData.frozenCells = {};
+    }
 
-    this.spreadsheetData.frozenCells = {
-      ...this.spreadsheetData.frozenCells,
-      [sheetId]: {
-        ...this.spreadsheetData.frozenCells?.[sheetId],
-        ...frozenCell,
-        id: sheetId,
-      },
+    this.spreadsheetData.sheets![sheetId].frozenCell = sheetId;
+
+    this.spreadsheetData.frozenCells[sheetId] = {
+      ...this.spreadsheetData.frozenCells?.[sheetId],
+      ...frozenCell,
+      id: sheetId,
     };
 
     const frozenCells = this.spreadsheetData.frozenCells?.[sheetId];
@@ -296,20 +308,21 @@ class Data {
     const sheetId = rowColAddress.sheet;
     const sheetRowColId = rowColAddress.toSheetRowColId();
 
-    this.setSheet(sheetId, {
-      [pluralType]: {
-        ...this.spreadsheetData.sheets?.[sheetId]?.[pluralType],
-        [sheetRowColId]: sheetRowColId,
-      },
-    });
+    if (!this.spreadsheetData[pluralType]) {
+      this.spreadsheetData[pluralType] = {};
+    }
 
-    this.spreadsheetData[pluralType] = {
-      ...this.spreadsheetData[pluralType],
-      [sheetRowColId]: {
-        ...this.spreadsheetData[pluralType]?.[sheetRowColId],
-        ...rowColData,
-        id: sheetRowColId,
-      },
+    if (!this.spreadsheetData.sheets![sheetId][pluralType]) {
+      this.spreadsheetData.sheets![sheetId][pluralType] = {};
+    }
+
+    this.spreadsheetData.sheets![sheetId][pluralType]![sheetRowColId] =
+      sheetRowColId;
+
+    this.spreadsheetData[pluralType]![sheetRowColId] = {
+      ...this.spreadsheetData[pluralType]![sheetRowColId],
+      ...rowColData,
+      id: sheetRowColId,
     };
   }
 

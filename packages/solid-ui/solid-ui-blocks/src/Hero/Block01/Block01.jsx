@@ -22,7 +22,7 @@ const HeroBlock01 = ({ content: { text = [], buttons, form }, reverse }) => (
       >
         <iframe
           title='Powersheet Demo'
-          src='http://192.168.1.102:6006/?path=/story/spreadsheet--default'
+          src='https://storybook.powersheet.io/?path=/story/spreadsheet--default'
           height={700}
           width='100%'
           style={{

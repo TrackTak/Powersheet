@@ -298,7 +298,7 @@ class StyleableCell extends Cell {
 
     this.group.moveToTop();
 
-    if (!this.getIsCellPartOfMerge()) {
+    if (!this.sheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
       const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
       const cellHeight = this.getClientRectWithoutStroke().height;
 

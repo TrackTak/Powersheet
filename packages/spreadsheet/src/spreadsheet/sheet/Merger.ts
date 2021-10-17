@@ -13,6 +13,12 @@ class Merger {
     this.associatedMergedCellAddressMap = new Map();
   }
 
+  getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
+    return this.sheet.merger.associatedMergedCellAddressMap.has(
+      simpleCellAddress.toCellId()
+    );
+  }
+
   setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const mergedCell =

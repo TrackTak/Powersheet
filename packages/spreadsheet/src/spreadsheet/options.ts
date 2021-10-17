@@ -4,9 +4,16 @@ export interface IRowColOptions {
   defaultSize: number;
 }
 
+export interface IPatternFormats {
+  plainText: string;
+  number: string;
+  percent: string;
+}
+
 export interface IOptions {
   width?: number;
   height?: number;
+  textPatternFormats: IPatternFormats;
   row: IRowColOptions;
   col: IRowColOptions;
   exportSpreadsheetName: string;

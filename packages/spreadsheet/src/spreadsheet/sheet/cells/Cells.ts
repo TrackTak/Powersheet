@@ -17,7 +17,6 @@ class Cells {
 
   private clearAll() {
     this.cellsMap.clear();
-    this.sheet.merger.associatedMergedCellAddressMap.clear();
   }
 
   destroyOutOfViewportItems() {
@@ -92,9 +91,34 @@ class Cells {
     return (forceDraw || !cellAlreadyExists) && hasCellData;
   };
 
+  private drawMergedCellIfAssociatedCellShowing(
+    simpleCellAddress: SimpleCellAddress
+  ) {
+    const rangeSimpleCellAddress =
+      this.sheet.merger.associatedMergedCellAddressMap.get(
+        simpleCellAddress.toCellId()
+      );
+
+    if (rangeSimpleCellAddress) {
+      const mergedCellId =
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
+      const mergedCell = this.cellsMap.get(mergedCellId);
+
+      if (!mergedCell) {
+        this.initializeCell(rangeSimpleCellAddress.topLeftSimpleCellAddress);
+      }
+    }
+  }
+
   drawCell(simpleCellAddress: SimpleCellAddress, forceDraw: boolean) {
+    this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
+
     if (!this.getShouldDraw(simpleCellAddress, forceDraw)) return;
 
+    this.initializeCell(simpleCellAddress);
+  }
+
+  private initializeCell(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const existingCell = this.sheet.cells.cellsMap.get(cellId);
 

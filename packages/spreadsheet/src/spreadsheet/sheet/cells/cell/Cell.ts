@@ -76,12 +76,6 @@ class Cell {
     this.rect.height(height);
   }
 
-  getIsCellPartOfMerge() {
-    return this.sheet.merger.associatedMergedCellAddressMap.has(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-    );
-  }
-
   getStickyGroupCellBelongsTo() {
     return this.sheet.getStickyGroupType(
       this.isOnFrozenRow(),

@@ -4,16 +4,18 @@ export interface IRowColOptions {
   defaultSize: number;
 }
 
-export interface IPatternFormats {
+// eslint-disable-next-line functional/no-mixed-type
+export interface ITextPatternFormats {
   plainText: string;
   number: string;
   percent: string;
+  [index: string]: string;
 }
 
 export interface IOptions {
   width?: number;
   height?: number;
-  textPatternFormats: IPatternFormats;
+  textPatternFormats: ITextPatternFormats;
   row: IRowColOptions;
   col: IRowColOptions;
   exportSpreadsheetName: string;
@@ -32,6 +34,11 @@ export const defaultOptions: IOptions = {
     amount: 26,
     minSize: 60,
     defaultSize: 100,
+  },
+  textPatternFormats: {
+    plainText: '',
+    number: '#,##0.00',
+    percent: '0.00%',
   },
   exportSpreadsheetName: 'Powersheet.xlsx',
   touchScrollSpeed: 1.2,

@@ -84,12 +84,6 @@ interface IAutosaveElement {
   text: HTMLDivElement;
 }
 
-export interface ITextFormatMap {
-  plainText: string;
-  number: string;
-  percent: string;
-}
-
 class Toolbar {
   toolbarEl!: HTMLDivElement;
   iconElementsMap!: Record<IconElementsName, IIconElements>;
@@ -99,7 +93,6 @@ class Toolbar {
   borderElements!: IBorderElements;
   fontSizeElements!: IFontSizeElements;
   textFormatElements!: ITextFormatElements;
-  textFormatMap!: ITextFormatMap;
   functionElements?: IFunctionElements;
   autosaveElement!: IAutosaveElement;
   toolbarActionGroups!: IToolbarActionGroups[];
@@ -120,18 +113,13 @@ class Toolbar {
     >;
     this.borderElements = {} as IBorderElements;
     this.textFormatElements = {} as ITextFormatElements;
-    this.textFormatMap = {
-      plainText: '',
-      number: '#,##0.00',
-      percent: '0.00%',
-    };
     this.functionElements = {} as IFunctionElements;
     this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
 
     const { dropdownContent: fontSizeDropdownContent, fontSizes } =
       createFontSizeContent();
     const { dropdownContent: textFormatDropdownContent, textFormats } =
-      createTextFormatContent(this.textFormatMap);
+      createTextFormatContent(this.spreadsheet.options.textPatternFormats);
 
     this.setDropdownButtonContent('fontSize', fontSizeDropdownContent, true);
     this.setDropdownButtonContent(
@@ -640,9 +628,12 @@ class Toolbar {
         break;
       }
       case 'textFormatPattern': {
-        const format = value as keyof ITextFormatMap;
+        const format = value;
 
-        setStyle<string>('textFormatPattern', this.textFormatMap[format]);
+        setStyle<string>(
+          'textFormatPattern',
+          this.spreadsheet.options.textPatternFormats[format]
+        );
         break;
       }
       case 'backgroundColor': {
@@ -1002,8 +993,8 @@ class Toolbar {
 
     let textFormat = 'plainText';
 
-    Object.keys(this.textFormatMap).forEach((key) => {
-      const value = this.textFormatMap[key as keyof ITextFormatMap];
+    Object.keys(this.spreadsheet.options.textPatternFormats).forEach((key) => {
+      const value = this.spreadsheet.options.textPatternFormats[key];
 
       if (textFormatPattern === value) {
         textFormat = key;

@@ -82,44 +82,37 @@ class Clipboard {
     );
 
     this.spreadsheet.pushToHistory(() => {
-      this.spreadsheet.hyperformula.batch(() => {
-        rangeData.forEach((rowData, rowIndex) => {
-          rowData.forEach((_, colIndex) => {
-            let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
+      rangeData.forEach((rowData, rowIndex) => {
+        rowData.forEach((_, colIndex) => {
+          let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
 
-            row += rowIndex % this.sourceRange!.height();
-            col += colIndex % this.sourceRange!.width();
+          row += rowIndex % this.sourceRange!.height();
+          col += colIndex % this.sourceRange!.width();
 
-            const soureSimpleCellAddress = new SimpleCellAddress(
-              this.sourceRange!.topLeftSimpleCellAddress.sheet,
-              row,
-              col
-            );
+          const soureSimpleCellAddress = new SimpleCellAddress(
+            this.sourceRange!.topLeftSimpleCellAddress.sheet,
+            row,
+            col
+          );
 
-            const targetSimpleCellAddress = new SimpleCellAddress(
-              targetRange.topLeftSimpleCellAddress.sheet,
-              targetRange.topLeftSimpleCellAddress.row + rowIndex,
-              targetRange.topLeftSimpleCellAddress.col + colIndex
-            );
+          const targetSimpleCellAddress = new SimpleCellAddress(
+            targetRange.topLeftSimpleCellAddress.sheet,
+            targetRange.topLeftSimpleCellAddress.row + rowIndex,
+            targetRange.topLeftSimpleCellAddress.col + colIndex
+          );
 
-            const data = this.spreadsheet.data.spreadsheetData;
-            const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
+          const data = this.spreadsheet.data.spreadsheetData;
+          const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
 
-            if (cell) {
-              this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
-            } else {
-              this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
-            }
+          if (cell) {
+            this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
+          } else {
+            this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
+          }
 
-            this.spreadsheet.hyperformula.setCellContents(
-              targetSimpleCellAddress,
-              cell?.value
-            );
-
-            if (this.isCut) {
-              this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
-            }
-          });
+          if (this.isCut) {
+            this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
+          }
         });
       });
     });

@@ -132,7 +132,7 @@ class RowCol {
 
   private shiftMergedCells(
     getValue: (mergedCell: number) => number,
-    comparer?: (a: string, b: string) => number
+    comparer: (a: string, b: string) => number
   ) {
     const { mergedCells } =
       this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
@@ -172,70 +172,83 @@ class RowCol {
   }
 
   delete(amount: number) {
+    const comparer = (x: string, y: string) =>
+      new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }).compare(x, y);
+
     this.spreadsheet.pushToHistory(() => {
       const { cells, ...rest } =
         this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
       const rowCols = rest[this.pluralType];
 
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
-      this.shiftMergedCells((mergedCell) => mergedCell - amount);
+      this.shiftMergedCells((mergedCell) => mergedCell - amount, comparer);
 
-      Object.keys(rowCols ?? {}).forEach((key) => {
-        const sheetRowColId = key as SheetRowColId;
-        const sheetRowColAddress =
-          RowColAddress.sheetRowColIdToAddress(sheetRowColId);
-        const rowColIndex = sheetRowColAddress.rowCol;
+      Object.keys(rowCols ?? {})
+        .sort(comparer)
+        .forEach((key) => {
+          const sheetRowColId = key as SheetRowColId;
+          const sheetRowColAddress =
+            RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+          const rowColIndex = sheetRowColAddress.rowCol;
 
-        if (rowColIndex < this.index) return;
+          if (rowColIndex < this.index) return;
 
-        if (rowColIndex > this.index) {
-          const rowCol =
-            this.spreadsheet.data.spreadsheetData[this.pluralType]![
-              sheetRowColId
-            ];
-          const newRowColIndex = rowColIndex - amount;
+          if (rowColIndex > this.index) {
+            const rowCol =
+              this.spreadsheet.data.spreadsheetData[this.pluralType]![
+                sheetRowColId
+              ];
+            const newRowColIndex = rowColIndex - amount;
 
-          this.spreadsheet.data.setRowCol(
+            this.spreadsheet.data.setRowCol(
+              this.pluralType,
+              new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
+              rowCol
+            );
+          }
+          this.spreadsheet.data.deleteRowCol(
             this.pluralType,
-            new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
-            rowCol
+            sheetRowColAddress
           );
-        }
-        this.spreadsheet.data.deleteRowCol(this.pluralType, sheetRowColAddress);
-      });
+        });
 
-      Object.keys(cells ?? {}).forEach((key) => {
-        const cellId = key as CellId;
-        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-        const newSimpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
-          this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
-          this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
-        );
+      Object.keys(cells ?? {})
+        .sort(comparer)
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
+            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
+          );
 
-        if (simpleCellAddress[this.type] < this.index) return;
+          if (simpleCellAddress[this.type] < this.index) return;
 
-        if (simpleCellAddress[this.type] > this.index) {
-          const cellId = simpleCellAddress.toCellId();
-          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+          if (simpleCellAddress[this.type] > this.index) {
+            const cellId = simpleCellAddress.toCellId();
+            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
 
-          this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
-        }
+            this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
+          }
 
-        this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+        });
 
-        if (this.isCol) {
-          this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
-            this.index,
-            amount,
-          ]);
-        } else {
-          this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
-            this.index,
-            amount,
-          ]);
-        }
-      });
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      }
     });
 
     this.spreadsheet.updateViewport();

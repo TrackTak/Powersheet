@@ -24,21 +24,18 @@ describe('Powersheet', () => {
     cy.get('#storybook-preview-iframe').iframe().toMatchImageSnapshot()
   }
 
+  const getCanvas = () =>
+    cy.get('#storybook-preview-iframe').iframe().find('canvas').first()
+
+  const getStorybookIFrame = () => cy.get('#storybook-preview-iframe').iframe()
+
   it('Inserts row correctly.', () => {
     cy.visit(STORY).then(() => {
       cy.wait(1000) // TODO find better way
 
-      const canvas = cy
-        .get('#storybook-preview-iframe')
-        .iframe()
-        .find('canvas')
-        .first()
-        .rightclick(COORDS.CELL_A1.x, COORDS.CELL_A1.y)
+      const canvas = getCanvas().rightclick(COORDS.CELL_A1.x, COORDS.CELL_A1.y)
 
-      cy.get('#storybook-preview-iframe')
-        .iframe()
-        .contains('Insert row')
-        .click()
+      getStorybookIFrame().contains('Insert row').click()
 
       compareSnapshots()
     })
@@ -48,16 +45,11 @@ describe('Powersheet', () => {
     cy.visit(STORY).then(() => {
       cy.wait(1000) // TODO find better way
 
-      const canvas = cy
-        .get('#storybook-preview-iframe')
-        .iframe()
-        .find('canvas')
-        .first()
+      const canvas = getCanvas()
         .trigger('mousedown', COORDS.CELL_A1.x, COORDS.CELL_A1.y)
         .trigger('mousemove', COORDS.CELL_C2.x, COORDS.CELL_C2.y)
 
-      cy.get('#storybook-preview-iframe')
-        .iframe()
+      getStorybookIFrame()
         .find(TOOLBAR_SELECTOR)
         .find(MERGE_BUTTON_SELECTOR)
         .click()

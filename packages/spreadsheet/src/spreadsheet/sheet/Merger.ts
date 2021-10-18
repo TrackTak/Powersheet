@@ -16,7 +16,7 @@ class Merger {
     );
   }
 
-  setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
+  *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const mergedCell =
       this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
@@ -37,12 +37,21 @@ class Merger {
             ci
           );
 
-          this.associatedMergedCellAddressMap.set(
-            associatedSimpleCellAddress.toCellId(),
-            rangeSimpleCellAddress
-          );
+          yield { associatedSimpleCellAddress, rangeSimpleCellAddress };
         }
       }
+    }
+  }
+
+  setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
+    for (const {
+      associatedSimpleCellAddress,
+      rangeSimpleCellAddress,
+    } of this.iterateAssociatedMergedCells(simpleCellAddress)) {
+      this.associatedMergedCellAddressMap.set(
+        associatedSimpleCellAddress.toCellId(),
+        rangeSimpleCellAddress
+      );
     }
   }
 

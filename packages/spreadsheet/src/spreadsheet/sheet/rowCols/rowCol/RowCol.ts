@@ -130,47 +130,6 @@ class RowCol {
     }
   }
 
-  private shiftMergedCells(
-    getValue: (mergedCell: number) => number,
-    comparer: (a: string, b: string) => number
-  ) {
-    const { mergedCells } =
-      this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
-
-    Object.keys(mergedCells ?? {})
-      .sort(comparer)
-      .forEach((key) => {
-        const topLeftCellId = key as CellId;
-        const mergedCell =
-          this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId];
-
-        const newMergedCell: IMergedCellData = {
-          id: mergedCell.id,
-          row: { ...mergedCell.row },
-          col: { ...mergedCell.col },
-        };
-
-        if (mergedCell[this.type].x >= this.index) {
-          newMergedCell[this.type].x = getValue(mergedCell[this.type].x);
-        }
-
-        if (mergedCell[this.type].y >= this.index) {
-          newMergedCell[this.type].y = getValue(mergedCell[this.type].y);
-        }
-
-        const simpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
-          newMergedCell.row.x,
-          newMergedCell.col.x
-        );
-
-        this.spreadsheet.data.deleteMergedCell(
-          SimpleCellAddress.cellIdToAddress(topLeftCellId)
-        );
-        this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell);
-      });
-  }
-
   delete(amount: number) {
     const comparer = (x: string, y: string) =>
       new Intl.Collator(undefined, {
@@ -179,12 +138,54 @@ class RowCol {
       }).compare(x, y);
 
     this.spreadsheet.pushToHistory(() => {
-      const { cells, ...rest } =
+      const { cells, mergedCells, ...rest } =
         this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
       const rowCols = rest[this.pluralType];
 
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
-      this.shiftMergedCells((mergedCell) => mergedCell - amount, comparer);
+
+      Object.keys(mergedCells ?? {})
+        .sort(comparer)
+        .forEach((key) => {
+          const topLeftCellId = key as CellId;
+          const mergedCell =
+            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId];
+
+          const newMergedCell: IMergedCellData = {
+            id: mergedCell.id,
+            row: { ...mergedCell.row },
+            col: { ...mergedCell.col },
+          };
+
+          if (
+            mergedCell[this.type].x === this.index &&
+            mergedCell[this.type].x === mergedCell[this.type].y
+          ) {
+            this.spreadsheet.data.deleteMergedCell(
+              SimpleCellAddress.cellIdToAddress(topLeftCellId)
+            );
+            return;
+          }
+
+          if (mergedCell[this.type].x > this.index) {
+            newMergedCell[this.type].x = mergedCell[this.type].x - amount;
+          }
+
+          if (mergedCell[this.type].y >= this.index) {
+            newMergedCell[this.type].y = mergedCell[this.type].y - amount;
+          }
+
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            newMergedCell.row.x,
+            newMergedCell.col.x
+          );
+
+          this.spreadsheet.data.deleteMergedCell(
+            SimpleCellAddress.cellIdToAddress(topLeftCellId)
+          );
+          this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell);
+        });
 
       Object.keys(rowCols ?? {})
         .sort(comparer)
@@ -262,12 +263,44 @@ class RowCol {
       }).compare(y, x);
 
     this.spreadsheet.pushToHistory(() => {
-      const { cells, ...rest } =
+      const { cells, mergedCells, ...rest } =
         this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
       const rowCols = rest[this.pluralType];
 
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
-      this.shiftMergedCells((mergedCell) => mergedCell + amount, comparer);
+
+      Object.keys(mergedCells ?? {})
+        .sort(comparer)
+        .forEach((key) => {
+          const topLeftCellId = key as CellId;
+          const mergedCell =
+            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId];
+
+          const newMergedCell: IMergedCellData = {
+            id: mergedCell.id,
+            row: { ...mergedCell.row },
+            col: { ...mergedCell.col },
+          };
+
+          if (mergedCell[this.type].x >= this.index) {
+            newMergedCell[this.type].x = mergedCell[this.type].x + amount;
+          }
+
+          if (mergedCell[this.type].y >= this.index) {
+            newMergedCell[this.type].y = mergedCell[this.type].y + amount;
+          }
+
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            newMergedCell.row.x,
+            newMergedCell.col.x
+          );
+
+          this.spreadsheet.data.deleteMergedCell(
+            SimpleCellAddress.cellIdToAddress(topLeftCellId)
+          );
+          this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell);
+        });
 
       Object.keys(rowCols ?? {})
         .sort(comparer)

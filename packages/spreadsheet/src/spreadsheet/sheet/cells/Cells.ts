@@ -98,16 +98,6 @@ class Cells {
     const rangeSimpleCellAddress =
       this.spreadsheet.merger.associatedMergedCellAddressMap.get(cellId);
     if (rangeSimpleCellAddress) {
-      const mergedCellExists = this.spreadsheet.data.getIsCellAMergedCell(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress
-      );
-
-      if (!mergedCellExists) {
-        this.spreadsheet.merger.associatedMergedCellAddressMap.delete(cellId);
-
-        return;
-      }
-
       const mergedCellId =
         rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
       const mergedCell = this.cellsMap.get(mergedCellId);

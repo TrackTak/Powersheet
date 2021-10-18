@@ -95,7 +95,7 @@ class Cells {
     simpleCellAddress: SimpleCellAddress
   ) {
     const rangeSimpleCellAddress =
-      this.sheet.merger.associatedMergedCellAddressMap.get(
+      this.spreadsheet.merger.associatedMergedCellAddressMap.get(
         simpleCellAddress.toCellId()
       );
 

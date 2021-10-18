@@ -19,6 +19,7 @@ import SimpleCellAddress, {
 } from './sheet/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
+import Merger from './sheet/Merger';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -41,6 +42,7 @@ class Spreadsheet {
   exporter?: Exporter;
   hyperformula: HyperFormula;
   clipboard: Clipboard;
+  merger: Merger;
   history: any;
   bottomBar?: BottomBar;
   activeSheetId = 0;
@@ -54,6 +56,7 @@ class Spreadsheet {
     this.styles = defaultStyles;
     this.eventEmitter = new PowersheetEmitter();
 
+    this.merger = new Merger(this);
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;

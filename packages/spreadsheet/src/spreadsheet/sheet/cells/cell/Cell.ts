@@ -41,11 +41,12 @@ class Cell {
 
     this.group.add(this.rect);
 
-    this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
+    this.spreadsheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 
-    const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
-      simpleCellAddress.toCellId()
-    );
+    const mergedCellAddress =
+      this.spreadsheet.merger.associatedMergedCellAddressMap.get(
+        simpleCellAddress.toCellId()
+      );
 
     if (mergedCellAddress) {
       this.setMergedCellProperties(mergedCellAddress);

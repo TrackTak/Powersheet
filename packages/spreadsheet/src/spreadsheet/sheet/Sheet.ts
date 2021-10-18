@@ -3,7 +3,6 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
-import Merger from './Merger';
 import RowCols, { RowColType } from './rowCols/RowCols';
 import CellEditor from './cellEditor/CellEditor';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
@@ -58,7 +57,6 @@ class Sheet {
   cols: RowCols;
   rows: RowCols;
   selector: Selector;
-  merger: Merger;
   cells: Cells;
   sheetDimensions: IDimensions;
   previousSheetClickTime = 0;
@@ -111,7 +109,6 @@ class Sheet {
     this.rows.updateViewportSize();
     this.cols.updateViewportSize();
 
-    this.merger = new Merger(this);
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
@@ -424,7 +421,7 @@ class Sheet {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
         const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
         const existingRangeSimpleCellAddress =
-          this.merger.associatedMergedCellAddressMap.get(
+          this.spreadsheet.merger.associatedMergedCellAddressMap.get(
             simpleCellAddress.toCellId()
           );
 

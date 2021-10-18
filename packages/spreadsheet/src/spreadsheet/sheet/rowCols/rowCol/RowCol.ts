@@ -9,6 +9,7 @@ import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
 import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
+import { IMergedCellData } from '../../Data';
 
 class RowCol {
   spreadsheet: Spreadsheet;
@@ -143,24 +144,30 @@ class RowCol {
         const mergedCell =
           this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId];
 
+        const newMergedCell: IMergedCellData = {
+          id: mergedCell.id,
+          row: { ...mergedCell.row },
+          col: { ...mergedCell.col },
+        };
+
         if (mergedCell[this.type].x >= this.index) {
-          mergedCell[this.type].x = getValue(mergedCell[this.type].x);
+          newMergedCell[this.type].x = getValue(mergedCell[this.type].x);
         }
 
         if (mergedCell[this.type].y >= this.index) {
-          mergedCell[this.type].y = getValue(mergedCell[this.type].y);
+          newMergedCell[this.type].y = getValue(mergedCell[this.type].y);
         }
 
         const simpleCellAddress = new SimpleCellAddress(
           this.sheet.sheetId,
-          mergedCell.row.x,
-          mergedCell.col.x
+          newMergedCell.row.x,
+          newMergedCell.col.x
         );
 
         this.spreadsheet.data.deleteMergedCell(
           SimpleCellAddress.cellIdToAddress(topLeftCellId)
         );
-        this.spreadsheet.data.setMergedCell(simpleCellAddress, mergedCell);
+        this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell);
       });
   }
 
@@ -217,27 +224,29 @@ class RowCol {
 
         this.spreadsheet.data.deleteCell(simpleCellAddress, false);
       });
-    });
 
-    if (this.isCol) {
-      this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
-        this.index,
-        amount,
-      ]);
-    } else {
-      this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
-        this.index,
-        amount,
-      ]);
-    }
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      }
+    });
 
     this.spreadsheet.updateViewport();
   }
 
   insert(amount: number) {
-    const comparer = (a: string, b: string) => {
-      return b.localeCompare(a);
-    };
+    const comparer = (x: string, y: string) =>
+      new Intl.Collator(undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }).compare(y, x);
 
     this.spreadsheet.pushToHistory(() => {
       const { cells, ...rest } =
@@ -292,19 +301,20 @@ class RowCol {
           this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
           this.spreadsheet.data.deleteCell(simpleCellAddress, false);
         });
+
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.addColumns(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.addRows(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      }
     });
 
-    if (this.isCol) {
-      this.spreadsheet.hyperformula.addColumns(this.sheet.sheetId, [
-        this.index,
-        amount,
-      ]);
-    } else {
-      this.spreadsheet.hyperformula.addRows(this.sheet.sheetId, [
-        this.index,
-        amount,
-      ]);
-    }
     this.spreadsheet.updateViewport();
   }
 

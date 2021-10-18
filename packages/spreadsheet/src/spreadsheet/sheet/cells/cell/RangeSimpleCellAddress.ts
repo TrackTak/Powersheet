@@ -99,9 +99,10 @@ class RangeSimpleCellAddress {
     }
 
     const filterOutAssociatedMergedCells = (cell: C) => {
-      const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
-        cell.simpleCellAddress.toCellId()
-      );
+      const mergedCellAddress =
+        sheet.spreadsheet.merger.associatedMergedCellAddressMap.get(
+          cell.simpleCellAddress.toCellId()
+        );
 
       if (
         !mergedCellAddress ||

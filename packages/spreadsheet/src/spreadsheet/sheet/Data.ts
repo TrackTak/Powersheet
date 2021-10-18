@@ -161,7 +161,11 @@ class Data {
     delete this.spreadsheetData.sheets?.[sheetId];
   }
 
-  setCell(simpleCellAddress: SimpleCellAddress, cell?: Omit<ICellData, 'id'>) {
+  setCell(
+    simpleCellAddress: SimpleCellAddress,
+    cell?: Omit<ICellData, 'id'>,
+    setHyperformula = true
+  ) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
@@ -185,7 +189,8 @@ class Data {
       if (
         this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
           simpleCellAddress
-        )
+        ) &&
+        setHyperformula
       ) {
         this.spreadsheet.hyperformula.setCellContents(
           simpleCellAddress,
@@ -197,7 +202,11 @@ class Data {
     }
   }
 
-  deleteCell(simpleCellAddress: SimpleCellAddress, deleteMergedCell = true) {
+  deleteCell(
+    simpleCellAddress: SimpleCellAddress,
+    setHyperformula = true,
+    deleteMergedCell = true
+  ) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
@@ -208,7 +217,8 @@ class Data {
     if (
       this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
         simpleCellAddress
-      )
+      ) &&
+      setHyperformula
     ) {
       this.spreadsheet.hyperformula.setCellContents(
         simpleCellAddress,

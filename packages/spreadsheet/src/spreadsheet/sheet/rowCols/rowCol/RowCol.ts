@@ -219,10 +219,22 @@ class RowCol {
           const cellId = simpleCellAddress.toCellId();
           const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
 
-          this.spreadsheet.data.setCell(newSimpleCellAddress, cell);
+          this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
         }
 
-        this.spreadsheet.data.deleteCell(simpleCellAddress, false);
+        this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+
+        if (this.isCol) {
+          this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
+            this.index,
+            amount,
+          ]);
+        } else {
+          this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+            this.index,
+            amount,
+          ]);
+        }
       });
     });
 
@@ -286,9 +298,21 @@ class RowCol {
 
           const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
 
-          this.spreadsheet.data.setCell(newSimpleCellAddress, cell);
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false);
+          this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
         });
+
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.addColumns(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.addRows(this.sheet.sheetId, [
+          this.index,
+          amount,
+        ]);
+      }
     });
 
     this.spreadsheet.updateViewport();

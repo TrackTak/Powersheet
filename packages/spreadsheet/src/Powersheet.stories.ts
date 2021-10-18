@@ -1,10 +1,11 @@
+import { CellId } from './spreadsheet/sheet/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData } from './spreadsheet/sheet/Data';
+import { ISpreadsheetData, ICellData } from './spreadsheet/sheet/Data';
 import { IOptions } from './spreadsheet/options';
 import { IStyles } from './spreadsheet/styles';
 import { NestedPartial } from './spreadsheet/types';
@@ -591,4 +592,54 @@ export const RealExample = Template.bind({});
 
 RealExample.args = {
   data: realExampleData,
+};
+
+const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
+  const data = args.data;
+
+  const cell: Partial<ICellData> = {
+    value: 'Performance test 0.05',
+    comment: 'Performance of the each cell',
+    borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+    backgroundColor: 'purple',
+    fontColor: 'white',
+    fontSize: 13,
+    textWrap: 'wrap',
+    underline: true,
+    strikeThrough: true,
+    bold: true,
+    italic: true,
+    horizontalTextAlign: 'right',
+    verticalTextAlign: 'bottom',
+  };
+
+  for (let rowIndex = 0; rowIndex <= defaultOptions.row.amount; rowIndex++) {
+    for (let colIndex = 0; colIndex <= defaultOptions.col.amount; colIndex++) {
+      const cellId = `0_${rowIndex}_${colIndex}` as CellId;
+
+      data!.cells![cellId] = {
+        id: cellId,
+        ...cell,
+      };
+
+      data!.sheets![0]!.cells![cellId] = cellId;
+    }
+  }
+
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
+};
+
+export const SpreadsheetPerformance = SpreadsheetPerformanceTemplate.bind({});
+
+SpreadsheetPerformance.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'Spreadsheet Performance',
+        cells: {},
+      },
+    },
+    cells: {},
+  },
 };

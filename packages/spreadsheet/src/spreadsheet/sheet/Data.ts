@@ -1,7 +1,6 @@
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
-import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import { RowColId, RowColsType } from './rowCols/RowCols';
@@ -162,11 +161,7 @@ class Data {
     delete this.spreadsheetData.sheets?.[sheetId];
   }
 
-  setCell(
-    simpleCellAddress: SimpleCellAddress,
-    cell?: Omit<ICellData, 'id'>,
-    setHyperformula = true
-  ) {
+  setCell(simpleCellAddress: SimpleCellAddress, cell?: Omit<ICellData, 'id'>) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
@@ -190,8 +185,7 @@ class Data {
       if (
         this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
           simpleCellAddress
-        ) &&
-        setHyperformula
+        )
       ) {
         this.spreadsheet.hyperformula.setCellContents(
           simpleCellAddress,
@@ -203,17 +197,18 @@ class Data {
     }
   }
 
-  deleteCell(simpleCellAddress: SimpleCellAddress, setHyperformula = true) {
+  deleteCell(simpleCellAddress: SimpleCellAddress, deleteMergedCell = true) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
 
-    this.deleteMergedCell(simpleCellAddress);
+    if (deleteMergedCell) {
+      this.deleteMergedCell(simpleCellAddress);
+    }
 
     if (
       this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
         simpleCellAddress
-      ) &&
-      setHyperformula
+      )
     ) {
       this.spreadsheet.hyperformula.setCellContents(
         simpleCellAddress,
@@ -259,32 +254,6 @@ class Data {
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
     const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
-
-    const mergedCell =
-      this.spreadsheet.data.spreadsheetData.mergedCells?.[mergedCellId];
-
-    if (mergedCell) {
-      const { row, col } = mergedCell;
-
-      const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-        new SimpleCellAddress(sheetId, row.x, col.x),
-        new SimpleCellAddress(sheetId, row.y, col.y)
-      );
-
-      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-          const associatedSimpleCellAddress = new SimpleCellAddress(
-            sheetId,
-            ri,
-            ci
-          );
-
-          this.spreadsheet.merger.associatedMergedCellAddressMap.delete(
-            associatedSimpleCellAddress.toCellId()
-          );
-        }
-      }
-    }
 
     delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId];
     delete this.spreadsheetData.mergedCells?.[mergedCellId];

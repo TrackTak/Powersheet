@@ -187,7 +187,6 @@ class Merger {
       sheet.getMinMaxRangeSimpleCellAddress(selectedCells);
 
     this.spreadsheet.pushToHistory(() => {
-      this.removeMergedCells(rangeSimpleCellAddress);
       this.addMergedCells(rangeSimpleCellAddress);
     });
   }

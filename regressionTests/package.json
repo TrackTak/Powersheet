@@ -1,0 +1,17 @@
+{
+  "name": "regression-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx cypress open"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^8.6.0",
+    "cypress-plugin-snapshots": "^1.4.4",
+    "js-base64": "^2.5.2"
+  }
+}

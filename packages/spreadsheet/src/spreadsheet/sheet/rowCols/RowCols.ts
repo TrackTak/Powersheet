@@ -34,6 +34,7 @@ class RowCols {
   spreadsheet: Spreadsheet;
   resizer: Resizer;
   pluralType: RowColsType;
+  totalPreviousCustomSizes: Map<RowColId, number> = new Map();
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -78,24 +79,23 @@ class RowCols {
   getAxis(index: number) {
     const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
+    const rowCols = data.sheets?.[this.sheet.sheetId][this.pluralType];
 
-    let totalPreviousCustomSizeDifferences =
-      this.scrollBar.totalPreviousCustomSizeDifferences;
+    let totalPreviousCustomSizeDifferences = 0;
 
-    for (let i = this.scrollBar.sheetViewportPosition.x; i < index; i++) {
-      const sheetRowColId = new RowColAddress(
-        this.sheet.sheetId,
-        i
-      ).toSheetRowColId();
-      const size = data[this.pluralType]?.[sheetRowColId]?.size;
+    for (const key in rowCols) {
+      const sheetRowColId = key as SheetRowColId;
+      const sheetRowColAddress =
+        RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+      const rowCol = data[this.pluralType]![sheetRowColId];
 
-      if (size) {
-        totalPreviousCustomSizeDifferences += size - defaultSize;
-      }
+      if (sheetRowColAddress.rowCol >= index) break;
+
+      totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize;
     }
 
     const axis =
-      this.spreadsheet.options[this.type].defaultSize * index +
+      defaultSize * index +
       totalPreviousCustomSizeDifferences +
       this.sheet.getViewportVector()[this.functions.axis];
 
@@ -279,30 +279,29 @@ class RowCols {
 
   draw(index: number, forceDraw: boolean) {
     if (!this.getShouldDraw(index, forceDraw)) return;
+    if (index > this.spreadsheet.options[this.type].amount) return;
 
-    if (index < this.spreadsheet.options[this.type].amount) {
-      const existingRowCol = this.rowColMap.get(index);
+    const existingRowCol = this.rowColMap.get(index);
 
-      existingRowCol?.destroy();
+    existingRowCol?.destroy();
 
-      const rowCol = new RowCol(this, index);
+    const rowCol = new RowCol(this, index);
 
-      if (this.getIsLastFrozen(index)) {
-        rowCol.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
+    if (this.getIsLastFrozen(index)) {
+      rowCol.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
 
-        this.frozenLine = rowCol.gridLine;
+      this.frozenLine = rowCol.gridLine;
 
-        this.frozenLine[this.functions.axis](
-          this.getAxis(index) +
-            this.getSize(index) -
-            this.sheet.getViewportVector()[this.functions.axis]
-        );
+      this.frozenLine[this.functions.axis](
+        this.getAxis(index) +
+          this.getSize(index) -
+          this.sheet.getViewportVector()[this.functions.axis]
+      );
 
-        this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
-      }
-
-      this.rowColMap.set(index, rowCol);
+      this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
     }
+
+    this.rowColMap.set(index, rowCol);
   }
 }
 

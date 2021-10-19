@@ -94,11 +94,9 @@ class Cells {
   private drawMergedCellIfAssociatedCellShowing(
     simpleCellAddress: SimpleCellAddress
   ) {
+    const cellId = simpleCellAddress.toCellId();
     const rangeSimpleCellAddress =
-      this.sheet.merger.associatedMergedCellAddressMap.get(
-        simpleCellAddress.toCellId()
-      );
-
+      this.spreadsheet.merger.associatedMergedCellAddressMap.get(cellId);
     if (rangeSimpleCellAddress) {
       const mergedCellId =
         rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();

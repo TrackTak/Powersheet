@@ -55,6 +55,19 @@ class Merger {
     }
   }
 
+  deleteAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
+    for (const {
+      associatedSimpleCellAddress,
+    } of this.spreadsheet.merger.iterateAssociatedMergedCells(
+      simpleCellAddress
+    )) {
+      this.spreadsheet.merger.associatedMergedCellAddressMap.delete(
+        associatedSimpleCellAddress.toCellId()
+      );
+    }
+
+  }
+
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const sheet = rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet;
     const mergedCellId =

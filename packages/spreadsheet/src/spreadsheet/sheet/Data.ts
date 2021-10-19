@@ -268,21 +268,15 @@ class Data {
     ) {
       this.deleteMergedCell(simpleCellAddress);
     }
+
+    this.spreadsheet.merger.setAssociatedMergedCellIds(simpleCellAddress);
   }
 
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
     const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
 
-    for (const {
-      associatedSimpleCellAddress,
-    } of this.spreadsheet.merger.iterateAssociatedMergedCells(
-      simpleCellAddress
-    )) {
-      this.spreadsheet.merger.associatedMergedCellAddressMap.delete(
-        associatedSimpleCellAddress.toCellId()
-      );
-    }
+    this.spreadsheet.merger.deleteAssociatedMergedCellIds(simpleCellAddress);
 
     delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId];
     delete this.spreadsheetData.mergedCells?.[mergedCellId];

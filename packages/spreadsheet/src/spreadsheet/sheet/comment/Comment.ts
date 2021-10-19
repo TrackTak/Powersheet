@@ -61,11 +61,13 @@ class Comment {
   };
 
   successButtonOnClick = () => {
-    const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+    this.spreadsheet.pushToHistory(() => {
+      const simpleCellAddress =
+        this.sheet.selector.selectedCell!.simpleCellAddress;
 
-    this.spreadsheet.data.setCell(simpleCellAddress, {
-      comment: this.textarea.value,
+      this.spreadsheet.data.setCell(simpleCellAddress, {
+        comment: this.textarea.value,
+      });
     });
 
     this.spreadsheet.updateViewport();

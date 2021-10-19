@@ -201,15 +201,9 @@ class CellEditor {
 
   showCellTooltip = () => {
     if (this.currentCell) {
-      const { row, col } = this.currentCell.simpleCellAddress;
-      const rowText = this.sheet.rows.rowColMap
-        .get(row)!
-        .getHeaderTextContent();
-      const colText = this.sheet.cols.rowColMap
-        .get(col)!
-        .getHeaderTextContent();
+      const simpleCellAddress = this.currentCell.simpleCellAddress;
 
-      this.cellTooltip.setContent(`${colText}${rowText}`);
+      this.cellTooltip.setContent(simpleCellAddress.addressToString());
       this.cellTooltip.show();
     }
   };

@@ -105,7 +105,12 @@ class Clipboard {
           const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
 
           if (cell) {
-            this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
+            this.spreadsheet.data.setCell(
+              targetSimpleCellAddress,
+              cell,
+              true,
+              true
+            );
           } else {
             this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
           }

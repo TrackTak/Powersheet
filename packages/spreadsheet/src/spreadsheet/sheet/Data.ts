@@ -170,7 +170,8 @@ class Data {
   setCell(
     simpleCellAddress: SimpleCellAddress,
     cell?: Omit<ICellData, 'id'>,
-    setHyperformula = true
+    setHyperformula = true,
+    overwriteCell = false
   ) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
@@ -186,7 +187,7 @@ class Data {
     this.spreadsheetData.sheets![sheetId].cells![cellId] = cellId;
 
     this.spreadsheetData.cells[cellId] = {
-      ...this.spreadsheetData.cells?.[cellId],
+      ...(overwriteCell ? {} : this.spreadsheetData.cells?.[cellId]),
       ...cell,
       id: cellId,
     };

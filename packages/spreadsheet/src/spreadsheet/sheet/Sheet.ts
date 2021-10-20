@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { IRect, Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
@@ -13,7 +13,7 @@ import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import { DebouncedFunc, throttle } from 'lodash';
+import { debounce, DebouncedFunc, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
@@ -67,7 +67,7 @@ class Sheet {
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
-  private throttledResize: DebouncedFunc<(e: Event) => void>;
+  private debouncedResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
   >;
@@ -86,7 +86,7 @@ class Sheet {
 
     this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
 
-    this.throttledResize = throttle(this.onResize, 50);
+    this.debouncedResize = debounce(this.onResize, 50);
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
 
     this.sheet = new Rect({
@@ -133,7 +133,7 @@ class Sheet {
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
 
-    window.addEventListener('resize', this.throttledResize);
+    window.addEventListener('resize', this.debouncedResize);
 
     this.updateSheetDimensions();
 
@@ -546,7 +546,7 @@ class Sheet {
 
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
 
-    window.removeEventListener('resize', this.throttledResize);
+    window.removeEventListener('resize', this.debouncedResize);
 
     this.sheetEl.remove();
     this.stage.destroy();

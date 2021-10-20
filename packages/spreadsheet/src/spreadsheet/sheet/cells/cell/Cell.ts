@@ -37,9 +37,6 @@ class Cell {
   }
 
   private updateCell() {
-    this.rangeSimpleCellAddress.topLeftSimpleCellAddress =
-      this.simpleCellAddress;
-
     const { row, col } = this.simpleCellAddress;
 
     const position = {

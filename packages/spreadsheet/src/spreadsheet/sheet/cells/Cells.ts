@@ -25,10 +25,7 @@ class Cells {
   }
 
   setCachedCells() {
-    this.cachedCellsGroupsQueue.forEach((cachedCellGroup) =>
-      cachedCellGroup.destroy()
-    );
-    this.cachedCellsGroupsQueue = [];
+    const simpleCellAddressesForCache: SimpleCellAddress[] = [];
 
     for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
       for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
@@ -38,20 +35,41 @@ class Cells {
           ci
         );
 
-        const cachedCellGroup = new Group();
-        const rect = this.sheet.cells.cachedCellRect.clone();
-
-        cachedCellGroup.add(rect);
-
-        this.cachedCellsGroupsQueue.push(cachedCellGroup);
-
-        const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
-
-        this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
-
-        this.setStyleableCells(simpleCellAddress);
+        simpleCellAddressesForCache.push(simpleCellAddress);
       }
     }
+
+    const cellsToDestroy = Array.from(this.cellsMap).filter(([cellId]) => {
+      return simpleCellAddressesForCache.every(
+        (simpleCellAddress) => simpleCellAddress.toCellId() !== cellId
+      );
+    });
+
+    cellsToDestroy.forEach(([cellId, cell]) => {
+      cell.destroy();
+      this.cellsMap.delete(cellId);
+    });
+
+    simpleCellAddressesForCache.forEach((simpleCellAddress) => {
+      const cellId = simpleCellAddress.toCellId();
+
+      if (this.cellsMap.has(cellId)) {
+        return;
+      }
+
+      const cachedCellGroup = new Group();
+      const rect = this.sheet.cells.cachedCellRect.clone();
+
+      cachedCellGroup.add(rect);
+
+      this.cachedCellsGroupsQueue.push(cachedCellGroup);
+
+      const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
+
+      this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
+
+      this.setStyleableCells(simpleCellAddress);
+    });
   }
 
   getStickyGroupCellBelongsTo(simpleCellAddress: SimpleCellAddress) {

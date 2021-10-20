@@ -598,19 +598,19 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
   const data = args.data;
 
   const cell: Partial<ICellData> = {
-    value: 'Performance test 0.05',
-    comment: 'Performance of the each cell',
-    borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+    // value: 'Performance test 0.05',
+    // comment: 'Performance of the each cell',
+    // borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
     backgroundColor: 'purple',
-    fontColor: 'white',
-    fontSize: 13,
-    textWrap: 'wrap',
-    underline: true,
-    strikeThrough: true,
-    bold: true,
-    italic: true,
-    horizontalTextAlign: 'right',
-    verticalTextAlign: 'bottom',
+    // fontColor: 'white',
+    // fontSize: 13,
+    // textWrap: 'wrap',
+    // underline: true,
+    // strikeThrough: true,
+    // bold: true,
+    // italic: true,
+    // horizontalTextAlign: 'right',
+    // verticalTextAlign: 'bottom',
   };
 
   for (let rowIndex = 0; rowIndex <= defaultOptions.row.amount; rowIndex++) {

@@ -6,10 +6,10 @@ import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 
 class Cell {
-  group: Group;
-  rect: Rect;
   spreadsheet: Spreadsheet;
   rangeSimpleCellAddress: RangeSimpleCellAddress;
+  group: Group;
+  rect: Rect;
 
   constructor(
     public sheet: Sheet,
@@ -24,38 +24,44 @@ class Cell {
     );
 
     this.group = new Group();
-
-    this.rect = new Rect(this.spreadsheet.styles.cell.rect);
-
-    const { row, col } = this.rangeSimpleCellAddress.topLeftSimpleCellAddress;
-
-    this.group.x(
-      this.sheet.cols.getAxis(col) - this.sheet.getViewportVector().x
-    );
-    this.group.y(
-      this.sheet.rows.getAxis(row) - this.sheet.getViewportVector().y
-    );
-
-    this.rect.width(this.sheet.cols.getSize(col));
-    this.rect.height(this.sheet.rows.getSize(row));
-
+    this.rect = this.sheet.cells.cachedCellRect.clone();
     this.group.add(this.rect);
 
-    this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
-
-    const mergedCellAddress = sheet.merger.associatedMergedCellAddressMap.get(
-      simpleCellAddress.toCellId()
-    );
-
-    if (mergedCellAddress) {
-      this.setMergedCellProperties(mergedCellAddress);
-    }
+    this.updateCell(simpleCellAddress);
   }
 
-  private setMergedCellProperties(
-    rangeSimpleCellAddress: RangeSimpleCellAddress
-  ) {
-    this.rangeSimpleCellAddress = rangeSimpleCellAddress;
+  protected updateCell(simpleCellAddress: SimpleCellAddress) {
+    this.simpleCellAddress = simpleCellAddress;
+    this.rangeSimpleCellAddress.topLeftSimpleCellAddress = simpleCellAddress;
+
+    const { row, col } = simpleCellAddress;
+
+    const position = {
+      x: this.sheet.cols.getAxis(col) - this.sheet.getViewportVector().x,
+      y: this.sheet.rows.getAxis(row) - this.sheet.getViewportVector().y,
+    };
+
+    this.rect.size({
+      width: this.sheet.cols.getSize(col),
+      height: this.sheet.rows.getSize(row),
+    });
+
+    this.group.position(position);
+
+    this.setMergedCellPropertiesIfNeeded();
+  }
+
+  private setMergedCellPropertiesIfNeeded() {
+    this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
+
+    const mergedCellAddress =
+      this.sheet.merger.associatedMergedCellAddressMap.get(
+        this.simpleCellAddress.toCellId()
+      );
+
+    if (!mergedCellAddress) return;
+
+    this.rangeSimpleCellAddress = mergedCellAddress;
 
     let width = 0;
     let height = 0;

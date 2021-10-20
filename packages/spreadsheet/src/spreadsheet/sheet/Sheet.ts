@@ -1,7 +1,7 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
-import { Vector2d } from 'konva/lib/types';
+import { IRect, Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
 import Merger from './Merger';
 import RowCols, { RowColType } from './rowCols/RowCols';
@@ -19,6 +19,7 @@ import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
+import { Util } from 'konva/lib/Util';
 
 export interface IDimensions {
   width: number;
@@ -136,19 +137,68 @@ class Sheet {
 
     this.updateSheetDimensions();
 
-    const sheetConfig: RectConfig = {
-      width: this.cols.totalSize,
-      height: this.rows.totalSize,
-      x: this.getViewportVector().x,
-      y: this.getViewportVector().y,
-    };
-
-    this.sheet.setAttrs(sheetConfig);
+    this.sheet.setPosition(this.getViewportVector());
 
     this.cols.scrollBar.setYIndex();
     this.rows.scrollBar.setYIndex();
 
-    this.spreadsheet.updateViewport();
+    scrollGroups.forEach((key) => {
+      const type = key as keyof IScrollGroups;
+
+      const group = new Group();
+
+      const sheetGroup = new Group({
+        ...this.getViewportVector(),
+        listening: true,
+        type: 'sheet',
+      });
+
+      const cellGroup = new Group({
+        type: 'cell',
+      });
+
+      const rowColGroup = new Group({
+        type: 'rowCol',
+      });
+
+      const headerGroup = new Group({
+        listening: true,
+        type: 'header',
+      });
+
+      const frozenBackground = new Rect({
+        type: 'frozenBackground',
+        fill: 'white',
+        visible: false,
+      });
+
+      if (key !== 'main') {
+        sheetGroup.add(frozenBackground);
+      }
+
+      // The order added here matters as it determines the zIndex for konva
+      sheetGroup.add(rowColGroup, cellGroup);
+      group.add(sheetGroup, headerGroup);
+
+      this.layer.add(group);
+
+      this.sheet.moveToTop();
+
+      this.scrollGroups = {
+        ...this.scrollGroups,
+        [type]: {
+          ...this.scrollGroups?.[type],
+          group,
+          sheetGroup,
+          cellGroup,
+          rowColGroup,
+          headerGroup,
+          frozenBackground,
+        },
+      };
+    });
+
+    this.drawTopLeftOffsetRect();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
@@ -157,8 +207,9 @@ class Sheet {
   }
 
   updateSize() {
-    this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
-    this.stage.height(this.spreadsheet.sheetsEl.offsetHeight);
+    // 16 is scrollbar
+    this.stage.width(this.spreadsheet.sheetsEl.offsetWidth - 16);
+    this.stage.height(this.spreadsheet.sheetsEl.offsetHeight - 16);
 
     this.sheet.width(this.stage.width() - this.getViewportVector().x);
     this.sheet.height(this.stage.height() - this.getViewportVector().y);
@@ -173,7 +224,12 @@ class Sheet {
     context.reset();
     context.translate(0.5, 0.5);
 
+    this.cells.setCachedCells();
     this.spreadsheet.updateViewport();
+  }
+
+  isClientRectOnSheet(rect: IRect) {
+    return Util.haveIntersection(this.sheet.getClientRect(), rect);
   }
 
   onResize = () => {
@@ -374,8 +430,8 @@ class Sheet {
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {
     return !shape.isClientRectOnScreen({
-      x: -(this.getViewportVector().x + (margin?.x ?? 0)),
-      y: -(this.getViewportVector().y + (margin?.y ?? 0)),
+      x: -(this.getViewportVector().x + (margin?.x ?? 0.001)),
+      y: -(this.getViewportVector().y + (margin?.y ?? 0.001)),
     });
   }
 
@@ -548,74 +604,7 @@ class Sheet {
     }
   }
 
-  updateScrollGroups() {
-    scrollGroups.forEach((key) => {
-      const type = key as keyof IScrollGroups;
-
-      const existingGroup = this.scrollGroups?.[type]?.group;
-
-      existingGroup?.destroy();
-
-      const group = new Group({
-        x: existingGroup?.x(),
-        y: existingGroup?.y(),
-      });
-
-      const sheetGroup = new Group({
-        ...this.getViewportVector(),
-        listening: true,
-        type: 'sheet',
-      });
-
-      const cellGroup = new Group({
-        type: 'cell',
-      });
-
-      const rowColGroup = new Group({
-        type: 'rowCol',
-      });
-
-      const headerGroup = new Group({
-        listening: true,
-        type: 'header',
-      });
-
-      const frozenBackground = new Rect({
-        type: 'frozenBackground',
-        fill: 'white',
-        visible: false,
-      });
-
-      if (key !== 'main') {
-        sheetGroup.add(frozenBackground);
-      }
-
-      // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(rowColGroup, cellGroup);
-      group.add(sheetGroup, headerGroup);
-
-      this.layer.add(group);
-
-      this.sheet.moveToTop();
-
-      this.scrollGroups = {
-        ...this.scrollGroups,
-        [type]: {
-          ...this.scrollGroups?.[type],
-          group,
-          sheetGroup,
-          cellGroup,
-          rowColGroup,
-          headerGroup,
-          frozenBackground,
-        },
-      };
-    });
-  }
-
   updateViewport() {
-    this.updateScrollGroups();
-    this.drawTopLeftOffsetRect();
     this.updateSheetDimensions();
     this.rows.updateViewport();
     this.cols.updateViewport();

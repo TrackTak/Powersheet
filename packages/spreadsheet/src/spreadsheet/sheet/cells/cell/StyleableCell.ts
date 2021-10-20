@@ -27,7 +27,11 @@ class StyleableCell extends Cell {
   ) {
     super(sheet, simpleCellAddress);
 
-    this.draw();
+    this.updateCell(simpleCellAddress);
+
+    const stickyGroup = this.getStickyGroupCellBelongsTo();
+
+    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
   }
 
   private getBorder(type: BorderStyle) {
@@ -36,6 +40,12 @@ class StyleableCell extends Cell {
     this.borders.set(type, border);
 
     return border;
+  }
+
+  updateCell(simpleCellAddress: SimpleCellAddress) {
+    super.updateCell(simpleCellAddress);
+
+    this.setStyles();
   }
 
   setBottomBorder() {
@@ -193,7 +203,7 @@ class StyleableCell extends Cell {
     this.group.add(this.text);
   }
 
-  draw() {
+  setStyles() {
     const cell =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -291,10 +301,6 @@ class StyleableCell extends Cell {
         }
       });
     }
-
-    const stickyGroup = this.getStickyGroupCellBelongsTo();
-
-    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
 
     this.group.moveToTop();
 

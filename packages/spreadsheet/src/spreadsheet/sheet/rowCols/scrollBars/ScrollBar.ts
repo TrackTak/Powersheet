@@ -63,6 +63,13 @@ class ScrollBar {
     this.setScrollSize();
   }
 
+  getIsScrollingNormal() {
+    return (
+      this.sheetViewportPosition.x >= this.previousSheetViewportPosition.x &&
+      this.sheetViewportPosition.y >= this.previousSheetViewportPosition.y
+    );
+  }
+
   setScrollSize() {
     const scrollSize = this.sheet.sheetDimensions[this.functions.size];
     //   this.sheet.getViewportVector()[this.functions.axis];
@@ -98,14 +105,16 @@ class ScrollBar {
 
   private getYIndex() {
     const xIndex = this.sheetViewportPosition.x;
-    const stageSize = this.sheet.stage[this.functions.size]();
+    const stageSize =
+      this.sheet.stage[this.functions.size]() -
+      this.sheet.getViewportVector()[this.functions.axis];
 
     const yIndex = this.rowCols.calculateSheetViewportEndPosition(
       stageSize,
       xIndex
     );
 
-    return yIndex - 1;
+    return yIndex;
   }
 
   setYIndex() {

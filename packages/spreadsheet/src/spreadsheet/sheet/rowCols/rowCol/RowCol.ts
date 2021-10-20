@@ -4,7 +4,6 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
-import { centerRectTwoInRectOne } from '../../../utils';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
@@ -12,10 +11,8 @@ import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 
 class RowCol {
   spreadsheet: Spreadsheet;
-  headerGroup: Group;
   headerRect: Rect;
   headerText: Text;
-  gridLine: Line;
   resizeLine: Line;
   xFrozenLine?: Line;
   yFrozenLine?: Line;
@@ -29,7 +26,12 @@ class RowCol {
   oppositeFunctions: IRowColFunctions;
   rowColAddress: RowColAddress;
 
-  constructor(public rowCols: RowCols, public index: number) {
+  constructor(
+    public rowCols: RowCols,
+    public index: number,
+    public headerGroup: Group,
+    public gridLine: Line
+  ) {
     this.rowCols = rowCols;
     this.index = index;
     this.sheet = rowCols.sheet;
@@ -40,55 +42,27 @@ class RowCol {
     this.oppositeType = rowCols.oppositeType;
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
+    this.headerRect = this.headerGroup.findOne('Rect');
+    this.headerText = this.headerGroup.findOne('Text');
+    this.resizeLine = this.headerGroup.findOne('Line');
+    this.gridLine = gridLine;
     this.rowColAddress = new RowColAddress(this.sheet.sheetId, this.index);
 
-    this.headerGroup = new Group({
-      [this.functions.axis]: this.rowCols.getAxis(this.index),
-    });
-    this.headerRect = new Rect({
-      ...this.spreadsheet.styles[this.type].headerRect,
-      [this.functions.size]: this.rowCols.getSize(this.index),
-    });
-    this.headerText = new Text({
-      ...this.spreadsheet.styles[this.type].headerText,
-      text: this.getHeaderTextContent(),
-    });
-    const headerTextMidPoints = centerRectTwoInRectOne(
-      this.headerRect.getClientRect(),
-      this.headerText.getClientRect()
-    );
-
-    this.headerText.x(headerTextMidPoints.x);
-    this.headerText.y(headerTextMidPoints.y);
-
-    this.gridLine = new Line({
-      ...this.spreadsheet.styles[this.type].gridLine,
-      [this.functions.axis]:
-        this.rowCols.getAxis(this.index) +
+    this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index));
+    this.headerRect[this.functions.size](this.rowCols.getSize(this.index));
+    this.headerText.text(this.getHeaderTextContent());
+    this.gridLine[this.functions.axis](
+      this.rowCols.getAxis(this.index) +
         this.rowCols.getSize(this.index) -
-        this.sheet.getViewportVector()[this.functions.axis],
-      points: this.getLinePoints(this.getSheetSize()),
-    });
-
-    this.resizeLine = new Line({
-      ...this.spreadsheet.styles[this.type].resizeLine,
-      [this.functions.axis]: this.rowCols.getSize(this.index),
-      points: this.isCol
-        ? [0, 0, 0, this.sheet.getViewportVector().y]
-        : [0, 0, this.sheet.getViewportVector().x, 0],
-    });
-
-    this.headerGroup.add(this.headerRect, this.headerText, this.resizeLine);
+        this.sheet.getViewportVector()[this.functions.axis]
+    );
+    this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index));
 
     this.draw();
 
     this.resizeLine.on('mouseover', this.resizeLineOnMouseOver);
     this.resizeLine.on('mouseout', this.resizeLineOnMouseOut);
   }
-
-  getLinePoints = (size: number) => {
-    return this.isCol ? [0, 0, 0, size] : [0, 0, size, 0];
-  };
 
   resizeLineOnMouseOver = () => {
     this.rowCols.resizer.setCursor();
@@ -336,14 +310,14 @@ class RowCol {
 
     if (!this.isCol && this.index > frozenCell) {
       this.xFrozenLine = this.gridLine.clone({
-        points: this.getLinePoints(size),
+        points: this.rowCols.getLinePoints(size),
       });
     }
 
     if (this.isCol && this.index < frozenCell) {
       this.xFrozenLine = this.gridLine.clone({
         y: size,
-        points: this.getLinePoints(this.sheet.sheetDimensions.height),
+        points: this.rowCols.getLinePoints(this.sheet.sheetDimensions.height),
       });
     }
   }
@@ -354,13 +328,13 @@ class RowCol {
     if (!this.isCol && this.index < frozenCell) {
       this.yFrozenLine = this.gridLine.clone({
         x: size,
-        points: this.getLinePoints(this.sheet.sheetDimensions.width),
+        points: this.rowCols.getLinePoints(this.sheet.sheetDimensions.width),
       });
     }
 
     if (this.isCol && this.index > frozenCell) {
       this.yFrozenLine = this.gridLine.clone({
-        points: this.getLinePoints(size),
+        points: this.rowCols.getLinePoints(size),
       });
     }
   }
@@ -370,16 +344,9 @@ class RowCol {
 
     if (this.index < frozenCell) {
       this.xyFrozenLine = this.gridLine.clone({
-        points: this.getLinePoints(size),
+        points: this.rowCols.getLinePoints(size),
       });
     }
-  }
-
-  private getSheetSize() {
-    return (
-      this.sheet.sheetDimensions[this.oppositeFunctions.size] +
-      this.sheet.getViewportVector()[this.oppositeFunctions.axis]
-    );
   }
 
   private drawGridLine() {

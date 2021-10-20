@@ -12,6 +12,7 @@ import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { centerRectTwoInRectOne } from '../../utils';
+import { Group } from 'konva/lib/Group';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -37,8 +38,9 @@ class RowCols {
   spreadsheet: Spreadsheet;
   resizer: Resizer;
   pluralType: RowColsType;
-  cachedHeaderRect: Rect;
-  cachedHeaderText: Text;
+  cachedHeaderGroup: Group;
+  cachedGridLine: Line;
+  cachedRowCols: Group[] = [];
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -75,25 +77,89 @@ class RowCols {
     this.resizer = new Resizer(this);
     this.scrollBar = new ScrollBar(this);
 
-    this.cachedHeaderRect = new Rect({
+    const headerRect = new Rect({
       ...this.spreadsheet.styles[this.type].headerRect,
       [this.functions.size]: this.spreadsheet.options[this.type].defaultSize,
-    }).cache();
+    });
 
-    this.cachedHeaderText = new Text(
-      this.spreadsheet.styles[this.type].headerText
-    );
+    const headerText = new Text(this.spreadsheet.styles[this.type].headerText);
 
     const headerTextMidPoints = centerRectTwoInRectOne(
-      this.cachedHeaderRect.getClientRect(),
-      this.cachedHeaderText.getClientRect()
+      headerRect.getClientRect(),
+      headerText.getClientRect()
     );
 
-    this.cachedHeaderText.position(headerTextMidPoints);
-    this.cachedHeaderText.size(this.cachedHeaderRect.size());
+    headerText.position(headerTextMidPoints);
+    headerText.size(headerRect.size());
 
-    this.cachedHeaderText.cache();
+    const headerResizeLine = new Line({
+      ...this.spreadsheet.styles[this.type].resizeLine,
+      points: this.isCol
+        ? [0, 0, 0, this.sheet.getViewportVector().y]
+        : [0, 0, this.sheet.getViewportVector().x, 0],
+    });
+
+    this.cachedHeaderGroup = new Group();
+
+    this.cachedHeaderGroup.add(headerRect, headerText, headerResizeLine);
+
+    this.cachedHeaderGroup.cache();
+
+    this.cachedGridLine = new Line({
+      ...this.spreadsheet.styles[this.type].gridLine,
+      points: this.getLinePoints(this.getSheetSize()),
+    }).cache();
   }
+
+  setCachedRowCols() {
+    const sheetRowColAddressesForCache: RowColAddress[] = [];
+
+    for (const index of this.sheet[
+      this.pluralType
+    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      sheetRowColAddressesForCache.push(
+        new RowColAddress(this.sheet.sheetId, index)
+      );
+    }
+
+    const rowColsToDestroy = Array.from(this.rowColMap).filter(([index]) => {
+      return sheetRowColAddressesForCache.every(
+        (rowColAddress) => rowColAddress.rowCol !== index
+      );
+    });
+
+    rowColsToDestroy.forEach(([rowColId, rowCol]) => {
+      rowCol.destroy();
+      this.rowColMap.delete(rowColId);
+    });
+
+    sheetRowColAddressesForCache.forEach((rowColAddress) => {
+      if (this.rowColMap.has(rowColAddress.rowCol)) {
+        return;
+      }
+
+      const clonedHeaderGroup = this.cachedHeaderGroup.clone();
+
+      this.cachedRowCols.push(clonedHeaderGroup);
+
+      const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
+
+      this.sheet.scrollGroups[stickyGroup].cellGroup.add(clonedCellGroup);
+
+      this.setStyleableCells(simpleCellAddress);
+    });
+  }
+
+  private getSheetSize() {
+    return (
+      this.sheet.sheetDimensions[this.oppositeFunctions.size] +
+      this.sheet.getViewportVector()[this.oppositeFunctions.axis]
+    );
+  }
+
+  getLinePoints = (size: number) => {
+    return this.isCol ? [0, 0, 0, size] : [0, 0, size, 0];
+  };
 
   destroy() {
     this.scrollBar.destroy();

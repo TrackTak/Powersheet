@@ -33,10 +33,6 @@ class Cell {
       this.group.add(this.rect);
     }
 
-    this.updateCell();
-  }
-
-  private updateCell() {
     const { row, col } = this.simpleCellAddress;
 
     const position = {

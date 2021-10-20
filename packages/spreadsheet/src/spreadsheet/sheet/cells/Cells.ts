@@ -9,20 +9,25 @@ import { Text } from 'konva/lib/shapes/Text';
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
   cachedCellsGroupsQueue: Group[] = [];
-  cachedCellRect: Rect;
-  cachedCellText: Text;
+  cachedCellGroup: Group;
   private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.cellsMap = new Map();
-    this.cachedCellRect = new Rect({
+    const cellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
-    }).cache();
-    this.cachedCellText = new Text(this.spreadsheet.styles.cell.text).cache();
+    });
+    const cellText = new Text(this.spreadsheet.styles.cell.text);
+
+    this.cachedCellGroup = new Group();
+
+    this.cachedCellGroup.add(cellRect, cellText);
+
+    this.cachedCellGroup.cache();
   }
 
   setCachedCells() {
@@ -58,17 +63,13 @@ class Cells {
         return;
       }
 
-      const cachedCellGroup = new Group();
-      const rect = this.cachedCellRect.clone();
-      const text = this.cachedCellText.clone();
+      const clonedCellGroup = this.cachedCellGroup.clone();
 
-      cachedCellGroup.add(rect, text);
-
-      this.cachedCellsGroupsQueue.push(cachedCellGroup);
+      this.cachedCellsGroupsQueue.push(clonedCellGroup);
 
       const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
 
-      this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
+      this.sheet.scrollGroups[stickyGroup].cellGroup.add(clonedCellGroup);
 
       this.setStyleableCells(simpleCellAddress);
     });

@@ -21,12 +21,8 @@ class Cells {
       ...this.spreadsheet.styles.cell.rect,
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
-    });
-    this.cachedCellText = new Text({
-      ...this.spreadsheet.styles.cell.text,
-    });
-
-    this.cachedCellRect.cache();
+    }).cache();
+    this.cachedCellText = new Text(this.spreadsheet.styles.cell.text).cache();
   }
 
   setCachedCells() {

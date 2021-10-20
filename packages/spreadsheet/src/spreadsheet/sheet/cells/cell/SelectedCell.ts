@@ -1,4 +1,3 @@
-import { Group } from 'konva/lib/Group';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import Sheet from '../../Sheet';
 import Cell from './Cell';

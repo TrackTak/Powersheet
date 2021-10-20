@@ -9,6 +9,9 @@ import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
 import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
+import { Rect } from 'konva/lib/shapes/Rect';
+import { Text } from 'konva/lib/shapes/Text';
+import { centerRectTwoInRectOne } from '../../utils';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -34,6 +37,8 @@ class RowCols {
   spreadsheet: Spreadsheet;
   resizer: Resizer;
   pluralType: RowColsType;
+  cachedHeaderRect: Rect;
+  cachedHeaderText: Text;
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -69,6 +74,25 @@ class RowCols {
 
     this.resizer = new Resizer(this);
     this.scrollBar = new ScrollBar(this);
+
+    this.cachedHeaderRect = new Rect({
+      ...this.spreadsheet.styles[this.type].headerRect,
+      [this.functions.size]: this.spreadsheet.options[this.type].defaultSize,
+    }).cache();
+
+    this.cachedHeaderText = new Text(
+      this.spreadsheet.styles[this.type].headerText
+    );
+
+    const headerTextMidPoints = centerRectTwoInRectOne(
+      this.cachedHeaderRect.getClientRect(),
+      this.cachedHeaderText.getClientRect()
+    );
+
+    this.cachedHeaderText.position(headerTextMidPoints);
+    this.cachedHeaderText.size(this.cachedHeaderRect.size());
+
+    this.cachedHeaderText.cache();
   }
 
   destroy() {

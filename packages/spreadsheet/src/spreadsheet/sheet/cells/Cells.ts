@@ -4,11 +4,13 @@ import StyleableCell from './cell/StyleableCell';
 import Sheet from '../Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
+import { Text } from 'konva/lib/shapes/Text';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
   cachedCellsGroupsQueue: Group[] = [];
   cachedCellRect: Rect;
+  cachedCellText: Text;
   private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
@@ -19,6 +21,9 @@ class Cells {
       ...this.spreadsheet.styles.cell.rect,
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
+    });
+    this.cachedCellText = new Text({
+      ...this.spreadsheet.styles.cell.text,
     });
 
     this.cachedCellRect.cache();
@@ -58,9 +63,10 @@ class Cells {
       }
 
       const cachedCellGroup = new Group();
-      const rect = this.sheet.cells.cachedCellRect.clone();
+      const rect = this.cachedCellRect.clone();
+      const text = this.cachedCellText.clone();
 
-      cachedCellGroup.add(rect);
+      cachedCellGroup.add(rect, text);
 
       this.cachedCellsGroupsQueue.push(cachedCellGroup);
 
@@ -117,17 +123,23 @@ class Cells {
     }
   }
 
-  setStyleableCells(simpleCellAddress: SimpleCellAddress) {
-    // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
-
+  getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
-    const cellAlreadyExists = !!this.cellsMap.get(cellId);
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
     const hasCellData = !!(
       cell || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
     );
 
-    if (cellAlreadyExists || !hasCellData) return;
+    return hasCellData;
+  }
+
+  setStyleableCells(simpleCellAddress: SimpleCellAddress) {
+    // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
+
+    const cellId = simpleCellAddress.toCellId();
+    const cellAlreadyExists = !!this.cellsMap.get(cellId);
+
+    if (cellAlreadyExists || !this.getHasCellData(simpleCellAddress)) return;
 
     const cachedCellGroup = this.cachedCellsGroupsQueue.shift()!;
 
@@ -191,33 +203,15 @@ class Cells {
     // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
 
     const cellId = simpleCellAddress.toCellId();
-    const cellData = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
-    const hasCellData = !!(
-      cellData || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
-    );
 
-    if (!hasCellData) return;
+    if (!this.getHasCellData(simpleCellAddress)) return;
 
     const cell = this.cellsMap.get(cellId);
 
     if (cell) {
-      //  cell.update();
+      cell.update();
     }
   }
-
-  private getShouldDraw = (
-    simpleCellAddress: SimpleCellAddress,
-    forceDraw: boolean
-  ) => {
-    const cellId = simpleCellAddress.toCellId();
-    const cellAlreadyExists = !!this.cellsMap.get(cellId);
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
-    const hasCellData = !!(
-      cell || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
-    );
-
-    return (forceDraw || !cellAlreadyExists) && hasCellData;
-  };
 
   private drawMergedCellIfAssociatedCellShowing(
     simpleCellAddress: SimpleCellAddress

@@ -157,13 +157,11 @@ export const defaultStyles: IStyles = {
   },
   cell: {
     rect: {
-      type: 'cellRect',
       fill: 'white',
       // stroke: sharedStyles.gridLine.stroke,
       // strokeWidth: sharedStyles.gridLine.strokeWidth,
     },
     text: {
-      type: 'cellText',
       fontFamily,
       fontSize: 12,
       fill: 'black',

@@ -19,7 +19,7 @@ import { CellValue } from 'hyperformula';
 import { Group } from 'konva/lib/Group';
 
 class StyleableCell extends Cell {
-  text?: Text;
+  text: Text;
   borders = new Map<BorderStyle, Border>();
 
   constructor(
@@ -28,6 +28,8 @@ class StyleableCell extends Cell {
     public group: Group
   ) {
     super(sheet, simpleCellAddress, group);
+
+    this.text = group.findOne('Text');
 
     this.update();
   }
@@ -71,7 +73,7 @@ class StyleableCell extends Cell {
   }
 
   setTextWrap(textWrap: TextWrap) {
-    this.text?.wrap(textWrap);
+    this.text.wrap(textWrap);
   }
 
   setBackgroundColor(backgroundColor: string) {
@@ -79,11 +81,11 @@ class StyleableCell extends Cell {
   }
 
   setFontColor(fontColor: string) {
-    this.text?.fill(fontColor);
+    this.text.fill(fontColor);
   }
 
   setFontSize(fontSize: number) {
-    this.text?.fontSize(fontSize);
+    this.text.fontSize(fontSize);
   }
 
   setBold(bold: boolean) {
@@ -135,11 +137,11 @@ class StyleableCell extends Cell {
   }
 
   setHorizontalTextAlign(horizontalTextAlign: HorizontalTextAlign) {
-    this.text?.align(horizontalTextAlign);
+    this.text.align(horizontalTextAlign);
   }
 
   setVerticalTextAlign(verticalTextAlign: VerticalTextAlign) {
-    this.text?.verticalAlign(verticalTextAlign);
+    this.text.verticalAlign(verticalTextAlign);
   }
 
   setTextFormat(textFormatPattern: string) {
@@ -177,22 +179,17 @@ class StyleableCell extends Cell {
   setCellTextHeight() {
     const { height } = this.getClientRectWithoutStroke();
 
-    if (this.text?.wrap() !== 'wrap') {
-      this.text?.height(height);
+    if (this.text.wrap() !== 'wrap') {
+      this.text.height(height);
     }
   }
 
   setCellTextValue(value: string) {
     const { width } = this.getClientRectWithoutStroke();
 
-    this.text = new Text({
-      ...this.spreadsheet.styles.cell.text,
-      text: value,
-      // Only set the width for text wrapping to work
-      width,
-    });
-
-    this.group.add(this.text);
+    this.text.text(value);
+    // Only set the width for text wrapping to work
+    this.text.width(width);
   }
 
   update() {

@@ -175,9 +175,9 @@ class ScrollBar {
 
     this.setYIndex();
     this.rowCols.destroyOutOfViewportItems();
-    this.sheet.cells.destroyOutOfViewportItems();
+    this.sheet.cells.cacheOutOfViewportCells();
     this.rowCols.drawViewport();
-    this.sheet.cells.drawViewport();
+    this.sheet.cells.updateViewportForScroll();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();

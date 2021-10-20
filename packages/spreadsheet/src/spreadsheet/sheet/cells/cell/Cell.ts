@@ -13,7 +13,8 @@ class Cell {
 
   constructor(
     public sheet: Sheet,
-    public simpleCellAddress: SimpleCellAddress
+    public simpleCellAddress: SimpleCellAddress,
+    group?: Group
   ) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
@@ -23,18 +24,23 @@ class Cell {
       simpleCellAddress
     );
 
-    this.group = new Group();
-    this.rect = this.sheet.cells.cachedCellRect.clone();
-    this.group.add(this.rect);
+    if (group) {
+      this.group = group;
+      this.rect = group.findOne('Rect');
+    } else {
+      this.group = new Group();
+      this.rect = this.sheet.cells.cachedCellRect.clone();
+      this.group.add(this.rect);
+    }
 
-    this.updateCell(simpleCellAddress);
+    this.updateCell();
   }
 
-  protected updateCell(simpleCellAddress: SimpleCellAddress) {
-    this.simpleCellAddress = simpleCellAddress;
-    this.rangeSimpleCellAddress.topLeftSimpleCellAddress = simpleCellAddress;
+  private updateCell() {
+    this.rangeSimpleCellAddress.topLeftSimpleCellAddress =
+      this.simpleCellAddress;
 
-    const { row, col } = simpleCellAddress;
+    const { row, col } = this.simpleCellAddress;
 
     const position = {
       x: this.sheet.cols.getAxis(col) - this.sheet.getViewportVector().x,
@@ -80,25 +86,6 @@ class Cell {
 
     this.rect.width(width);
     this.rect.height(height);
-  }
-
-  getStickyGroupCellBelongsTo() {
-    return this.sheet.getStickyGroupType(
-      this.isOnFrozenRow(),
-      this.isOnFrozenCol()
-    );
-  }
-
-  isOnFrozenRow() {
-    return this.sheet.rows.getIsFrozen(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.row
-    );
-  }
-
-  isOnFrozenCol() {
-    return this.sheet.cols.getIsFrozen(
-      this.rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-    );
   }
 
   destroy() {

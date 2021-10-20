@@ -1,3 +1,4 @@
+import { Group } from 'konva/lib/Group';
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import Sheet from '../../Sheet';
 import Cell from './Cell';
@@ -13,6 +14,7 @@ class SelectedCell extends Cell {
     super(sheet, simpleCellAddress);
 
     this.innerRect = new Rect();
+    this.group.add(this.innerRect);
 
     this.setInnerRectProperties();
   }
@@ -39,8 +41,6 @@ class SelectedCell extends Cell {
 
     this.rect.setAttrs(rectConfig);
     this.innerRect.setAttrs(innerRectConfig);
-
-    this.group.add(this.innerRect);
   }
 }
 

@@ -16,6 +16,7 @@ import {
 } from '../../Data';
 import RowColAddress from './RowColAddress';
 import { CellValue } from 'hyperformula';
+import { Group } from 'konva/lib/Group';
 
 class StyleableCell extends Cell {
   text?: Text;
@@ -23,15 +24,12 @@ class StyleableCell extends Cell {
 
   constructor(
     public sheet: Sheet,
-    public simpleCellAddress: SimpleCellAddress
+    public simpleCellAddress: SimpleCellAddress,
+    public group: Group
   ) {
-    super(sheet, simpleCellAddress);
+    super(sheet, simpleCellAddress, group);
 
-    this.updateCell(simpleCellAddress);
-
-    const stickyGroup = this.getStickyGroupCellBelongsTo();
-
-    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
+    this.update();
   }
 
   private getBorder(type: BorderStyle) {
@@ -40,12 +38,6 @@ class StyleableCell extends Cell {
     this.borders.set(type, border);
 
     return border;
-  }
-
-  updateCell(simpleCellAddress: SimpleCellAddress) {
-    super.updateCell(simpleCellAddress);
-
-    this.setStyles();
   }
 
   setBottomBorder() {
@@ -203,7 +195,7 @@ class StyleableCell extends Cell {
     this.group.add(this.text);
   }
 
-  setStyles() {
+  update() {
     const cell =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -302,8 +294,6 @@ class StyleableCell extends Cell {
       });
     }
 
-    this.group.moveToTop();
-
     if (!this.sheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
       const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
       const cellHeight = this.getClientRectWithoutStroke().height;
@@ -321,6 +311,8 @@ class StyleableCell extends Cell {
       }
     }
     this.setCellTextHeight();
+
+    this.group.moveToTop();
   }
 }
 

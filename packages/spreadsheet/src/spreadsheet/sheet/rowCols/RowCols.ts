@@ -4,7 +4,7 @@ import { Vector2d } from 'konva/lib/types';
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
 
-import { isNil } from 'lodash';
+import { debounce, isNil } from 'lodash';
 import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
@@ -40,7 +40,7 @@ class RowCols {
   pluralType: RowColsType;
   cachedHeaderGroup: Group;
   cachedGridLine: Line;
-  cachedRowCols: Group[] = [];
+  cachedHeaderRowColGroups: Group[] = [];
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -84,14 +84,6 @@ class RowCols {
 
     const headerText = new Text(this.spreadsheet.styles[this.type].headerText);
 
-    const headerTextMidPoints = centerRectTwoInRectOne(
-      headerRect.getClientRect(),
-      headerText.getClientRect()
-    );
-
-    headerText.position(headerTextMidPoints);
-    headerText.size(headerRect.size());
-
     const headerResizeLine = new Line({
       ...this.spreadsheet.styles[this.type].resizeLine,
       points: this.isCol
@@ -109,6 +101,23 @@ class RowCols {
       ...this.spreadsheet.styles[this.type].gridLine,
       points: this.getLinePoints(this.getSheetSize()),
     }).cache();
+  }
+
+  cacheOutOfViewportRowCols() {
+    this.rowColMap.forEach((rowCol, index) => {
+      const clientRect = rowCol.headerGroup.getClientRect({
+        skipStroke: true,
+      });
+      const isShapeOutsideOfSheet = !this.sheet.isClientRectOnSheet({
+        ...clientRect,
+        [this.functions.axis]: clientRect[this.functions.axis] - 0.001,
+      });
+
+      if (isShapeOutsideOfSheet) {
+        this.rowColMap.delete(index);
+        this.cachedHeaderRowColGroups.push(rowCol.headerGroup);
+      }
+    });
   }
 
   setCachedRowCols() {
@@ -140,14 +149,86 @@ class RowCols {
 
       const clonedHeaderGroup = this.cachedHeaderGroup.clone();
 
-      this.cachedRowCols.push(clonedHeaderGroup);
+      this.cachedHeaderRowColGroups.push(clonedHeaderGroup);
 
-      const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
+      const isFrozen = this.getIsFrozen(rowColAddress.rowCol);
 
-      this.sheet.scrollGroups[stickyGroup].cellGroup.add(clonedCellGroup);
+      if (isFrozen) {
+        this.sheet.scrollGroups.xySticky.headerGroup.add(clonedHeaderGroup);
+      } else {
+        if (this.isCol) {
+          this.sheet.scrollGroups.ySticky.headerGroup.add(clonedHeaderGroup);
+        } else {
+          this.sheet.scrollGroups.xSticky.headerGroup.add(clonedHeaderGroup);
+        }
+      }
 
-      this.setStyleableCells(simpleCellAddress);
+      this.setRowCols(rowColAddress);
     });
+  }
+
+  updateViewportForScroll() {
+    for (const index of this.sheet[
+      this.pluralType
+    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+
+      this.setRowCols(rowColAddress);
+    }
+  }
+
+  setRowCols(rowColAddress: RowColAddress) {
+    // TODO: This if shouldn't be needed
+    if (rowColAddress.rowCol > this.spreadsheet.options[this.type].amount)
+      return;
+
+    const rowColAlreadyExists = this.rowColMap.has(rowColAddress.rowCol);
+
+    if (rowColAlreadyExists) return;
+
+    const cachedHeaderRowColGroup = this.cachedHeaderRowColGroups.shift()!;
+
+    const rowCol = new RowCol(
+      this,
+      rowColAddress.rowCol,
+      cachedHeaderRowColGroup
+    );
+
+    this.rowColMap.set(rowColAddress.rowCol, rowCol);
+  }
+
+  updateViewport() {
+    this.scrollBar.setScrollSize();
+
+    // const data = this.spreadsheet.data.spreadsheetData;
+
+    // const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
+
+    // if (!isNil(frozenCell)) {
+    //   for (let index = 0; index <= frozenCell; index++) {
+    //     this.draw(index, forceDraw);
+    //   }
+    // }
+
+    // for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    //   this.draw(index, forceDraw);
+    // }
+
+    for (const index of this.sheet[
+      this.pluralType
+    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+
+      this.updateRowCol(rowColAddress);
+    }
+  }
+
+  updateRowCol(rowColAddress: RowColAddress) {
+    const rowCol = this.rowColMap.get(rowColAddress.rowCol);
+
+    if (rowCol) {
+      // rowCol.update();
+    }
   }
 
   private getSheetSize() {
@@ -273,40 +354,6 @@ class RowCols {
     return totalSize;
   }
 
-  destroyOutOfViewportItems() {
-    for (const [key, rowCol] of this.rowColMap) {
-      if (this.sheet.isShapeOutsideOfViewport(rowCol.headerGroup)) {
-        rowCol.destroy();
-
-        this.rowColMap.delete(key);
-      }
-    }
-  }
-
-  // forceDraw is turned off for scrolling for performance
-  drawViewport(forceDraw = false) {
-    const data = this.spreadsheet.data.spreadsheetData;
-
-    const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
-
-    if (!isNil(frozenCell)) {
-      for (let index = 0; index <= frozenCell; index++) {
-        this.draw(index, forceDraw);
-      }
-    }
-
-    for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      this.draw(index, forceDraw);
-    }
-  }
-
-  updateViewport() {
-    this.rowColMap.clear();
-    this.drawViewport(true);
-
-    this.scrollBar.setScrollSize();
-  }
-
   *getSizeForFrozenCell() {
     const { frozenCells } = this.spreadsheet.data.spreadsheetData;
     const frozenCell = frozenCells?.[this.sheet.sheetId]?.[this.type];
@@ -358,39 +405,6 @@ class RowCols {
       topIndex,
       bottomIndex,
     };
-  }
-
-  private getShouldDraw = (index: number, forceDraw: boolean) => {
-    const rowColAlreadyExists = !!this.rowColMap.get(index);
-
-    return forceDraw || !rowColAlreadyExists;
-  };
-
-  draw(index: number, forceDraw: boolean) {
-    if (!this.getShouldDraw(index, forceDraw)) return;
-    if (index > this.spreadsheet.options[this.type].amount) return;
-
-    const existingRowCol = this.rowColMap.get(index);
-
-    existingRowCol?.destroy();
-
-    const rowCol = new RowCol(this, index);
-
-    if (this.getIsLastFrozen(index)) {
-      rowCol.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
-
-      this.frozenLine = rowCol.gridLine;
-
-      this.frozenLine[this.functions.axis](
-        this.getAxis(index) +
-          this.getSize(index) -
-          this.sheet.getViewportVector()[this.functions.axis]
-      );
-
-      this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
-    }
-
-    this.rowColMap.set(index, rowCol);
   }
 }
 

@@ -600,19 +600,18 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
   const data = args.data;
 
   const cell: Partial<ICellData> = {
-    // value: 'Performance test 0.05',
-    // comment: 'Performance of the each cell',
-    // borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+    comment: 'Performance of the each cell',
+    borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
     backgroundColor: 'purple',
-    // fontColor: 'white',
-    // fontSize: 13,
+    fontColor: 'white',
+    fontSize: 13,
     // textWrap: 'wrap',
-    // underline: true,
-    // strikeThrough: true,
-    // bold: true,
-    // italic: true,
-    // horizontalTextAlign: 'right',
-    // verticalTextAlign: 'bottom',
+    underline: true,
+    strikeThrough: true,
+    bold: true,
+    italic: true,
+    horizontalTextAlign: 'center',
+    verticalTextAlign: 'middle',
   };
 
   const getRandomBackgroundColor = () => {

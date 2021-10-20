@@ -2,19 +2,21 @@ import { Group } from 'konva/lib/Group';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { isNil } from 'lodash';
+import { head, isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheet from '../../Sheet';
 import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 import { IMergedCellData } from '../../Data';
+import { centerRectTwoInRectOne } from '../../../utils';
 
 class RowCol {
   spreadsheet: Spreadsheet;
   headerRect: Rect;
   headerText: Text;
   resizeLine: Line;
+  gridLine: Line;
   xFrozenLine?: Line;
   yFrozenLine?: Line;
   xyFrozenLine?: Line;
@@ -30,11 +32,11 @@ class RowCol {
   constructor(
     public rowCols: RowCols,
     public index: number,
-    public headerGroup: Group,
-    public gridLine: Line
+    public headerGroup: Group
   ) {
     this.rowCols = rowCols;
     this.index = index;
+    this.headerGroup = headerGroup;
     this.sheet = rowCols.sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.type = rowCols.type;
@@ -46,20 +48,42 @@ class RowCol {
     this.headerRect = this.headerGroup.findOne('Rect');
     this.headerText = this.headerGroup.findOne('Text');
     this.resizeLine = this.headerGroup.findOne('Line');
-    this.gridLine = gridLine;
+    this.gridLine = this.rowCols.cachedGridLine.clone({
+      [this.functions.axis]:
+        this.rowCols.getAxis(this.index) +
+        this.rowCols.getSize(this.index) -
+        this.sheet.getViewportVector()[this.functions.axis],
+    });
     this.rowColAddress = new RowColAddress(this.sheet.sheetId, this.index);
 
     this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index));
     this.headerRect[this.functions.size](this.rowCols.getSize(this.index));
     this.headerText.text(this.getHeaderTextContent());
-    this.gridLine[this.functions.axis](
-      this.rowCols.getAxis(this.index) +
-        this.rowCols.getSize(this.index) -
-        this.sheet.getViewportVector()[this.functions.axis]
-    );
+
+    // const headerTextMidPoints = centerRectTwoInRectOne(
+    //   this.headerRect.getClientRect(),
+    //   this.headerText.getClientRect()
+    // );
+
+    // this.headerText.position(headerTextMidPoints);
+
     this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index));
 
-    this.draw();
+    // this.drawGridLine();
+
+    // if (this.rowCols.getIsLastFrozen(this.index)) {
+    //   this.gridLine.setAttrs(this.spreadsheet.styles[this.type].frozenLine);
+
+    //   this.rowCols.frozenLine = this.gridLine;
+
+    //   this.rowCols.frozenLine[this.functions.axis](
+    //     this.rowCols.getAxis(this.index) +
+    //       this.rowCols.getSize(this.index) -
+    //       this.sheet.getViewportVector()[this.functions.axis]
+    //   );
+
+    //   this.sheet.scrollGroups.xySticky.sheetGroup.add(this.rowCols.frozenLine);
+    // }
 
     this.resizeLine.on('mouseover', this.resizeLineOnMouseOver);
     this.resizeLine.on('mouseout', this.resizeLineOnMouseOut);
@@ -86,11 +110,6 @@ class RowCol {
     this.xFrozenLine?.destroy();
     this.yFrozenLine?.destroy();
     this.xyFrozenLine?.destroy();
-  }
-
-  draw() {
-    this.drawHeader();
-    this.drawGridLine();
   }
 
   private shiftFrozenCells(getValue: (frozenCell: number) => number) {
@@ -433,20 +452,6 @@ class RowCol {
       this.sheet.scrollGroups.xSticky.rowColGroup.add(this.xFrozenLine!);
     }
     this.sheet.scrollGroups.main.rowColGroup.add(this.gridLine);
-  }
-
-  private drawHeader() {
-    const isFrozen = this.rowCols.getIsFrozen(this.index);
-
-    if (isFrozen) {
-      this.sheet.scrollGroups.xySticky.headerGroup.add(this.headerGroup);
-    } else {
-      if (this.isCol) {
-        this.sheet.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
-      } else {
-        this.sheet.scrollGroups.xSticky.headerGroup.add(this.headerGroup);
-      }
-    }
   }
 }
 

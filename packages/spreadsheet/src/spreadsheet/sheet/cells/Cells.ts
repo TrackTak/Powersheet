@@ -10,22 +10,23 @@ class Cells {
   cellsMap: Map<CellId, StyleableCell>;
   cachedCellsGroupsQueue: Group[] = [];
   cachedCellGroup: Group;
+  cachedCellRect: Rect;
   private spreadsheet: Spreadsheet;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.cellsMap = new Map();
-    const cellRect = new Rect({
+    this.cachedCellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
-    });
+    }).cache();
     const cellText = new Text(this.spreadsheet.styles.cell.text);
 
     this.cachedCellGroup = new Group();
 
-    this.cachedCellGroup.add(cellRect, cellText);
+    this.cachedCellGroup.add(this.cachedCellRect, cellText);
 
     this.cachedCellGroup.cache();
   }
@@ -91,7 +92,7 @@ class Cells {
   }
 
   cacheOutOfViewportCells() {
-    for (const [key, cell] of this.cellsMap) {
+    this.cellsMap.forEach((cell, cellId) => {
       const clientRect = cell.group.getClientRect();
       const isShapeOutsideOfSheet = !this.sheet.isClientRectOnSheet({
         ...clientRect,
@@ -100,10 +101,10 @@ class Cells {
       });
 
       if (isShapeOutsideOfSheet) {
-        this.cellsMap.delete(key);
+        this.cellsMap.delete(cellId);
         this.cachedCellsGroupsQueue.push(cell.group);
       }
-    }
+    });
   }
 
   updateViewportForScroll() {
@@ -134,7 +135,7 @@ class Cells {
     // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
 
     const cellId = simpleCellAddress.toCellId();
-    const cellAlreadyExists = !!this.cellsMap.get(cellId);
+    const cellAlreadyExists = this.cellsMap.has(cellId);
 
     if (cellAlreadyExists || !this.getHasCellData(simpleCellAddress)) return;
 

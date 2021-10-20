@@ -174,8 +174,8 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.rowCols.destroyOutOfViewportItems();
-    this.rowCols.drawViewport();
+    this.rowCols.cacheOutOfViewportRowCols();
+    this.rowCols.updateViewportForScroll();
     this.sheet.cells.cacheOutOfViewportCells();
     this.sheet.cells.updateViewportForScroll();
 

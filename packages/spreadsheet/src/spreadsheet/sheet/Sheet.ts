@@ -221,6 +221,8 @@ class Sheet {
     context.reset();
     context.translate(0.5, 0.5);
 
+    this.rows.setCachedRowCols();
+    this.cols.setCachedRowCols();
     this.cells.setCachedCells();
     this.spreadsheet.updateViewport();
   }

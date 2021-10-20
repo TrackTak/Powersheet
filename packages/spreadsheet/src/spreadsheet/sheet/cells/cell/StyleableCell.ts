@@ -291,7 +291,7 @@ class StyleableCell extends Cell {
       });
     }
 
-    if (!this.sheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
+    if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
       const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
       const cellHeight = this.getClientRectWithoutStroke().height;
 

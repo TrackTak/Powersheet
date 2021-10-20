@@ -142,12 +142,6 @@ class Data {
       this.deleteCell(SimpleCellAddress.cellIdToAddress(cellId));
     }
 
-    for (const key in sheet?.mergedCells) {
-      const cellId = key as CellId;
-
-      this.deleteMergedCell(SimpleCellAddress.cellIdToAddress(cellId));
-    }
-
     for (const key in sheet?.cols) {
       const sheetRowColId = key as SheetRowColId;
       const sheetRowColAddress =
@@ -208,9 +202,17 @@ class Data {
     }
   }
 
-  deleteCell(simpleCellAddress: SimpleCellAddress, setHyperformula = true) {
+  deleteCell(
+    simpleCellAddress: SimpleCellAddress,
+    setHyperformula = true,
+    deleteMergedCell = true
+  ) {
     const sheetId = simpleCellAddress.sheet;
     const cellId = simpleCellAddress.toCellId();
+
+    if (deleteMergedCell) {
+      this.deleteMergedCell(simpleCellAddress);
+    }
 
     if (
       this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
@@ -257,11 +259,24 @@ class Data {
       },
       id: mergedCellId,
     };
+
+    const mergedCellResult = this.spreadsheetData.mergedCells[mergedCellId];
+
+    if (
+      mergedCellResult.col.x === mergedCellResult.col.y &&
+      mergedCellResult.row.x === mergedCellResult.row.y
+    ) {
+      this.deleteMergedCell(simpleCellAddress);
+    }
+
+    this.spreadsheet.merger.setAssociatedMergedCellIds(simpleCellAddress);
   }
 
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
     const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
+
+    this.spreadsheet.merger.deleteAssociatedMergedCellIds(simpleCellAddress);
 
     delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId];
     delete this.spreadsheetData.mergedCells?.[mergedCellId];
@@ -280,17 +295,17 @@ class Data {
       id: sheetId,
     };
 
-    const frozenCells = this.spreadsheetData.frozenCells?.[sheetId];
+    const frozenCellResult = this.spreadsheetData.frozenCells?.[sheetId];
 
-    if (!isNil(frozenCells?.col) && frozenCells?.col < 0) {
-      delete frozenCells?.col;
+    if (!isNil(frozenCellResult?.col) && frozenCellResult?.col < 0) {
+      delete frozenCellResult?.col;
     }
 
-    if (!isNil(frozenCells?.row) && frozenCells?.row < 0) {
-      delete frozenCells?.row;
+    if (!isNil(frozenCellResult?.row) && frozenCellResult?.row < 0) {
+      delete frozenCellResult?.row;
     }
 
-    if (isNil(frozenCells?.col) && isNil(frozenCells?.row)) {
+    if (isNil(frozenCellResult?.col) && isNil(frozenCellResult?.row)) {
       this.deleteFrozenCell(sheetId);
     }
   }

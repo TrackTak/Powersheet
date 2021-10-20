@@ -19,11 +19,8 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const {
-      editorArea,
-      editableContentContainer,
-      editableContent,
-    } = createFormulaEditorArea();
+    const { editorArea, editableContentContainer, editableContent } =
+      createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
@@ -53,11 +50,20 @@ class FormulaBar {
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     const sheet = this.spreadsheet.getActiveSheet();
-    const value = simpleCellAddress
-      ? this.spreadsheet.data.spreadsheetData.cells?.[
-          simpleCellAddress.toCellId()
-        ]?.value
-      : null;
+
+    let value;
+
+    if (simpleCellAddress) {
+      const formula =
+        this.spreadsheet.hyperformula.getCellFormula(simpleCellAddress);
+
+      value = formula
+        ? formula
+        : this.spreadsheet.data.spreadsheetData.cells?.[
+            simpleCellAddress.toCellId()
+          ]?.value;
+    }
+
     const cellEditorTextContent =
       sheet?.cellEditor?.cellEditorEl.textContent ?? null;
 

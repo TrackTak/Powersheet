@@ -652,9 +652,9 @@ class Toolbar {
       }
       case 'merge': {
         if (this.iconElementsMap.merge.active) {
-          sheet.merger.unMergeSelectedCells();
+          this.spreadsheet.merger.unMergeSelectedCells();
         } else if (!this.iconElementsMap.merge.button.disabled) {
-          sheet.merger.mergeSelectedCells();
+          this.spreadsheet.merger.mergeSelectedCells();
         }
 
         break;
@@ -919,10 +919,10 @@ class Toolbar {
   }
 
   setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
     const isMerged =
-      sheet.merger.getIsCellPartOfMerge(selectedCell.simpleCellAddress) &&
-      selectedCells.length === 1;
+      this.spreadsheet.merger.getIsCellPartOfMerge(
+        selectedCell.simpleCellAddress
+      ) && selectedCells.length === 1;
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false;

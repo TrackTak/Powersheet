@@ -51,10 +51,10 @@ class Cell {
   }
 
   private setMergedCellPropertiesIfNeeded() {
-    this.sheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
+    this.spreadsheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 
     const mergedCellAddress =
-      this.sheet.merger.associatedMergedCellAddressMap.get(
+      this.spreadsheet.merger.associatedMergedCellAddressMap.get(
         this.simpleCellAddress.toCellId()
       );
 

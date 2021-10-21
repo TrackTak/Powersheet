@@ -4,14 +4,13 @@ import { Vector2d } from 'konva/lib/types';
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
 
-import { debounce, isNil } from 'lodash';
+import { isNil } from 'lodash';
 import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
 import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { centerRectTwoInRectOne } from '../../utils';
 import { Group } from 'konva/lib/Group';
 
 export type RowColType = 'row' | 'col';

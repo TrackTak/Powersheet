@@ -6,7 +6,6 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
-import { sharedStyles } from '../../styles';
 import { rotateAroundCenter } from '../../utils';
 
 class Cells {

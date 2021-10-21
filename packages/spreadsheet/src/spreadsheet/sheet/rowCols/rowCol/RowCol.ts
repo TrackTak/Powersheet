@@ -60,12 +60,12 @@ class RowCol {
     this.headerRect[this.functions.size](this.rowCols.getSize(this.index));
     this.headerText.text(this.getHeaderTextContent());
 
-    // const headerTextMidPoints = centerRectTwoInRectOne(
-    //   this.headerRect.getClientRect(),
-    //   this.headerText.getClientRect()
-    // );
+    const headerTextMidPoints = centerRectTwoInRectOne(
+      this.headerRect.getClientRect(),
+      this.headerText.getClientRect()
+    );
 
-    // this.headerText.position(headerTextMidPoints);
+    this.headerText.position(headerTextMidPoints);
 
     this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index));
 

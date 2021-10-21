@@ -35,8 +35,8 @@ export const rotateAroundCenter = (shape: Shape, rotation: number) => {
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
-    x: rectOne.x + rectOne.width / 2,
-    y: rectOne.y + rectOne.height / 2,
+    x: rectOne.width / 2,
+    y: rectOne.height / 2,
   };
 
   const rectTwoMidPoint = {

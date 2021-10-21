@@ -1,4 +1,4 @@
-import { Vector2d } from 'konva/lib/types';
+import { Vector2d } from '@tracktak/konva/lib/types';
 import { isNil } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';

@@ -1,24 +1,24 @@
-import { Layer } from 'konva/lib/Layer';
-import { Rect } from 'konva/lib/shapes/Rect';
-import { Group } from 'konva/lib/Group';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Layer } from '@tracktak/konva/lib/Layer';
+import { Rect } from '@tracktak/konva/lib/shapes/Rect';
+import { Group } from '@tracktak/konva/lib/Group';
+import { IRect, Vector2d } from '@tracktak/konva/lib/types';
 import Selector from './Selector';
 import RowCols, { RowColType } from './rowCols/RowCols';
 import CellEditor from './cellEditor/CellEditor';
 import RightClickMenu from './rightClickMenu/RightClickMenu';
-import { Stage } from 'konva/lib/Stage';
+import { Stage } from '@tracktak/konva/lib/Stage';
 import Spreadsheet from '../Spreadsheet';
 import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheet.module.scss';
-import { KonvaEventObject } from 'konva/lib/Node';
+import { KonvaEventObject } from '@tracktak/konva/lib/Node';
 import Comment from './comment/Comment';
 import { debounce, DebouncedFunc, throttle } from 'lodash';
-import { Shape } from 'konva/lib/Shape';
+import { Shape } from '@tracktak/konva/lib/Shape';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
-import { Util } from 'konva/lib/Util';
+import { Util } from '@tracktak/konva/lib/Util';
 
 export interface IDimensions {
   width: number;

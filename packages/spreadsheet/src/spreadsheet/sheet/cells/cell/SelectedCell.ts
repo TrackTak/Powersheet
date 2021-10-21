@@ -1,4 +1,4 @@
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect, RectConfig } from '@tracktak/konva/lib/shapes/Rect';
 import Sheet from '../../Sheet';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';

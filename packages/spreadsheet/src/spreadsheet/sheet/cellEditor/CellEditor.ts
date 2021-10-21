@@ -1,4 +1,4 @@
-import { IRect } from 'konva/lib/types';
+import { IRect } from '@tracktak/konva/lib/types';
 import Sheet from '../Sheet';
 import styles from './CellEditor.module.scss';
 

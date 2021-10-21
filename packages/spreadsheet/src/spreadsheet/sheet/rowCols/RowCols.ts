@@ -1,5 +1,5 @@
-import { Line } from 'konva/lib/shapes/Line';
-import { Vector2d } from 'konva/lib/types';
+import { Line } from '@tracktak/konva/lib/shapes/Line';
+import { Vector2d } from '@tracktak/konva/lib/types';
 
 import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
@@ -9,10 +9,10 @@ import Sheet from '../Sheet';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
 import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
-import { Rect } from 'konva/lib/shapes/Rect';
-import { Text } from 'konva/lib/shapes/Text';
+import { Rect } from '@tracktak/konva/lib/shapes/Rect';
+import { Text } from '@tracktak/konva/lib/shapes/Text';
 import { centerRectTwoInRectOne } from '../../utils';
-import { Group } from 'konva/lib/Group';
+import { Group } from '@tracktak/konva/lib/Group';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';

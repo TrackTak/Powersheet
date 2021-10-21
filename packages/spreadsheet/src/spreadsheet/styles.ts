@@ -1,6 +1,6 @@
-import { LineConfig } from 'konva/lib/shapes/Line';
-import { RectConfig } from 'konva/lib/shapes/Rect';
-import { TextConfig } from 'konva/lib/shapes/Text';
+import { LineConfig } from '@tracktak/konva/lib/shapes/Line';
+import { RectConfig } from '@tracktak/konva/lib/shapes/Rect';
+import { TextConfig } from '@tracktak/konva/lib/shapes/Text';
 
 export interface IRowHeaderRectConfig extends RectConfig {
   width: number;

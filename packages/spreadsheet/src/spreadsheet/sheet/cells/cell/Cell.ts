@@ -1,5 +1,5 @@
-import { Group } from 'konva/lib/Group';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { Group } from '@tracktak/konva/lib/Group';
+import { Rect } from '@tracktak/konva/lib/shapes/Rect';
 import Spreadsheet from '../../../Spreadsheet';
 import Sheet from '../../Sheet';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';

@@ -1,6 +1,6 @@
-import { KonvaEventObject } from 'konva/lib/Node';
-import { Line } from 'konva/lib/shapes/Line';
-import { Rect } from 'konva/lib/shapes/Rect';
+import { KonvaEventObject } from '@tracktak/konva/lib/Node';
+import { Line } from '@tracktak/konva/lib/shapes/Line';
+import { Rect } from '@tracktak/konva/lib/shapes/Rect';
 import Sheet from '../../Sheet';
 import Spreadsheet from '../../../Spreadsheet';
 import RowCols from '../RowCols';

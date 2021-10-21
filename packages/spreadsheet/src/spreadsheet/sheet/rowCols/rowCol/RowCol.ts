@@ -1,7 +1,7 @@
-import { Group } from 'konva/lib/Group';
-import { Line } from 'konva/lib/shapes/Line';
-import { Rect } from 'konva/lib/shapes/Rect';
-import { Text } from 'konva/lib/shapes/Text';
+import { Group } from '@tracktak/konva/lib/Group';
+import { Line } from '@tracktak/konva/lib/shapes/Line';
+import { Rect } from '@tracktak/konva/lib/shapes/Rect';
+import { Text } from '@tracktak/konva/lib/shapes/Text';
 import { head, isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';

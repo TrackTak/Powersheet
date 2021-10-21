@@ -79,13 +79,18 @@ class RowCols {
 
     const headerRect = new Rect({
       ...this.spreadsheet.styles[this.type].headerRect,
+      name: 'headerRect',
       [this.functions.size]: this.spreadsheet.options[this.type].defaultSize,
     });
 
-    const headerText = new Text(this.spreadsheet.styles[this.type].headerText);
+    const headerText = new Text({
+      ...this.spreadsheet.styles[this.type].headerText,
+      name: 'headerText',
+    });
 
     const headerResizeLine = new Line({
       ...this.spreadsheet.styles[this.type].resizeLine,
+      name: 'headerResizeLine',
       points: this.isCol
         ? [0, 0, 0, this.sheet.getViewportVector().y]
         : [0, 0, this.sheet.getViewportVector().x, 0],

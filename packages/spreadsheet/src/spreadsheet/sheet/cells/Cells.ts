@@ -5,6 +5,9 @@ import Sheet from '../Sheet';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
+import { Line } from 'konva/lib/shapes/Line';
+import { sharedStyles } from '../../styles';
+import { rotateAroundCenter } from '../../utils';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
@@ -19,14 +22,40 @@ class Cells {
     this.cellsMap = new Map();
     this.cachedCellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
+      name: 'cellRect',
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
     }).cache();
-    const cellText = new Text(this.spreadsheet.styles.cell.text);
+    const borderLine = new Line({
+      ...this.spreadsheet.styles.cell.borderLine,
+      name: 'borderLine',
+    });
+    const commentMarker = new Line({
+      ...this.spreadsheet.styles.cell.commentMarker,
+      name: 'commentMarker',
+    });
+    rotateAroundCenter(commentMarker, 180);
+
+    const cellText = new Text({
+      name: 'cellText',
+      ...this.spreadsheet.styles.cell.text,
+    });
 
     this.cachedCellGroup = new Group();
 
-    this.cachedCellGroup.add(this.cachedCellRect, cellText);
+    const borderLines = [
+      borderLine.clone(),
+      borderLine.clone(),
+      borderLine.clone(),
+      borderLine.clone(),
+    ];
+
+    this.cachedCellGroup.add(
+      this.cachedCellRect,
+      cellText,
+      commentMarker,
+      ...borderLines
+    );
 
     this.cachedCellGroup.cache();
   }
@@ -93,7 +122,7 @@ class Cells {
 
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
-      const clientRect = cell.group.getClientRect();
+      const clientRect = cell.getClientRectWithoutStroke();
       const isShapeOutsideOfSheet = !this.sheet.isClientRectOnSheet({
         ...clientRect,
         x: clientRect.x - 0.001,

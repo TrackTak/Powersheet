@@ -26,7 +26,7 @@ class Cell {
 
     if (group) {
       this.group = group;
-      this.rect = group.findOne('Rect');
+      this.rect = group.findOne('.cellRect');
     } else {
       this.group = new Group();
       this.rect = this.sheet.cells.cachedCellRect.clone();

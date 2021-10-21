@@ -23,6 +23,8 @@ export interface IColHeaderConfig {
 export interface ICellConfig {
   rect: RectConfig;
   text: TextConfig;
+  commentMarker: LineConfig;
+  borderLine: LineConfig;
 }
 
 export interface IRowColConfig {
@@ -39,7 +41,6 @@ export interface IStyles {
   topLeftRect: RectConfig;
   selectionFirstCell: RectConfig;
   selection: RectConfig;
-  commentMarker: LineConfig;
   col: IRowColConfig;
   row: IRowColConfig;
   cell: ICellConfig;
@@ -103,16 +104,6 @@ export const defaultStyles: IStyles = {
     stroke: '#1a73e8',
     fill: 'rgb(14, 101, 235, 0.1)',
   },
-  commentMarker: {
-    type: 'commentMarker',
-    stroke: 'orange',
-    fill: 'orange',
-    strokeWidth: 2,
-    offsetX: -6,
-    offsetY: 1,
-    points: [0, 5, 5, 5, 0, 0],
-    closed: true,
-  },
   row: {
     frozenLine: sharedStyles.frozenLine,
     resizeGuideLine: sharedStyles.resizeGuideLine,
@@ -169,6 +160,19 @@ export const defaultStyles: IStyles = {
       verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
+    },
+    commentMarker: {
+      stroke: 'orange',
+      fill: 'orange',
+      strokeWidth: 2,
+      offsetX: -6,
+      offsetY: 1,
+      points: [0, 5, 5, 5, 0, 0],
+      closed: true,
+    },
+    borderLine: {
+      stroke: 'black',
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
     },
   },
 };

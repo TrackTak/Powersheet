@@ -45,9 +45,9 @@ class RowCol {
     this.oppositeType = rowCols.oppositeType;
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
-    this.headerRect = this.headerGroup.findOne('Rect');
-    this.headerText = this.headerGroup.findOne('Text');
-    this.resizeLine = this.headerGroup.findOne('Line');
+    this.headerRect = this.headerGroup.findOne('.headerRect');
+    this.headerText = this.headerGroup.findOne('.headerText');
+    this.resizeLine = this.headerGroup.findOne('.headerResizeLine');
     this.gridLine = this.rowCols.cachedGridLine.clone({
       [this.functions.axis]:
         this.rowCols.getAxis(this.index) +

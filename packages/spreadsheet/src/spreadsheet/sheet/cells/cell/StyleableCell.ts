@@ -1,11 +1,9 @@
 import { Line } from 'konva/lib/shapes/Line';
 import { Text } from 'konva/lib/shapes/Text';
 import Sheet from '../../Sheet';
-import Border from './Border';
 import FontStyle from './FontStyle';
 import TextDecoration from './TextDecoration';
 import { format } from 'numfmt';
-import { rotateAroundCenter } from '../../../utils';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 import {
@@ -20,7 +18,8 @@ import { Group } from 'konva/lib/Group';
 
 class StyleableCell extends Cell {
   text: Text;
-  borders = new Map<BorderStyle, Border>();
+  commentMarker: Line;
+  borders: Record<BorderStyle, Line>;
 
   constructor(
     public sheet: Sheet,
@@ -29,47 +28,49 @@ class StyleableCell extends Cell {
   ) {
     super(sheet, simpleCellAddress, group);
 
-    this.text = group.findOne('Text');
+    this.text = group.findOne('.cellText');
+    this.commentMarker = group.findOne<Line>('.commentMarker');
+
+    const borders = group.find<Line>('.borderLine');
+
+    this.borders = {
+      borderLeft: borders[0],
+      borderRight: borders[1],
+      borderBottom: borders[2],
+      borderTop: borders[3],
+    };
 
     this.update();
   }
 
-  private getBorder(type: BorderStyle) {
-    const border = new Border(this, type);
-
-    this.borders.set(type, border);
-
-    return border;
-  }
-
   setBottomBorder() {
     const clientRect = this.getClientRectWithoutStroke();
-    const border = this.getBorder('borderBottom');
+    const border = this.borders.borderBottom;
 
-    border.line.y(clientRect.height);
-    border.line.points([0, 0, clientRect.width, 0]);
+    border.y(clientRect.height);
+    border.points([0, 0, clientRect.width, 0]);
   }
 
   setRightBorder() {
     const clientRect = this.getClientRectWithoutStroke();
-    const border = this.getBorder('borderRight');
+    const border = this.borders.borderRight;
 
-    border.line.x(clientRect.width);
-    border.line.points([0, 0, 0, clientRect.height]);
+    border.x(clientRect.width);
+    border.points([0, 0, 0, clientRect.height]);
   }
 
   setTopBorder() {
     const clientRect = this.getClientRectWithoutStroke();
-    const border = this.getBorder('borderTop');
+    const border = this.borders.borderTop;
 
-    border.line.points([0, 0, clientRect.width, 0]);
+    border.points([0, 0, clientRect.width, 0]);
   }
 
   setLeftBorder() {
     const clientRect = this.getClientRectWithoutStroke();
-    const border = this.getBorder('borderLeft');
+    const border = this.borders.borderLeft;
 
-    border.line.points([0, 0, 0, clientRect.height]);
+    border.points([0, 0, 0, clientRect.height]);
   }
 
   setTextWrap(textWrap: TextWrap) {
@@ -166,14 +167,8 @@ class StyleableCell extends Cell {
 
   setCellCommentMarker() {
     const clientRect = this.getClientRectWithoutStroke();
-    const commentMarker = new Line({
-      ...this.spreadsheet.styles.commentMarker,
-      x: clientRect.width,
-    });
 
-    this.group.add(commentMarker);
-
-    rotateAroundCenter(commentMarker, 180);
+    this.commentMarker.x(clientRect.width);
   }
 
   setCellTextHeight() {
@@ -308,8 +303,6 @@ class StyleableCell extends Cell {
       }
     }
     this.setCellTextHeight();
-
-    this.group.moveToTop();
   }
 }
 

@@ -190,11 +190,11 @@ class ScrollBar {
     }
 
     this.layerListeningTimeout = setTimeout(() => {
-      this.sheet.layer.listening(true);
+      //  this.sheet.layer.listening(true);
     }, 40);
 
     // Improves performance by ~4fps
-    this.sheet.layer.listening(false);
+    // this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
       this.isCol ? 'scrollHorizontal' : 'scrollVertical',

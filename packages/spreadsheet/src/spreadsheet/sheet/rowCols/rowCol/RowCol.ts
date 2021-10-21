@@ -434,6 +434,10 @@ class RowCol {
     if (!isNil(frozenCell)) {
       this.setXFrozenGridLine(frozenCell);
       this.setYFrozenGridLine(frozenCell);
+    } else {
+      this.sheet.scrollGroups.xSticky.frozenBackground.destroy();
+      this.sheet.scrollGroups.ySticky.frozenBackground.destroy();
+      this.sheet.scrollGroups.xySticky.frozenBackground.destroy();
     }
 
     if (!isNil(frozenRow) && !isNil(frozenCol)) {

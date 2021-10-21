@@ -1,5 +1,5 @@
-import { Line } from '@tracktak/konva/lib/shapes/Line';
-import { Text } from '@tracktak/konva/lib/shapes/Text';
+import { Line } from 'konva/lib/shapes/Line';
+import { Text } from 'konva/lib/shapes/Text';
 import Sheet from '../../Sheet';
 import FontStyle from './FontStyle';
 import TextDecoration from './TextDecoration';
@@ -14,7 +14,7 @@ import {
 } from '../../Data';
 import RowColAddress from './RowColAddress';
 import { CellValue } from 'hyperformula';
-import { Group } from '@tracktak/konva/lib/Group';
+import { Group } from 'konva/lib/Group';
 
 class StyleableCell extends Cell {
   text: Text;

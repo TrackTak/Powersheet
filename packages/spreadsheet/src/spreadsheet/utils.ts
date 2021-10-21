@@ -1,5 +1,5 @@
-import { Shape } from '@tracktak/konva/lib/Shape';
-import { IRect, Vector2d } from '@tracktak/konva/lib/types';
+import { Shape } from 'konva/lib/Shape';
+import { IRect, Vector2d } from 'konva/lib/types';
 
 export const prefix = 'powersheet';
 

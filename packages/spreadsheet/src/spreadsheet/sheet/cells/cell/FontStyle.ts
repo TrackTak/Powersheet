@@ -1,4 +1,4 @@
-import { Text } from '@tracktak/konva/lib/shapes/Text';
+import { Text } from 'konva/lib/shapes/Text';
 
 class FontStyle {
   constructor(

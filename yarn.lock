@@ -4044,11 +4044,6 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
   integrity sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==
 
-"@tracktak/konva@8.2.2":
-  version "8.2.2"
-  resolved "https://npm.pkg.github.com/download/@tracktak/konva/8.2.2/e0a5edc008fb9f0566c9b36df4df790075626a3300841272823fd46b7d536d56#e1ecd00fd545c69ae039ed81a5f98738e9233ed2"
-  integrity sha512-kZd7PDa1PwgvHp0eUbCK3R/rZLOuE5Cb6pArMT8fMxTLyK2AzLtpmuNXpX3OqDHLR2Z7sMLbBmL4vwYHgHqN5w==
-
 "@trysound/sax@0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@trysound/sax/-/sax-0.2.0.tgz#cccaab758af56761eb7bf37af6f03f326dd798ad"
@@ -13019,6 +13014,11 @@ klona@^2.0.4:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/klona/-/klona-2.0.4.tgz#7bb1e3affb0cb8624547ef7e8f6708ea2e39dfc0"
   integrity sha512-ZRbnvdg/NxqzC7L9Uyqzf4psi1OM4Cuc+sJAkQPjO6XkQIJTNbfK2Rsmbw8fx1p2mkZdp2FZYo2+LwXYY/uwIA==
+
+konva@^8.2.2:
+  version "8.2.2"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-8.2.2.tgz#6077f5fa6cd628320612cc565ad62eb27aad3a3f"
+  integrity sha512-O6Ybw1V5x/PNX4Tc+h/U9LCuyoVZe+XaWc23XKxKs0xIbFyTkvdAJEsw3XQw+DsMDTO56UiTvspq5pfO75xEOg==
 
 language-subtag-registry@~0.3.2:
   version "0.3.21"

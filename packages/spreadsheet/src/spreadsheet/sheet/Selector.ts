@@ -1,6 +1,6 @@
-import { Shape } from '@tracktak/konva/lib/Shape';
-import { Rect } from '@tracktak/konva/lib/shapes/Rect';
-import { Vector2d } from '@tracktak/konva/lib/types';
+import { Shape } from 'konva/lib/Shape';
+import { Rect } from 'konva/lib/shapes/Rect';
+import { Vector2d } from 'konva/lib/types';
 import Spreadsheet from '../Spreadsheet';
 import SelectedCell from './cells/cell/SelectedCell';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';

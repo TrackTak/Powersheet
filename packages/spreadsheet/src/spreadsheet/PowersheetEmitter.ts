@@ -1,4 +1,4 @@
-import { KonvaEventObject } from '@tracktak/konva/lib/Node';
+import { KonvaEventObject } from 'konva/lib/Node';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { ISpreadsheetData } from './sheet/Data';
 import { ISelectionArea } from './sheet/Selector';

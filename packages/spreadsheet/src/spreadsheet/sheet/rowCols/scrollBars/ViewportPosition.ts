@@ -1,4 +1,4 @@
-import { Vector2d } from '@tracktak/konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
 
 class ViewportPosition implements Vector2d {
   constructor(public x = 0, public y = 0) {

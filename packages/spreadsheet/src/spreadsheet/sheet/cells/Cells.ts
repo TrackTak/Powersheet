@@ -6,10 +6,11 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
+import { Util } from 'konva/lib/Util';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
-  cachedCellsGroupsQueue: Group[] = [];
+  cachedCellsGroups: Group[] = [];
   cachedCellGroup: Group;
   cachedCellRect: Rect;
   private spreadsheet: Spreadsheet;
@@ -97,7 +98,7 @@ class Cells {
 
       const clonedCellGroup = this.cachedCellGroup.clone();
 
-      this.cachedCellsGroupsQueue.push(clonedCellGroup);
+      this.cachedCellsGroups.push(clonedCellGroup);
 
       const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
 
@@ -123,9 +124,12 @@ class Cells {
   }
 
   cacheOutOfViewportCells() {
+    const sheetRect = this.sheet.sheet.getClientRect();
+
     this.cellsMap.forEach((cell, cellId) => {
       const clientRect = cell.getClientRectWithoutStroke();
-      const isShapeOutsideOfSheet = !this.sheet.isClientRectOnSheet({
+
+      const isShapeOutsideOfSheet = !Util.haveIntersection(sheetRect, {
         ...clientRect,
         x: clientRect.x - 0.001,
         y: clientRect.y - 0.001,
@@ -133,7 +137,7 @@ class Cells {
 
       if (isShapeOutsideOfSheet) {
         this.cellsMap.delete(cellId);
-        this.cachedCellsGroupsQueue.push(cell.group);
+        this.cachedCellsGroups.push(cell.group);
       }
     });
   }
@@ -170,7 +174,7 @@ class Cells {
     if (this.cellsMap.has(cellId) || !this.getHasCellData(simpleCellAddress))
       return;
 
-    const cachedCellGroup = this.cachedCellsGroupsQueue.shift()!;
+    const cachedCellGroup = this.cachedCellsGroups.shift()!;
 
     const styleableCell = new StyleableCell(
       this.sheet,

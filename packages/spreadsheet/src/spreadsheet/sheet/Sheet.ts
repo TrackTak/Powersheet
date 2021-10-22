@@ -12,13 +12,12 @@ import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheet.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import { debounce, DebouncedFunc, throttle } from 'lodash';
+import { debounce, DebouncedFunc, isNil, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
-import { Util } from 'konva/lib/Util';
 
 export interface IDimensions {
   width: number;
@@ -103,42 +102,6 @@ class Sheet {
 
     this.stage.add(this.layer);
 
-    this.cells = new Cells(this);
-    this.cols = new RowCols('col', this);
-    this.rows = new RowCols('row', this);
-
-    this.rows.updateViewportSize();
-    this.cols.updateViewportSize();
-
-    this.selector = new Selector(this);
-    this.rightClickMenu = new RightClickMenu(this);
-    this.comment = new Comment(this);
-
-    this.stage.on('contextmenu', this.onContextMenu);
-    this.stage.on('mousedown', this.stageOnMousedown);
-    this.stage.on('click', this.stageOnClick);
-    this.stage.on('wheel', this.onWheel);
-    this.sheet.on('click', this.sheetOnClick);
-    this.sheet.on('mousedown', this.onSheetMouseDown);
-    this.sheet.on('mousemove', this.throttledSheetMove);
-    this.sheet.on('mouseup', this.onSheetMouseUp);
-
-    this.sheet.on('touchstart', this.sheetOnTouchStart);
-    this.sheet.on('touchmove', this.sheetOnTouchMove);
-    this.sheet.on('tap', this.sheetOnTap);
-
-    this.sheetEl.tabIndex = 1;
-    this.sheetEl.addEventListener('keydown', this.keyHandler);
-
-    window.addEventListener('resize', this.debouncedResize);
-
-    this.updateSheetDimensions();
-
-    this.sheet.setPosition(this.getViewportVector());
-
-    this.cols.scrollBar.setYIndex();
-    this.rows.scrollBar.setYIndex();
-
     scrollGroups.forEach((key) => {
       const type = key as keyof IScrollGroups;
 
@@ -195,6 +158,42 @@ class Sheet {
       };
     });
 
+    this.cells = new Cells(this);
+    this.cols = new RowCols('col', this);
+    this.rows = new RowCols('row', this);
+
+    this.rows.updateViewportSize();
+    this.cols.updateViewportSize();
+
+    this.selector = new Selector(this);
+    this.rightClickMenu = new RightClickMenu(this);
+    this.comment = new Comment(this);
+
+    this.stage.on('contextmenu', this.onContextMenu);
+    this.stage.on('mousedown', this.stageOnMousedown);
+    this.stage.on('click', this.stageOnClick);
+    this.stage.on('wheel', this.onWheel);
+    this.sheet.on('click', this.sheetOnClick);
+    this.sheet.on('mousedown', this.onSheetMouseDown);
+    this.sheet.on('mousemove', this.throttledSheetMove);
+    this.sheet.on('mouseup', this.onSheetMouseUp);
+
+    this.sheet.on('touchstart', this.sheetOnTouchStart);
+    this.sheet.on('touchmove', this.sheetOnTouchMove);
+    this.sheet.on('tap', this.sheetOnTap);
+
+    this.sheetEl.tabIndex = 1;
+    this.sheetEl.addEventListener('keydown', this.keyHandler);
+
+    window.addEventListener('resize', this.debouncedResize);
+
+    this.updateSheetDimensions();
+
+    this.sheet.setPosition(this.getViewportVector());
+
+    this.cols.scrollBar.setYIndex();
+    this.rows.scrollBar.setYIndex();
+
     this.drawTopLeftOffsetRect();
 
     // TODO: use scrollBar size instead of hardcoded value
@@ -225,10 +224,6 @@ class Sheet {
     this.cols.setCachedRowCols();
     this.cells.setCachedCells();
     this.spreadsheet.updateViewport();
-  }
-
-  isClientRectOnSheet(rect: IRect) {
-    return Util.haveIntersection(this.sheet.getClientRect(), rect);
   }
 
   onResize = () => {
@@ -566,40 +561,47 @@ class Sheet {
   }
 
   updateFrozenBackgrounds() {
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheetId];
     const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
     const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
     const xyStickyFrozenBackground =
       this.scrollGroups.xySticky.frozenBackground;
+    const frozenRowExists = !isNil(frozenCells?.row);
+    const frozenColExists = !isNil(frozenCells?.col);
 
-    if (this.rows.frozenLine && this.cols.frozenLine) {
-      const colClientRect = this.cols.frozenLine.getClientRect({
-        skipStroke: true,
+    const sizeUpToFrozenCol = this.cols.getSizeUpToFrozenRowCol();
+    const sizeUpToFrozenRow = this.rows.getSizeUpToFrozenRowCol();
+
+    if (frozenRowExists) {
+      xStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: this.sheetDimensions.height,
       });
-      const rowClientRect = this.rows.frozenLine.getClientRect({
-        skipStroke: true,
-      });
-
-      colClientRect.x -= this.getViewportVector().x;
-      rowClientRect.y -= this.getViewportVector().y;
-
-      xStickyFrozenBackground.width(colClientRect.x);
-      xStickyFrozenBackground.height(this.sheetDimensions.height);
-      xStickyFrozenBackground.y(rowClientRect.y);
-
-      yStickyFrozenBackground.width(this.sheetDimensions.width);
-      yStickyFrozenBackground.height(rowClientRect.y);
-      yStickyFrozenBackground.x(colClientRect.x);
-
-      xyStickyFrozenBackground.width(colClientRect.x);
-      xyStickyFrozenBackground.height(rowClientRect.y);
-
+      xStickyFrozenBackground.y(sizeUpToFrozenRow);
       xStickyFrozenBackground.show();
-      yStickyFrozenBackground.show();
-      xyStickyFrozenBackground.show();
     } else {
       xStickyFrozenBackground.hide();
+    }
+
+    if (frozenColExists) {
+      yStickyFrozenBackground.size({
+        width: this.sheetDimensions.width,
+        height: sizeUpToFrozenRow,
+      });
+      yStickyFrozenBackground.x(sizeUpToFrozenCol);
+      yStickyFrozenBackground.show();
+    } else {
       yStickyFrozenBackground.hide();
-      xyStickyFrozenBackground.hide();
+    }
+
+    if (frozenRowExists && frozenColExists) {
+      xyStickyFrozenBackground.show();
+
+      xyStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: sizeUpToFrozenRow,
+      });
     }
   }
 
@@ -614,6 +616,7 @@ class Sheet {
       this.selector.selectedCell?.simpleCellAddress
     );
     this.updateFrozenBackgrounds();
+    console.log(this.sheet);
   }
 }
 

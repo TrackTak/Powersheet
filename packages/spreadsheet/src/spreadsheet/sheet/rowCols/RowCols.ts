@@ -25,16 +25,23 @@ export type HeaderGroupId = number;
 
 export type RowColId = number;
 
+interface ICachedGridLines {
+  main: Line[];
+  xFrozenLines: Line[];
+  yFrozenLines: Line[];
+  xyFrozenLines: Line[];
+}
+
 interface ICachedRowColGroup {
   headerGroups: Group[];
-  gridLines: Line[];
+  gridLines: ICachedGridLines;
 }
 
 class RowCols {
   scrollBar: ScrollBar;
   rowColMap: Map<RowColId, RowCol>;
   totalSize: number;
-  frozenLine?: Line;
+  frozenLine: Line;
   functions: IRowColFunctions;
   oppositeType: RowColType;
   oppositeFunctions: IRowColFunctions;
@@ -42,16 +49,21 @@ class RowCols {
   spreadsheet: Spreadsheet;
   resizer: Resizer;
   pluralType: RowColsType;
+  oppositePluralType: RowColsType;
   cachedHeaderGroup: Group;
   cachedGridLine: Line;
   cachedRowColGroups: ICachedRowColGroup = {
     headerGroups: [],
-    gridLines: [],
+    gridLines: {
+      main: [],
+      xFrozenLines: [],
+      yFrozenLines: [],
+      xyFrozenLines: [],
+    },
   };
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
-    this.pluralType = `${this.type}s`;
     this.isCol = this.type === 'col';
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
@@ -80,6 +92,8 @@ class RowCols {
         size: 'width',
       };
     }
+    this.pluralType = `${this.type}s`;
+    this.oppositePluralType = `${this.oppositeType}s`;
 
     this.resizer = new Resizer(this);
     this.scrollBar = new ScrollBar(this);
@@ -112,23 +126,33 @@ class RowCols {
     this.cachedGridLine = new Line({
       ...this.spreadsheet.styles[this.type].gridLine,
       name: 'gridLine',
+      listening: false,
     }).cache();
+
+    this.frozenLine = new Line({
+      ...this.spreadsheet.styles[this.type].frozenLine,
+      visible: false,
+      name: 'frozenLine',
+    });
+
+    this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
   }
 
   cacheOutOfViewportRowCols() {
     this.rowColMap.forEach((rowCol, index) => {
-      const clientRect = rowCol.headerGroup.getClientRect({
-        skipStroke: true,
-      });
-      const isShapeOutsideOfSheet = !this.sheet.isClientRectOnSheet({
-        ...clientRect,
-        [this.functions.axis]: clientRect[this.functions.axis] - 0.001,
-      });
-
-      if (isShapeOutsideOfSheet) {
+      if (rowCol.getIsOutsideSheet()) {
         this.rowColMap.delete(index);
         this.cachedRowColGroups.headerGroups.push(rowCol.headerGroup);
-        this.cachedRowColGroups.gridLines.push(rowCol.gridLine);
+        this.cachedRowColGroups.gridLines.main.push(rowCol.gridLine);
+        this.cachedRowColGroups.gridLines.xFrozenLines.push(
+          rowCol.xFrozenGridLine
+        );
+        this.cachedRowColGroups.gridLines.yFrozenLines.push(
+          rowCol.yFrozenGridLine
+        );
+        this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+          rowCol.xyFrozenGridLine
+        );
       }
     });
   }
@@ -163,12 +187,34 @@ class RowCols {
       const clonedHeaderGroup = this.cachedHeaderGroup.clone();
       const clonedGridLine = this.cachedGridLine.clone({
         points: this.getLinePoints(this.getSheetSize()),
-      });
+      }) as Line;
+      const clonedXFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
+      const clonedYFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
+      const clonedXYFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
 
       this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
-      this.cachedRowColGroups.gridLines.push(clonedGridLine);
+      this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
+      this.cachedRowColGroups.gridLines.xFrozenLines.push(
+        clonedXFrozenGridLine
+      );
+      this.cachedRowColGroups.gridLines.yFrozenLines.push(
+        clonedYFrozenGridLine
+      );
+      this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+        clonedXYFrozenGridLine
+      );
 
       const isFrozen = this.getIsFrozen(rowColAddress.rowCol);
+
+      this.sheet.scrollGroups.xSticky.rowColGroup.add(clonedXFrozenGridLine);
+      this.sheet.scrollGroups.ySticky.rowColGroup.add(clonedYFrozenGridLine);
+      this.sheet.scrollGroups.xySticky.rowColGroup.add(clonedXYFrozenGridLine);
 
       if (isFrozen) {
         this.sheet.scrollGroups.xySticky.headerGroup.add(clonedHeaderGroup);
@@ -187,9 +233,11 @@ class RowCols {
   }
 
   updateViewportForScroll() {
+    // Backwards so we ignore frozen row/cols
+    // when they don't exist in the cache
     for (const index of this.sheet[
       this.pluralType
-    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    ].scrollBar.sheetViewportPosition.iterateFromYToX()) {
       const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
 
       this.setRowCols(rowColAddress);
@@ -201,36 +249,36 @@ class RowCols {
 
     if (rowColAlreadyExists) return;
 
-    const cachedHeaderRowColGroup =
-      this.cachedRowColGroups.headerGroups.shift()!;
-    const cachedGridLine = this.cachedRowColGroups.gridLines.shift()!;
+    const cachedHeaderRowColGroup = this.cachedRowColGroups.headerGroups.pop()!;
+    const cachedGridLine = this.cachedRowColGroups.gridLines.main.pop()!;
+    const cachedXFrozenGridLine =
+      this.cachedRowColGroups.gridLines.xFrozenLines.pop()!;
+    const cachedYFrozenGridLine =
+      this.cachedRowColGroups.gridLines.yFrozenLines.pop()!;
+    const cachedXYFrozenGridLine =
+      this.cachedRowColGroups.gridLines.xyFrozenLines.pop()!;
+
+    if (!cachedHeaderRowColGroup) return;
 
     const rowCol = new RowCol(
       this,
       rowColAddress.rowCol,
       cachedHeaderRowColGroup,
-      cachedGridLine
+      cachedGridLine,
+      cachedXFrozenGridLine,
+      cachedYFrozenGridLine,
+      cachedXYFrozenGridLine
     );
 
     this.rowColMap.set(rowColAddress.rowCol, rowCol);
   }
 
   updateViewport() {
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+    const frozenCell = frozenCells?.[this.type];
+
     this.scrollBar.setScrollSize();
-
-    // const data = this.spreadsheet.data.spreadsheetData;
-
-    // const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
-
-    // if (!isNil(frozenCell)) {
-    //   for (let index = 0; index <= frozenCell; index++) {
-    //     this.draw(index, forceDraw);
-    //   }
-    // }
-
-    // for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-    //   this.draw(index, forceDraw);
-    // }
 
     for (const index of this.sheet[
       this.pluralType
@@ -239,13 +287,29 @@ class RowCols {
 
       this.updateRowCol(rowColAddress);
     }
+
+    if (!isNil(frozenCell)) {
+      this.frozenLine[this.functions.axis](
+        this.getAxis(frozenCell) +
+          this.getSize(frozenCell) -
+          this.sheet.getViewportVector()[this.functions.axis]
+      );
+      this.frozenLine.points(
+        this.getLinePoints(
+          this.isCol
+            ? this.sheet.sheetDimensions.height
+            : this.sheet.sheetDimensions.width
+        )
+      );
+      this.frozenLine.show();
+    }
   }
 
   updateRowCol(rowColAddress: RowColAddress) {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol);
 
     if (rowCol) {
-      // rowCol.update();
+      rowCol.update();
     }
   }
 
@@ -262,6 +326,7 @@ class RowCols {
 
   destroy() {
     this.scrollBar.destroy();
+    this.frozenLine.destroy();
   }
 
   getAxis(index: number) {
@@ -300,15 +365,6 @@ class RowCols {
         ?.size;
 
     return size ?? this.spreadsheet.options[this.type].defaultSize;
-  }
-
-  getIsLastFrozen(index: number) {
-    return (
-      index ===
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId]?.[
-        this.type
-      ]
-    );
   }
 
   getIsFrozen(index: number) {
@@ -370,6 +426,15 @@ class RowCols {
       totalSizeDifference;
 
     return totalSize;
+  }
+
+  getSizeUpToFrozenRowCol() {
+    let size = 0;
+
+    for (const value of this.getSizeForFrozenCell()) {
+      size = value.size;
+    }
+    return size;
   }
 
   *getSizeForFrozenCell() {

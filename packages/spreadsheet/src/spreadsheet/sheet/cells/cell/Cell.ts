@@ -1,5 +1,6 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
+import { Util } from 'konva/lib/Util';
 import Spreadsheet from '../../../Spreadsheet';
 import Sheet from '../../Sheet';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';
@@ -79,6 +80,30 @@ class Cell {
 
     this.rect.width(width);
     this.rect.height(height);
+  }
+
+  getIsOutsideSheet() {
+    const clientRect = this.getClientRectWithoutStroke();
+    const sheetRect = this.sheet.sheet.getClientRect();
+    const sizeUpToFrozenRow = this.sheet.rows.getSizeUpToFrozenRowCol();
+    const sizeUpToFrozenCol = this.sheet.cols.getSizeUpToFrozenRowCol();
+
+    sheetRect.width -= sizeUpToFrozenCol;
+    sheetRect.height -= sizeUpToFrozenRow;
+
+    sheetRect.x += sizeUpToFrozenCol;
+    sheetRect.y += sizeUpToFrozenRow;
+
+    const isShapeOutsideSheet =
+      !Util.haveIntersection(sheetRect, {
+        ...clientRect,
+        x: clientRect.x - 0.001,
+        y: clientRect.y - 0.001,
+      }) &&
+      !this.sheet.cells.isCellOnFrozenCol(this.simpleCellAddress) &&
+      !this.sheet.cells.isCellOnFrozenRow(this.simpleCellAddress);
+
+    return isShapeOutsideSheet;
   }
 
   destroy() {

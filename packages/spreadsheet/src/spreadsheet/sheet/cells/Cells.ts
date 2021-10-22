@@ -88,7 +88,10 @@ class Cells {
     simpleCellAddressesForCache.forEach((simpleCellAddress) => {
       const cellId = simpleCellAddress.toCellId();
 
-      if (this.cellsMap.has(cellId)) {
+      if (
+        this.cellsMap.has(cellId) ||
+        !this.getHasCellData(simpleCellAddress)
+      ) {
         return;
       }
 
@@ -163,9 +166,9 @@ class Cells {
     // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
 
     const cellId = simpleCellAddress.toCellId();
-    const cellAlreadyExists = this.cellsMap.has(cellId);
 
-    if (cellAlreadyExists || !this.getHasCellData(simpleCellAddress)) return;
+    if (this.cellsMap.has(cellId) || !this.getHasCellData(simpleCellAddress))
+      return;
 
     const cachedCellGroup = this.cachedCellsGroupsQueue.shift()!;
 

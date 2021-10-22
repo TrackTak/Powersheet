@@ -146,25 +146,25 @@ class Sheet {
 
       const sheetGroup = new Group({
         ...this.getViewportVector(),
+        name: 'sheetGroup',
         listening: true,
-        type: 'sheet',
       });
 
       const cellGroup = new Group({
-        type: 'cell',
+        name: 'cellGroup',
       });
 
       const rowColGroup = new Group({
-        type: 'rowCol',
+        name: 'rowColGroup',
       });
 
       const headerGroup = new Group({
+        name: 'headerGroup',
         listening: true,
-        type: 'header',
       });
 
       const frozenBackground = new Rect({
-        type: 'frozenBackground',
+        name: 'frozenBackgroundRect',
         fill: 'white',
         visible: false,
       });

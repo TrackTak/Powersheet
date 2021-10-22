@@ -25,6 +25,11 @@ export type HeaderGroupId = number;
 
 export type RowColId = number;
 
+interface ICachedRowColGroup {
+  headerGroups: Group[];
+  gridLines: Line[];
+}
+
 class RowCols {
   scrollBar: ScrollBar;
   rowColMap: Map<RowColId, RowCol>;
@@ -39,7 +44,10 @@ class RowCols {
   pluralType: RowColsType;
   cachedHeaderGroup: Group;
   cachedGridLine: Line;
-  cachedHeaderRowColGroups: Group[] = [];
+  cachedRowColGroups: ICachedRowColGroup = {
+    headerGroups: [],
+    gridLines: [],
+  };
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -103,7 +111,7 @@ class RowCols {
 
     this.cachedGridLine = new Line({
       ...this.spreadsheet.styles[this.type].gridLine,
-      points: this.getLinePoints(this.getSheetSize()),
+      name: 'gridLine',
     }).cache();
   }
 
@@ -119,7 +127,8 @@ class RowCols {
 
       if (isShapeOutsideOfSheet) {
         this.rowColMap.delete(index);
-        this.cachedHeaderRowColGroups.push(rowCol.headerGroup);
+        this.cachedRowColGroups.headerGroups.push(rowCol.headerGroup);
+        this.cachedRowColGroups.gridLines.push(rowCol.gridLine);
       }
     });
   }
@@ -152,8 +161,12 @@ class RowCols {
       }
 
       const clonedHeaderGroup = this.cachedHeaderGroup.clone();
+      const clonedGridLine = this.cachedGridLine.clone({
+        points: this.getLinePoints(this.getSheetSize()),
+      });
 
-      this.cachedHeaderRowColGroups.push(clonedHeaderGroup);
+      this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
+      this.cachedRowColGroups.gridLines.push(clonedGridLine);
 
       const isFrozen = this.getIsFrozen(rowColAddress.rowCol);
 
@@ -166,6 +179,8 @@ class RowCols {
           this.sheet.scrollGroups.xSticky.headerGroup.add(clonedHeaderGroup);
         }
       }
+
+      this.sheet.scrollGroups.main.rowColGroup.add(clonedGridLine);
 
       this.setRowCols(rowColAddress);
     });
@@ -186,12 +201,15 @@ class RowCols {
 
     if (rowColAlreadyExists) return;
 
-    const cachedHeaderRowColGroup = this.cachedHeaderRowColGroups.shift()!;
+    const cachedHeaderRowColGroup =
+      this.cachedRowColGroups.headerGroups.shift()!;
+    const cachedGridLine = this.cachedRowColGroups.gridLines.shift()!;
 
     const rowCol = new RowCol(
       this,
       rowColAddress.rowCol,
-      cachedHeaderRowColGroup
+      cachedHeaderRowColGroup,
+      cachedGridLine
     );
 
     this.rowColMap.set(rowColAddress.rowCol, rowCol);

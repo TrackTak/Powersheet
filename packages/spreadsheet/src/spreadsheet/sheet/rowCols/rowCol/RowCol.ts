@@ -2,7 +2,7 @@ import { Group } from 'konva/lib/Group';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
-import { head, isNil } from 'lodash';
+import { isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
@@ -16,7 +16,6 @@ class RowCol {
   headerRect: Rect;
   headerText: Text;
   resizeLine: Line;
-  gridLine: Line;
   xFrozenLine?: Line;
   yFrozenLine?: Line;
   xyFrozenLine?: Line;
@@ -32,11 +31,13 @@ class RowCol {
   constructor(
     public rowCols: RowCols,
     public index: number,
-    public headerGroup: Group
+    public headerGroup: Group,
+    public gridLine: Line
   ) {
     this.rowCols = rowCols;
     this.index = index;
     this.headerGroup = headerGroup;
+    this.gridLine = gridLine;
     this.sheet = rowCols.sheet;
     this.spreadsheet = this.sheet.spreadsheet;
     this.type = rowCols.type;
@@ -48,12 +49,12 @@ class RowCol {
     this.headerRect = this.headerGroup.findOne('.headerRect');
     this.headerText = this.headerGroup.findOne('.headerText');
     this.resizeLine = this.headerGroup.findOne('.headerResizeLine');
-    this.gridLine = this.rowCols.cachedGridLine.clone({
-      [this.functions.axis]:
-        this.rowCols.getAxis(this.index) +
+    this.gridLine[this.functions.axis](
+      this.rowCols.getAxis(this.index) +
         this.rowCols.getSize(this.index) -
-        this.sheet.getViewportVector()[this.functions.axis],
-    });
+        this.sheet.getViewportVector()[this.functions.axis]
+    );
+
     this.rowColAddress = new RowColAddress(this.sheet.sheetId, this.index);
 
     this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index));
@@ -105,11 +106,11 @@ class RowCol {
     this.resizeLine.off('mouseover', this.resizeLineOnMouseOver);
     this.resizeLine.off('mouseup', this.resizeLineOnMouseOut);
 
-    this.headerGroup.destroy();
-    this.gridLine.destroy();
-    this.xFrozenLine?.destroy();
-    this.yFrozenLine?.destroy();
-    this.xyFrozenLine?.destroy();
+    // this.headerGroup.destroy();
+    // this.gridLine.destroy();
+    // this.xFrozenLine?.destroy();
+    // this.yFrozenLine?.destroy();
+    // this.xyFrozenLine?.destroy();
   }
 
   private shiftFrozenCells(getValue: (frozenCell: number) => number) {

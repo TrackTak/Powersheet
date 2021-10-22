@@ -49,6 +49,7 @@ class StyleableCell extends Cell {
 
     border.y(clientRect.height);
     border.points([0, 0, clientRect.width, 0]);
+    border.show();
   }
 
   setRightBorder() {
@@ -57,6 +58,7 @@ class StyleableCell extends Cell {
 
     border.x(clientRect.width);
     border.points([0, 0, 0, clientRect.height]);
+    border.show();
   }
 
   setTopBorder() {
@@ -64,6 +66,7 @@ class StyleableCell extends Cell {
     const border = this.borders.borderTop;
 
     border.points([0, 0, clientRect.width, 0]);
+    border.show();
   }
 
   setLeftBorder() {
@@ -71,6 +74,7 @@ class StyleableCell extends Cell {
     const border = this.borders.borderLeft;
 
     border.points([0, 0, 0, clientRect.height]);
+    border.show();
   }
 
   setTextWrap(textWrap: TextWrap) {
@@ -168,7 +172,10 @@ class StyleableCell extends Cell {
   setCellCommentMarker() {
     const clientRect = this.getClientRectWithoutStroke();
 
-    this.commentMarker.x(clientRect.width);
+    this.commentMarker.x(clientRect.width - 1);
+    this.commentMarker.y(this.commentMarker.height() + 1);
+
+    this.commentMarker.show();
   }
 
   setCellTextHeight() {
@@ -185,6 +192,7 @@ class StyleableCell extends Cell {
     this.text.text(value);
     // Only set the width for text wrapping to work
     this.text.width(width);
+    this.text.show();
   }
 
   update() {

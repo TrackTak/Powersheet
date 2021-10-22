@@ -182,10 +182,6 @@ class RowCols {
   }
 
   setRowCols(rowColAddress: RowColAddress) {
-    // TODO: This if shouldn't be needed
-    if (rowColAddress.rowCol > this.spreadsheet.options[this.type].amount)
-      return;
-
     const rowColAlreadyExists = this.rowColMap.has(rowColAddress.rowCol);
 
     if (rowColAlreadyExists) return;

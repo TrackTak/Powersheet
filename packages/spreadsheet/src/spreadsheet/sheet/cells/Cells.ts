@@ -6,7 +6,6 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
-import { rotateAroundCenter } from '../../utils';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
@@ -28,19 +27,20 @@ class Cells {
     const borderLine = new Line({
       ...this.spreadsheet.styles.cell.borderLine,
       name: 'borderLine',
-    });
+    }).hide();
     const commentMarker = new Line({
       ...this.spreadsheet.styles.cell.commentMarker,
       name: 'commentMarker',
-    });
-    rotateAroundCenter(commentMarker, 180);
+    }).hide();
 
     const cellText = new Text({
       name: 'cellText',
       ...this.spreadsheet.styles.cell.text,
-    });
+    }).hide();
 
-    this.cachedCellGroup = new Group();
+    this.cachedCellGroup = new Group({
+      listening: false,
+    });
 
     const borderLines = [
       borderLine.clone(),

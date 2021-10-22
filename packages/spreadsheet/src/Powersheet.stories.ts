@@ -602,7 +602,7 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
     borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
     fontColor: 'white',
     fontSize: 13,
-    // textWrap: 'wrap',
+    textWrap: 'wrap',
     underline: true,
     strikeThrough: true,
     bold: true,

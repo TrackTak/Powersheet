@@ -177,21 +177,19 @@ class Cells {
     if (!this.getHasCellData(simpleCellAddress)) return;
 
     const cell = this.cellsMap.get(cellId);
+    const cachedCellGroup = cell ? cell.group : this.cachedCellGroup.clone();
+    const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
+
+    this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
 
     if (cell) {
       cell.update();
     } else {
-      const cachedCellGroup = this.cachedCellGroup.clone();
-
       const styleableCell = new StyleableCell(
         this.sheet,
         simpleCellAddress,
         cachedCellGroup
       );
-
-      const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
-
-      this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
 
       this.cellsMap.set(cellId, styleableCell);
     }

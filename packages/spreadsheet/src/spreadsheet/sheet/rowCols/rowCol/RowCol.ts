@@ -397,6 +397,12 @@ class RowCol {
     this.yFrozenGridLine.hide();
     this.xyFrozenGridLine.hide();
 
+    if (this.isCol) {
+      this.sheet.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
+    } else {
+      this.sheet.scrollGroups.xSticky.headerGroup.add(this.headerGroup);
+    }
+
     if (!isNil(frozenCell)) {
       if (this.isCol) {
         if (this.index > frozenCell) {
@@ -424,6 +430,10 @@ class RowCol {
           this.xFrozenGridLine.points(this.rowCols.getLinePoints(size));
           this.xFrozenGridLine.show();
         }
+      }
+
+      if (this.index <= frozenCell) {
+        this.sheet.scrollGroups.xySticky.headerGroup.add(this.headerGroup);
       }
 
       if (this.index < frozenCell) {

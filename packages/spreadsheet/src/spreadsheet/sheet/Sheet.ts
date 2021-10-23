@@ -1,7 +1,7 @@
 import { Layer } from 'konva/lib/Layer';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
-import { IRect, Vector2d } from 'konva/lib/types';
+import { Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
 import RowCols, { RowColType } from './rowCols/RowCols';
 import CellEditor from './cellEditor/CellEditor';
@@ -573,36 +573,35 @@ class Sheet {
     const sizeUpToFrozenCol = this.cols.getSizeUpToFrozenRowCol();
     const sizeUpToFrozenRow = this.rows.getSizeUpToFrozenRowCol();
 
-    if (frozenRowExists) {
-      xStickyFrozenBackground.size({
-        width: sizeUpToFrozenCol,
-        height: this.sheetDimensions.height,
-      });
-      xStickyFrozenBackground.y(sizeUpToFrozenRow);
-      xStickyFrozenBackground.show();
-    } else {
-      xStickyFrozenBackground.hide();
-    }
+    xStickyFrozenBackground.hide();
+    yStickyFrozenBackground.hide();
+    xyStickyFrozenBackground.hide();
 
-    if (frozenColExists) {
+    // if (frozenColExists) {
+    //   xStickyFrozenBackground.size({
+    //     width: sizeUpToFrozenCol,
+    //     height: this.sheetDimensions.height,
+    //   });
+    //   xStickyFrozenBackground.y(sizeUpToFrozenRow);
+    //   xStickyFrozenBackground.show();
+    // }
+
+    if (frozenRowExists) {
       yStickyFrozenBackground.size({
         width: this.sheetDimensions.width,
         height: sizeUpToFrozenRow,
       });
       yStickyFrozenBackground.x(sizeUpToFrozenCol);
       yStickyFrozenBackground.show();
-    } else {
-      yStickyFrozenBackground.hide();
     }
+    // if (frozenRowExists && frozenColExists) {
+    //   xyStickyFrozenBackground.show();
 
-    if (frozenRowExists && frozenColExists) {
-      xyStickyFrozenBackground.show();
-
-      xyStickyFrozenBackground.size({
-        width: sizeUpToFrozenCol,
-        height: sizeUpToFrozenRow,
-      });
-    }
+    //   xyStickyFrozenBackground.size({
+    //     width: sizeUpToFrozenCol,
+    //     height: sizeUpToFrozenRow,
+    //   });
+    // }
   }
 
   updateViewport() {
@@ -616,7 +615,6 @@ class Sheet {
       this.selector.selectedCell?.simpleCellAddress
     );
     this.updateFrozenBackgrounds();
-    console.log(this.sheet);
   }
 }
 

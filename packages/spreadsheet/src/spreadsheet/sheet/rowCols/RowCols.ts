@@ -178,55 +178,61 @@ class RowCols {
       rowCol.destroy();
       this.rowColMap.delete(rowColId);
     });
-  }
 
-  updateViewportForScroll() {
-    // Backwards so we ignore frozen row/cols
-    // when they don't exist in the cache
-    for (const index of this.sheet[
-      this.pluralType
-    ].scrollBar.sheetViewportPosition.iterateFromYToX()) {
-      const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+    sheetRowColAddressesForCache.forEach((rowColAddress) => {
+      if (this.rowColMap.has(rowColAddress.rowCol)) {
+        return;
+      }
 
-      this.setRowCols(rowColAddress);
-    }
-  }
+      const clonedHeaderGroup = this.cachedHeaderGroup.clone();
+      const clonedGridLine = this.cachedGridLine.clone({
+        points: this.getLinePoints(this.getSheetSize()),
+      }) as Line;
+      const clonedXFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
+      const clonedYFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
+      const clonedXYFrozenGridLine = this.cachedGridLine.clone({
+        visible: false,
+      }) as Line;
 
-  setRowCols(rowColAddress: RowColAddress) {
-    const rowColAlreadyExists = this.rowColMap.has(rowColAddress.rowCol);
+      this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
+      this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
+      this.cachedRowColGroups.gridLines.xFrozenLines.push(
+        clonedXFrozenGridLine
+      );
+      this.cachedRowColGroups.gridLines.yFrozenLines.push(
+        clonedYFrozenGridLine
+      );
+      this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+        clonedXYFrozenGridLine
+      );
 
-    if (rowColAlreadyExists) return;
-
-    const cachedHeaderRowColGroup = this.cachedRowColGroups.headerGroups.pop()!;
-    const cachedGridLine = this.cachedRowColGroups.gridLines.main.pop()!;
-    const cachedXFrozenGridLine =
-      this.cachedRowColGroups.gridLines.xFrozenLines.pop()!;
-    const cachedYFrozenGridLine =
-      this.cachedRowColGroups.gridLines.yFrozenLines.pop()!;
-    const cachedXYFrozenGridLine =
-      this.cachedRowColGroups.gridLines.xyFrozenLines.pop()!;
-
-    if (!cachedHeaderRowColGroup) return;
-
-    const rowCol = new RowCol(
-      this,
-      rowColAddress.rowCol,
-      cachedHeaderRowColGroup,
-      cachedGridLine,
-      cachedXFrozenGridLine,
-      cachedYFrozenGridLine,
-      cachedXYFrozenGridLine
-    );
-
-    this.rowColMap.set(rowColAddress.rowCol, rowCol);
+      this.sheet.scrollGroups.main.rowColGroup.add(clonedGridLine);
+      this.sheet.scrollGroups.xSticky.rowColGroup.add(clonedXFrozenGridLine);
+      this.sheet.scrollGroups.ySticky.rowColGroup.add(clonedYFrozenGridLine);
+      this.sheet.scrollGroups.xySticky.rowColGroup.add(clonedXYFrozenGridLine);
+    });
   }
 
   updateViewport() {
+    this.scrollBar.setScrollSize();
+
+    this.frozenLine.hide();
+
     const frozenCells =
       this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
     const frozenCell = frozenCells?.[this.type];
 
-    this.scrollBar.setScrollSize();
+    if (!isNil(frozenCell)) {
+      for (let index = 0; index <= frozenCell; index++) {
+        const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+
+        this.updateRowCol(rowColAddress);
+      }
+    }
 
     for (const index of this.sheet[
       this.pluralType
@@ -259,52 +265,33 @@ class RowCols {
     if (rowCol) {
       rowCol.update();
     } else {
-      const clonedHeaderGroup = this.cachedHeaderGroup.clone();
-      const clonedGridLine = this.cachedGridLine.clone({
-        points: this.getLinePoints(this.getSheetSize()),
-      }) as Line;
-      const clonedXFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-      const clonedYFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-      const clonedXYFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-
-      this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
-      this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
-      this.cachedRowColGroups.gridLines.xFrozenLines.push(
-        clonedXFrozenGridLine
-      );
-      this.cachedRowColGroups.gridLines.yFrozenLines.push(
-        clonedYFrozenGridLine
-      );
-      this.cachedRowColGroups.gridLines.xyFrozenLines.push(
-        clonedXYFrozenGridLine
-      );
-
-      const isFrozen = this.getIsFrozen(rowColAddress.rowCol);
-
-      this.sheet.scrollGroups.xSticky.rowColGroup.add(clonedXFrozenGridLine);
-      this.sheet.scrollGroups.ySticky.rowColGroup.add(clonedYFrozenGridLine);
-      this.sheet.scrollGroups.xySticky.rowColGroup.add(clonedXYFrozenGridLine);
-
-      if (isFrozen) {
-        this.sheet.scrollGroups.xySticky.headerGroup.add(clonedHeaderGroup);
-      } else {
-        if (this.isCol) {
-          this.sheet.scrollGroups.ySticky.headerGroup.add(clonedHeaderGroup);
-        } else {
-          this.sheet.scrollGroups.xSticky.headerGroup.add(clonedHeaderGroup);
-        }
-      }
-
-      this.sheet.scrollGroups.main.rowColGroup.add(clonedGridLine);
-
-      this.setRowCols(rowColAddress);
+      this.setRowCol(rowColAddress);
     }
+  }
+
+  setRowCol(rowColAddress: RowColAddress) {
+    const clonedHeaderGroup = this.cachedRowColGroups.headerGroups.pop()!;
+    const cachedGridLine = this.cachedRowColGroups.gridLines.main.pop()!;
+    const cachedXFrozenGridLine =
+      this.cachedRowColGroups.gridLines.xFrozenLines.pop()!;
+    const cachedYFrozenGridLine =
+      this.cachedRowColGroups.gridLines.yFrozenLines.pop()!;
+    const cachedXYFrozenGridLine =
+      this.cachedRowColGroups.gridLines.xyFrozenLines.pop()!;
+
+    if (!clonedHeaderGroup) return;
+
+    const rowCol = new RowCol(
+      this,
+      rowColAddress.rowCol,
+      clonedHeaderGroup,
+      cachedGridLine,
+      cachedXFrozenGridLine,
+      cachedYFrozenGridLine,
+      cachedXYFrozenGridLine
+    );
+
+    this.rowColMap.set(rowColAddress.rowCol, rowCol);
   }
 
   private getSheetSize() {

@@ -207,6 +207,16 @@ class RowCols {
     }
   }
 
+  updateFrozenRowCols(frozenRowCol?: number) {
+    if (!isNil(frozenRowCol)) {
+      for (let index = 0; index <= frozenRowCol; index++) {
+        const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+
+        this.updateRowCol(rowColAddress);
+      }
+    }
+  }
+
   updateViewport() {
     this.scrollBar.setScrollSize();
 
@@ -214,15 +224,9 @@ class RowCols {
 
     const frozenCells =
       this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
-    const frozenCell = frozenCells?.[this.type];
+    const frozenRowCol = frozenCells?.[this.type];
 
-    if (!isNil(frozenCell)) {
-      for (let index = 0; index <= frozenCell; index++) {
-        const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
-
-        this.updateRowCol(rowColAddress);
-      }
-    }
+    this.updateFrozenRowCols(frozenRowCol);
 
     // Backwards so we ignore frozen row/cols
     // when they don't exist in the cache
@@ -234,10 +238,10 @@ class RowCols {
       this.updateRowCol(rowColAddress);
     }
 
-    if (!isNil(frozenCell)) {
+    if (!isNil(frozenRowCol)) {
       this.frozenLine[this.functions.axis](
-        this.getAxis(frozenCell) +
-          this.getSize(frozenCell) -
+        this.getAxis(frozenRowCol) +
+          this.getSize(frozenRowCol) -
           this.sheet.getViewportVector()[this.functions.axis]
       );
       this.frozenLine.points(

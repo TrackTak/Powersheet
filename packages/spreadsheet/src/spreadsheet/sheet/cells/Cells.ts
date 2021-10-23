@@ -100,12 +100,7 @@ class Cells {
     return hasCellData;
   }
 
-  updateViewport() {
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
-    const frozenRow = frozenCells?.row;
-    const frozenCol = frozenCells?.col;
-
+  updateFrozenCells(frozenRow?: number, frozenCol?: number) {
     if (!isNil(frozenRow)) {
       for (let ri = 0; ri <= frozenRow; ri++) {
         for (const ci of this.sheet.cols.rowColMap.keys()) {
@@ -133,11 +128,18 @@ class Cells {
         }
       }
     }
+  }
 
-    // Backwards so we ignore frozen cells
-    // when they don't exist in the cache
-    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromYToX()) {
-      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromYToX()) {
+  updateViewport() {
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+    const frozenRow = frozenCells?.row;
+    const frozenCol = frozenCells?.col;
+
+    this.updateFrozenCells(frozenRow, frozenCol);
+
+    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
         const simpleCellAddress = new SimpleCellAddress(
           this.sheet.sheetId,
           ri,

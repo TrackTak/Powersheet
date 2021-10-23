@@ -577,14 +577,14 @@ class Sheet {
     yStickyFrozenBackground.hide();
     xyStickyFrozenBackground.hide();
 
-    // if (frozenColExists) {
-    //   xStickyFrozenBackground.size({
-    //     width: sizeUpToFrozenCol,
-    //     height: this.sheetDimensions.height,
-    //   });
-    //   xStickyFrozenBackground.y(sizeUpToFrozenRow);
-    //   xStickyFrozenBackground.show();
-    // }
+    if (frozenColExists) {
+      xStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: this.sheetDimensions.height,
+      });
+      xStickyFrozenBackground.y(sizeUpToFrozenRow);
+      xStickyFrozenBackground.show();
+    }
 
     if (frozenRowExists) {
       yStickyFrozenBackground.size({
@@ -594,14 +594,15 @@ class Sheet {
       yStickyFrozenBackground.x(sizeUpToFrozenCol);
       yStickyFrozenBackground.show();
     }
-    // if (frozenRowExists && frozenColExists) {
-    //   xyStickyFrozenBackground.show();
 
-    //   xyStickyFrozenBackground.size({
-    //     width: sizeUpToFrozenCol,
-    //     height: sizeUpToFrozenRow,
-    //   });
-    // }
+    if (frozenRowExists && frozenColExists) {
+      xyStickyFrozenBackground.show();
+
+      xyStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: sizeUpToFrozenRow,
+      });
+    }
   }
 
   updateViewport() {

@@ -234,9 +234,11 @@ class RowCols {
       }
     }
 
+    // Backwards so we ignore frozen row/cols
+    // when they don't exist in the cache
     for (const index of this.sheet[
       this.pluralType
-    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    ].scrollBar.sheetViewportPosition.iterateFromYToX()) {
       const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
 
       this.updateRowCol(rowColAddress);
@@ -270,7 +272,7 @@ class RowCols {
   }
 
   setRowCol(rowColAddress: RowColAddress) {
-    const clonedHeaderGroup = this.cachedRowColGroups.headerGroups.pop()!;
+    const cachedHeaderGroup = this.cachedRowColGroups.headerGroups.pop()!;
     const cachedGridLine = this.cachedRowColGroups.gridLines.main.pop()!;
     const cachedXFrozenGridLine =
       this.cachedRowColGroups.gridLines.xFrozenLines.pop()!;
@@ -279,12 +281,12 @@ class RowCols {
     const cachedXYFrozenGridLine =
       this.cachedRowColGroups.gridLines.xyFrozenLines.pop()!;
 
-    if (!clonedHeaderGroup) return;
+    if (!cachedHeaderGroup) return;
 
     const rowCol = new RowCol(
       this,
       rowColAddress.rowCol,
-      clonedHeaderGroup,
+      cachedHeaderGroup,
       cachedGridLine,
       cachedXFrozenGridLine,
       cachedYFrozenGridLine,

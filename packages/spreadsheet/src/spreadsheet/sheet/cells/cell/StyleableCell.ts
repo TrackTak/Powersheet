@@ -41,6 +41,10 @@ class StyleableCell extends Cell {
     };
 
     this.update();
+
+    const stickyGroup = this.getStickyGroupCellBelongsTo();
+
+    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
   }
 
   setBottomBorder() {

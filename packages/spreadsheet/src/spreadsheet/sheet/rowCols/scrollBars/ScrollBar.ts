@@ -26,6 +26,7 @@ class ScrollBar {
   functions: IRowColFunctions;
   layerListeningTimeout?: NodeJS.Timeout;
   pluralType: RowColsType;
+  isScrolling = false;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
@@ -130,6 +131,8 @@ class ScrollBar {
 
     const scrollPercent = scroll / scrollSize;
 
+    this.isScrolling = true;
+
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
@@ -177,7 +180,7 @@ class ScrollBar {
     this.rowCols.cacheOutOfViewportRowCols();
     this.rowCols.updateViewport();
     this.sheet.cells.cacheOutOfViewportCells();
-    this.sheet.cells.updateViewportForScroll();
+    this.sheet.cells.updateViewport();
 
     if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheet.cellEditor.showCellTooltip();
@@ -190,11 +193,11 @@ class ScrollBar {
     }
 
     this.layerListeningTimeout = setTimeout(() => {
-      //  this.sheet.layer.listening(true);
+      this.sheet.layer.listening(true);
+      this.isScrolling = false;
     }, 40);
-
     // Improves performance by ~4fps
-    // this.sheet.layer.listening(false);
+    this.sheet.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
       this.isCol ? 'scrollHorizontal' : 'scrollVertical',

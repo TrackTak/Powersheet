@@ -54,9 +54,7 @@ class Selector {
         this.selectedSimpleCellAddress
       );
 
-      const stickyGroup = this.sheet.cells.getStickyGroupCellBelongsTo(
-        this.selectedSimpleCellAddress
-      );
+      const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo();
       const sheetGroup = this.sheet.scrollGroups[stickyGroup].sheetGroup;
 
       sheetGroup.add(this.selectedCell.group);
@@ -100,9 +98,7 @@ class Selector {
       };
 
       this.selectedCells.forEach((cell) => {
-        const stickyGroup = this.sheet.cells.getStickyGroupCellBelongsTo(
-          cell.simpleCellAddress
-        );
+        const stickyGroup = cell.getStickyGroupCellBelongsTo();
 
         this.groupedCells![stickyGroup].cells.push(cell);
       });
@@ -172,11 +168,11 @@ class Selector {
 
     const rect = cell.getClientRectWithoutStroke();
 
-    if (!this.sheet.cells.isCellOnFrozenCol(cell.simpleCellAddress)) {
+    if (!cell.isCellOnFrozenCol()) {
       rect.x -= Math.abs(this.sheet.cols.scrollBar.scroll);
     }
 
-    if (!this.sheet.cells.isCellOnFrozenRow(cell.simpleCellAddress)) {
+    if (!cell.isCellOnFrozenRow()) {
       rect.y -= Math.abs(this.sheet.rows.scrollBar.scroll);
     }
 

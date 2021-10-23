@@ -51,6 +51,21 @@ class Cell {
     this.setMergedCellPropertiesIfNeeded();
   }
 
+  isCellOnFrozenRow() {
+    return this.sheet.rows.getIsFrozen(this.simpleCellAddress.row);
+  }
+
+  isCellOnFrozenCol() {
+    return this.sheet.cols.getIsFrozen(this.simpleCellAddress.col);
+  }
+
+  getStickyGroupCellBelongsTo() {
+    return this.sheet.getStickyGroupType(
+      this.isCellOnFrozenRow(),
+      this.isCellOnFrozenCol()
+    );
+  }
+
   private setMergedCellPropertiesIfNeeded() {
     this.spreadsheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 
@@ -100,8 +115,8 @@ class Cell {
         x: clientRect.x - 0.001,
         y: clientRect.y - 0.001,
       }) &&
-      !this.sheet.cells.isCellOnFrozenCol(this.simpleCellAddress) &&
-      !this.sheet.cells.isCellOnFrozenRow(this.simpleCellAddress);
+      !this.isCellOnFrozenCol() &&
+      !this.isCellOnFrozenRow();
 
     return isShapeOutsideSheet;
   }

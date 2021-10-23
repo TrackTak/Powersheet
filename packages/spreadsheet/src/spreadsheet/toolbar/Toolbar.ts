@@ -673,6 +673,8 @@ class Toolbar {
             });
           }
         });
+        sheet.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
+        sheet.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
         break;
       }
       case 'export': {

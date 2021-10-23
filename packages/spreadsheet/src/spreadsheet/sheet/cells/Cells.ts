@@ -38,9 +38,7 @@ class Cells {
       ...this.spreadsheet.styles.cell.text,
     }).hide();
 
-    this.cachedCellGroup = new Group({
-      listening: false,
-    });
+    this.cachedCellGroup = new Group();
 
     const borderLines = [
       borderLine.clone(),
@@ -84,21 +82,16 @@ class Cells {
       cell.destroy();
       this.cellsMap.delete(cellId);
     });
-  }
 
-  getStickyGroupCellBelongsTo(simpleCellAddress: SimpleCellAddress) {
-    return this.sheet.getStickyGroupType(
-      this.isCellOnFrozenRow(simpleCellAddress),
-      this.isCellOnFrozenCol(simpleCellAddress)
-    );
-  }
+    simpleCellAddressesForCache.forEach((simpleCellAddress) => {
+      if (this.cellsMap.has(simpleCellAddress.toCellId())) {
+        return;
+      }
 
-  isCellOnFrozenRow(simpleCellAddress: SimpleCellAddress) {
-    return this.sheet.rows.getIsFrozen(simpleCellAddress.row);
-  }
+      const cachedCellGroup = this.cachedCellGroup.clone();
 
-  isCellOnFrozenCol(simpleCellAddress: SimpleCellAddress) {
-    return this.sheet.cols.getIsFrozen(simpleCellAddress.col);
+      this.cachedCellsGroups.push(cachedCellGroup);
+    });
   }
 
   cacheOutOfViewportCells() {
@@ -110,20 +103,6 @@ class Cells {
     });
   }
 
-  updateViewportForScroll() {
-    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromYToX()) {
-      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromYToX()) {
-        const simpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
-          ri,
-          ci
-        );
-
-        this.setStyleableCells(simpleCellAddress);
-      }
-    }
-  }
-
   getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
@@ -132,27 +111,6 @@ class Cells {
     );
 
     return hasCellData;
-  }
-
-  setStyleableCells(simpleCellAddress: SimpleCellAddress) {
-    // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
-
-    const cellId = simpleCellAddress.toCellId();
-
-    if (this.cellsMap.has(cellId) || !this.getHasCellData(simpleCellAddress))
-      return;
-
-    const cachedCellGroup = this.cachedCellsGroups.pop()!;
-
-    if (!cachedCellGroup) return;
-
-    const styleableCell = new StyleableCell(
-      this.sheet,
-      simpleCellAddress,
-      cachedCellGroup
-    );
-
-    this.cellsMap.set(cellId, styleableCell);
   }
 
   updateViewport() {
@@ -169,6 +127,22 @@ class Cells {
     }
   }
 
+  setStyleableCell(simpleCellAddress: SimpleCellAddress) {
+    const cachedCellGroup = this.cachedCellsGroups.pop()!;
+
+    if (!cachedCellGroup) return;
+
+    const styleableCell = new StyleableCell(
+      this.sheet,
+      simpleCellAddress,
+      cachedCellGroup
+    );
+
+    const cellId = simpleCellAddress.toCellId();
+
+    this.cellsMap.set(cellId, styleableCell);
+  }
+
   updateCell(simpleCellAddress: SimpleCellAddress) {
     // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
 
@@ -177,21 +151,16 @@ class Cells {
     if (!this.getHasCellData(simpleCellAddress)) return;
 
     const cell = this.cellsMap.get(cellId);
-    const cachedCellGroup = cell ? cell.group : this.cachedCellGroup.clone();
-    const stickyGroup = this.getStickyGroupCellBelongsTo(simpleCellAddress);
-
-    this.sheet.scrollGroups[stickyGroup].cellGroup.add(cachedCellGroup);
 
     if (cell) {
-      cell.update();
+      if (
+        !this.sheet.rows.scrollBar.isScrolling &&
+        !this.sheet.cols.scrollBar.isScrolling
+      ) {
+        cell.update();
+      }
     } else {
-      const styleableCell = new StyleableCell(
-        this.sheet,
-        simpleCellAddress,
-        cachedCellGroup
-      );
-
-      this.cellsMap.set(cellId, styleableCell);
+      this.setStyleableCell(simpleCellAddress);
     }
   }
 

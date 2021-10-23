@@ -130,6 +130,17 @@ class Cells {
     }
   }
 
+  clearAll() {
+    this.cellsMap.forEach((cell, cellId) => {
+      const clone = this.cachedCellGroup.clone();
+
+      cell.destroy();
+
+      this.cellsMap.delete(cellId);
+      this.cachedCellsGroups.push(clone);
+    });
+  }
+
   updateViewport() {
     const frozenCells =
       this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
@@ -168,40 +179,27 @@ class Cells {
   }
 
   updateCell(simpleCellAddress: SimpleCellAddress) {
-    // this.drawMergedCellIfAssociatedCellShowing(simpleCellAddress);
-
     const cellId = simpleCellAddress.toCellId();
 
-    if (!this.getHasCellData(simpleCellAddress)) return;
-
-    const cell = this.cellsMap.get(cellId);
-
-    if (cell) {
-      if (
-        !this.sheet.rows.scrollBar.isScrolling &&
-        !this.sheet.cols.scrollBar.isScrolling
-      ) {
-        cell.updateStyles();
-      }
-    } else {
-      this.setStyleableCell(simpleCellAddress);
-    }
-  }
-
-  private drawMergedCellIfAssociatedCellShowing(
-    simpleCellAddress: SimpleCellAddress
-  ) {
-    const cellId = simpleCellAddress.toCellId();
     const rangeSimpleCellAddress =
       this.spreadsheet.merger.associatedMergedCellAddressMap.get(cellId);
+
     if (rangeSimpleCellAddress) {
       const mergedCellId =
         rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
       const mergedCell = this.cellsMap.get(mergedCellId);
 
       if (!mergedCell) {
-        // this.initializeCell(rangeSimpleCellAddress.topLeftSimpleCellAddress);
+        this.setStyleableCell(rangeSimpleCellAddress.topLeftSimpleCellAddress);
       }
+    }
+
+    if (!this.getHasCellData(simpleCellAddress)) return;
+
+    const cellExists = this.cellsMap.has(cellId);
+
+    if (!cellExists) {
+      this.setStyleableCell(simpleCellAddress);
     }
   }
 }

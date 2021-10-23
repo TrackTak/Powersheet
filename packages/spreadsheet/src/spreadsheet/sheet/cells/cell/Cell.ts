@@ -1,6 +1,5 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
-import { Util } from 'konva/lib/Util';
 import Spreadsheet from '../../../Spreadsheet';
 import Sheet from '../../Sheet';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';

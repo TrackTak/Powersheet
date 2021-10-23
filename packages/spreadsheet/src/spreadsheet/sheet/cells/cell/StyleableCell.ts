@@ -298,22 +298,22 @@ class StyleableCell extends Cell {
       });
     }
 
-    if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
-      const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
-      const cellHeight = this.getClientRectWithoutStroke().height;
+    // if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
+    //   const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
+    //   const cellHeight = this.getClientRectWithoutStroke().height;
 
-      if (cellHeight > height) {
-        this.spreadsheet.data.setRowCol(
-          'rows',
-          new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
-          {
-            size: cellHeight,
-          }
-        );
+    //   if (cellHeight > height) {
+    //     this.spreadsheet.data.setRowCol(
+    //       'rows',
+    //       new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
+    //       {
+    //         size: cellHeight,
+    //       }
+    //     );
 
-        this.spreadsheet.updateViewport();
-      }
-    }
+    //     this.spreadsheet.updateViewport();
+    //   }
+    // }
     this.setCellTextHeight();
   }
 }

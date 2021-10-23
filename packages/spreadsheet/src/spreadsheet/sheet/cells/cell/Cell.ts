@@ -34,6 +34,10 @@ class Cell {
       this.group.add(this.rect);
     }
 
+    this.update();
+  }
+
+  update() {
     const { row, col } = this.simpleCellAddress;
 
     const position = {
@@ -109,14 +113,13 @@ class Cell {
     sheetRect.x += sizeUpToFrozenCol;
     sheetRect.y += sizeUpToFrozenRow;
 
-    const isShapeOutsideSheet =
-      !Util.haveIntersection(sheetRect, {
-        ...clientRect,
-        x: clientRect.x - 0.001,
-        y: clientRect.y - 0.001,
-      }) &&
-      !this.isCellOnFrozenCol() &&
-      !this.isCellOnFrozenRow();
+    const isShapeOutsideSheet = !Util.haveIntersection(sheetRect, {
+      ...clientRect,
+      x: clientRect.x - 0.001,
+      y: clientRect.y - 0.001,
+    });
+
+    const isFrozen = !this.isCellOnFrozenCol() || !this.isCellOnFrozenRow();
 
     return isShapeOutsideSheet;
   }

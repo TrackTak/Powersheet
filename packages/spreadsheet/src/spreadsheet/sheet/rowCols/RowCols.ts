@@ -141,6 +141,7 @@ class RowCols {
   cacheOutOfViewportRowCols() {
     this.rowColMap.forEach((rowCol, index) => {
       if (rowCol.getIsOutsideSheet()) {
+        console.log(true);
         this.rowColMap.delete(index);
         this.cachedRowColGroups.headerGroups.push(rowCol.headerGroup);
         this.cachedRowColGroups.gridLines.main.push(rowCol.gridLine);
@@ -265,7 +266,12 @@ class RowCols {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol);
 
     if (rowCol) {
-      rowCol.update();
+      if (
+        !this.sheet.rows.scrollBar.isScrolling &&
+        !this.sheet.cols.scrollBar.isScrolling
+      ) {
+        rowCol.update();
+      }
     } else {
       this.setRowCol(rowColAddress);
     }

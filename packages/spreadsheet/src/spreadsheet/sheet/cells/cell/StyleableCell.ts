@@ -40,11 +40,7 @@ class StyleableCell extends Cell {
       borderTop: borders[3],
     };
 
-    this.update();
-
-    const stickyGroup = this.getStickyGroupCellBelongsTo();
-
-    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
+    this.updateStyles();
   }
 
   setBottomBorder() {
@@ -199,11 +195,15 @@ class StyleableCell extends Cell {
     this.text.show();
   }
 
-  update() {
+  updateStyles() {
     const cell =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ];
+
+    const stickyGroup = this.getStickyGroupCellBelongsTo();
+
+    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
 
     let value: CellValue | undefined =
       this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);

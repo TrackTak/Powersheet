@@ -6,6 +6,7 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
+import { isNil } from 'lodash';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
@@ -97,6 +98,7 @@ class Cells {
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (cell.getIsOutsideSheet()) {
+        console.log(true);
         this.cellsMap.delete(cellId);
         this.cachedCellsGroups.push(cell.group);
       }
@@ -114,8 +116,43 @@ class Cells {
   }
 
   updateViewport() {
-    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+    const frozenRow = frozenCells?.row;
+    const frozenCol = frozenCells?.col;
+
+    if (!isNil(frozenRow)) {
+      for (let ri = 0; ri <= frozenRow; ri++) {
+        for (const ci of this.sheet.cols.rowColMap.keys()) {
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            ri,
+            ci
+          );
+
+          this.updateCell(simpleCellAddress);
+        }
+      }
+    }
+
+    if (!isNil(frozenCol)) {
+      for (let ci = 0; ci <= frozenCol; ci++) {
+        for (const ri of this.sheet.rows.rowColMap.keys()) {
+          const simpleCellAddress = new SimpleCellAddress(
+            this.sheet.sheetId,
+            ri,
+            ci
+          );
+
+          this.updateCell(simpleCellAddress);
+        }
+      }
+    }
+
+    // Backwards so we ignore frozen cells
+    // when they don't exist in the cache
+    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromYToX()) {
+      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromYToX()) {
         const simpleCellAddress = new SimpleCellAddress(
           this.sheet.sheetId,
           ri,
@@ -157,7 +194,7 @@ class Cells {
         !this.sheet.rows.scrollBar.isScrolling &&
         !this.sheet.cols.scrollBar.isScrolling
       ) {
-        cell.update();
+        cell.updateStyles();
       }
     } else {
       this.setStyleableCell(simpleCellAddress);

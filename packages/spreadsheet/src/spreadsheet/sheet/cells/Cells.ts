@@ -13,7 +13,8 @@ class Cells {
   cachedCellsGroups: Group[] = [];
   cachedCellGroup: Group;
   cachedCellRect: Rect;
-  private spreadsheet: Spreadsheet;
+  spreadsheet: Spreadsheet;
+  numberOfCachedCells = 0;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -59,46 +60,30 @@ class Cells {
   }
 
   setCachedCells() {
-    const simpleCellAddressesForCache: SimpleCellAddress[] = [];
+    // * 2 to account for frozen cells
+    const currentNumberOfCachedCells =
+      this.sheet.rows.numberOfCachedRowCols *
+      this.sheet.cols.numberOfCachedRowCols *
+      2;
 
-    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-        const simpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
-          ri,
-          ci
-        );
-
-        simpleCellAddressesForCache.push(simpleCellAddress);
-      }
-    }
-
-    const cellsToDestroy = Array.from(this.cellsMap).filter(([cellId]) => {
-      return simpleCellAddressesForCache.every(
-        (simpleCellAddress) => simpleCellAddress.toCellId() !== cellId
-      );
-    });
-
-    cellsToDestroy.forEach(([cellId, cell]) => {
-      cell.destroy();
-      this.cellsMap.delete(cellId);
-    });
-
-    simpleCellAddressesForCache.forEach((simpleCellAddress) => {
-      if (this.cellsMap.has(simpleCellAddress.toCellId())) {
-        return;
-      }
-
+    for (
+      let index = this.numberOfCachedCells;
+      index < currentNumberOfCachedCells;
+      index++
+    ) {
       const cachedCellGroup = this.cachedCellGroup.clone();
 
       this.cachedCellsGroups.push(cachedCellGroup);
-    });
+    }
+
+    this.numberOfCachedCells =
+      this.sheet.rows.numberOfCachedRowCols *
+      this.sheet.cols.numberOfCachedRowCols;
   }
 
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
-      if (cell.getIsOutsideSheet()) {
-        console.log(true);
+      if (!cell.group.isClientRectOnScreen()) {
         this.cellsMap.delete(cellId);
         this.cachedCellsGroups.push(cell.group);
       }

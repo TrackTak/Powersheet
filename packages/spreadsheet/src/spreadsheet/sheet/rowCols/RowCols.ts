@@ -61,6 +61,7 @@ class RowCols {
       xyFrozenLines: [],
     },
   };
+  numberOfCachedRowCols = 0;
 
   constructor(public type: RowColType, public sheet: Sheet) {
     this.type = type;
@@ -141,7 +142,6 @@ class RowCols {
   cacheOutOfViewportRowCols() {
     this.rowColMap.forEach((rowCol, index) => {
       if (rowCol.getIsOutsideSheet()) {
-        console.log(true);
         this.rowColMap.delete(index);
         this.cachedRowColGroups.headerGroups.push(rowCol.headerGroup);
         this.cachedRowColGroups.gridLines.main.push(rowCol.gridLine);
@@ -159,32 +159,21 @@ class RowCols {
   }
 
   setCachedRowCols() {
-    const sheetRowColAddressesForCache: RowColAddress[] = [];
+    const numberOfCachedRowCols = this.numberOfCachedRowCols;
 
-    for (const index of this.sheet[
-      this.pluralType
-    ].scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      sheetRowColAddressesForCache.push(
-        new RowColAddress(this.sheet.sheetId, index)
-      );
-    }
+    const maxNumberOfCachedRoCols = Math.max(
+      this.sheet.stage[this.functions.size]() /
+        this.spreadsheet.options[this.type].minSize,
+      this.numberOfCachedRowCols
+    );
 
-    const rowColsToDestroy = Array.from(this.rowColMap).filter(([index]) => {
-      return sheetRowColAddressesForCache.every(
-        (rowColAddress) => rowColAddress.rowCol !== index
-      );
-    });
+    this.numberOfCachedRowCols = maxNumberOfCachedRoCols;
 
-    rowColsToDestroy.forEach(([rowColId, rowCol]) => {
-      rowCol.destroy();
-      this.rowColMap.delete(rowColId);
-    });
-
-    sheetRowColAddressesForCache.forEach((rowColAddress) => {
-      if (this.rowColMap.has(rowColAddress.rowCol)) {
-        return;
-      }
-
+    for (
+      let index = numberOfCachedRowCols;
+      index < maxNumberOfCachedRoCols;
+      index++
+    ) {
       const clonedHeaderGroup = this.cachedHeaderGroup.clone();
       const clonedGridLine = this.cachedGridLine.clone({
         points: this.getLinePoints(this.getSheetSize()),
@@ -215,7 +204,7 @@ class RowCols {
       this.sheet.scrollGroups.xSticky.rowColGroup.add(clonedXFrozenGridLine);
       this.sheet.scrollGroups.ySticky.rowColGroup.add(clonedYFrozenGridLine);
       this.sheet.scrollGroups.xySticky.rowColGroup.add(clonedXYFrozenGridLine);
-    });
+    }
   }
 
   updateViewport() {

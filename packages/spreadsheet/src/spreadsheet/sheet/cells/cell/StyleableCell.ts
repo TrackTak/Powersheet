@@ -43,38 +43,54 @@ class StyleableCell extends Cell {
     this.updateStyles();
   }
 
-  setBottomBorder() {
+  setBottomBorder(borders?: BorderStyle[]) {
     const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderBottom;
 
-    border.y(clientRect.height);
-    border.points([0, 0, clientRect.width, 0]);
-    border.show();
+    if (borders?.includes('borderBottom')) {
+      border.y(clientRect.height);
+      border.points([0, 0, clientRect.width, 0]);
+      border.show();
+    } else {
+      border.hide();
+    }
   }
 
-  setRightBorder() {
+  setRightBorder(borders?: BorderStyle[]) {
     const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderRight;
 
-    border.x(clientRect.width);
-    border.points([0, 0, 0, clientRect.height]);
-    border.show();
+    if (borders?.includes('borderRight')) {
+      border.x(clientRect.width);
+      border.points([0, 0, 0, clientRect.height]);
+      border.show();
+    } else {
+      border.hide();
+    }
   }
 
-  setTopBorder() {
+  setTopBorder(borders?: BorderStyle[]) {
     const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderTop;
 
-    border.points([0, 0, clientRect.width, 0]);
-    border.show();
+    if (borders?.includes('borderTop')) {
+      border.points([0, 0, clientRect.width, 0]);
+      border.show();
+    } else {
+      border.hide();
+    }
   }
 
-  setLeftBorder() {
+  setLeftBorder(borders?: BorderStyle[]) {
     const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderLeft;
 
-    border.points([0, 0, 0, clientRect.height]);
-    border.show();
+    if (borders?.includes('borderLeft')) {
+      border.points([0, 0, 0, clientRect.height]);
+      border.show();
+    } else {
+      border.hide();
+    }
   }
 
   setTextWrap(textWrap?: TextWrap) {
@@ -251,25 +267,10 @@ class StyleableCell extends Cell {
     this.setVerticalTextAlign(verticalTextAlign);
     this.setCellTextValue(value, textFormatPattern);
     this.setCellTextHeight();
-
-    // if (borders) {
-    //   borders.forEach((borderType) => {
-    //     switch (borderType) {
-    //       case 'borderLeft':
-    //         this.setLeftBorder();
-    //         break;
-    //       case 'borderTop':
-    //         this.setTopBorder();
-    //         break;
-    //       case 'borderRight':
-    //         this.setRightBorder();
-    //         break;
-    //       case 'borderBottom':
-    //         this.setBottomBorder();
-    //         break;
-    //     }
-    //   });
-    // }
+    this.setLeftBorder(borders);
+    this.setTopBorder(borders);
+    this.setRightBorder(borders);
+    this.setBottomBorder(borders);
 
     if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
       const height = this.sheet.rows.getSize(this.simpleCellAddress.row);

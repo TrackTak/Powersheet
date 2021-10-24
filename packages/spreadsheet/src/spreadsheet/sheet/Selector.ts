@@ -191,7 +191,7 @@ class Selector {
 
     this.selectedSimpleCellAddress = cell.simpleCellAddress;
 
-    this.updateSelectedCells();
+    this.spreadsheet.updateViewport();
 
     this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea);
   }

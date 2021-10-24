@@ -397,6 +397,11 @@ class RowCol {
     this.yFrozenGridLine.hide();
     this.xyFrozenGridLine.hide();
 
+    this.sheet.scrollGroups.main.rowColGroup.add(this.gridLine);
+    this.sheet.scrollGroups.xSticky.rowColGroup.add(this.xFrozenGridLine);
+    this.sheet.scrollGroups.ySticky.rowColGroup.add(this.yFrozenGridLine);
+    this.sheet.scrollGroups.xySticky.rowColGroup.add(this.xyFrozenGridLine);
+
     if (this.isCol) {
       this.sheet.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
     } else {

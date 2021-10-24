@@ -606,8 +606,12 @@ class Sheet {
   }
 
   updateViewport() {
-    this.cells.clearAll();
     this.updateSheetDimensions();
+
+    this.cells.clearAll();
+    this.rows.clearAll();
+    this.cols.clearAll();
+
     this.cells.updateViewport();
     this.rows.updateViewport();
     this.cols.updateViewport();

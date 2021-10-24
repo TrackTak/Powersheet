@@ -100,7 +100,7 @@ class Cells {
     return hasCellData;
   }
 
-  updateFrozenCells(frozenRow?: number, frozenCol?: number) {
+  private updateFrozenCells(frozenRow?: number, frozenCol?: number) {
     if (!isNil(frozenRow)) {
       for (let ri = 0; ri <= frozenRow; ri++) {
         for (const ci of this.sheet.cols.rowColMap.keys()) {
@@ -164,7 +164,6 @@ class Cells {
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
     const cachedCellGroup = this.cachedCellsGroups.pop()!;
-    const cellId = simpleCellAddress.toCellId();
 
     if (!cachedCellGroup) return;
 
@@ -173,6 +172,8 @@ class Cells {
       simpleCellAddress,
       cachedCellGroup
     );
+
+    const cellId = simpleCellAddress.toCellId();
 
     this.cellsMap.set(cellId, styleableCell);
   }

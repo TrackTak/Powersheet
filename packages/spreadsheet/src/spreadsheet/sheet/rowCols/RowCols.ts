@@ -158,6 +158,30 @@ class RowCols {
     });
   }
 
+  cloneGroupsAndPush() {
+    const clonedHeaderGroup = this.cachedHeaderGroup.clone();
+    const clonedGridLine = this.cachedGridLine.clone({
+      points: this.getLinePoints(this.getSheetSize()),
+    }) as Line;
+    const clonedXFrozenGridLine = this.cachedGridLine.clone({
+      visible: false,
+    }) as Line;
+    const clonedYFrozenGridLine = this.cachedGridLine.clone({
+      visible: false,
+    }) as Line;
+    const clonedXYFrozenGridLine = this.cachedGridLine.clone({
+      visible: false,
+    }) as Line;
+
+    this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
+    this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
+    this.cachedRowColGroups.gridLines.xFrozenLines.push(clonedXFrozenGridLine);
+    this.cachedRowColGroups.gridLines.yFrozenLines.push(clonedYFrozenGridLine);
+    this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+      clonedXYFrozenGridLine
+    );
+  }
+
   setCachedRowCols() {
     const numberOfCachedRowCols = this.numberOfCachedRowCols;
 
@@ -174,40 +198,11 @@ class RowCols {
       index < maxNumberOfCachedRoCols;
       index++
     ) {
-      const clonedHeaderGroup = this.cachedHeaderGroup.clone();
-      const clonedGridLine = this.cachedGridLine.clone({
-        points: this.getLinePoints(this.getSheetSize()),
-      }) as Line;
-      const clonedXFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-      const clonedYFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-      const clonedXYFrozenGridLine = this.cachedGridLine.clone({
-        visible: false,
-      }) as Line;
-
-      this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
-      this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
-      this.cachedRowColGroups.gridLines.xFrozenLines.push(
-        clonedXFrozenGridLine
-      );
-      this.cachedRowColGroups.gridLines.yFrozenLines.push(
-        clonedYFrozenGridLine
-      );
-      this.cachedRowColGroups.gridLines.xyFrozenLines.push(
-        clonedXYFrozenGridLine
-      );
-
-      this.sheet.scrollGroups.main.rowColGroup.add(clonedGridLine);
-      this.sheet.scrollGroups.xSticky.rowColGroup.add(clonedXFrozenGridLine);
-      this.sheet.scrollGroups.ySticky.rowColGroup.add(clonedYFrozenGridLine);
-      this.sheet.scrollGroups.xySticky.rowColGroup.add(clonedXYFrozenGridLine);
+      this.cloneGroupsAndPush();
     }
   }
 
-  updateFrozenRowCols(frozenRowCol?: number) {
+  private updateFrozenRowCols(frozenRowCol?: number) {
     if (!isNil(frozenRowCol)) {
       for (let index = 0; index <= frozenRowCol; index++) {
         const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
@@ -215,6 +210,16 @@ class RowCols {
         this.updateRowCol(rowColAddress);
       }
     }
+  }
+
+  clearAll() {
+    this.rowColMap.forEach((rowCol, rowColId) => {
+      this.cloneGroupsAndPush();
+
+      rowCol.destroy();
+
+      this.rowColMap.delete(rowColId);
+    });
   }
 
   updateViewport() {
@@ -258,14 +263,7 @@ class RowCols {
   updateRowCol(rowColAddress: RowColAddress) {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol);
 
-    if (rowCol) {
-      if (
-        !this.sheet.rows.scrollBar.isScrolling &&
-        !this.sheet.cols.scrollBar.isScrolling
-      ) {
-        rowCol.update();
-      }
-    } else {
+    if (!rowCol) {
       this.setRowCol(rowColAddress);
     }
   }

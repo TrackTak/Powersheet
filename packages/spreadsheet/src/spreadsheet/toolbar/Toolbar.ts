@@ -660,9 +660,6 @@ class Toolbar {
         break;
       }
       case 'freeze': {
-        const previousFrozenCells =
-          this.spreadsheet.data.spreadsheetData.frozenCells?.[sheet.sheetId];
-
         sheet.spreadsheet.pushToHistory(() => {
           if (this.iconElementsMap.freeze.active) {
             this.spreadsheet.data.deleteFrozenCell(sheet.sheetId);
@@ -679,17 +676,6 @@ class Toolbar {
 
         sheet.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
         sheet.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
-
-        // // We have to remove frozen rows/cols here
-        // // and not in updateViewport due to performane
-        // if (previousFrozenCells) {
-        //   sheet.cells.updateFrozenCells(
-        //     previousFrozenCells.row,
-        //     previousFrozenCells.col
-        //   );
-        //   sheet.rows.updateFrozenRowCols(previousFrozenCells.row);
-        //   sheet.cols.updateFrozenRowCols(previousFrozenCells.col);
-        // }
 
         break;
       }

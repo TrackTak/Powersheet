@@ -342,9 +342,8 @@ class RowCols {
       this.sheet.sheetId,
       index
     ).toSheetRowColId();
-    const size =
-      this.spreadsheet.data.spreadsheetData[this.pluralType]?.[sheetRowColId]
-        ?.size;
+    const data = this.spreadsheet.data.spreadsheetData;
+    const size = data[this.pluralType]?.[sheetRowColId]?.size;
 
     return size ?? this.spreadsheet.options[this.type].defaultSize;
   }

@@ -77,57 +77,57 @@ class StyleableCell extends Cell {
     border.show();
   }
 
-  setTextWrap(textWrap: TextWrap) {
-    this.text.wrap(textWrap);
+  setTextWrap(textWrap?: TextWrap) {
+    this.text.wrap(textWrap ?? 'none');
   }
 
-  setBackgroundColor(backgroundColor: string) {
-    this.rect.fill(backgroundColor);
+  setBackgroundColor(backgroundColor?: string) {
+    this.rect.fill(backgroundColor ?? 'white');
   }
 
-  setFontColor(fontColor: string) {
-    this.text.fill(fontColor);
+  setFontColor(fontColor?: string) {
+    this.text.fill(fontColor ?? 'black');
   }
 
-  setFontSize(fontSize: number) {
-    this.text.fontSize(fontSize);
+  setFontSize(fontSize?: number) {
+    this.text.fontSize(fontSize ?? 12);
   }
 
-  setBold(bold: boolean) {
+  setBold(bold?: boolean) {
     const italic =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.italic ?? false;
-    const fontStyle = new FontStyle(this.text, bold, italic);
+    const fontStyle = new FontStyle(this.text, bold ?? false, italic);
 
     fontStyle.setStyle();
   }
 
-  setItalic(italic: boolean) {
+  setItalic(italic?: boolean) {
     const bold =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.bold ?? false;
-    const fontStyle = new FontStyle(this.text, bold, italic);
+    const fontStyle = new FontStyle(this.text, bold, italic ?? false);
 
     fontStyle.setStyle();
   }
 
-  setStrikeThrough(strikeThrough: boolean) {
+  setStrikeThrough(strikeThrough?: boolean) {
     const underline =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.underline ?? false;
     const textDecoration = new TextDecoration(
       this.text,
-      strikeThrough,
+      strikeThrough ?? false,
       underline
     );
 
     textDecoration.setStyle();
   }
 
-  setUnderline(underline: boolean) {
+  setUnderline(underline?: boolean) {
     const strikeThrough =
       this.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -135,24 +135,41 @@ class StyleableCell extends Cell {
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough,
-      underline
+      underline ?? false
     );
 
     textDecoration.setStyle();
   }
 
-  setHorizontalTextAlign(horizontalTextAlign: HorizontalTextAlign) {
-    this.text.align(horizontalTextAlign);
+  setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
+    this.text.align(horizontalTextAlign ?? 'left');
   }
 
-  setVerticalTextAlign(verticalTextAlign: VerticalTextAlign) {
-    this.text.verticalAlign(verticalTextAlign);
+  setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
+    this.text.verticalAlign(verticalTextAlign ?? 'middle');
   }
 
-  setTextFormat(textFormatPattern: string) {
-    if (this.text && !this.spreadsheet.data.spreadsheetData.showFormulas) {
-      let text = this.text.text();
+  setCellCommentMarker(comment?: string) {
+    if (comment) {
+      const clientRect = this.getClientRectWithoutStroke();
 
+      this.commentMarker.x(clientRect.width - 1);
+      this.commentMarker.y(this.commentMarker.height() + 1);
+
+      this.commentMarker.show();
+    } else {
+      this.commentMarker.hide();
+    }
+  }
+
+  setCellTextValue(value?: CellValue, textFormatPattern?: string) {
+    const { width } = this.getClientRectWithoutStroke();
+    let text = value;
+
+    if (
+      textFormatPattern &&
+      !this.spreadsheet.data.spreadsheetData.showFormulas
+    ) {
       try {
         text = format(textFormatPattern, Number(text));
       } catch (e) {
@@ -164,35 +181,28 @@ class StyleableCell extends Cell {
       } catch (e) {
         text = e as string;
       }
-
-      this.text.text(text);
     }
-  }
 
-  setCellCommentMarker() {
-    const clientRect = this.getClientRectWithoutStroke();
+    if (text) {
+      this.text.text(text.toString());
+      // Only set the width for text wrapping to work
+      this.text.width(width);
 
-    this.commentMarker.x(clientRect.width - 1);
-    this.commentMarker.y(this.commentMarker.height() + 1);
-
-    this.commentMarker.show();
+      this.text.show();
+    } else {
+      this.text.hide();
+    }
   }
 
   setCellTextHeight() {
-    const { height } = this.getClientRectWithoutStroke();
+    const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
 
-    if (this.text.wrap() !== 'wrap') {
+    if (this.text.wrap() === 'none') {
       this.text.height(height);
+    } else {
+      // @ts-ignore
+      this.text.height('auto');
     }
-  }
-
-  setCellTextValue(value: string) {
-    const { width } = this.getClientRectWithoutStroke();
-
-    this.text.text(value);
-    // Only set the width for text wrapping to work
-    this.text.width(width);
-    this.text.show();
   }
 
   updateStyles() {
@@ -212,14 +222,6 @@ class StyleableCell extends Cell {
       value = cell?.value;
     }
 
-    if (value) {
-      this.setCellTextValue(value?.toString());
-    }
-
-    if (cell?.comment) {
-      this.setCellCommentMarker();
-    }
-
     const {
       textWrap,
       fontSize,
@@ -233,88 +235,58 @@ class StyleableCell extends Cell {
       horizontalTextAlign,
       verticalTextAlign,
       textFormatPattern,
+      comment,
     } = cell ?? {};
 
-    if (textWrap) {
-      this.setTextWrap(textWrap);
-    }
-
-    if (fontSize) {
-      this.setFontSize(fontSize);
-    }
-
-    if (backgroundColor) {
-      this.setBackgroundColor(backgroundColor);
-    }
-
-    if (fontColor) {
-      this.setFontColor(fontColor);
-    }
-
-    if (bold) {
-      this.setBold(bold);
-    }
-
-    if (italic) {
-      this.setItalic(italic);
-    }
-
-    if (strikeThrough) {
-      this.setStrikeThrough(strikeThrough);
-    }
-
-    if (underline) {
-      this.setUnderline(underline);
-    }
-
-    if (horizontalTextAlign) {
-      this.setHorizontalTextAlign(horizontalTextAlign);
-    }
-
-    if (verticalTextAlign) {
-      this.setVerticalTextAlign(verticalTextAlign);
-    }
-
-    if (textFormatPattern) {
-      this.setTextFormat(textFormatPattern);
-    }
-
-    if (borders) {
-      borders.forEach((borderType) => {
-        switch (borderType) {
-          case 'borderLeft':
-            this.setLeftBorder();
-            break;
-          case 'borderTop':
-            this.setTopBorder();
-            break;
-          case 'borderRight':
-            this.setRightBorder();
-            break;
-          case 'borderBottom':
-            this.setBottomBorder();
-            break;
-        }
-      });
-    }
-
-    // if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
-    //   const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
-    //   const cellHeight = this.getClientRectWithoutStroke().height;
-
-    //   if (cellHeight > height) {
-    //     this.spreadsheet.data.setRowCol(
-    //       'rows',
-    //       new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
-    //       {
-    //         size: cellHeight,
-    //       }
-    //     );
-
-    //     this.spreadsheet.updateViewport();
-    //   }
-    // }
+    this.setCellCommentMarker(comment);
+    this.setTextWrap(textWrap);
+    this.setFontSize(fontSize);
+    this.setBackgroundColor(backgroundColor);
+    this.setFontColor(fontColor);
+    this.setBold(bold);
+    this.setItalic(italic);
+    this.setStrikeThrough(strikeThrough);
+    this.setUnderline(underline);
+    this.setHorizontalTextAlign(horizontalTextAlign);
+    this.setVerticalTextAlign(verticalTextAlign);
+    this.setCellTextValue(value, textFormatPattern);
     this.setCellTextHeight();
+
+    // if (borders) {
+    //   borders.forEach((borderType) => {
+    //     switch (borderType) {
+    //       case 'borderLeft':
+    //         this.setLeftBorder();
+    //         break;
+    //       case 'borderTop':
+    //         this.setTopBorder();
+    //         break;
+    //       case 'borderRight':
+    //         this.setRightBorder();
+    //         break;
+    //       case 'borderBottom':
+    //         this.setBottomBorder();
+    //         break;
+    //     }
+    //   });
+    // }
+
+    if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
+      const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
+      const cellHeight = this.getClientRectWithoutStroke().height;
+
+      if (cellHeight > height) {
+        this.spreadsheet.data.setRowCol(
+          'rows',
+          new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
+          {
+            size: cellHeight,
+          }
+        );
+
+        this.spreadsheet.updateViewport();
+      }
+    }
   }
 }
 

@@ -164,6 +164,7 @@ class Cells {
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
     const cachedCellGroup = this.cachedCellsGroups.pop()!;
+    const cellId = simpleCellAddress.toCellId();
 
     if (!cachedCellGroup) return;
 
@@ -172,8 +173,6 @@ class Cells {
       simpleCellAddress,
       cachedCellGroup
     );
-
-    const cellId = simpleCellAddress.toCellId();
 
     this.cellsMap.set(cellId, styleableCell);
   }

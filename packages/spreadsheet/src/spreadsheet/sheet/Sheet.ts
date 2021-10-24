@@ -607,11 +607,10 @@ class Sheet {
 
   updateViewport() {
     this.cells.clearAll();
-
     this.updateSheetDimensions();
+    this.cells.updateViewport();
     this.rows.updateViewport();
     this.cols.updateViewport();
-    this.cells.updateViewport();
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(

@@ -72,6 +72,7 @@ class Sheets {
   sheetClickTime = 0;
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
+  topLeftRect?: Rect;
   comment: Comment;
   activeSheetId = 0;
   totalSheetCount = 0;
@@ -113,7 +114,6 @@ class Sheets {
       const group = new Group();
 
       const sheetGroup = new Group({
-        ...this.getViewportVector(),
         name: 'sheetGroup',
         listening: true,
       });
@@ -200,8 +200,6 @@ class Sheets {
 
     this.cols.scrollBar.setYIndex();
     this.rows.scrollBar.setYIndex();
-
-    this.drawTopLeftOffsetRect();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
@@ -608,14 +606,15 @@ class Sheets {
   }
 
   drawTopLeftOffsetRect() {
-    const topLeftRect = new Rect({
+    this.topLeftRect?.destroy();
+    this.topLeftRect = new Rect({
       ...this.spreadsheet.styles.topLeftRect,
       width: this.getViewportVector().x,
       height: this.getViewportVector().y,
     });
-    this.scrollGroups.xySticky.group.add(topLeftRect);
+    this.scrollGroups.xySticky.group.add(this.topLeftRect);
 
-    topLeftRect.moveToTop();
+    this.topLeftRect.moveToTop();
   }
 
   updateFrozenBackgrounds() {
@@ -664,12 +663,20 @@ class Sheets {
   }
 
   updateViewport() {
+    Object.keys(this.scrollGroups).forEach((key) => {
+      const type = key as keyof IScrollGroups;
+
+      const scrollGroup = this.scrollGroups[type];
+
+      scrollGroup.sheetGroup.setAttrs(this.getViewportVector());
+    });
     this.updateSheetDimensions();
 
     this.cells.clearAll();
     this.rows.clearAll();
     this.cols.clearAll();
 
+    this.drawTopLeftOffsetRect();
     this.cells.updateViewport();
     this.rows.updateViewport();
     this.cols.updateViewport();

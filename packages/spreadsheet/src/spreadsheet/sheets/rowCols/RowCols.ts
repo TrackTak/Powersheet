@@ -50,8 +50,6 @@ class RowCols {
   resizer: Resizer;
   pluralType: RowColsType;
   oppositePluralType: RowColsType;
-  cachedHeaderGroup: Group;
-  cachedGridLine: Line;
   cachedRowColGroups: ICachedRowColGroup = {
     headerGroups: [],
     gridLines: {
@@ -99,39 +97,7 @@ class RowCols {
     this.resizer = new Resizer(this);
     this.scrollBar = new ScrollBar(this);
 
-    const headerRect = new Rect({
-      ...this.spreadsheet.styles[this.type].headerRect,
-      name: 'headerRect',
-      [this.functions.size]: this.spreadsheet.options[this.type].defaultSize,
-    });
-
-    const headerText = new Text({
-      ...this.spreadsheet.styles[this.type].headerText,
-      name: 'headerText',
-    });
-
-    const resizeLine = new Line({
-      ...this.spreadsheet.styles[this.type].resizeLine,
-      name: 'resizeLine',
-      points: this.isCol
-        ? [0, 0, 0, this.sheets.getViewportVector().y]
-        : [0, 0, this.sheets.getViewportVector().x, 0],
-    });
-
-    this.cachedHeaderGroup = new Group();
-
-    this.cachedHeaderGroup.add(headerRect, headerText, resizeLine);
-
-    this.cachedHeaderGroup.cache();
-
-    this.cachedGridLine = new Line({
-      ...this.spreadsheet.styles[this.type].gridLine,
-      name: 'gridLine',
-    }).cache();
-
     this.frozenLine = new Line({
-      ...this.spreadsheet.styles[this.type].frozenLine,
-      visible: false,
       name: 'frozenLine',
     });
 
@@ -158,22 +124,47 @@ class RowCols {
   }
 
   cloneGroupsAndPush() {
-    const clonedHeaderGroup = this.cachedHeaderGroup.clone();
-    const clonedGridLine = this.cachedGridLine.clone({
+    const headerRect = new Rect({
+      ...this.spreadsheet.styles[this.type].headerRect,
+      name: 'headerRect',
+      [this.functions.size]: this.spreadsheet.options[this.type].defaultSize,
+    });
+
+    const headerText = new Text({
+      ...this.spreadsheet.styles[this.type].headerText,
+      name: 'headerText',
+    });
+
+    const resizeLine = new Line({
+      ...this.spreadsheet.styles[this.type].resizeLine,
+      name: 'resizeLine',
+      points: this.isCol
+        ? [0, 0, 0, this.sheets.getViewportVector().y]
+        : [0, 0, this.sheets.getViewportVector().x, 0],
+    });
+
+    const headerGroup = new Group();
+
+    headerGroup.add(headerRect, headerText, resizeLine);
+
+    const gridLine = new Line({
+      ...this.spreadsheet.styles[this.type].gridLine,
       points: this.getLinePoints(this.getSheetSize()),
-    }) as Line;
-    const clonedXFrozenGridLine = this.cachedGridLine.clone({
+      name: 'gridLine',
+    });
+
+    const clonedXFrozenGridLine = gridLine.clone({
       visible: false,
     }) as Line;
-    const clonedYFrozenGridLine = this.cachedGridLine.clone({
+    const clonedYFrozenGridLine = gridLine.clone({
       visible: false,
     }) as Line;
-    const clonedXYFrozenGridLine = this.cachedGridLine.clone({
+    const clonedXYFrozenGridLine = gridLine.clone({
       visible: false,
     }) as Line;
 
-    this.cachedRowColGroups.headerGroups.push(clonedHeaderGroup);
-    this.cachedRowColGroups.gridLines.main.push(clonedGridLine);
+    this.cachedRowColGroups.headerGroups.push(headerGroup);
+    this.cachedRowColGroups.gridLines.main.push(gridLine);
     this.cachedRowColGroups.gridLines.xFrozenLines.push(clonedXFrozenGridLine);
     this.cachedRowColGroups.gridLines.yFrozenLines.push(clonedYFrozenGridLine);
     this.cachedRowColGroups.gridLines.xyFrozenLines.push(
@@ -227,7 +218,10 @@ class RowCols {
   updateViewport() {
     this.scrollBar.setScrollSize();
 
-    this.frozenLine.hide();
+    this.frozenLine.setAttrs({
+      ...this.spreadsheet.styles[this.type].frozenLine,
+      visible: false,
+    });
 
     const frozenCells =
       this.spreadsheet.data.spreadsheetData.frozenCells?.[

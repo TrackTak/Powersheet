@@ -29,7 +29,11 @@ class Cell {
       this.rect = group.findOne('.rect');
     } else {
       this.group = new Group();
-      this.rect = this.sheets.cells.cachedCellRect.clone();
+      this.rect = new Rect({
+        ...this.spreadsheet.styles.cell.rect,
+        ...this.sheets.cells.getDefaultCellRectAttrs(),
+        name: 'rect',
+      });
       this.group.add(this.rect);
     }
 

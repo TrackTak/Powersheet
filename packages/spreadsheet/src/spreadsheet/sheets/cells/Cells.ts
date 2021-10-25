@@ -14,8 +14,6 @@ import { ShapeConfig } from 'konva/lib/Shape';
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
   cachedCellGroups: Group[] = [];
-  cachedCellGroup: Group;
-  cachedCellRect: Rect;
   spreadsheet: Spreadsheet;
   numberOfCachedCells = 0;
 
@@ -23,42 +21,9 @@ class Cells {
     this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
     this.cellsMap = new Map();
-    this.cachedCellRect = new Rect({
-      ...this.spreadsheet.styles.cell.rect,
-      ...this.getDefaultCellRectAttrs(),
-      name: 'rect',
-    });
-    const borderLine = new Line({
-      ...this.spreadsheet.styles.cell.borderLine,
-      name: 'borderLine',
-    });
-    const commentMarker = new Line({
-      ...this.spreadsheet.styles.cell.commentMarker,
-      name: 'commentMarker',
-    });
-    const cellText = new Text({
-      name: 'text',
-      ...this.spreadsheet.styles.cell.text,
-    });
-
-    this.cachedCellGroup = new Group();
-
-    const borderLines = [
-      borderLine.clone(),
-      borderLine.clone(),
-      borderLine.clone(),
-      borderLine.clone(),
-    ];
-
-    this.cachedCellGroup.add(
-      this.cachedCellRect,
-      cellText,
-      commentMarker,
-      ...borderLines
-    );
   }
 
-  private getDefaultCellRectAttrs() {
+  getDefaultCellRectAttrs() {
     return {
       width: this.spreadsheet.options.col.defaultSize,
       height: this.spreadsheet.options.row.defaultSize,
@@ -78,9 +43,36 @@ class Cells {
       index < currentNumberOfCachedCells;
       index++
     ) {
-      const cachedCellGroup = this.cachedCellGroup.clone();
+      const cellRect = new Rect({
+        ...this.spreadsheet.styles.cell.rect,
+        ...this.getDefaultCellRectAttrs(),
+        name: 'rect',
+      });
+      const borderLine = new Line({
+        ...this.spreadsheet.styles.cell.borderLine,
+        name: 'borderLine',
+      });
+      const commentMarker = new Line({
+        ...this.spreadsheet.styles.cell.commentMarker,
+        name: 'commentMarker',
+      });
+      const cellText = new Text({
+        name: 'text',
+        ...this.spreadsheet.styles.cell.text,
+      });
 
-      this.cachedCellGroups.push(cachedCellGroup);
+      const cellGroup = new Group();
+
+      const borderLines = [
+        borderLine.clone(),
+        borderLine.clone(),
+        borderLine.clone(),
+        borderLine.clone(),
+      ];
+
+      cellGroup.add(cellRect, cellText, commentMarker, ...borderLines);
+
+      this.cachedCellGroups.push(cellGroup);
     }
 
     this.numberOfCachedCells =

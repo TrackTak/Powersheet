@@ -1,6 +1,10 @@
 .sheet {
-  flex: 1;
+  height: 100%;
   position: relative;
   overflow: hidden;
   outline: none;
+}
+
+.sheetContainer {
+  flex: 1;
 }

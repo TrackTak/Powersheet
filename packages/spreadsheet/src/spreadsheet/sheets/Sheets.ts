@@ -55,6 +55,8 @@ class Sheets {
   scrollGroups!: IScrollGroups;
   sheetIds: SheetId[] = [];
   sheetEl: HTMLDivElement;
+  // Purely for comment with tippy
+  sheetElContainer: HTMLDivElement;
   stage: Stage;
   layer: Layer;
   sheet: Rect;
@@ -84,10 +86,17 @@ class Sheets {
   constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
 
+    this.sheetElContainer = document.createElement('div');
+    this.sheetElContainer.classList.add(
+      `${prefix}-sheet-container`,
+      styles.sheetContainer
+    );
+
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetEl);
+    this.sheetElContainer.appendChild(this.sheetEl);
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetElContainer);
 
     this.debouncedResize = debounce(this.onResize, 50);
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);

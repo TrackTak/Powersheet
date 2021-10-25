@@ -226,6 +226,8 @@ class Sheets {
   }
 
   switchSheet(sheetId: SheetId) {
+    this.cells.clearCells();
+
     this.activeSheetId = sheetId;
 
     this.spreadsheet.updateViewport();
@@ -674,7 +676,7 @@ class Sheets {
     });
     this.updateSheetDimensions();
 
-    this.cells.clearAll();
+    this.cells.resetCachedCells();
     this.rows.clearAll();
     this.cols.clearAll();
 

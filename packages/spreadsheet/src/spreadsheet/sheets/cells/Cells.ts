@@ -10,6 +10,7 @@ import { isNil } from 'lodash';
 import { Node } from 'konva/lib/Node';
 import { ICellConfig } from '../../styles';
 import { ShapeConfig } from 'konva/lib/Shape';
+import RowColAddress from './cell/RowColAddress';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
@@ -43,36 +44,7 @@ class Cells {
       index < currentNumberOfCachedCells;
       index++
     ) {
-      const cellRect = new Rect({
-        ...this.spreadsheet.styles.cell.rect,
-        ...this.getDefaultCellRectAttrs(),
-        name: 'rect',
-      });
-      const borderLine = new Line({
-        ...this.spreadsheet.styles.cell.borderLine,
-        name: 'borderLine',
-      });
-      const commentMarker = new Line({
-        ...this.spreadsheet.styles.cell.commentMarker,
-        name: 'commentMarker',
-      });
-      const cellText = new Text({
-        name: 'text',
-        ...this.spreadsheet.styles.cell.text,
-      });
-
-      const cellGroup = new Group();
-
-      const borderLines = [
-        borderLine.clone(),
-        borderLine.clone(),
-        borderLine.clone(),
-        borderLine.clone(),
-      ];
-
-      cellGroup.add(cellRect, cellText, commentMarker, ...borderLines);
-
-      this.cachedCellGroups.push(cellGroup);
+      this.cachedCellGroups.push(this.getCellGroup());
     }
 
     this.numberOfCachedCells =
@@ -161,7 +133,49 @@ class Cells {
     }
   }
 
-  clearAll() {
+  getCellGroup() {
+    const cellRect = new Rect({
+      ...this.spreadsheet.styles.cell.rect,
+      ...this.getDefaultCellRectAttrs(),
+      name: 'rect',
+    });
+    const borderLine = new Line({
+      ...this.spreadsheet.styles.cell.borderLine,
+      name: 'borderLine',
+    });
+    const commentMarker = new Line({
+      ...this.spreadsheet.styles.cell.commentMarker,
+      name: 'commentMarker',
+    });
+    const cellText = new Text({
+      name: 'text',
+      ...this.spreadsheet.styles.cell.text,
+    });
+
+    const cellGroup = new Group();
+
+    const borderLines = [
+      borderLine.clone(),
+      borderLine.clone(),
+      borderLine.clone(),
+      borderLine.clone(),
+    ];
+
+    cellGroup.add(cellRect, cellText, commentMarker, ...borderLines);
+
+    return cellGroup;
+  }
+
+  clearCells() {
+    this.cellsMap.forEach((cell, cellId) => {
+      cell.destroy();
+
+      this.cellsMap.delete(cellId);
+      this.cachedCellGroups.push(this.getCellGroup().clone());
+    });
+  }
+
+  resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
       this.resetAttrs(cell);
 
@@ -207,6 +221,25 @@ class Cells {
     const cellId = simpleCellAddress.toCellId();
 
     this.cellsMap.set(cellId, styleableCell);
+
+    if (
+      !this.spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
+    ) {
+      const height = this.sheets.rows.getSize(simpleCellAddress.row);
+      const cellHeight = styleableCell.getClientRectWithoutStroke().height;
+
+      if (cellHeight > height) {
+        this.spreadsheet.data.setRowCol(
+          'rows',
+          new RowColAddress(this.sheets.activeSheetId, simpleCellAddress.row),
+          {
+            size: cellHeight,
+          }
+        );
+
+        this.spreadsheet.updateViewport();
+      }
+    }
   }
 
   updateCell(simpleCellAddress: SimpleCellAddress) {

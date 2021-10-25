@@ -12,7 +12,6 @@ import {
   TextWrap,
   VerticalTextAlign,
 } from '../../Data';
-import RowColAddress from './RowColAddress';
 import { CellValue } from 'hyperformula';
 import { Group } from 'konva/lib/Group';
 
@@ -290,30 +289,6 @@ class StyleableCell extends Cell {
     this.setTopBorder(borders);
     this.setRightBorder(borders);
     this.setBottomBorder(borders);
-
-    if (
-      !this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
-        this.simpleCellAddress
-      )
-    ) {
-      const height = this.sheets.rows.getSize(this.simpleCellAddress.row);
-      const cellHeight = this.getClientRectWithoutStroke().height;
-
-      if (cellHeight > height) {
-        this.spreadsheet.data.setRowCol(
-          'rows',
-          new RowColAddress(
-            this.sheets.activeSheetId,
-            this.simpleCellAddress.row
-          ),
-          {
-            size: cellHeight,
-          }
-        );
-
-        this.spreadsheet.updateViewport();
-      }
-    }
   }
 }
 

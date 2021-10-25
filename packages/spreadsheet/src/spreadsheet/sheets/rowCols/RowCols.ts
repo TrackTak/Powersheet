@@ -127,7 +127,6 @@ class RowCols {
     this.cachedGridLine = new Line({
       ...this.spreadsheet.styles[this.type].gridLine,
       name: 'gridLine',
-      listening: false,
     }).cache();
 
     this.frozenLine = new Line({

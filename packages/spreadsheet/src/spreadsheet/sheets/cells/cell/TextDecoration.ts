@@ -2,7 +2,7 @@ import { Text } from 'konva/lib/shapes/Text';
 
 class TextDecoration {
   constructor(
-    public text: Text | undefined,
+    public text: Text,
     public strikeThrough?: boolean,
     public underline?: boolean
   ) {
@@ -22,7 +22,7 @@ class TextDecoration {
   }
 
   setStyle() {
-    this.text?.textDecoration(this.getStyle());
+    this.text.textDecoration(this.getStyle());
   }
 }
 

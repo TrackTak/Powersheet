@@ -149,8 +149,10 @@ export const defaultStyles: IStyles = {
   cell: {
     rect: {
       fill: 'white',
-      // stroke: sharedStyles.gridLine.stroke,
-      // strokeWidth: sharedStyles.gridLine.strokeWidth,
+      // TODO: Remove these somehow as slows dont performance
+      // if tons of cells
+      stroke: sharedStyles.gridLine.stroke,
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
     },
     text: {
       fontFamily,
@@ -160,6 +162,7 @@ export const defaultStyles: IStyles = {
       verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
+      visible: false,
     },
     commentMarker: {
       stroke: 'orange',
@@ -167,10 +170,12 @@ export const defaultStyles: IStyles = {
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,
+      visible: false,
     },
     borderLine: {
       stroke: 'black',
       strokeWidth: sharedStyles.gridLine.strokeWidth,
+      visible: false,
     },
   },
 };

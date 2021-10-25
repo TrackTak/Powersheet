@@ -28,7 +28,7 @@ class StyleableCell extends Cell {
   ) {
     super(sheets, simpleCellAddress, group);
 
-    this.text = group.findOne('.cellText');
+    this.text = group.findOne('.text');
     this.commentMarker = group.findOne<Line>('.commentMarker');
 
     const borders = group.find<Line>('.borderLine');
@@ -94,75 +94,95 @@ class StyleableCell extends Cell {
   }
 
   setTextWrap(textWrap?: TextWrap) {
-    this.text.wrap(textWrap ?? 'none');
+    if (textWrap) {
+      this.text.wrap(textWrap);
+    }
   }
 
   setBackgroundColor(backgroundColor?: string) {
-    this.rect.fill(backgroundColor ?? 'white');
+    if (backgroundColor) {
+      this.rect.fill(backgroundColor);
+    }
   }
 
   setFontColor(fontColor?: string) {
-    this.text.fill(fontColor ?? 'black');
+    if (fontColor) {
+      this.text.fill(fontColor);
+    }
   }
 
   setFontSize(fontSize?: number) {
-    this.text.fontSize(fontSize ?? 12);
+    if (fontSize) {
+      this.text.fontSize(fontSize);
+    }
   }
 
   setBold(bold?: boolean) {
-    const italic =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.italic ?? false;
-    const fontStyle = new FontStyle(this.text, bold ?? false, italic);
+    if (bold) {
+      const italic =
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          this.simpleCellAddress.toCellId()
+        ]?.italic ?? false;
+      const fontStyle = new FontStyle(this.text, bold, italic);
 
-    fontStyle.setStyle();
+      fontStyle.setStyle();
+    }
   }
 
   setItalic(italic?: boolean) {
-    const bold =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.bold ?? false;
-    const fontStyle = new FontStyle(this.text, bold, italic ?? false);
+    if (italic) {
+      const bold =
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          this.simpleCellAddress.toCellId()
+        ]?.bold ?? false;
+      const fontStyle = new FontStyle(this.text, bold, italic);
 
-    fontStyle.setStyle();
+      fontStyle.setStyle();
+    }
   }
 
   setStrikeThrough(strikeThrough?: boolean) {
-    const underline =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.underline ?? false;
-    const textDecoration = new TextDecoration(
-      this.text,
-      strikeThrough ?? false,
-      underline
-    );
+    if (strikeThrough) {
+      const underline =
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          this.simpleCellAddress.toCellId()
+        ]?.underline ?? false;
+      const textDecoration = new TextDecoration(
+        this.text,
+        strikeThrough,
+        underline
+      );
 
-    textDecoration.setStyle();
+      textDecoration.setStyle();
+    }
   }
 
   setUnderline(underline?: boolean) {
-    const strikeThrough =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.strikeThrough ?? false;
-    const textDecoration = new TextDecoration(
-      this.text,
-      strikeThrough,
-      underline ?? false
-    );
+    if (underline) {
+      const strikeThrough =
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          this.simpleCellAddress.toCellId()
+        ]?.strikeThrough ?? false;
+      const textDecoration = new TextDecoration(
+        this.text,
+        strikeThrough,
+        underline
+      );
 
-    textDecoration.setStyle();
+      textDecoration.setStyle();
+    }
   }
 
   setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
-    this.text.align(horizontalTextAlign ?? 'left');
+    if (horizontalTextAlign) {
+      this.text.align(horizontalTextAlign);
+    }
   }
 
   setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
-    this.text.verticalAlign(verticalTextAlign ?? 'middle');
+    if (verticalTextAlign) {
+      this.text.verticalAlign(verticalTextAlign);
+    }
   }
 
   setCellCommentMarker(comment?: string) {
@@ -203,7 +223,6 @@ class StyleableCell extends Cell {
       this.text.text(text.toString());
       // Only set the width for text wrapping to work
       this.text.width(width);
-
       this.text.show();
     } else {
       this.text.hide();

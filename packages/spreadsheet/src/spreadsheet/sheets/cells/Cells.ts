@@ -7,6 +7,9 @@ import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
 import { isNil } from 'lodash';
+import { Node } from 'konva/lib/Node';
+import { ICellConfig } from '../../styles';
+import { ShapeConfig } from 'konva/lib/Shape';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
@@ -22,23 +25,21 @@ class Cells {
     this.cellsMap = new Map();
     this.cachedCellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
-      name: 'cellRect',
-      width: this.spreadsheet.options.col.defaultSize,
-      height: this.spreadsheet.options.row.defaultSize,
+      ...this.getDefaultCellRectAttrs(),
+      name: 'rect',
     }).cache();
     const borderLine = new Line({
       ...this.spreadsheet.styles.cell.borderLine,
       name: 'borderLine',
-    }).hide();
+    });
     const commentMarker = new Line({
       ...this.spreadsheet.styles.cell.commentMarker,
       name: 'commentMarker',
-    }).hide();
-
+    });
     const cellText = new Text({
-      name: 'cellText',
+      name: 'text',
       ...this.spreadsheet.styles.cell.text,
-    }).hide();
+    });
 
     this.cachedCellGroup = new Group();
 
@@ -59,8 +60,16 @@ class Cells {
     this.cachedCellGroup.cache();
   }
 
+  private getDefaultCellRectAttrs() {
+    return {
+      width: this.spreadsheet.options.col.defaultSize,
+      height: this.spreadsheet.options.row.defaultSize,
+    };
+  }
+
   setCachedCells() {
-    // * 2 to account for frozen cells
+    // TODO: Remove * 2 and measure the
+    // outOfViewport for freeze correctly instead
     const currentNumberOfCachedCells =
       this.sheets.rows.numberOfCachedRowCols *
       this.sheets.cols.numberOfCachedRowCols *
@@ -81,9 +90,41 @@ class Cells {
       this.sheets.cols.numberOfCachedRowCols;
   }
 
+  private resetNodeAttrs(node: Node) {
+    const { name, ...attrs } = node.getAttrs();
+    const cellConfigKey = name as keyof ICellConfig | undefined;
+
+    const resetValues: Partial<ShapeConfig> = {};
+
+    for (const key in attrs) {
+      let styleValue = null;
+
+      if (cellConfigKey) {
+        styleValue = this.spreadsheet.styles.cell[cellConfigKey][key] ?? null;
+      }
+
+      resetValues[key] = styleValue;
+    }
+
+    node.setAttrs(resetValues);
+  }
+
+  // The reason we do this instead of destroy() & clone()
+  // is that this is much much faster in terms of performance
+  resetAttrs(cell: StyleableCell) {
+    this.resetNodeAttrs(cell.group);
+
+    cell.group.getChildren().forEach((child) => {
+      this.resetNodeAttrs(child);
+    });
+
+    cell.rect.setAttrs(this.getDefaultCellRectAttrs());
+  }
+
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
+        this.resetAttrs(cell);
         this.cellsMap.delete(cellId);
         this.cachedCellGroups.push(cell.group);
       }
@@ -132,12 +173,16 @@ class Cells {
 
   clearAll() {
     this.cellsMap.forEach((cell, cellId) => {
-      const clone = this.cachedCellGroup.clone();
+      // const clone = this.cachedCellGroup.clone();
 
-      cell.destroy();
+      // cell.destroy();
+
+      // this.cellsMap.delete(cellId);
+      // this.cachedCellGroups.push(clone);
+      this.resetAttrs(cell);
 
       this.cellsMap.delete(cellId);
-      this.cachedCellGroups.push(clone);
+      this.cachedCellGroups.push(cell.group);
     });
   }
 

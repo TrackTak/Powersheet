@@ -26,7 +26,7 @@ class Cell {
 
     if (group) {
       this.group = group;
-      this.rect = group.findOne('.cellRect');
+      this.rect = group.findOne('.rect');
     } else {
       this.group = new Group();
       this.rect = this.sheets.cells.cachedCellRect.clone();
@@ -107,6 +107,13 @@ class Cell {
   }
 
   getClientRectWithoutStroke() {
+    if (this.simpleCellAddress.toCellId() === '0_1_0') {
+      console.log(
+        this.group.getClientRect({
+          skipStroke: true,
+        })
+      );
+    }
     return this.group.getClientRect({
       skipStroke: true,
     });

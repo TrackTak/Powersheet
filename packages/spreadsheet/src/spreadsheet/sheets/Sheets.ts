@@ -276,6 +276,7 @@ class Sheets {
     this.rows.setCachedRowCols();
     this.cols.setCachedRowCols();
     this.cells.setCachedCells();
+
     this.spreadsheet.updateViewport();
   }
 

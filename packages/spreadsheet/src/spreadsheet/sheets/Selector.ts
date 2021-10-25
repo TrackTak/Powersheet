@@ -4,7 +4,7 @@ import { Vector2d } from 'konva/lib/types';
 import Spreadsheet from '../Spreadsheet';
 import SelectedCell from './cells/cell/SelectedCell';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
-import Sheet from './Sheet';
+import Sheet from './Sheets';
 
 export interface ISelectedRowCols {
   rows: Shape[];

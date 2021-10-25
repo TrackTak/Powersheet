@@ -2,12 +2,12 @@ import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
-import { SheetId } from './sheet/Sheet';
-import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
+import { SheetId } from './sheets/Sheets';
+import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress, {
   CellId,
-} from './sheet/cells/cell/SimpleCellAddress';
-import { SheetRowColId } from './sheet/cells/cell/RowColAddress';
+} from './sheets/cells/cell/SimpleCellAddress';
+import { SheetRowColId } from './sheets/cells/cell/RowColAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;

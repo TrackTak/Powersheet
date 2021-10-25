@@ -1,7 +1,7 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
 import Spreadsheet from '../../../Spreadsheet';
-import Sheet from '../../Sheet';
+import Sheet from '../../Sheets';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 

@@ -1,6 +1,6 @@
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
-import Sheet from '../Sheet';
+import Sheet from '../Sheets';
 import { createGroup } from '../../htmlElementHelpers';
 import {
   createButtonContent,

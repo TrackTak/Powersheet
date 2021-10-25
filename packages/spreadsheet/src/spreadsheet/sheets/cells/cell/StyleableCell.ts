@@ -1,6 +1,6 @@
 import { Line } from 'konva/lib/shapes/Line';
 import { Text } from 'konva/lib/shapes/Text';
-import Sheet from '../../Sheet';
+import Sheet from '../../Sheets';
 import FontStyle from './FontStyle';
 import TextDecoration from './TextDecoration';
 import { format } from 'numfmt';

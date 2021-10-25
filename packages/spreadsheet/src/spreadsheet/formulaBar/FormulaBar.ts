@@ -1,4 +1,4 @@
-import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from '../sheets/cell/SimpleCellAddressddress';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 import styles from './FormulaBar.module.scss';
@@ -19,8 +19,11 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const { editorArea, editableContentContainer, editableContent } =
-      createFormulaEditorArea();
+    const {
+      editorArea,
+      editableContentContainer,
+      editableContent,
+    } = createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
@@ -54,8 +57,9 @@ class FormulaBar {
     let value;
 
     if (simpleCellAddress) {
-      const formula =
-        this.spreadsheet.hyperformula.getCellFormula(simpleCellAddress);
+      const formula = this.spreadsheet.hyperformula.getCellFormula(
+        simpleCellAddress
+      );
 
       value = formula
         ? formula

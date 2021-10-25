@@ -8,7 +8,7 @@ import {
 import styles from './BottomBar.module.scss';
 import tippy, { Instance, Props } from 'tippy.js';
 import { createIconButton, IIconElements } from '../htmlElementHelpers';
-import { SheetId } from '../sheet/Sheet';
+import { SheetId } from '../sheets/Sheets';
 import Spreadsheet from '../Spreadsheet';
 
 interface ISheetTabElements {

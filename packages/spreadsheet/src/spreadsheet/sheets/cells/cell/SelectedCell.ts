@@ -1,5 +1,5 @@
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import Sheet from '../../Sheet';
+import Sheet from '../../Sheets';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 

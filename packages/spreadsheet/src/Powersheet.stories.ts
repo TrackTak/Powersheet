@@ -1,11 +1,11 @@
-import SimpleCellAddress from './spreadsheet/sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from './spreadsheet/sheets/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData, ICellData } from './spreadsheet/sheet/Data';
+import { ISpreadsheetData, ICellData } from './spreadsheet/sheets/Data';
 import { IOptions } from './spreadsheet/options';
 import { IStyles } from './spreadsheet/styles';
 import { NestedPartial } from './spreadsheet/types';

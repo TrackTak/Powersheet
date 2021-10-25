@@ -5,7 +5,7 @@ import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
 
 import { isNil } from 'lodash';
-import Sheet from '../Sheet';
+import Sheet from '../Sheets';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
 import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';

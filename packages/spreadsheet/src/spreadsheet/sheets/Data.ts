@@ -4,7 +4,7 @@ import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import { RowColId, RowColsType } from './rowCols/RowCols';
-import { SheetId } from './Sheet';
+import { SheetId } from './Sheets';
 
 export type TextWrap = 'wrap';
 export type HorizontalTextAlign = 'left' | 'center' | 'right';

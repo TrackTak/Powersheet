@@ -33,18 +33,18 @@ import {
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
 import { sentenceCase } from 'sentence-case';
-import Cell from '../sheet/cells/cell/Cell';
-import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
+import Cell from '../sheets/cells/cell/Cell';
+import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import {
   BorderStyle,
   HorizontalTextAlign,
   ICellData,
   TextWrap,
   VerticalTextAlign,
-} from '../sheet/Data';
-import RangeSimpleCellAddress from '../sheet/cells/cell/RangeSimpleCellAddress';
-import SelectedCell from '../sheet/cells/cell/SelectedCell';
-import { SheetId } from '../sheet/Sheet';
+} from '../sheets/Data';
+import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress';
+import SelectedCell from '../sheets/cells/cell/SelectedCell';
+import { SheetId } from '../sheets/Sheets';
 import { HyperFormula } from 'hyperformula';
 
 export interface IToolbarActionGroups {

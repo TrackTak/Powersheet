@@ -1,6 +1,6 @@
 import { isNil, merge } from 'lodash';
 import { defaultOptions, IOptions } from './options';
-import Sheet, { SheetId } from './sheet/Sheet';
+import Sheets, { SheetId } from './sheets/Sheets';
 import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
@@ -13,13 +13,13 @@ import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import { HyperFormula } from 'hyperformula';
-import Data, { ISheetData, ISpreadsheetData } from './sheet/Data';
+import Data, { ISheetData, ISpreadsheetData } from './sheets/Data';
 import SimpleCellAddress, {
   CellId,
-} from './sheet/cells/cell/SimpleCellAddress';
+} from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
-import Merger from './sheet/Merger';
+import Merger from './sheets/Merger';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -32,7 +32,7 @@ export interface ISpreadsheetConstructor {
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement;
   sheetsEl: HTMLDivElement;
-  sheets: Map<SheetId, Sheet>;
+  sheets: Sheets;
   styles: IStyles;
   eventEmitter: PowersheetEmitter;
   options: IOptions;
@@ -45,8 +45,6 @@ class Spreadsheet {
   merger: Merger;
   history: any;
   bottomBar?: BottomBar;
-  activeSheetId = 0;
-  totalSheetCount = 0;
   isSaving = false;
   isInitialized = false;
 
@@ -56,13 +54,11 @@ class Spreadsheet {
     this.styles = defaultStyles;
     this.eventEmitter = new PowersheetEmitter();
 
-    this.merger = new Merger(this);
     this.toolbar = params.toolbar;
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
     this.hyperformula = params.hyperformula;
-    this.sheets = new Map();
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
@@ -82,12 +78,13 @@ class Spreadsheet {
 
     this.spreadsheetEl.appendChild(this.sheetsEl);
 
+    this.data.setSheet(0);
     this.toolbar?.initialize(this);
     this.formulaBar?.initialize(this);
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
     this.clipboard = new Clipboard(this);
-
+    this.merger = new Merger(this);
     this.history = new Manager((data: string) => {
       const currentData = this.data.spreadsheetData;
 
@@ -97,8 +94,7 @@ class Spreadsheet {
 
       return JSON.stringify(currentData);
     }, this.options.undoRedoLimit);
-
-    this.data.setSheet(0);
+    this.sheets = new Sheets(this);
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
@@ -132,7 +128,7 @@ class Spreadsheet {
   }
 
   private updateSheetSizes() {
-    this.sheets.forEach((sheet) => sheet.updateSize());
+    this.sheets.updateSize();
   }
 
   private onDOMContentLoaded = () => {
@@ -147,8 +143,7 @@ class Spreadsheet {
     this.toolbar?.destroy();
     this.formulaBar?.destroy();
     this.bottomBar?.destroy();
-
-    this.sheets.forEach((sheet) => sheet.destroy());
+    this.sheets.destroy();
   }
 
   private setCells() {
@@ -230,72 +225,9 @@ class Spreadsheet {
     return `Sheet${this.totalSheetCount + 1}`;
   }
 
-  getActiveSheet() {
-    return this.sheets.get(this.activeSheetId);
-  }
-
   updateViewport() {
     this.bottomBar?.updateSheetTabs();
-
-    this.sheets.forEach((sheet) => {
-      if (sheet.sheetId === this.activeSheetId) {
-        sheet.show();
-        sheet.updateViewport();
-      } else {
-        sheet.hide();
-      }
-    });
-  }
-
-  deleteSheet(sheetId: SheetId) {
-    const sheet = this.sheets.get(sheetId)!;
-
-    if (this.activeSheetId === sheetId) {
-      const sheetIds = Array.from(this.sheets.keys());
-      const currentIndex = sheetIds.indexOf(sheetId);
-
-      if (currentIndex === 0) {
-        this.switchSheet(sheetIds[1]);
-      } else {
-        this.switchSheet(sheetIds[currentIndex - 1]);
-      }
-    }
-
-    sheet.destroy();
-
-    this.data.deleteSheet(sheetId);
-
-    this.sheets.delete(sheetId);
-
-    this.updateViewport();
-  }
-
-  switchSheet(sheetId: SheetId) {
-    this.activeSheetId = sheetId;
-
-    this.updateViewport();
-  }
-
-  renameSheet(sheetId: SheetId, sheetName: string) {
-    this.data.setSheet(sheetId, {
-      sheetName,
-    });
-    this.hyperformula.renameSheet(sheetId, sheetName);
-
-    this.updateViewport();
-  }
-
-  createNewSheet(data: ISheetData) {
-    this.data.setSheet(data.id, data);
-    this.hyperformula.addSheet(data.sheetName);
-
-    const sheet = new Sheet(this, data.id);
-
-    this.sheets.set(data.id, sheet);
-
-    this.totalSheetCount++;
-
-    this.updateViewport();
+    this.sheets.updateViewport();
   }
 }
 

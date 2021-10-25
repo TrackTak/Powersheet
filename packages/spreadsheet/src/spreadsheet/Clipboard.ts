@@ -1,7 +1,7 @@
 import { SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
-import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './sheets/cell/RangeSimpleCellAddressddress';
+import SimpleCellAddress from './sheets/cell/SimpleCellAddressddress';
 import Spreadsheet from './Spreadsheet';
 
 class Clipboard {

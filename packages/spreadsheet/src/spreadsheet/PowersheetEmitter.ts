@@ -1,7 +1,7 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { TypedEmitter } from 'tiny-typed-emitter';
-import { ISpreadsheetData } from './sheet/Data';
-import { ISelectionArea } from './sheet/Selector';
+import { ISpreadsheetData } from './sheets/Data';
+import { ISelectionArea } from './sheets/Selector';
 
 export interface PowersheetEvents {
   scrollVertical: (e: Event, scroll: number) => void;

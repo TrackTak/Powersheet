@@ -1,7 +1,7 @@
 import Spreadsheet from '../../Spreadsheet';
 import SimpleCellAddress, { CellId } from './cell/SimpleCellAddress';
 import StyleableCell from './cell/StyleableCell';
-import Sheet from '../Sheet';
+import Sheet from '../Sheets';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
@@ -10,7 +10,7 @@ import { isNil } from 'lodash';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
-  cachedCellsGroups: Group[] = [];
+  cachedCellGroups: Group[] = [];
   cachedCellGroup: Group;
   cachedCellRect: Rect;
   spreadsheet: Spreadsheet;
@@ -73,7 +73,7 @@ class Cells {
     ) {
       const cachedCellGroup = this.cachedCellGroup.clone();
 
-      this.cachedCellsGroups.push(cachedCellGroup);
+      this.cachedCellGroups.push(cachedCellGroup);
     }
 
     this.numberOfCachedCells =
@@ -85,7 +85,7 @@ class Cells {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
         this.cellsMap.delete(cellId);
-        this.cachedCellsGroups.push(cell.group);
+        this.cachedCellGroups.push(cell.group);
       }
     });
   }
@@ -137,7 +137,7 @@ class Cells {
       cell.destroy();
 
       this.cellsMap.delete(cellId);
-      this.cachedCellsGroups.push(clone);
+      this.cachedCellGroups.push(clone);
     });
   }
 
@@ -163,7 +163,7 @@ class Cells {
   }
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
-    const cachedCellGroup = this.cachedCellsGroups.pop()!;
+    const cachedCellGroup = this.cachedCellGroups.pop()!;
 
     if (!cachedCellGroup) return;
 

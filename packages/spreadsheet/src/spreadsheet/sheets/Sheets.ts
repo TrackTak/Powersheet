@@ -9,7 +9,7 @@ import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import Spreadsheet from '../Spreadsheet';
 import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
-import styles from './Sheet.module.scss';
+import styles from './Sheets.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
 import { debounce, DebouncedFunc, isNil, throttle } from 'lodash';
@@ -18,6 +18,7 @@ import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
+import { ISheetData } from './Data';
 
 export interface IDimensions {
   width: number;
@@ -48,8 +49,9 @@ export interface ICustomSizes {
   size: number;
 }
 
-class Sheet {
+class Sheets {
   scrollGroups!: IScrollGroups;
+  sheetIds: SheetId[] = [];
   sheetEl: HTMLDivElement;
   stage: Stage;
   layer: Layer;
@@ -58,25 +60,24 @@ class Sheet {
   rows: RowCols;
   selector: Selector;
   cells: Cells;
-  sheetDimensions: IDimensions;
+  sheetDimensions: IDimensions = {
+    width: 0,
+    height: 0,
+  };
   previousSheetClickTime = 0;
   sheetClickTime = 0;
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
   comment: Comment;
+  activeSheetId = 0;
+  totalSheetCount = 0;
   private debouncedResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
   >;
 
-  constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
+  constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
-    this.sheetId = sheetId;
-
-    this.sheetDimensions = {
-      width: 0,
-      height: 0,
-    };
 
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
@@ -200,6 +201,46 @@ class Sheet {
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
     this.cellEditor = new CellEditor(this);
+  }
+
+  deleteSheet(sheetId: SheetId) {
+    if (this.activeSheetId === sheetId) {
+      const currentIndex = this.sheetIds.indexOf(sheetId);
+
+      if (currentIndex === 0) {
+        this.switchSheet(this.sheetIds[1]);
+      } else {
+        this.switchSheet(this.sheetIds[currentIndex - 1]);
+      }
+    }
+
+    delete this.sheetIds[sheetId];
+
+    this.updateViewport();
+  }
+
+  switchSheet(sheetId: SheetId) {
+    this.activeSheetId = sheetId;
+
+    this.updateViewport();
+  }
+
+  renameSheet(sheetId: SheetId, sheetName: string) {
+    this.spreadsheet.data.setSheet(sheetId, {
+      sheetName,
+    });
+    this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName);
+
+    this.updateViewport();
+  }
+
+  createNewSheet(data: ISheetData) {
+    this.spreadsheet.data.setSheet(data.id, data);
+    this.spreadsheet.hyperformula.addSheet(data.sheetName);
+
+    this.totalSheetCount++;
+
+    this.updateViewport();
   }
 
   updateSize() {
@@ -369,8 +410,8 @@ class Sheet {
       );
 
     return new RangeSimpleCellAddress(
-      new SimpleCellAddress(this.sheetId, getMin('row'), getMin('col')),
-      new SimpleCellAddress(this.sheetId, getMax('row'), getMax('col'))
+      new SimpleCellAddress(this.activeSheetId, getMin('row'), getMin('col')),
+      new SimpleCellAddress(this.activeSheetId, getMax('row'), getMax('col'))
     );
   }
 
@@ -459,12 +500,12 @@ class Sheet {
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
       new SimpleCellAddress(
-        this.sheetId,
+        this.activeSheetId,
         rowIndexes.topIndex,
         colIndexes.topIndex
       ),
       new SimpleCellAddress(
-        this.sheetId,
+        this.activeSheetId,
         rowIndexes.bottomIndex,
         colIndexes.bottomIndex
       )
@@ -472,7 +513,11 @@ class Sheet {
 
     for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-        const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
+        const simpleCellAddress = new SimpleCellAddress(
+          this.activeSheetId,
+          ri,
+          ci
+        );
         const existingRangeSimpleCellAddress =
           this.spreadsheet.merger.associatedMergedCellAddressMap.get(
             simpleCellAddress.toCellId()
@@ -562,7 +607,7 @@ class Sheet {
 
   updateFrozenBackgrounds() {
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheetId];
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.activeSheetId];
     const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
     const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
     const xyStickyFrozenBackground =
@@ -624,4 +669,4 @@ class Sheet {
   }
 }
 
-export default Sheet;
+export default Sheets;

@@ -9,7 +9,7 @@ import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheets from '../../Sheets';
 import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 import { IMergedCellData } from '../../Data';
-import { centerRectTwoInRectOne } from '../../../utils';
+import { centerRectTwoInRectOne, dataKeysComparer } from '../../../utils';
 import { Util } from 'konva/lib/Util';
 
 class RowCol {
@@ -123,12 +123,6 @@ class RowCol {
   }
 
   delete(amount: number) {
-    const comparer = (x: string, y: string) =>
-      new Intl.Collator(undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      }).compare(x, y);
-
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
         this.spreadsheet.data.spreadsheetData.sheets![
@@ -139,7 +133,7 @@ class RowCol {
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
 
       Object.keys(mergedCells ?? {})
-        .sort(comparer)
+        .sort(dataKeysComparer)
         .forEach((key) => {
           const topLeftCellId = key as CellId;
           const mergedCell =
@@ -182,7 +176,7 @@ class RowCol {
         });
 
       Object.keys(rowCols ?? {})
-        .sort(comparer)
+        .sort(dataKeysComparer)
         .forEach((key) => {
           const sheetRowColId = key as SheetRowColId;
           const sheetRowColAddress =
@@ -211,7 +205,7 @@ class RowCol {
         });
 
       Object.keys(cells ?? {})
-        .sort(comparer)
+        .sort(dataKeysComparer)
         .forEach((key) => {
           const cellId = key as CellId;
           const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
@@ -250,12 +244,6 @@ class RowCol {
   }
 
   insert(amount: number) {
-    const comparer = (x: string, y: string) =>
-      new Intl.Collator(undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      }).compare(y, x);
-
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
         this.spreadsheet.data.spreadsheetData.sheets![
@@ -266,7 +254,7 @@ class RowCol {
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
 
       Object.keys(mergedCells ?? {})
-        .sort(comparer)
+        .sort((a, b) => dataKeysComparer(b, a))
         .forEach((key) => {
           const topLeftCellId = key as CellId;
           const mergedCell =
@@ -299,7 +287,7 @@ class RowCol {
         });
 
       Object.keys(rowCols ?? {})
-        .sort(comparer)
+        .sort((a, b) => dataKeysComparer(b, a))
         .forEach((key) => {
           const sheetRowColId = key as SheetRowColId;
           const sheetRowColAddress =
@@ -326,7 +314,7 @@ class RowCol {
         });
 
       Object.keys(cells ?? {})
-        .sort(comparer)
+        .sort((a, b) => dataKeysComparer(b, a))
         .forEach((key) => {
           const cellId = key as CellId;
           const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);

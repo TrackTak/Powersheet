@@ -12,6 +12,7 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Group } from 'konva/lib/Group';
 import Sheets from '../Sheets';
+import { dataKeysComparer } from '../../utils';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -308,20 +309,23 @@ class RowCols {
   getAxis(index: number) {
     const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-    const rowCols = data.sheets?.[this.sheets.activeSheetId][this.pluralType];
+    const rowCols =
+      data.sheets?.[this.sheets.activeSheetId][this.pluralType] ?? {};
 
     let totalPreviousCustomSizeDifferences = 0;
 
-    for (const key in rowCols) {
-      const sheetRowColId = key as SheetRowColId;
-      const sheetRowColAddress =
-        RowColAddress.sheetRowColIdToAddress(sheetRowColId);
-      const rowCol = data[this.pluralType]![sheetRowColId];
+    Object.keys(rowCols)
+      .sort(dataKeysComparer)
+      .forEach((key) => {
+        const sheetRowColId = key as SheetRowColId;
+        const sheetRowColAddress =
+          RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+        const rowCol = data[this.pluralType]![sheetRowColId];
 
-      if (sheetRowColAddress.rowCol >= index) break;
+        if (sheetRowColAddress.rowCol >= index) return;
 
-      totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize;
-    }
+        totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize;
+      });
 
     const axis =
       defaultSize * index +

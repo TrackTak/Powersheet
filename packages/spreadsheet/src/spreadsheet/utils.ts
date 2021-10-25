@@ -11,6 +11,13 @@ export const rotatePoint = (
   return { x: x * rcos - y * rsin, y: y * rcos + x * rsin };
 };
 
+export const dataKeysComparer = (x: string, y: string) => {
+  return new Intl.Collator(undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  }).compare(x, y);
+};
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.width / 2,

@@ -27,7 +27,7 @@ class Cells {
       ...this.spreadsheet.styles.cell.rect,
       ...this.getDefaultCellRectAttrs(),
       name: 'rect',
-    }).cache();
+    });
     const borderLine = new Line({
       ...this.spreadsheet.styles.cell.borderLine,
       name: 'borderLine',
@@ -56,8 +56,6 @@ class Cells {
       commentMarker,
       ...borderLines
     );
-
-    this.cachedCellGroup.cache();
   }
 
   private getDefaultCellRectAttrs() {
@@ -173,12 +171,6 @@ class Cells {
 
   clearAll() {
     this.cellsMap.forEach((cell, cellId) => {
-      // const clone = this.cachedCellGroup.clone();
-
-      // cell.destroy();
-
-      // this.cellsMap.delete(cellId);
-      // this.cachedCellGroups.push(clone);
       this.resetAttrs(cell);
 
       this.cellsMap.delete(cellId);

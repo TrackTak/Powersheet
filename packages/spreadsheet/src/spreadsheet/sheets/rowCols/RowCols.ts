@@ -110,9 +110,9 @@ class RowCols {
       name: 'headerText',
     });
 
-    const headerResizeLine = new Line({
+    const resizeLine = new Line({
       ...this.spreadsheet.styles[this.type].resizeLine,
-      name: 'headerResizeLine',
+      name: 'resizeLine',
       points: this.isCol
         ? [0, 0, 0, this.sheets.getViewportVector().y]
         : [0, 0, this.sheets.getViewportVector().x, 0],
@@ -120,7 +120,7 @@ class RowCols {
 
     this.cachedHeaderGroup = new Group();
 
-    this.cachedHeaderGroup.add(headerRect, headerText, headerResizeLine);
+    this.cachedHeaderGroup.add(headerRect, headerText, resizeLine);
 
     this.cachedHeaderGroup.cache();
 

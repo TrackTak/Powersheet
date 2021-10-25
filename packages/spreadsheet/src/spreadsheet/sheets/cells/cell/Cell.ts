@@ -107,13 +107,6 @@ class Cell {
   }
 
   getClientRectWithoutStroke() {
-    if (this.simpleCellAddress.toCellId() === '0_1_0') {
-      console.log(
-        this.group.getClientRect({
-          skipStroke: true,
-        })
-      );
-    }
     return this.group.getClientRect({
       skipStroke: true,
     });

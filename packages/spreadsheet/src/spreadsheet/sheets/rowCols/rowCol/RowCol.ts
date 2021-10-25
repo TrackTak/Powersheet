@@ -54,7 +54,7 @@ class RowCol {
     this.xyFrozenGridLine = xyFrozenGridLine;
     this.headerRect = this.headerGroup.findOne('.headerRect');
     this.headerText = this.headerGroup.findOne('.headerText');
-    this.resizeLine = this.headerGroup.findOne('.headerResizeLine');
+    this.resizeLine = this.headerGroup.findOne('.resizeLine');
 
     this.rowColAddress = new RowColAddress(
       this.sheets.activeSheetId,

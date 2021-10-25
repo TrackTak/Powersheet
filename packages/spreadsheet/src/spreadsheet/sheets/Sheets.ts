@@ -246,6 +246,8 @@ class Sheets {
 
     this.totalSheetCount++;
 
+    this.sheetIds[data.id] = data.id;
+
     this.spreadsheet.updateViewport();
   }
 

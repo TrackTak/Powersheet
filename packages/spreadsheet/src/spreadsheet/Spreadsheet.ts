@@ -83,6 +83,8 @@ class Spreadsheet {
     }, this.options.undoRedoLimit);
     this.sheets = new Sheets(this);
 
+    this.data.setSheet(0);
+
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
       once: true,
@@ -100,9 +102,7 @@ class Spreadsheet {
         this.sheets.createNewSheet(sheet);
       }
 
-      this.setCells();
-
-      this.sheets.switchSheet(0);
+      if (this.data.spreadsheetData.sheets) this.setCells();
 
       this.isSaving = false;
 

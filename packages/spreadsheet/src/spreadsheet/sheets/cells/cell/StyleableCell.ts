@@ -1,6 +1,6 @@
 import { Line } from 'konva/lib/shapes/Line';
 import { Text } from 'konva/lib/shapes/Text';
-import Sheet from '../../Sheets';
+import Sheets from '../../Sheets';
 import FontStyle from './FontStyle';
 import TextDecoration from './TextDecoration';
 import { format } from 'numfmt';
@@ -22,11 +22,11 @@ class StyleableCell extends Cell {
   borders: Record<BorderStyle, Line>;
 
   constructor(
-    public sheet: Sheet,
+    public sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     public group: Group
   ) {
-    super(sheet, simpleCellAddress, group);
+    super(sheets, simpleCellAddress, group);
 
     this.text = group.findOne('.cellText');
     this.commentMarker = group.findOne<Line>('.commentMarker');
@@ -211,7 +211,7 @@ class StyleableCell extends Cell {
   }
 
   setCellTextHeight() {
-    const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
+    const height = this.sheets.rows.getSize(this.simpleCellAddress.row);
 
     if (this.text.wrap() === 'none') {
       this.text.height(height);
@@ -229,7 +229,7 @@ class StyleableCell extends Cell {
 
     const stickyGroup = this.getStickyGroupCellBelongsTo();
 
-    this.sheet.scrollGroups[stickyGroup].cellGroup.add(this.group);
+    this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
 
     let value: CellValue | undefined =
       this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
@@ -272,14 +272,21 @@ class StyleableCell extends Cell {
     this.setRightBorder(borders);
     this.setBottomBorder(borders);
 
-    if (!this.spreadsheet.merger.getIsCellPartOfMerge(this.simpleCellAddress)) {
-      const height = this.sheet.rows.getSize(this.simpleCellAddress.row);
+    if (
+      !this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
+        this.simpleCellAddress
+      )
+    ) {
+      const height = this.sheets.rows.getSize(this.simpleCellAddress.row);
       const cellHeight = this.getClientRectWithoutStroke().height;
 
       if (cellHeight > height) {
         this.spreadsheet.data.setRowCol(
           'rows',
-          new RowColAddress(this.sheet.sheetId, this.simpleCellAddress.row),
+          new RowColAddress(
+            this.sheets.activeSheetId,
+            this.simpleCellAddress.row
+          ),
           {
             size: cellHeight,
           }

@@ -1,13 +1,12 @@
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import styles from './RightClickMenu.module.scss';
-import Sheet from '../Sheets';
+import Sheets from '../Sheets';
 import { createGroup } from '../../htmlElementHelpers';
 import {
   createButtonContent,
   ButtonName,
   rightClickMenuPrefix,
 } from './rightClickMenuHtmlHelpers';
-import Spreadsheet from '../../Spreadsheet';
 
 export interface IRightClickMenuActionGroups {
   elements: HTMLElement[];
@@ -19,11 +18,9 @@ class RightClickMenu {
   dropdown: Instance<Props>;
   buttonMap: Record<ButtonName, HTMLElement>;
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
-  private spreadsheet: Spreadsheet;
 
-  constructor(private sheet: Sheet) {
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+  constructor(private sheets: Sheets) {
+    this.sheets = sheets;
     this.buttonMap = {
       comment: createButtonContent('Comment', 'comment'),
       copy: createButtonContent('Copy', 'copy'),
@@ -84,18 +81,18 @@ class RightClickMenu {
     buttons.insertColumn.addEventListener('click', this.insertColOnClick);
 
     buttons.cut.addEventListener('click', async () => {
-      await this.spreadsheet.clipboard.cut();
+      await this.sheets.clipboard.cut();
     });
 
     buttons.copy.addEventListener('click', async () => {
-      await this.spreadsheet.clipboard.copy();
+      await this.sheets.clipboard.copy();
     });
 
     buttons.paste.addEventListener('click', () => {
-      this.spreadsheet.clipboard.paste();
+      this.sheets.clipboard.paste();
     });
 
-    this.dropdown = tippy(this.sheet.sheetEl, {
+    this.dropdown = tippy(this.sheets.sheetEl, {
       placement: 'auto',
       interactive: true,
       arrow: false,
@@ -126,33 +123,33 @@ class RightClickMenu {
 
   commentOnClick = () => {
     const simpleCellAddress =
-      this.sheet.selector.selectedCell!.simpleCellAddress;
+      this.sheets.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.comment?.show(simpleCellAddress);
+    this.sheets.comment?.show(simpleCellAddress);
   };
 
   insertRowOnClick = () => {
-    const { row } = this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.rows.rowColMap.get(row)!.insert(1);
+    this.sheets.rows.rowColMap.get(row)!.insert(1);
   };
 
   insertColOnClick = () => {
-    const { col } = this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.cols.rowColMap.get(col)!.insert(1);
+    this.sheets.cols.rowColMap.get(col)!.insert(1);
   };
 
   deleteRowOnClick = () => {
-    const { row } = this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.rows.rowColMap.get(row)!.delete(1);
+    this.sheets.rows.rowColMap.get(row)!.delete(1);
   };
 
   deleteColOnClick = () => {
-    const { col } = this.sheet.selector.selectedCell!.simpleCellAddress;
+    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress;
 
-    this.sheet.cols.rowColMap.get(col)!.delete(1);
+    this.sheets.cols.rowColMap.get(col)!.delete(1);
   };
 }
 

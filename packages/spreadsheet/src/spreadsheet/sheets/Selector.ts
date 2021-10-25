@@ -4,7 +4,7 @@ import { Vector2d } from 'konva/lib/types';
 import Spreadsheet from '../Spreadsheet';
 import SelectedCell from './cells/cell/SelectedCell';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
-import Sheet from './Sheets';
+import Sheets from './Sheets';
 
 export interface ISelectedRowCols {
   rows: Shape[];
@@ -38,11 +38,15 @@ class Selector {
   selectionArea?: ISelectionArea | null;
   private spreadsheet: Spreadsheet;
 
-  constructor(private sheet: Sheet) {
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+  constructor(private sheets: Sheets) {
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
 
-    this.selectedSimpleCellAddress = new SimpleCellAddress(sheet.sheetId, 0, 0);
+    this.selectedSimpleCellAddress = new SimpleCellAddress(
+      this.sheets.activeSheetId,
+      0,
+      0
+    );
   }
 
   private renderSelectedCell() {
@@ -50,12 +54,12 @@ class Selector {
       this.selectedCell?.destroy();
 
       this.selectedCell = new SelectedCell(
-        this.sheet,
+        this.sheets,
         this.selectedSimpleCellAddress
       );
 
       const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo();
-      const sheetGroup = this.sheet.scrollGroups[stickyGroup].sheetGroup;
+      const sheetGroup = this.sheets.scrollGroups[stickyGroup].sheetGroup;
 
       sheetGroup.add(this.selectedCell.group);
     }
@@ -70,15 +74,15 @@ class Selector {
       });
 
       const rangeSimpleCellAddress =
-        this.sheet.convertVectorsToRangeSimpleCellAddress(
+        this.sheets.convertVectorsToRangeSimpleCellAddress(
           this.selectionArea.start,
           this.selectionArea.end
         );
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
-        this.sheet,
+        this.sheets,
         (simpleCellAddress) => {
-          return new SelectedCell(this.sheet, simpleCellAddress);
+          return new SelectedCell(this.sheets, simpleCellAddress);
         }
       );
 
@@ -116,21 +120,21 @@ class Selector {
           let height = 0;
 
           const minMaxRangeSimpleCellAddress =
-            this.sheet.getMinMaxRangeSimpleCellAddress(cells);
+            this.sheets.getMinMaxRangeSimpleCellAddress(cells);
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
           )) {
-            height += this.sheet.rows.getSize(index);
+            height += this.sheets.rows.getSize(index);
           }
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'col'
           )) {
-            width += this.sheet.cols.getSize(index);
+            width += this.sheets.cols.getSize(index);
           }
 
-          const sheetGroup = this.sheet.scrollGroups[type].sheetGroup;
+          const sheetGroup = this.sheets.scrollGroups[type].sheetGroup;
 
           this.groupedCells![type].rect = new Rect({
             ...this.spreadsheet.styles.selection,
@@ -157,23 +161,23 @@ class Selector {
     this.selectionArea = null;
 
     const rangeSimpleCellAddress =
-      this.sheet.convertVectorsToRangeSimpleCellAddress(vector, vector);
+      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector);
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
-      this.sheet,
+      this.sheets,
       (simpleCellAddress) => {
-        return new SelectedCell(this.sheet, simpleCellAddress);
+        return new SelectedCell(this.sheets, simpleCellAddress);
       }
     )[0];
 
     const rect = cell.getClientRectWithoutStroke();
 
     if (!cell.isCellOnFrozenCol()) {
-      rect.x -= Math.abs(this.sheet.cols.scrollBar.scroll);
+      rect.x -= Math.abs(this.sheets.cols.scrollBar.scroll);
     }
 
     if (!cell.isCellOnFrozenRow()) {
-      rect.y -= Math.abs(this.sheet.rows.scrollBar.scroll);
+      rect.y -= Math.abs(this.sheets.rows.scrollBar.scroll);
     }
 
     this.selectionArea = {
@@ -198,7 +202,7 @@ class Selector {
 
   moveSelection() {
     if (this.isInSelectionMode) {
-      const { x, y } = this.sheet.sheet.getRelativePointerPosition();
+      const { x, y } = this.sheets.sheet.getRelativePointerPosition();
       const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke();
 
       this.selectionArea = {

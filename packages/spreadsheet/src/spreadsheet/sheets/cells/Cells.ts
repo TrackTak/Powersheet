@@ -1,7 +1,7 @@
 import Spreadsheet from '../../Spreadsheet';
 import SimpleCellAddress, { CellId } from './cell/SimpleCellAddress';
 import StyleableCell from './cell/StyleableCell';
-import Sheet from '../Sheets';
+import Sheets from '../Sheets';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
@@ -16,9 +16,9 @@ class Cells {
   spreadsheet: Spreadsheet;
   numberOfCachedCells = 0;
 
-  constructor(private sheet: Sheet) {
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+  constructor(private sheets: Sheets) {
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.cellsMap = new Map();
     this.cachedCellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
@@ -62,8 +62,8 @@ class Cells {
   setCachedCells() {
     // * 2 to account for frozen cells
     const currentNumberOfCachedCells =
-      this.sheet.rows.numberOfCachedRowCols *
-      this.sheet.cols.numberOfCachedRowCols *
+      this.sheets.rows.numberOfCachedRowCols *
+      this.sheets.cols.numberOfCachedRowCols *
       2;
 
     for (
@@ -77,8 +77,8 @@ class Cells {
     }
 
     this.numberOfCachedCells =
-      this.sheet.rows.numberOfCachedRowCols *
-      this.sheet.cols.numberOfCachedRowCols;
+      this.sheets.rows.numberOfCachedRowCols *
+      this.sheets.cols.numberOfCachedRowCols;
   }
 
   cacheOutOfViewportCells() {
@@ -103,9 +103,9 @@ class Cells {
   private updateFrozenCells(frozenRow?: number, frozenCol?: number) {
     if (!isNil(frozenRow)) {
       for (let ri = 0; ri <= frozenRow; ri++) {
-        for (const ci of this.sheet.cols.rowColMap.keys()) {
+        for (const ci of this.sheets.cols.rowColMap.keys()) {
           const simpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             ri,
             ci
           );
@@ -117,9 +117,9 @@ class Cells {
 
     if (!isNil(frozenCol)) {
       for (let ci = 0; ci <= frozenCol; ci++) {
-        for (const ri of this.sheet.rows.rowColMap.keys()) {
+        for (const ri of this.sheets.rows.rowColMap.keys()) {
           const simpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             ri,
             ci
           );
@@ -143,16 +143,18 @@ class Cells {
 
   updateViewport() {
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+        this.sheets.activeSheetId
+      ];
     const frozenRow = frozenCells?.row;
     const frozenCol = frozenCells?.col;
 
     this.updateFrozenCells(frozenRow, frozenCol);
 
-    for (const ri of this.sheet.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
-      for (const ci of this.sheet.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    for (const ri of this.sheets.rows.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+      for (const ci of this.sheets.cols.scrollBar.sheetViewportPosition.iterateFromXToY()) {
         const simpleCellAddress = new SimpleCellAddress(
-          this.sheet.sheetId,
+          this.sheets.activeSheetId,
           ri,
           ci
         );
@@ -168,7 +170,7 @@ class Cells {
     if (!cachedCellGroup) return;
 
     const styleableCell = new StyleableCell(
-      this.sheet,
+      this.sheets,
       simpleCellAddress,
       cachedCellGroup
     );
@@ -182,7 +184,7 @@ class Cells {
     const cellId = simpleCellAddress.toCellId();
 
     const rangeSimpleCellAddress =
-      this.spreadsheet.merger.associatedMergedCellAddressMap.get(cellId);
+      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap.get(cellId);
 
     if (rangeSimpleCellAddress) {
       const mergedCellId =

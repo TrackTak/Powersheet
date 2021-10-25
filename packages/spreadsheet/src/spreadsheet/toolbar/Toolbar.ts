@@ -364,19 +364,18 @@ class Toolbar {
   }
 
   setFunction(functionName: string) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-
-    if (sheet.selector.selectedCells.length > 1) {
-      const rangeSimpleCellAddress = sheet.getMinMaxRangeSimpleCellAddress(
-        sheet.selector.selectedCells
-      );
+    if (this.spreadsheet.sheets.selector.selectedCells.length > 1) {
+      const rangeSimpleCellAddress =
+        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
+          this.spreadsheet.sheets.selector.selectedCells
+        );
 
       rangeSimpleCellAddress.bottomRightSimpleCellAddress.row += 1;
 
       const cell = new Cell(
-        sheet,
+        this.spreadsheet.sheets,
         new SimpleCellAddress(
-          sheet.sheetId,
+          this.spreadsheet.sheets.activeSheetId,
           rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
           rangeSimpleCellAddress.topLeftSimpleCellAddress.col
         )
@@ -387,20 +386,20 @@ class Toolbar {
       const bottomRightString =
         rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString();
 
-      const viewportVector = sheet.getViewportVector();
+      const viewportVector = this.spreadsheet.sheets.getViewportVector();
 
       cell.group.x(cell.group.x() + viewportVector.x);
       cell.group.y(cell.group.y() + viewportVector.y);
 
-      sheet.cellEditor.show(cell);
-      sheet.cellEditor.setTextContent(
+      this.spreadsheet.sheets.cellEditor.show(cell);
+      this.spreadsheet.sheets.cellEditor.setTextContent(
         `=${functionName}(${topLeftString}:${bottomRightString})`
       );
     } else {
-      const selectedCell = sheet.selector.selectedCell!;
+      const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
 
-      sheet.cellEditor.show(selectedCell);
-      sheet.cellEditor.setTextContent(`=${functionName}()`);
+      this.spreadsheet.sheets.cellEditor.show(selectedCell);
+      this.spreadsheet.sheets.cellEditor.setTextContent(`=${functionName}()`);
     }
   }
 
@@ -412,9 +411,11 @@ class Toolbar {
     ) => boolean,
     borderType: BorderStyle
   ) {
-    const sheet = this.spreadsheet.getActiveSheet()!;
     const borderCells = cells.filter((cell) =>
-      cellsFilter(cell, sheet.getMinMaxRangeSimpleCellAddress(cells))
+      cellsFilter(
+        cell,
+        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(cells)
+      )
     );
 
     borderCells.forEach((cell) => {
@@ -523,27 +524,25 @@ class Toolbar {
   }
 
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-
-    function setStyle<T>(key: keyof ICellData, value: T) {
-      sheet.spreadsheet.pushToHistory(() => {
-        sheet.selector.selectedCells.forEach((cell) => {
-          sheet.spreadsheet.data.setCell(cell.simpleCellAddress, {
+    const setStyle = <T>(key: keyof ICellData, value: T) => {
+      this.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.sheets.selector.selectedCells.forEach((cell) => {
+          this.spreadsheet.data.setCell(cell.simpleCellAddress, {
             [key]: value,
           });
         });
       });
-    }
+    };
 
-    function deleteStyle(key: keyof ICellData) {
-      sheet.spreadsheet.pushToHistory(() => {
-        sheet.selector.selectedCells.forEach((cell) => {
+    const deleteStyle = (key: keyof ICellData) => {
+      this.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.sheets.selector.selectedCells.forEach((cell) => {
           const cellId = cell.simpleCellAddress.toCellId();
 
-          delete sheet.spreadsheet.data.spreadsheetData.cells?.[cellId][key];
+          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId][key];
         });
       });
-    }
+    };
 
     switch (name) {
       case 'functions': {
@@ -551,7 +550,7 @@ class Toolbar {
         break;
       }
       case 'formula': {
-        sheet.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.pushToHistory(() => {
           this.spreadsheet.data.spreadsheetData.showFormulas =
             !this.spreadsheet.data.spreadsheetData.showFormulas;
         });
@@ -652,20 +651,22 @@ class Toolbar {
       }
       case 'merge': {
         if (this.iconElementsMap.merge.active) {
-          this.spreadsheet.merger.unMergeSelectedCells();
+          this.spreadsheet.sheets.merger.unMergeSelectedCells();
         } else if (!this.iconElementsMap.merge.button.disabled) {
-          this.spreadsheet.merger.mergeSelectedCells();
+          this.spreadsheet.sheets.merger.mergeSelectedCells();
         }
 
         break;
       }
       case 'freeze': {
-        sheet.spreadsheet.pushToHistory(() => {
+        this.spreadsheet.pushToHistory(() => {
           if (this.iconElementsMap.freeze.active) {
-            this.spreadsheet.data.deleteFrozenCell(sheet.sheetId);
+            this.spreadsheet.data.deleteFrozenCell(
+              this.spreadsheet.sheets.activeSheetId
+            );
           } else {
             const simpleCellAddress =
-              sheet.selector.selectedCell!.simpleCellAddress;
+              this.spreadsheet.sheets.selector.selectedCell!.simpleCellAddress;
 
             this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
               row: simpleCellAddress.row,
@@ -674,8 +675,8 @@ class Toolbar {
           }
         });
 
-        sheet.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
-        sheet.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
+        this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
+        this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
 
         break;
       }
@@ -685,62 +686,70 @@ class Toolbar {
       }
       case 'borderBottom': {
         this.spreadsheet.pushToHistory(() => {
-          this.setBottomBorders(sheet.selector.selectedCells);
+          this.setBottomBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderRight': {
         this.spreadsheet.pushToHistory(() => {
-          this.setRightBorders(sheet.selector.selectedCells);
+          this.setRightBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderTop': {
         this.spreadsheet.pushToHistory(() => {
-          this.setTopBorders(sheet.selector.selectedCells);
+          this.setTopBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderLeft': {
         this.spreadsheet.pushToHistory(() => {
-          this.setLeftBorders(sheet.selector.selectedCells);
+          this.setLeftBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderVertical': {
         this.spreadsheet.pushToHistory(() => {
-          this.setVerticalBorders(sheet.selector.selectedCells);
+          this.setVerticalBorders(
+            this.spreadsheet.sheets.selector.selectedCells
+          );
         });
         break;
       }
       case 'borderHorizontal': {
         this.spreadsheet.pushToHistory(() => {
-          this.setHorizontalBorders(sheet.selector.selectedCells);
+          this.setHorizontalBorders(
+            this.spreadsheet.sheets.selector.selectedCells
+          );
         });
         break;
       }
       case 'borderInside': {
         this.spreadsheet.pushToHistory(() => {
-          this.setInsideBorders(sheet.selector.selectedCells);
+          this.setInsideBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderOutside': {
         this.spreadsheet.pushToHistory(() => {
-          this.setOutsideBorders(sheet.selector.selectedCells);
+          this.setOutsideBorders(
+            this.spreadsheet.sheets.selector.selectedCells
+          );
         });
         break;
       }
       case 'borderAll': {
         this.spreadsheet.pushToHistory(() => {
-          this.setAllBorders(sheet.selector.selectedCells);
+          this.setAllBorders(this.spreadsheet.sheets.selector.selectedCells);
         });
         break;
       }
       case 'borderNone': {
         this.spreadsheet.pushToHistory(() => {
           this.clearBorders(
-            sheet.selector.selectedCells.map((cell) => cell.simpleCellAddress)
+            this.spreadsheet.sheets.selector.selectedCells.map(
+              (cell) => cell.simpleCellAddress
+            )
           );
         });
         break;
@@ -806,12 +815,8 @@ class Toolbar {
   }
 
   updateActiveStates = () => {
-    const sheet = this.spreadsheet.getActiveSheet()!;
-
-    if (!sheet) return;
-
-    const selectedCells = sheet.selector.selectedCells;
-    const selectedCell = sheet.selector.selectedCell!;
+    const selectedCells = this.spreadsheet.sheets.selector.selectedCells;
+    const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
 
     this.setTextFormatPatterns();
     this.setFontSizes();
@@ -820,7 +825,7 @@ class Toolbar {
     this.setActiveColor(selectedCell, 'fontColor');
     this.setActive(
       this.iconElementsMap.freeze,
-      this.isFreezeActive(sheet.sheetId)
+      this.isFreezeActive(this.spreadsheet.sheets.activeSheetId)
     );
     this.setActive(
       this.iconElementsMap.textWrap,
@@ -924,7 +929,7 @@ class Toolbar {
 
   setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
     const isMerged =
-      this.spreadsheet.merger.getIsCellPartOfMerge(
+      this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
         selectedCell.simpleCellAddress
       ) && selectedCells.length === 1;
 

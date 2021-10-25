@@ -6,7 +6,7 @@ import { isNil } from 'lodash';
 import Spreadsheet from '../../../Spreadsheet';
 import SimpleCellAddress, { CellId } from '../../cells/cell/SimpleCellAddress';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
-import Sheet from '../../Sheet';
+import Sheets from '../../Sheets';
 import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 import { IMergedCellData } from '../../Data';
 import { centerRectTwoInRectOne } from '../../../utils';
@@ -17,7 +17,7 @@ class RowCol {
   headerRect: Rect;
   headerText: Text;
   resizeLine: Line;
-  sheet: Sheet;
+  sheets: Sheets;
   type: RowColType;
   pluralType: RowColsType;
   isCol: boolean;
@@ -39,8 +39,8 @@ class RowCol {
     this.rowCols = rowCols;
     this.index = index;
     this.headerGroup = headerGroup;
-    this.sheet = rowCols.sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+    this.sheets = rowCols.sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.type = rowCols.type;
     this.pluralType = rowCols.pluralType;
     this.isCol = rowCols.isCol;
@@ -56,7 +56,10 @@ class RowCol {
     this.headerText = this.headerGroup.findOne('.headerText');
     this.resizeLine = this.headerGroup.findOne('.headerResizeLine');
 
-    this.rowColAddress = new RowColAddress(this.sheet.sheetId, this.index);
+    this.rowColAddress = new RowColAddress(
+      this.sheets.activeSheetId,
+      this.index
+    );
 
     this.resizeLine.on('mouseover', this.resizeLineOnMouseOver);
     this.resizeLine.on('mouseout', this.resizeLineOnMouseOut);
@@ -91,7 +94,7 @@ class RowCol {
     const clientRect = this.headerGroup.getClientRect({
       skipStroke: true,
     });
-    const sheetRect = this.sheet.sheet.getClientRect();
+    const sheetRect = this.sheets.sheet.getClientRect();
     const sizeUpToFrozenRowCol = this.rowCols.getSizeUpToFrozenRowCol();
 
     sheetRect[this.functions.size] -= sizeUpToFrozenRowCol;
@@ -109,9 +112,11 @@ class RowCol {
   private shiftFrozenCells(getValue: (frozenCell: number) => number) {
     if (this.rowCols.getIsFrozen(this.index)) {
       const existingFrozenCells =
-        this.spreadsheet.data.spreadsheetData.frozenCells![this.sheet.sheetId];
+        this.spreadsheet.data.spreadsheetData.frozenCells![
+          this.sheets.activeSheetId
+        ];
 
-      this.spreadsheet.data.setFrozenCell(this.sheet.sheetId, {
+      this.spreadsheet.data.setFrozenCell(this.sheets.activeSheetId, {
         [this.type]: getValue(existingFrozenCells![this.type]!),
       });
     }
@@ -126,7 +131,9 @@ class RowCol {
 
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
+        this.spreadsheet.data.spreadsheetData.sheets![
+          this.sheets.activeSheetId
+        ];
       const rowCols = rest[this.pluralType];
 
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
@@ -163,7 +170,7 @@ class RowCol {
           }
 
           const simpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             newMergedCell.row.x,
             newMergedCell.col.x
           );
@@ -209,7 +216,7 @@ class RowCol {
           const cellId = key as CellId;
           const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
           const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
             this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
           );
@@ -227,12 +234,12 @@ class RowCol {
         });
 
       if (this.isCol) {
-        this.spreadsheet.hyperformula.removeColumns(this.sheet.sheetId, [
+        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
           this.index,
           amount,
         ]);
       } else {
-        this.spreadsheet.hyperformula.removeRows(this.sheet.sheetId, [
+        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
           this.index,
           amount,
         ]);
@@ -251,7 +258,9 @@ class RowCol {
 
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheet.sheetId];
+        this.spreadsheet.data.spreadsheetData.sheets![
+          this.sheets.activeSheetId
+        ];
       const rowCols = rest[this.pluralType];
 
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
@@ -278,7 +287,7 @@ class RowCol {
           }
 
           const simpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             newMergedCell.row.x,
             newMergedCell.col.x
           );
@@ -322,7 +331,7 @@ class RowCol {
           const cellId = key as CellId;
           const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
           const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheet.sheetId,
+            this.sheets.activeSheetId,
             this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
             this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
           );
@@ -336,12 +345,12 @@ class RowCol {
         });
 
       if (this.isCol) {
-        this.spreadsheet.hyperformula.addColumns(this.sheet.sheetId, [
+        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
           this.index,
           amount,
         ]);
       } else {
-        this.spreadsheet.hyperformula.addRows(this.sheet.sheetId, [
+        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
           this.index,
           amount,
         ]);
@@ -366,7 +375,7 @@ class RowCol {
     const gridLineAxis =
       this.rowCols.getAxis(this.index) +
       this.rowCols.getSize(this.index) -
-      this.sheet.getViewportVector()[this.functions.axis];
+      this.sheets.getViewportVector()[this.functions.axis];
 
     this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index));
     this.headerRect[this.functions.size](this.rowCols.getSize(this.index));
@@ -382,11 +391,13 @@ class RowCol {
     this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index));
 
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+        this.sheets.activeSheetId
+      ];
 
     const frozenCell = frozenCells?.[this.type];
 
-    const size = this.sheet[this.oppositePluralType].getSizeUpToFrozenRowCol();
+    const size = this.sheets[this.oppositePluralType].getSizeUpToFrozenRowCol();
 
     this.gridLine[this.functions.axis](gridLineAxis);
     this.xFrozenGridLine[this.functions.axis](gridLineAxis);
@@ -397,15 +408,15 @@ class RowCol {
     this.yFrozenGridLine.hide();
     this.xyFrozenGridLine.hide();
 
-    this.sheet.scrollGroups.main.rowColGroup.add(this.gridLine);
-    this.sheet.scrollGroups.xSticky.rowColGroup.add(this.xFrozenGridLine);
-    this.sheet.scrollGroups.ySticky.rowColGroup.add(this.yFrozenGridLine);
-    this.sheet.scrollGroups.xySticky.rowColGroup.add(this.xyFrozenGridLine);
+    this.sheets.scrollGroups.main.rowColGroup.add(this.gridLine);
+    this.sheets.scrollGroups.xSticky.rowColGroup.add(this.xFrozenGridLine);
+    this.sheets.scrollGroups.ySticky.rowColGroup.add(this.yFrozenGridLine);
+    this.sheets.scrollGroups.xySticky.rowColGroup.add(this.xyFrozenGridLine);
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
+      this.sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
     } else {
-      this.sheet.scrollGroups.xSticky.headerGroup.add(this.headerGroup);
+      this.sheets.scrollGroups.xSticky.headerGroup.add(this.headerGroup);
     }
 
     if (!isNil(frozenCell)) {
@@ -418,7 +429,7 @@ class RowCol {
         if (this.index < frozenCell) {
           this.xFrozenGridLine.y(size);
           this.xFrozenGridLine.points(
-            this.rowCols.getLinePoints(this.sheet.sheetDimensions.height)
+            this.rowCols.getLinePoints(this.sheets.sheetDimensions.height)
           );
           this.xFrozenGridLine.show();
         }
@@ -426,7 +437,7 @@ class RowCol {
         if (this.index < frozenCell) {
           this.yFrozenGridLine.x(size);
           this.yFrozenGridLine.points(
-            this.rowCols.getLinePoints(this.sheet.sheetDimensions.width)
+            this.rowCols.getLinePoints(this.sheets.sheetDimensions.width)
           );
           this.yFrozenGridLine.show();
         }
@@ -438,7 +449,7 @@ class RowCol {
       }
 
       if (this.index <= frozenCell) {
-        this.sheet.scrollGroups.xySticky.headerGroup.add(this.headerGroup);
+        this.sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup);
       }
 
       if (this.index < frozenCell) {

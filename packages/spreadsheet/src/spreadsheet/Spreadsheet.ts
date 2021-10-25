@@ -1,6 +1,6 @@
 import { isNil, merge } from 'lodash';
 import { defaultOptions, IOptions } from './options';
-import Sheets, { SheetId } from './sheets/Sheets';
+import Sheets from './sheets/Sheets';
 import { defaultStyles, IStyles } from './styles';
 import Toolbar from './toolbar/Toolbar';
 import FormulaBar from './formulaBar/FormulaBar';
@@ -8,18 +8,16 @@ import { prefix } from './utils';
 import 'tippy.js/dist/tippy.css';
 import './tippy.scss';
 import styles from './Spreadsheet.module.scss';
-import Clipboard from './Clipboard';
 import Manager from 'undo-redo-manager';
 import Exporter from './Exporter';
 import BottomBar from './bottomBar/BottomBar';
 import { HyperFormula } from 'hyperformula';
-import Data, { ISheetData, ISpreadsheetData } from './sheets/Data';
+import Data, { ISpreadsheetData } from './sheets/Data';
 import SimpleCellAddress, {
   CellId,
 } from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
-import Merger from './sheets/Merger';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -31,7 +29,6 @@ export interface ISpreadsheetConstructor {
 
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement;
-  sheetsEl: HTMLDivElement;
   sheets: Sheets;
   styles: IStyles;
   eventEmitter: PowersheetEmitter;
@@ -41,8 +38,6 @@ class Spreadsheet {
   formulaBar?: FormulaBar;
   exporter?: Exporter;
   hyperformula: HyperFormula;
-  clipboard: Clipboard;
-  merger: Merger;
   history: any;
   bottomBar?: BottomBar;
   isSaving = false;
@@ -73,18 +68,10 @@ class Spreadsheet {
       this.spreadsheetEl.style.height = `${this.options.height}px`;
     }
 
-    this.sheetsEl = document.createElement('div');
-    this.sheetsEl.classList.add(styles.sheets, `${prefix}-sheets`);
-
-    this.spreadsheetEl.appendChild(this.sheetsEl);
-
-    this.data.setSheet(0);
     this.toolbar?.initialize(this);
     this.formulaBar?.initialize(this);
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
-    this.clipboard = new Clipboard(this);
-    this.merger = new Merger(this);
     this.history = new Manager((data: string) => {
       const currentData = this.data.spreadsheetData;
 
@@ -110,12 +97,12 @@ class Spreadsheet {
         const sheetId = parseInt(key, 10);
         const sheet = this.data.spreadsheetData.sheets[sheetId];
 
-        this.createNewSheet(sheet);
+        this.sheets.createNewSheet(sheet);
       }
 
       this.setCells();
 
-      this.switchSheet(0);
+      this.sheets.switchSheet(0);
 
       this.isSaving = false;
 
@@ -219,10 +206,6 @@ class Spreadsheet {
 
     this.persistData();
     this.updateViewport();
-  }
-
-  getSheetName() {
-    return `Sheet${this.totalSheetCount + 1}`;
   }
 
   updateViewport() {

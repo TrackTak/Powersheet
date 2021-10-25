@@ -1,5 +1,5 @@
 import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import Sheet from '../../Sheets';
+import Sheets from '../../Sheets';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 
@@ -7,10 +7,10 @@ class SelectedCell extends Cell {
   innerRect: Rect;
 
   constructor(
-    public sheet: Sheet,
+    public sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress
   ) {
-    super(sheet, simpleCellAddress);
+    super(sheets, simpleCellAddress);
 
     this.innerRect = new Rect();
     this.group.add(this.innerRect);

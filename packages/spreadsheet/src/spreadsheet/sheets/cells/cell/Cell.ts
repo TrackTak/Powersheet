@@ -1,7 +1,7 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
 import Spreadsheet from '../../../Spreadsheet';
-import Sheet from '../../Sheets';
+import Sheets from '../../Sheets';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 
@@ -12,12 +12,12 @@ class Cell {
   rect: Rect;
 
   constructor(
-    public sheet: Sheet,
+    public sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     group?: Group
   ) {
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.simpleCellAddress = simpleCellAddress;
     this.rangeSimpleCellAddress = new RangeSimpleCellAddress(
       simpleCellAddress,
@@ -29,7 +29,7 @@ class Cell {
       this.rect = group.findOne('.cellRect');
     } else {
       this.group = new Group();
-      this.rect = this.sheet.cells.cachedCellRect.clone();
+      this.rect = this.sheets.cells.cachedCellRect.clone();
       this.group.add(this.rect);
     }
 
@@ -40,13 +40,13 @@ class Cell {
     const { row, col } = this.simpleCellAddress;
 
     const position = {
-      x: this.sheet.cols.getAxis(col) - this.sheet.getViewportVector().x,
-      y: this.sheet.rows.getAxis(row) - this.sheet.getViewportVector().y,
+      x: this.sheets.cols.getAxis(col) - this.sheets.getViewportVector().x,
+      y: this.sheets.rows.getAxis(row) - this.sheets.getViewportVector().y,
     };
 
     this.rect.size({
-      width: this.sheet.cols.getSize(col),
-      height: this.sheet.rows.getSize(row),
+      width: this.sheets.cols.getSize(col),
+      height: this.sheets.rows.getSize(row),
     });
 
     this.group.position(position);
@@ -55,25 +55,27 @@ class Cell {
   }
 
   isCellOnFrozenRow() {
-    return this.sheet.rows.getIsFrozen(this.simpleCellAddress.row);
+    return this.sheets.rows.getIsFrozen(this.simpleCellAddress.row);
   }
 
   isCellOnFrozenCol() {
-    return this.sheet.cols.getIsFrozen(this.simpleCellAddress.col);
+    return this.sheets.cols.getIsFrozen(this.simpleCellAddress.col);
   }
 
   getStickyGroupCellBelongsTo() {
-    return this.sheet.getStickyGroupType(
+    return this.sheets.getStickyGroupType(
       this.isCellOnFrozenRow(),
       this.isCellOnFrozenCol()
     );
   }
 
   private setMergedCellPropertiesIfNeeded() {
-    this.spreadsheet.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
+    this.spreadsheet.sheets.merger.setAssociatedMergedCellIds(
+      this.simpleCellAddress
+    );
 
     const mergedCellAddress =
-      this.spreadsheet.merger.associatedMergedCellAddressMap.get(
+      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap.get(
         this.simpleCellAddress.toCellId()
       );
 
@@ -87,13 +89,13 @@ class Cell {
     for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
       'col'
     )) {
-      width += this.sheet.cols.getSize(index);
+      width += this.sheets.cols.getSize(index);
     }
 
     for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
       'row'
     )) {
-      height += this.sheet.rows.getSize(index);
+      height += this.sheets.rows.getSize(index);
     }
 
     this.rect.width(width);

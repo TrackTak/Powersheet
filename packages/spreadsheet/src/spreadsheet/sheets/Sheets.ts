@@ -19,6 +19,8 @@ import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
 import { ISheetData } from './Data';
+import Merger from './Merger';
+import Clipboard from '../Clipboard';
 
 export interface IDimensions {
   width: number;
@@ -58,6 +60,8 @@ class Sheets {
   sheet: Rect;
   cols: RowCols;
   rows: RowCols;
+  clipboard: Clipboard;
+  merger: Merger;
   selector: Selector;
   cells: Cells;
   sheetDimensions: IDimensions = {
@@ -82,7 +86,7 @@ class Sheets {
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetEl);
 
     this.debouncedResize = debounce(this.onResize, 50);
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
@@ -159,6 +163,8 @@ class Sheets {
       };
     });
 
+    this.clipboard = new Clipboard(this);
+    this.merger = new Merger(this);
     this.cells = new Cells(this);
     this.cols = new RowCols('col', this);
     this.rows = new RowCols('row', this);
@@ -214,15 +220,17 @@ class Sheets {
       }
     }
 
+    this.spreadsheet.data.deleteSheet(sheetId);
+
     delete this.sheetIds[sheetId];
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   switchSheet(sheetId: SheetId) {
     this.activeSheetId = sheetId;
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
@@ -231,7 +239,7 @@ class Sheets {
     });
     this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName);
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
   }
 
   createNewSheet(data: ISheetData) {
@@ -240,13 +248,17 @@ class Sheets {
 
     this.totalSheetCount++;
 
-    this.updateViewport();
+    this.spreadsheet.updateViewport();
+  }
+
+  getSheetName() {
+    return `Sheet${this.totalSheetCount + 1}`;
   }
 
   updateSize() {
     // 16 is scrollbar
-    this.stage.width(this.spreadsheet.sheetsEl.offsetWidth - 16);
-    this.stage.height(this.spreadsheet.sheetsEl.offsetHeight - 16);
+    this.stage.width(this.sheetEl.offsetWidth - 16);
+    this.stage.height(this.sheetEl.offsetHeight - 16);
 
     this.sheet.width(this.stage.width() - this.getViewportVector().x);
     this.sheet.height(this.stage.height() - this.getViewportVector().y);
@@ -443,15 +455,15 @@ class Sheets {
         break;
       }
       case e.ctrlKey && 'x': {
-        await this.spreadsheet.clipboard.cut();
+        await this.clipboard.cut();
         break;
       }
       case e.ctrlKey && 'c': {
-        await this.spreadsheet.clipboard.copy();
+        await this.clipboard.copy();
         break;
       }
       case e.ctrlKey && 'v': {
-        this.spreadsheet.clipboard.paste();
+        this.clipboard.paste();
         break;
       }
       default:
@@ -519,7 +531,7 @@ class Sheets {
           ci
         );
         const existingRangeSimpleCellAddress =
-          this.spreadsheet.merger.associatedMergedCellAddressMap.get(
+          this.merger.associatedMergedCellAddressMap.get(
             simpleCellAddress.toCellId()
           );
 

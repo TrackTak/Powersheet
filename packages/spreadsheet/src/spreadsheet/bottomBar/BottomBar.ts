@@ -97,7 +97,7 @@ class BottomBar {
   setSheetTabElements(sheetId: SheetId) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab();
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton();
-    const isActive = sheetId === this.spreadsheet.activeSheetId;
+    const isActive = sheetId === this.spreadsheet.sheets.activeSheetId;
 
     if (isActive) {
       sheetTab.classList.add('active');
@@ -109,7 +109,7 @@ class BottomBar {
       this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!;
 
     const switchSheet = () => {
-      this.spreadsheet.switchSheet(sheetId);
+      this.spreadsheet.sheets.switchSheet(sheetId);
     };
 
     const setTabToContentEditable = () => {
@@ -120,7 +120,7 @@ class BottomBar {
     const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
       createSheetTabDropdownContent();
 
-    deleteSheetButton.disabled = this.spreadsheet.sheets.size === 1;
+    deleteSheetButton.disabled = this.spreadsheet.sheets.sheetIds.length === 1;
 
     const sheetTabDropdown = tippy(sheetTab, {
       placement: 'top',
@@ -172,7 +172,7 @@ class BottomBar {
       () => {
         sheetTabDropdown.hide();
 
-        this.spreadsheet.deleteSheet(sheetId);
+        this.spreadsheet.sheets.deleteSheet(sheetId);
       },
       { once: true }
     );
@@ -193,7 +193,10 @@ class BottomBar {
         nameContainer.contentEditable = 'false';
         nameContainer.blur();
 
-        this.spreadsheet.renameSheet(sheetId, nameContainer.textContent!);
+        this.spreadsheet.sheets.renameSheet(
+          sheetId,
+          nameContainer.textContent!
+        );
       },
       { once: true }
     );
@@ -219,8 +222,8 @@ class BottomBar {
     this.tabContainer.innerHTML = '';
     this.sheetSelectionDropdownContent.innerHTML = '';
 
-    this.spreadsheet.sheets.forEach((sheet) => {
-      this.setSheetTabElements(sheet.sheetId);
+    this.spreadsheet.sheets.sheetIds.forEach((sheetId) => {
+      this.setSheetTabElements(sheetId);
     });
   }
 
@@ -229,17 +232,17 @@ class BottomBar {
   };
 
   createNewSheetButtonOnClick = () => {
-    const sheetName = this.spreadsheet.getSheetName();
-    const id = this.spreadsheet.sheets.size;
+    const sheetName = this.spreadsheet.sheets.getSheetName();
+    const id = this.spreadsheet.sheets.sheetIds.length;
 
-    this.spreadsheet.createNewSheet({
+    this.spreadsheet.sheets.createNewSheet({
       id,
       sheetName,
     });
 
-    this.spreadsheet.switchSheet(id);
+    this.spreadsheet.sheets.switchSheet(id);
 
-    this.spreadsheet.sheets.get(id)!.updateSize();
+    this.spreadsheet.sheets.updateSize();
   };
 
   destroy() {

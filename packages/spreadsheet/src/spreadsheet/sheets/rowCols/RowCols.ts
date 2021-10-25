@@ -5,13 +5,13 @@ import ScrollBar from './scrollBars/ScrollBar';
 import Spreadsheet from '../../Spreadsheet';
 
 import { isNil } from 'lodash';
-import Sheet from '../Sheets';
 import RowCol from './rowCol/RowCol';
 import Resizer from './rowCol/Resizer';
 import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress';
 import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Group } from 'konva/lib/Group';
+import Sheets from '../Sheets';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -63,11 +63,11 @@ class RowCols {
   };
   numberOfCachedRowCols = 0;
 
-  constructor(public type: RowColType, public sheet: Sheet) {
+  constructor(public type: RowColType, public sheets: Sheets) {
     this.type = type;
     this.isCol = this.type === 'col';
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.rowColMap = new Map();
 
     this.totalSize = 0;
@@ -114,8 +114,8 @@ class RowCols {
       ...this.spreadsheet.styles[this.type].resizeLine,
       name: 'headerResizeLine',
       points: this.isCol
-        ? [0, 0, 0, this.sheet.getViewportVector().y]
-        : [0, 0, this.sheet.getViewportVector().x, 0],
+        ? [0, 0, 0, this.sheets.getViewportVector().y]
+        : [0, 0, this.sheets.getViewportVector().x, 0],
     });
 
     this.cachedHeaderGroup = new Group();
@@ -136,7 +136,7 @@ class RowCols {
       name: 'frozenLine',
     });
 
-    this.sheet.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
+    this.sheets.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
   }
 
   cacheOutOfViewportRowCols() {
@@ -186,7 +186,7 @@ class RowCols {
     const numberOfCachedRowCols = this.numberOfCachedRowCols;
 
     const maxNumberOfCachedRoCols = Math.max(
-      this.sheet.stage[this.functions.size]() /
+      this.sheets.stage[this.functions.size]() /
         this.spreadsheet.options[this.type].minSize,
       this.numberOfCachedRowCols
     );
@@ -205,7 +205,10 @@ class RowCols {
   private updateFrozenRowCols(frozenRowCol?: number) {
     if (!isNil(frozenRowCol)) {
       for (let index = 0; index <= frozenRowCol; index++) {
-        const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+        const rowColAddress = new RowColAddress(
+          this.sheets.activeSheetId,
+          index
+        );
 
         this.updateRowCol(rowColAddress);
       }
@@ -228,17 +231,17 @@ class RowCols {
     this.frozenLine.hide();
 
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.sheet.sheetId];
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+        this.sheets.activeSheetId
+      ];
     const frozenRowCol = frozenCells?.[this.type];
 
     this.updateFrozenRowCols(frozenRowCol);
 
     // Backwards so we ignore frozen row/cols
     // when they don't exist in the cache
-    for (const index of this.sheet[
-      this.pluralType
-    ].scrollBar.sheetViewportPosition.iterateFromYToX()) {
-      const rowColAddress = new RowColAddress(this.sheet.sheetId, index);
+    for (const index of this.scrollBar.sheetViewportPosition.iterateFromYToX()) {
+      const rowColAddress = new RowColAddress(this.sheets.activeSheetId, index);
 
       this.updateRowCol(rowColAddress);
     }
@@ -247,13 +250,13 @@ class RowCols {
       this.frozenLine[this.functions.axis](
         this.getAxis(frozenRowCol) +
           this.getSize(frozenRowCol) -
-          this.sheet.getViewportVector()[this.functions.axis]
+          this.sheets.getViewportVector()[this.functions.axis]
       );
       this.frozenLine.points(
         this.getLinePoints(
           this.isCol
-            ? this.sheet.sheetDimensions.height
-            : this.sheet.sheetDimensions.width
+            ? this.sheets.sheetDimensions.height
+            : this.sheets.sheetDimensions.width
         )
       );
       this.frozenLine.show();
@@ -295,8 +298,8 @@ class RowCols {
 
   private getSheetSize() {
     return (
-      this.sheet.sheetDimensions[this.oppositeFunctions.size] +
-      this.sheet.getViewportVector()[this.oppositeFunctions.axis]
+      this.sheets.sheetDimensions[this.oppositeFunctions.size] +
+      this.sheets.getViewportVector()[this.oppositeFunctions.axis]
     );
   }
 
@@ -312,7 +315,7 @@ class RowCols {
   getAxis(index: number) {
     const data = this.spreadsheet.data.spreadsheetData;
     const defaultSize = this.spreadsheet.options[this.type].defaultSize;
-    const rowCols = data.sheets?.[this.sheet.sheetId][this.pluralType];
+    const rowCols = data.sheets?.[this.sheets.activeSheetId][this.pluralType];
 
     let totalPreviousCustomSizeDifferences = 0;
 
@@ -330,14 +333,14 @@ class RowCols {
     const axis =
       defaultSize * index +
       totalPreviousCustomSizeDifferences +
-      this.sheet.getViewportVector()[this.functions.axis];
+      this.sheets.getViewportVector()[this.functions.axis];
 
     return axis;
   }
 
   getSize(index: number) {
     const sheetRowColId = new RowColAddress(
-      this.sheet.sheetId,
+      this.sheets.activeSheetId,
       index
     ).toSheetRowColId();
     const data = this.spreadsheet.data.spreadsheetData;
@@ -348,7 +351,8 @@ class RowCols {
 
   getIsFrozen(index: number) {
     const data = this.spreadsheet.data.spreadsheetData;
-    const frozenCell = data.frozenCells?.[this.sheet.sheetId]?.[this.type];
+    const frozenCell =
+      data.frozenCells?.[this.sheets.activeSheetId]?.[this.type];
 
     return isNil(frozenCell) ? false : index <= frozenCell;
   }
@@ -418,7 +422,7 @@ class RowCols {
 
   *getSizeForFrozenCell() {
     const { frozenCells } = this.spreadsheet.data.spreadsheetData;
-    const frozenCell = frozenCells?.[this.sheet.sheetId]?.[this.type];
+    const frozenCell = frozenCells?.[this.sheets.activeSheetId]?.[this.type];
 
     if (isNil(frozenCell)) return null;
 

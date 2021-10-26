@@ -144,7 +144,9 @@ class RowCols {
         : [0, 0, this.sheets.getViewportVector().x, 0],
     });
 
-    const headerGroup = new Group();
+    const headerGroup = new Group({
+      name: 'headerGroup',
+    });
 
     headerGroup.add(headerRect, headerText, resizeLine);
 

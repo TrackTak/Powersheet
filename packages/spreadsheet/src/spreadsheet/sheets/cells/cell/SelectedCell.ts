@@ -12,7 +12,9 @@ class SelectedCell extends Cell {
   ) {
     super(sheets, simpleCellAddress);
 
-    this.innerRect = new Rect();
+    this.innerRect = new Rect({
+      name: 'innerRect',
+    });
     this.group.add(this.innerRect);
 
     this.setInnerRectProperties();

@@ -54,18 +54,13 @@ class Cells {
 
   private resetNodeAttrs(node: Node) {
     const { name, ...attrs } = node.getAttrs();
-    const cellConfigKey = name as keyof ICellConfig | undefined;
+    const cellConfigKey = name as keyof ICellConfig;
 
     const resetValues: Partial<ShapeConfig> = {};
 
     for (const key in attrs) {
-      let styleValue = null;
-
-      if (cellConfigKey) {
-        styleValue = this.spreadsheet.styles.cell[cellConfigKey][key] ?? null;
-      }
-
-      resetValues[key] = styleValue;
+      resetValues[key] =
+        this.spreadsheet.styles.cell[cellConfigKey]?.[key] ?? null;
     }
 
     node.setAttrs(resetValues);
@@ -152,7 +147,9 @@ class Cells {
       ...this.spreadsheet.styles.cell.text,
     });
 
-    const cellGroup = new Group();
+    const cellGroup = new Group({
+      name: 'stylableCellGroup',
+    });
 
     const borderLines = [
       borderLine.clone(),
@@ -205,6 +202,8 @@ class Cells {
         this.updateCell(simpleCellAddress);
       }
     }
+    console.log(this.cellsMap);
+    console.log(this.cachedCellGroups);
   }
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {

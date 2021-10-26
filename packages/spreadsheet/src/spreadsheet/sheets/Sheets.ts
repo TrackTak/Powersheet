@@ -102,7 +102,7 @@ class Sheets {
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
 
     this.sheet = new Rect({
-      type: 'sheet',
+      name: 'sheet',
       listening: true,
       opacity: 0,
     });
@@ -120,7 +120,9 @@ class Sheets {
     scrollGroups.forEach((key) => {
       const type = key as keyof IScrollGroups;
 
-      const group = new Group();
+      const group = new Group({
+        name: 'scrollGroup',
+      });
 
       const sheetGroup = new Group({
         name: 'sheetGroup',

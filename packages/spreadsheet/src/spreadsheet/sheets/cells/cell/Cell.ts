@@ -28,7 +28,9 @@ class Cell {
       this.group = group;
       this.rect = group.findOne('.rect');
     } else {
-      this.group = new Group();
+      this.group = new Group({
+        name: 'cellGroup',
+      });
       this.rect = new Rect({
         ...this.spreadsheet.styles.cell.rect,
         ...this.sheets.cells.getDefaultCellRectAttrs(),

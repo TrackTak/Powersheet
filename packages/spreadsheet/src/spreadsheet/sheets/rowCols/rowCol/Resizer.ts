@@ -24,10 +24,12 @@ class Resizer {
       ];
     this.resizeMarker = new Rect({
       ...this.spreadsheet.styles[this.rowCols.type].resizeMarker,
+      name: 'resizeMarker',
       [this.rowCols.oppositeFunctions.size]: size,
     });
     this.resizeGuideLine = new Line({
       ...this.spreadsheet.styles[this.rowCols.type].resizeGuideLine,
+      name: 'resizeGuideLine',
       [this.rowCols.oppositeFunctions.size]: size,
     });
 

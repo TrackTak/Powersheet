@@ -139,6 +139,7 @@ class Selector {
           this.groupedCells![type].rect = new Rect({
             ...this.spreadsheet.styles.selection,
             ...topLeftCellClientRect,
+            name: 'selectionRect',
             stroke: undefined,
             width,
             height,

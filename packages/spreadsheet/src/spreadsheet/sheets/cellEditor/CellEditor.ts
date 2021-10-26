@@ -66,10 +66,14 @@ class CellEditor {
     const textContent = this.cellEditorEl.textContent;
 
     this.spreadsheet.pushToHistory(() => {
-      this.spreadsheet.data.setCell(simpleCellAddress, {
-        ...cellData,
-        value: textContent ? textContent : undefined,
-      });
+      const value = textContent ? textContent : undefined;
+
+      if (cellData?.value !== value) {
+        this.spreadsheet.data.setCell(simpleCellAddress, {
+          ...cellData,
+          value,
+        });
+      }
     });
   }
 

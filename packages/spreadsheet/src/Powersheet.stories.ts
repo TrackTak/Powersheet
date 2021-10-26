@@ -1,10 +1,11 @@
+import SimpleCellAddress from './spreadsheet/sheets/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData } from './spreadsheet/sheet/Data';
+import { ISpreadsheetData, ICellData } from './spreadsheet/sheets/Data';
 import { IOptions } from './spreadsheet/options';
 import { IStyles } from './spreadsheet/styles';
 import { NestedPartial } from './spreadsheet/types';
@@ -591,4 +592,65 @@ export const RealExample = Template.bind({});
 
 RealExample.args = {
   data: realExampleData,
+};
+
+const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
+  const data = args.data;
+
+  const cell: Partial<ICellData> = {
+    comment: 'Performance of the each cell',
+    borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+    fontColor: 'white',
+    fontSize: 13,
+    textWrap: 'wrap',
+    underline: true,
+    strikeThrough: true,
+    bold: true,
+    italic: true,
+    horizontalTextAlign: 'center',
+    verticalTextAlign: 'middle',
+  };
+
+  const getRandomBackgroundColor = () => {
+    const x = Math.floor(Math.random() * 256);
+    const y = Math.floor(Math.random() * 256);
+    const z = Math.floor(Math.random() * 256);
+
+    const backgroundColor = 'rgb(' + x + ',' + y + ',' + z + ')';
+
+    return backgroundColor;
+  };
+
+  for (let ri = 0; ri <= defaultOptions.row.amount; ri++) {
+    for (let ci = 0; ci <= defaultOptions.col.amount; ci++) {
+      const simpleCellAddress = new SimpleCellAddress(0, ri, ci);
+      const cellId = simpleCellAddress.toCellId();
+
+      data!.cells![cellId] = {
+        ...cell,
+        id: cellId,
+        value: simpleCellAddress.addressToString(),
+        backgroundColor: getRandomBackgroundColor(),
+      };
+
+      data!.sheets![0]!.cells![cellId] = cellId;
+    }
+  }
+
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
+};
+
+export const SpreadsheetPerformance = SpreadsheetPerformanceTemplate.bind({});
+
+SpreadsheetPerformance.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'Spreadsheet Performance',
+        cells: {},
+      },
+    },
+    cells: {},
+  },
 };

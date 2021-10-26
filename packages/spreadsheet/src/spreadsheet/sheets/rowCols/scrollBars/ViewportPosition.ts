@@ -11,6 +11,11 @@ class ViewportPosition implements Vector2d {
       yield index;
     }
   }
+  *iterateFromYToX() {
+    for (let index = this.y; index >= this.x; index--) {
+      yield index;
+    }
+  }
 }
 
 export default ViewportPosition;

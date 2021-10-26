@@ -1,5 +1,5 @@
 import { RowColType } from '../../rowCols/RowCols';
-import Sheet from '../../Sheet';
+import Sheets from '../../Sheets';
 import Cell from './Cell';
 import SimpleCellAddress from './SimpleCellAddress';
 
@@ -84,14 +84,18 @@ class RangeSimpleCellAddress {
   }
 
   getCellsBetweenRange<C extends Cell>(
-    sheet: Sheet,
+    sheets: Sheets,
     getCell: (simpleCellAddress: SimpleCellAddress) => C
   ) {
     const cells: C[] = [];
 
     for (const ri of this.iterateFromTopToBottom('row')) {
       for (const ci of this.iterateFromTopToBottom('col')) {
-        const simpleCellAddress = new SimpleCellAddress(sheet.sheetId, ri, ci);
+        const simpleCellAddress = new SimpleCellAddress(
+          sheets.activeSheetId,
+          ri,
+          ci
+        );
         const cell = getCell(simpleCellAddress);
 
         cells.push(cell);
@@ -100,13 +104,13 @@ class RangeSimpleCellAddress {
 
     const filterOutAssociatedMergedCells = (cell: C) => {
       const mergedCellAddress =
-        sheet.spreadsheet.merger.associatedMergedCellAddressMap.get(
+        sheets.merger.associatedMergedCellAddressMap.get(
           cell.simpleCellAddress.toCellId()
         );
 
       if (
         !mergedCellAddress ||
-        sheet.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
+        sheets.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
       ) {
         return true;
       }

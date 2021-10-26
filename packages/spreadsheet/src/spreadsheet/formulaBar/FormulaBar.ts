@@ -1,4 +1,4 @@
-import SimpleCellAddress from '../sheet/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
 import { prefix } from '../utils';
 import styles from './FormulaBar.module.scss';
@@ -19,8 +19,11 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const { editorArea, editableContentContainer, editableContent } =
-      createFormulaEditorArea();
+    const {
+      editorArea,
+      editableContentContainer,
+      editableContent,
+    } = createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
@@ -38,34 +41,44 @@ class FormulaBar {
   }
 
   onInput = (e: Event) => {
-    const sheet = this.spreadsheet.getActiveSheet();
     const target = e.target as HTMLDivElement;
     const textContent = target.firstChild?.textContent;
 
-    if (sheet?.cellEditor.getIsHidden()) {
-      sheet.cellEditor.show(sheet.selector.selectedCell!, false);
+    if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
+      this.spreadsheet.sheets.cellEditor.show(
+        this.spreadsheet.sheets.selector.selectedCell!,
+        false
+      );
     }
-    sheet?.cellEditor.setTextContent(textContent ?? null);
+    this.spreadsheet.sheets.cellEditor.setTextContent(textContent ?? null);
   };
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
-    const sheet = this.spreadsheet.getActiveSheet();
-
     let value;
 
     if (simpleCellAddress) {
-      const formula =
-        this.spreadsheet.hyperformula.getCellFormula(simpleCellAddress);
+      const sheetName = this.spreadsheet.hyperformula.getSheetName(
+        simpleCellAddress.sheet
+      );
 
-      value = formula
-        ? formula
-        : this.spreadsheet.data.spreadsheetData.cells?.[
-            simpleCellAddress.toCellId()
-          ]?.value;
+      if (
+        sheetName &&
+        this.spreadsheet.hyperformula.doesSheetExist(sheetName)
+      ) {
+        const formula = this.spreadsheet.hyperformula.getCellFormula(
+          simpleCellAddress
+        );
+
+        value = formula
+          ? formula
+          : this.spreadsheet.data.spreadsheetData.cells?.[
+              simpleCellAddress.toCellId()
+            ]?.value;
+      }
     }
 
     const cellEditorTextContent =
-      sheet?.cellEditor?.cellEditorEl.textContent ?? null;
+      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.textContent ?? null;
 
     this.setTextContent(value ?? cellEditorTextContent);
   }
@@ -77,16 +90,14 @@ class FormulaBar {
   onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
 
-    const sheet = this.spreadsheet.getActiveSheet();
-
     switch (e.key) {
       case 'Escape': {
-        sheet?.cellEditor.hide();
+        this.spreadsheet.sheets.cellEditor.hide();
         this.editableContent.blur();
         break;
       }
       case 'Enter': {
-        sheet?.cellEditor.hideAndSave();
+        this.spreadsheet.sheets.cellEditor.hideAndSave();
         this.editableContent.blur();
 
         break;

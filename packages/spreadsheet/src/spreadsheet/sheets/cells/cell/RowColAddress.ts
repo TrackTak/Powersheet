@@ -1,5 +1,5 @@
 import { RowColId } from '../../rowCols/RowCols';
-import { SheetId } from '../../Sheet';
+import { SheetId } from '../../Sheets';
 
 export type SheetRowColId = `${SheetId}_${RowColId}`;
 

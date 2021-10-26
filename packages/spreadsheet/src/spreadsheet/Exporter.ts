@@ -2,12 +2,12 @@ import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
 import { isText, isDate } from 'numfmt';
-import { SheetId } from './sheet/Sheet';
-import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
+import { SheetId } from './sheets/Sheets';
+import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress, {
   CellId,
-} from './sheet/cells/cell/SimpleCellAddress';
-import { SheetRowColId } from './sheet/cells/cell/RowColAddress';
+} from './sheets/cells/cell/SimpleCellAddress';
+import { SheetRowColId } from './sheets/cells/cell/RowColAddress';
 
 class Export {
   spreadsheet!: Spreadsheet;
@@ -24,10 +24,14 @@ class Export {
       new SimpleCellAddress(sheetId, 0, 0)
     );
 
-    for (const key in this.spreadsheet.data.spreadsheetData.cells) {
+    const cellIds =
+      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].cells;
+
+    for (const key in cellIds) {
       const cellId = key as CellId;
+      const cells = this.spreadsheet.data.spreadsheetData.cells!;
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-      const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+      const cell = cells[cellId];
       const cellString = simpleCellAddress.addressToString();
       const mergedCell =
         this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
@@ -81,12 +85,12 @@ class Export {
 
         worksheet['!merges'].push({
           s: {
-            r: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
-            c: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
+            r: mergedCell.row.x,
+            c: mergedCell.col.x,
           },
           e: {
-            r: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-            c: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
+            r: mergedCell.row.y,
+            c: mergedCell.col.y,
           },
         });
       }

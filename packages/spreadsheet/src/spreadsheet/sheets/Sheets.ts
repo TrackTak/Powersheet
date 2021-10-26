@@ -1,5 +1,5 @@
 import { Layer } from 'konva/lib/Layer';
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
+import { Rect } from 'konva/lib/shapes/Rect';
 import { Group } from 'konva/lib/Group';
 import { Vector2d } from 'konva/lib/types';
 import Selector from './Selector';
@@ -9,15 +9,18 @@ import RightClickMenu from './rightClickMenu/RightClickMenu';
 import { Stage } from 'konva/lib/Stage';
 import Spreadsheet from '../Spreadsheet';
 import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
-import styles from './Sheet.module.scss';
+import styles from './Sheets.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import { DebouncedFunc, throttle } from 'lodash';
+import { debounce, DebouncedFunc, isNil, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import Cell from './cells/cell/Cell';
 import Cells from './cells/Cells';
+import { ISheetData } from './Data';
+import Merger from './Merger';
+import Clipboard from '../Clipboard';
 
 export interface IDimensions {
   width: number;
@@ -48,42 +51,54 @@ export interface ICustomSizes {
   size: number;
 }
 
-class Sheet {
+class Sheets {
   scrollGroups!: IScrollGroups;
+  sheetIds: SheetId[] = [];
   sheetEl: HTMLDivElement;
+  // Purely for comment with tippy
+  sheetElContainer: HTMLDivElement;
   stage: Stage;
   layer: Layer;
   sheet: Rect;
   cols: RowCols;
   rows: RowCols;
+  clipboard: Clipboard;
+  merger: Merger;
   selector: Selector;
   cells: Cells;
-  sheetDimensions: IDimensions;
+  sheetDimensions: IDimensions = {
+    width: 0,
+    height: 0,
+  };
   previousSheetClickTime = 0;
   sheetClickTime = 0;
   cellEditor: CellEditor;
   rightClickMenu: RightClickMenu;
+  topLeftRect?: Rect;
   comment: Comment;
-  private throttledResize: DebouncedFunc<(e: Event) => void>;
+  activeSheetId = 0;
+  totalSheetCount = 0;
+  private debouncedResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
   >;
 
-  constructor(public spreadsheet: Spreadsheet, public sheetId: SheetId) {
+  constructor(public spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
-    this.sheetId = sheetId;
 
-    this.sheetDimensions = {
-      width: 0,
-      height: 0,
-    };
+    this.sheetElContainer = document.createElement('div');
+    this.sheetElContainer.classList.add(
+      `${prefix}-sheet-container`,
+      styles.sheetContainer
+    );
 
     this.sheetEl = document.createElement('div');
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet);
 
-    this.spreadsheet.sheetsEl.appendChild(this.sheetEl);
+    this.sheetElContainer.appendChild(this.sheetEl);
+    this.spreadsheet.spreadsheetEl.appendChild(this.sheetElContainer);
 
-    this.throttledResize = throttle(this.onResize, 50);
+    this.debouncedResize = debounce(this.onResize, 50);
     this.throttledSheetMove = throttle(this.onSheetMouseMove, 35);
 
     this.sheet = new Rect({
@@ -102,6 +117,63 @@ class Sheet {
 
     this.stage.add(this.layer);
 
+    scrollGroups.forEach((key) => {
+      const type = key as keyof IScrollGroups;
+
+      const group = new Group();
+
+      const sheetGroup = new Group({
+        name: 'sheetGroup',
+        listening: true,
+      });
+
+      const cellGroup = new Group({
+        name: 'cellGroup',
+      });
+
+      const rowColGroup = new Group({
+        name: 'rowColGroup',
+      });
+
+      const headerGroup = new Group({
+        name: 'headerGroup',
+        listening: true,
+      });
+
+      const frozenBackground = new Rect({
+        name: 'frozenBackgroundRect',
+        fill: 'white',
+        visible: false,
+      });
+
+      if (key !== 'main') {
+        sheetGroup.add(frozenBackground);
+      }
+
+      // The order added here matters as it determines the zIndex for konva
+      sheetGroup.add(rowColGroup, cellGroup);
+      group.add(sheetGroup, headerGroup);
+
+      this.layer.add(group);
+
+      this.sheet.moveToTop();
+
+      this.scrollGroups = {
+        ...this.scrollGroups,
+        [type]: {
+          ...this.scrollGroups?.[type],
+          group,
+          sheetGroup,
+          cellGroup,
+          rowColGroup,
+          headerGroup,
+          frozenBackground,
+        },
+      };
+    });
+
+    this.clipboard = new Clipboard(this);
+    this.merger = new Merger(this);
     this.cells = new Cells(this);
     this.cols = new RowCols('col', this);
     this.rows = new RowCols('row', this);
@@ -129,23 +201,14 @@ class Sheet {
     this.sheetEl.tabIndex = 1;
     this.sheetEl.addEventListener('keydown', this.keyHandler);
 
-    window.addEventListener('resize', this.throttledResize);
+    window.addEventListener('resize', this.debouncedResize);
 
     this.updateSheetDimensions();
 
-    const sheetConfig: RectConfig = {
-      width: this.cols.totalSize,
-      height: this.rows.totalSize,
-      x: this.getViewportVector().x,
-      y: this.getViewportVector().y,
-    };
-
-    this.sheet.setAttrs(sheetConfig);
+    this.sheet.setPosition(this.getViewportVector());
 
     this.cols.scrollBar.setYIndex();
     this.rows.scrollBar.setYIndex();
-
-    this.spreadsheet.updateViewport();
 
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
@@ -153,9 +216,60 @@ class Sheet {
     this.cellEditor = new CellEditor(this);
   }
 
+  deleteSheet(sheetId: SheetId) {
+    if (this.activeSheetId === sheetId) {
+      const currentIndex = this.sheetIds.indexOf(sheetId);
+
+      if (currentIndex === 0) {
+        this.switchSheet(this.sheetIds[1]);
+      } else {
+        this.switchSheet(this.sheetIds[currentIndex - 1]);
+      }
+    }
+
+    this.spreadsheet.data.deleteSheet(sheetId);
+
+    delete this.sheetIds[sheetId];
+
+    this.spreadsheet.updateViewport();
+  }
+
+  switchSheet(sheetId: SheetId) {
+    this.cells.clearCells();
+
+    this.activeSheetId = sheetId;
+
+    this.spreadsheet.updateViewport();
+  }
+
+  renameSheet(sheetId: SheetId, sheetName: string) {
+    this.spreadsheet.data.setSheet(sheetId, {
+      sheetName,
+    });
+    this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName);
+
+    this.spreadsheet.updateViewport();
+  }
+
+  createNewSheet(data: ISheetData) {
+    this.spreadsheet.data.setSheet(data.id, data);
+    this.spreadsheet.hyperformula.addSheet(data.sheetName);
+
+    this.totalSheetCount++;
+
+    this.sheetIds[data.id] = data.id;
+
+    this.spreadsheet.updateViewport();
+  }
+
+  getSheetName() {
+    return `Sheet${this.totalSheetCount + 1}`;
+  }
+
   updateSize() {
-    this.stage.width(this.spreadsheet.sheetsEl.offsetWidth);
-    this.stage.height(this.spreadsheet.sheetsEl.offsetHeight);
+    // 16 is scrollbar
+    this.stage.width(this.sheetEl.offsetWidth - 16);
+    this.stage.height(this.sheetEl.offsetHeight - 16);
 
     this.sheet.width(this.stage.width() - this.getViewportVector().x);
     this.sheet.height(this.stage.height() - this.getViewportVector().y);
@@ -169,6 +283,10 @@ class Sheet {
     // translate 0.5 for crisp lines.
     context.reset();
     context.translate(0.5, 0.5);
+
+    this.rows.setCachedRowCols();
+    this.cols.setCachedRowCols();
+    this.cells.setCachedCells();
 
     this.spreadsheet.updateViewport();
   }
@@ -316,8 +434,8 @@ class Sheet {
       );
 
     return new RangeSimpleCellAddress(
-      new SimpleCellAddress(this.sheetId, getMin('row'), getMin('col')),
-      new SimpleCellAddress(this.sheetId, getMax('row'), getMax('col'))
+      new SimpleCellAddress(this.activeSheetId, getMin('row'), getMin('col')),
+      new SimpleCellAddress(this.activeSheetId, getMax('row'), getMax('col'))
     );
   }
 
@@ -349,15 +467,15 @@ class Sheet {
         break;
       }
       case e.ctrlKey && 'x': {
-        await this.spreadsheet.clipboard.cut();
+        await this.clipboard.cut();
         break;
       }
       case e.ctrlKey && 'c': {
-        await this.spreadsheet.clipboard.copy();
+        await this.clipboard.copy();
         break;
       }
       case e.ctrlKey && 'v': {
-        this.spreadsheet.clipboard.paste();
+        this.clipboard.paste();
         break;
       }
       default:
@@ -371,8 +489,8 @@ class Sheet {
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {
     return !shape.isClientRectOnScreen({
-      x: -(this.getViewportVector().x + (margin?.x ?? 0)),
-      y: -(this.getViewportVector().y + (margin?.y ?? 0)),
+      x: -(this.getViewportVector().x + (margin?.x ?? 0.001)),
+      y: -(this.getViewportVector().y + (margin?.y ?? 0.001)),
     });
   }
 
@@ -406,12 +524,12 @@ class Sheet {
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
       new SimpleCellAddress(
-        this.sheetId,
+        this.activeSheetId,
         rowIndexes.topIndex,
         colIndexes.topIndex
       ),
       new SimpleCellAddress(
-        this.sheetId,
+        this.activeSheetId,
         rowIndexes.bottomIndex,
         colIndexes.bottomIndex
       )
@@ -419,9 +537,13 @@ class Sheet {
 
     for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
       for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-        const simpleCellAddress = new SimpleCellAddress(this.sheetId, ri, ci);
+        const simpleCellAddress = new SimpleCellAddress(
+          this.activeSheetId,
+          ri,
+          ci
+        );
         const existingRangeSimpleCellAddress =
-          this.spreadsheet.merger.associatedMergedCellAddressMap.get(
+          this.merger.associatedMergedCellAddressMap.get(
             simpleCellAddress.toCellId()
           );
 
@@ -487,7 +609,7 @@ class Sheet {
 
     this.sheetEl.removeEventListener('keydown', this.keyHandler);
 
-    window.removeEventListener('resize', this.throttledResize);
+    window.removeEventListener('resize', this.debouncedResize);
 
     this.sheetEl.remove();
     this.stage.destroy();
@@ -497,126 +619,83 @@ class Sheet {
   }
 
   drawTopLeftOffsetRect() {
-    const topLeftRect = new Rect({
+    this.topLeftRect?.destroy();
+    this.topLeftRect = new Rect({
       ...this.spreadsheet.styles.topLeftRect,
       width: this.getViewportVector().x,
       height: this.getViewportVector().y,
     });
-    this.scrollGroups.xySticky.group.add(topLeftRect);
+    this.scrollGroups.xySticky.group.add(this.topLeftRect);
 
-    topLeftRect.moveToTop();
+    this.topLeftRect.moveToTop();
   }
 
   updateFrozenBackgrounds() {
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.activeSheetId];
     const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
     const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
     const xyStickyFrozenBackground =
       this.scrollGroups.xySticky.frozenBackground;
+    const frozenRowExists = !isNil(frozenCells?.row);
+    const frozenColExists = !isNil(frozenCells?.col);
 
-    if (this.rows.frozenLine && this.cols.frozenLine) {
-      const colClientRect = this.cols.frozenLine.getClientRect({
-        skipStroke: true,
+    const sizeUpToFrozenCol = this.cols.getSizeUpToFrozenRowCol();
+    const sizeUpToFrozenRow = this.rows.getSizeUpToFrozenRowCol();
+
+    xStickyFrozenBackground.hide();
+    yStickyFrozenBackground.hide();
+    xyStickyFrozenBackground.hide();
+
+    if (frozenColExists) {
+      xStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: this.sheetDimensions.height,
       });
-      const rowClientRect = this.rows.frozenLine.getClientRect({
-        skipStroke: true,
-      });
-
-      colClientRect.x -= this.getViewportVector().x;
-      rowClientRect.y -= this.getViewportVector().y;
-
-      xStickyFrozenBackground.width(colClientRect.x);
-      xStickyFrozenBackground.height(this.sheetDimensions.height);
-      xStickyFrozenBackground.y(rowClientRect.y);
-
-      yStickyFrozenBackground.width(this.sheetDimensions.width);
-      yStickyFrozenBackground.height(rowClientRect.y);
-      yStickyFrozenBackground.x(colClientRect.x);
-
-      xyStickyFrozenBackground.width(colClientRect.x);
-      xyStickyFrozenBackground.height(rowClientRect.y);
-
+      xStickyFrozenBackground.y(sizeUpToFrozenRow);
       xStickyFrozenBackground.show();
+    }
+
+    if (frozenRowExists) {
+      yStickyFrozenBackground.size({
+        width: this.sheetDimensions.width,
+        height: sizeUpToFrozenRow,
+      });
+      yStickyFrozenBackground.x(sizeUpToFrozenCol);
       yStickyFrozenBackground.show();
+    }
+
+    if (frozenRowExists && frozenColExists) {
       xyStickyFrozenBackground.show();
-    } else {
-      xStickyFrozenBackground.hide();
-      yStickyFrozenBackground.hide();
-      xyStickyFrozenBackground.hide();
+
+      xyStickyFrozenBackground.size({
+        width: sizeUpToFrozenCol,
+        height: sizeUpToFrozenRow,
+      });
     }
   }
 
-  updateScrollGroups() {
-    scrollGroups.forEach((key) => {
+  updateViewport() {
+    Object.keys(this.scrollGroups).forEach((key) => {
       const type = key as keyof IScrollGroups;
 
-      const existingGroup = this.scrollGroups?.[type]?.group;
+      const scrollGroup = this.scrollGroups[type];
 
-      existingGroup?.destroy();
-
-      const group = new Group({
-        x: existingGroup?.x(),
-        y: existingGroup?.y(),
-      });
-
-      const sheetGroup = new Group({
-        ...this.getViewportVector(),
-        listening: true,
-        type: 'sheet',
-      });
-
-      const cellGroup = new Group({
-        type: 'cell',
-      });
-
-      const rowColGroup = new Group({
-        type: 'rowCol',
-      });
-
-      const headerGroup = new Group({
-        listening: true,
-        type: 'header',
-      });
-
-      const frozenBackground = new Rect({
-        type: 'frozenBackground',
-        fill: 'white',
-        visible: false,
-      });
-
-      if (key !== 'main') {
-        sheetGroup.add(frozenBackground);
-      }
-
-      // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(rowColGroup, cellGroup);
-      group.add(sheetGroup, headerGroup);
-
-      this.layer.add(group);
-
-      this.sheet.moveToTop();
-
-      this.scrollGroups = {
-        ...this.scrollGroups,
-        [type]: {
-          ...this.scrollGroups?.[type],
-          group,
-          sheetGroup,
-          cellGroup,
-          rowColGroup,
-          headerGroup,
-          frozenBackground,
-        },
-      };
+      scrollGroup.sheetGroup.setAttrs(this.getViewportVector());
     });
-  }
 
-  updateViewport() {
-    this.updateScrollGroups();
-    this.drawTopLeftOffsetRect();
     this.updateSheetDimensions();
-    this.rows.updateViewport();
-    this.cols.updateViewport();
+    this.drawTopLeftOffsetRect();
+
+    this.cells.resetCachedCells();
     this.cells.updateViewport();
+
+    this.rows.clearAll();
+    this.rows.updateViewport();
+
+    this.cols.clearAll();
+    this.cols.updateViewport();
+
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(
@@ -626,4 +705,4 @@ class Sheet {
   }
 }
 
-export default Sheet;
+export default Sheets;

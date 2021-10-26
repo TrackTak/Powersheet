@@ -1,7 +1,7 @@
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Line } from 'konva/lib/shapes/Line';
 import { Rect } from 'konva/lib/shapes/Rect';
-import Sheet from '../../Sheet';
+import Sheets from '../../Sheets';
 import Spreadsheet from '../../../Spreadsheet';
 import RowCols from '../RowCols';
 import SheetRowColAddress from '../../cells/cell/RowColAddress';
@@ -10,16 +10,16 @@ class Resizer {
   resizeMarker: Rect;
   resizeGuideLine: Line;
   spreadsheet: Spreadsheet;
-  sheet: Sheet;
+  sheets: Sheets;
   currentIndex = 0;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
-    this.sheet = this.rowCols.sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+    this.sheets = this.rowCols.sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
 
     const size =
-      this.rowCols.sheet.getViewportVector()[
+      this.rowCols.sheets.getViewportVector()[
         this.rowCols.oppositeFunctions.axis
       ];
     this.resizeMarker = new Rect({
@@ -37,7 +37,7 @@ class Resizer {
     this.resizeMarker.on('dragmove', this.resizeLineDragMove);
     this.resizeMarker.on('dragend', this.resizeLineDragEnd);
 
-    this.sheet.layer.add(this.resizeMarker, this.resizeGuideLine);
+    this.sheets.layer.add(this.resizeMarker, this.resizeGuideLine);
   }
 
   setCursor() {
@@ -85,8 +85,8 @@ class Resizer {
     );
     this.resizeGuideLine.points(
       this.rowCols.isCol
-        ? [0, this.sheet.getViewportVector().y, 0, this.sheet.stage.height()]
-        : [this.sheet.getViewportVector().x, 0, this.sheet.stage.width(), 0]
+        ? [0, this.sheets.getViewportVector().y, 0, this.sheets.stage.height()]
+        : [this.sheets.getViewportVector().x, 0, this.sheets.stage.width(), 0]
     );
 
     this.resizeGuideLine.show();
@@ -158,7 +158,7 @@ class Resizer {
 
     this.spreadsheet.data.setRowCol(
       this.rowCols.pluralType,
-      new SheetRowColAddress(this.sheet.sheetId, this.currentIndex),
+      new SheetRowColAddress(this.sheets.activeSheetId, this.currentIndex),
       {
         size: newSize,
       }

@@ -1,4 +1,3 @@
-import { Shape } from 'konva/lib/Shape';
 import { IRect, Vector2d } from 'konva/lib/types';
 
 export const prefix = 'powersheet';
@@ -12,31 +11,17 @@ export const rotatePoint = (
   return { x: x * rcos - y * rsin, y: y * rcos + x * rsin };
 };
 
-export const rotateAroundCenter = (shape: Shape, rotation: number) => {
-  //@ts-ignore
-  const getAngle = Konva.getAngle;
-
-  const topLeft = {
-    x: -shape.width() / 2,
-    y: -shape.height() / 2,
-  };
-
-  const current = rotatePoint(topLeft, getAngle(shape.rotation()));
-  const rotated = rotatePoint(topLeft, getAngle(rotation));
-  const dx = rotated.x - current.x,
-    dy = rotated.y - current.y;
-
-  shape.rotation(rotation);
-  shape.x(shape.x() + dx);
-  shape.y(shape.y() + dy);
-
-  return { shape, rotation };
+export const dataKeysComparer = (x: string, y: string) => {
+  return new Intl.Collator(undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  }).compare(x, y);
 };
 
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
-    x: rectOne.x + rectOne.width / 2,
-    y: rectOne.y + rectOne.height / 2,
+    x: rectOne.width / 2,
+    y: rectOne.height / 2,
   };
 
   const rectTwoMidPoint = {
@@ -81,6 +66,20 @@ export const reverseVectorsIfStartBiggerThanEnd = (
     isReversedX,
     isReversedY,
   };
+};
+
+// Taken from: https://codereview.stackexchange.com/questions/16124/implement-numbering-scheme-like-a-b-c-aa-ab-aaa-similar-to-converting
+export const getColumnHeader = (number: number) => {
+  const baseChar = 'A'.charCodeAt(0);
+  let columnHeader = '';
+
+  do {
+    number -= 1;
+    columnHeader = String.fromCharCode(baseChar + (number % 26)) + columnHeader;
+    number = (number / 26) >> 0; // quick `floor`
+  } while (number > 0);
+
+  return columnHeader;
 };
 
 export const setCaretToEndOfElement = (element: HTMLElement) => {

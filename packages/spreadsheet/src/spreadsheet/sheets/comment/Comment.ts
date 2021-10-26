@@ -1,4 +1,4 @@
-import Sheet from '../Sheet';
+import Sheets from '../Sheets';
 import tippy, { followCursor, Instance, Props } from 'tippy.js';
 import {
   createButtonContainer,
@@ -19,9 +19,9 @@ class Comment {
   container: Instance<Props>;
   spreadsheet: Spreadsheet;
 
-  constructor(private sheet: Sheet) {
-    this.sheet = sheet;
-    this.spreadsheet = this.sheet.spreadsheet;
+  constructor(private sheets: Sheets) {
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.content = createContent();
     this.textarea = createTextarea();
     this.buttonContainer = createButtonContainer();
@@ -33,7 +33,7 @@ class Comment {
     this.buttonContainer.appendChild(this.successButton);
     this.buttonContainer.appendChild(this.cancelButton);
 
-    this.container = tippy(this.sheet.sheetEl, {
+    this.container = tippy(this.sheets.sheetEl, {
       placement: 'auto',
       interactive: true,
       arrow: false,
@@ -63,7 +63,7 @@ class Comment {
   successButtonOnClick = () => {
     this.spreadsheet.pushToHistory(() => {
       const simpleCellAddress =
-        this.sheet.selector.selectedCell!.simpleCellAddress;
+        this.sheets.selector.selectedCell!.simpleCellAddress;
 
       this.spreadsheet.data.setCell(simpleCellAddress, {
         comment: this.textarea.value,

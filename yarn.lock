@@ -13015,7 +13015,7 @@ klona@^2.0.4:
   resolved "https://registry.yarnpkg.com/klona/-/klona-2.0.4.tgz#7bb1e3affb0cb8624547ef7e8f6708ea2e39dfc0"
   integrity sha512-ZRbnvdg/NxqzC7L9Uyqzf4psi1OM4Cuc+sJAkQPjO6XkQIJTNbfK2Rsmbw8fx1p2mkZdp2FZYo2+LwXYY/uwIA==
 
-konva@^8.1.1:
+konva@^8.2.2:
   version "8.2.2"
   resolved "https://registry.yarnpkg.com/konva/-/konva-8.2.2.tgz#6077f5fa6cd628320612cc565ad62eb27aad3a3f"
   integrity sha512-O6Ybw1V5x/PNX4Tc+h/U9LCuyoVZe+XaWc23XKxKs0xIbFyTkvdAJEsw3XQw+DsMDTO56UiTvspq5pfO75xEOg==

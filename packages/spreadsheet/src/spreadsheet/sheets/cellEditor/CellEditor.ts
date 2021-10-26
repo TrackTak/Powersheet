@@ -1,5 +1,5 @@
 import { IRect } from 'konva/lib/types';
-import Sheet from '../Sheet';
+import Sheet from '../Sheets';
 import styles from './CellEditor.module.scss';
 
 import { DelegateInstance, delegate } from 'tippy.js';

@@ -23,6 +23,8 @@ export interface IColHeaderConfig {
 export interface ICellConfig {
   rect: RectConfig;
   text: TextConfig;
+  commentMarker: LineConfig;
+  borderLine: LineConfig;
 }
 
 export interface IRowColConfig {
@@ -39,7 +41,6 @@ export interface IStyles {
   topLeftRect: RectConfig;
   selectionFirstCell: RectConfig;
   selection: RectConfig;
-  commentMarker: LineConfig;
   col: IRowColConfig;
   row: IRowColConfig;
   cell: ICellConfig;
@@ -103,16 +104,6 @@ export const defaultStyles: IStyles = {
     stroke: '#1a73e8',
     fill: 'rgb(14, 101, 235, 0.1)',
   },
-  commentMarker: {
-    type: 'commentMarker',
-    stroke: 'orange',
-    fill: 'orange',
-    strokeWidth: 2,
-    offsetX: -6,
-    offsetY: 1,
-    points: [0, 5, 5, 5, 0, 0],
-    closed: true,
-  },
   row: {
     frozenLine: sharedStyles.frozenLine,
     resizeGuideLine: sharedStyles.resizeGuideLine,
@@ -157,13 +148,13 @@ export const defaultStyles: IStyles = {
   },
   cell: {
     rect: {
-      type: 'cellRect',
       fill: 'white',
+      // TODO: Remove these somehow as slows dont performance
+      // if tons of cells
       stroke: sharedStyles.gridLine.stroke,
       strokeWidth: sharedStyles.gridLine.strokeWidth,
     },
     text: {
-      type: 'cellText',
       fontFamily,
       fontSize: 12,
       fill: 'black',
@@ -171,6 +162,20 @@ export const defaultStyles: IStyles = {
       verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
+      visible: false,
+    },
+    commentMarker: {
+      stroke: 'orange',
+      fill: 'orange',
+      rotation: 180,
+      points: [0, 5, 5, 5, 0, 0],
+      closed: true,
+      visible: false,
+    },
+    borderLine: {
+      stroke: 'black',
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
+      visible: false,
     },
   },
 };

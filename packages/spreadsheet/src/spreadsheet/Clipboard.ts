@@ -1,15 +1,18 @@
 import { SimpleCellRange } from 'hyperformula';
 import { isEmpty } from 'lodash';
-import RangeSimpleCellAddress from './sheet/cells/cell/RangeSimpleCellAddress';
-import SimpleCellAddress from './sheet/cells/cell/SimpleCellAddress';
+import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
+import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress';
+import Sheets from './sheets/Sheets';
 import Spreadsheet from './Spreadsheet';
 
 class Clipboard {
-  private sourceRange: RangeSimpleCellAddress | null = null;
-  private isCut = false;
+  sourceRange: RangeSimpleCellAddress | null = null;
+  isCut = false;
+  spreadsheet: Spreadsheet;
 
-  constructor(private spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
+  constructor(public sheets: Sheets) {
+    this.sheets = sheets;
+    this.spreadsheet = this.sheets.spreadsheet;
   }
 
   private async writeToClipboard(source: SimpleCellRange) {
@@ -129,8 +132,7 @@ class Clipboard {
   private getCellRangeForSelection(
     expandSelectionForPaste = false
   ): RangeSimpleCellAddress | null {
-    const selectedCells =
-      this.spreadsheet.getActiveSheet()?.selector.selectedCells;
+    const selectedCells = this.sheets.selector.selectedCells;
 
     if (
       isEmpty(selectedCells) ||
@@ -139,18 +141,17 @@ class Clipboard {
       return null;
     }
 
-    const sheet = this.spreadsheet.getActiveSheet()!;
     const firstSelectedCell = selectedCells![0];
     const lastSelectedCell = selectedCells![selectedCells!.length - 1];
 
     const topLeftSimpleCellAddress = new SimpleCellAddress(
-      sheet.sheetId,
+      this.sheets.activeSheetId,
       firstSelectedCell.simpleCellAddress.row,
       firstSelectedCell.simpleCellAddress.col
     );
 
     const bottomRightSimpleCellAddress = new SimpleCellAddress(
-      sheet.sheetId,
+      this.sheets.activeSheetId,
       lastSelectedCell.simpleCellAddress.row,
       lastSelectedCell.simpleCellAddress.col
     );

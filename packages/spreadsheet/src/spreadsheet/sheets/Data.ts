@@ -4,7 +4,7 @@ import Spreadsheet from '../Spreadsheet';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import { RowColId, RowColsType } from './rowCols/RowCols';
-import { SheetId } from './Sheet';
+import { SheetId } from './Sheets';
 
 export type TextWrap = 'wrap';
 export type HorizontalTextAlign = 'left' | 'center' | 'right';
@@ -122,7 +122,7 @@ class Data {
     }
 
     this.spreadsheetData.sheets[sheetId] = {
-      sheetName: this.spreadsheet.getSheetName(),
+      sheetName: this.spreadsheet.sheets.getSheetName(),
       ...this.spreadsheetData.sheets?.[sheetId],
       ...sheetData,
       id: sheetId,
@@ -269,14 +269,18 @@ class Data {
       this.deleteMergedCell(simpleCellAddress);
     }
 
-    this.spreadsheet.merger.setAssociatedMergedCellIds(simpleCellAddress);
+    this.spreadsheet.sheets.merger.setAssociatedMergedCellIds(
+      simpleCellAddress
+    );
   }
 
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
     const sheetId = simpleCellAddress.sheet;
     const mergedCellId = simpleCellAddress.toCellId();
 
-    this.spreadsheet.merger.deleteAssociatedMergedCellIds(simpleCellAddress);
+    this.spreadsheet.sheets.merger.deleteAssociatedMergedCellIds(
+      simpleCellAddress
+    );
 
     delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId];
     delete this.spreadsheetData.mergedCells?.[mergedCellId];

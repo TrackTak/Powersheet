@@ -1,6 +1,6 @@
 import { DebouncedFunc, throttle } from 'lodash';
 import { prefix } from '../../../utils';
-import Sheet from '../../Sheet';
+import Sheets from '../../Sheets';
 import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import styles from './ScrollBar.module.scss';
 import Spreadsheet from '../../../Spreadsheet';
@@ -20,19 +20,20 @@ class ScrollBar {
   scrollType: ScrollBarType;
   throttledScroll: DebouncedFunc<(e: Event) => void>;
   spreadsheet: Spreadsheet;
-  sheet: Sheet;
+  sheets: Sheets;
   type: RowColType;
   isCol: boolean;
   functions: IRowColFunctions;
   layerListeningTimeout?: NodeJS.Timeout;
   pluralType: RowColsType;
+  isScrolling = false;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
-    this.sheet = this.rowCols.sheet;
+    this.sheets = this.rowCols.sheets;
     this.type = this.rowCols.type;
     this.pluralType = this.rowCols.pluralType;
-    this.spreadsheet = this.sheet.spreadsheet;
+    this.spreadsheet = this.sheets.spreadsheet;
     this.isCol = this.rowCols.isCol;
     this.scrollType = this.isCol ? 'horizontal' : 'vertical';
     this.functions = this.rowCols.functions;
@@ -58,14 +59,21 @@ class ScrollBar {
 
     this.scrollBarEl.addEventListener('scroll', this.throttledScroll);
 
-    this.sheet.sheetEl.appendChild(this.scrollBarEl);
+    this.sheets.sheetEl.appendChild(this.scrollBarEl);
 
     this.setScrollSize();
   }
 
+  getIsScrollingNormal() {
+    return (
+      this.sheetViewportPosition.x >= this.previousSheetViewportPosition.x &&
+      this.sheetViewportPosition.y >= this.previousSheetViewportPosition.y
+    );
+  }
+
   setScrollSize() {
-    const scrollSize = this.sheet.sheetDimensions[this.functions.size];
-    //   this.sheet.getViewportVector()[this.functions.axis];
+    const scrollSize = this.sheets.sheetDimensions[this.functions.size];
+    //   this.sheets.getViewportVector()[this.functions.axis];
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }
@@ -78,7 +86,7 @@ class ScrollBar {
     let totalCustomSizeDifferencs = 0;
 
     for (let i = start; i < end; i++) {
-      const rowCollAddress = new RowColAddress(this.sheet.sheetId, i);
+      const rowCollAddress = new RowColAddress(this.sheets.activeSheetId, i);
       const size =
         data[this.pluralType]?.[rowCollAddress.toSheetRowColId()]?.size;
 
@@ -98,14 +106,16 @@ class ScrollBar {
 
   private getYIndex() {
     const xIndex = this.sheetViewportPosition.x;
-    const stageSize = this.sheet.stage[this.functions.size]();
+    const stageSize =
+      this.sheets.stage[this.functions.size]() -
+      this.sheets.getViewportVector()[this.functions.axis];
 
     const yIndex = this.rowCols.calculateSheetViewportEndPosition(
       stageSize,
       xIndex
     );
 
-    return yIndex - 1;
+    return yIndex;
   }
 
   setYIndex() {
@@ -120,6 +130,8 @@ class ScrollBar {
     const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight;
 
     const scrollPercent = scroll / scrollSize;
+
+    this.isScrolling = true;
 
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
@@ -151,12 +163,12 @@ class ScrollBar {
     newScroll *= -1;
 
     if (this.isCol) {
-      this.sheet.scrollGroups.ySticky.group.x(newScroll);
+      this.sheets.scrollGroups.ySticky.group.x(newScroll);
     } else {
-      this.sheet.scrollGroups.xSticky.group.y(newScroll);
+      this.sheets.scrollGroups.xSticky.group.y(newScroll);
     }
 
-    this.sheet.scrollGroups.main.group[this.functions.axis](newScroll);
+    this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
@@ -165,15 +177,15 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.rowCols.destroyOutOfViewportItems();
-    this.sheet.cells.destroyOutOfViewportItems();
-    this.rowCols.drawViewport();
-    this.sheet.cells.drawViewport();
+    this.rowCols.cacheOutOfViewportRowCols();
+    this.rowCols.updateViewport();
+    this.sheets.cells.cacheOutOfViewportCells();
+    this.sheets.cells.updateViewport();
 
-    if (this.sheet.cellEditor.currentScroll?.[this.type] !== this.scroll) {
-      this.sheet.cellEditor.showCellTooltip();
+    if (this.sheets.cellEditor.currentScroll?.[this.type] !== this.scroll) {
+      this.sheets.cellEditor.showCellTooltip();
     } else {
-      this.sheet.cellEditor.hideCellTooltip();
+      this.sheets.cellEditor.hideCellTooltip();
     }
 
     if (this.layerListeningTimeout) {
@@ -181,11 +193,11 @@ class ScrollBar {
     }
 
     this.layerListeningTimeout = setTimeout(() => {
-      this.sheet.layer.listening(true);
+      this.sheets.layer.listening(true);
+      this.isScrolling = false;
     }, 40);
-
     // Improves performance by ~4fps
-    this.sheet.layer.listening(false);
+    this.sheets.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
       this.isCol ? 'scrollHorizontal' : 'scrollVertical',

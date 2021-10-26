@@ -103,15 +103,46 @@ class Clipboard {
             targetRange.topLeftSimpleCellAddress.row + rowIndex,
             targetRange.topLeftSimpleCellAddress.col + colIndex
           );
-
+          const sourceCellId = soureSimpleCellAddress.toCellId();
           const data = this.spreadsheet.data.spreadsheetData;
-          const cell = data.cells?.[soureSimpleCellAddress.toCellId()];
+          const cell = data.cells?.[sourceCellId];
+          const mergedCell = data.mergedCells?.[sourceCellId];
+
+          if (rangeData.length !== 1 || rowData.length !== 1) {
+            this.spreadsheet.data.deleteMergedCell(targetSimpleCellAddress);
+          }
+
+          this.spreadsheet.data.deleteCell(
+            targetSimpleCellAddress,
+            true,
+            false
+          );
+
+          if (mergedCell) {
+            const newMergedCell = {
+              ...mergedCell,
+              row: {
+                x: targetSimpleCellAddress.row,
+                y:
+                  targetSimpleCellAddress.row +
+                  (mergedCell.row.y - mergedCell.row.x),
+              },
+              col: {
+                x: targetSimpleCellAddress.col,
+                y:
+                  targetSimpleCellAddress.col +
+                  (mergedCell.col.y - mergedCell.col.x),
+              },
+            };
+
+            this.spreadsheet.data.setMergedCell(
+              targetSimpleCellAddress,
+              newMergedCell
+            );
+          }
 
           if (cell) {
-            this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
             this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
-          } else {
-            this.spreadsheet.data.deleteCell(targetSimpleCellAddress);
           }
 
           if (this.isCut) {
@@ -130,14 +161,11 @@ class Clipboard {
   }
 
   private getCellRangeForSelection(
-    expandSelectionForPaste = false
+    isPasting = false
   ): RangeSimpleCellAddress | null {
     const selectedCells = this.sheets.selector.selectedCells;
 
-    if (
-      isEmpty(selectedCells) ||
-      (expandSelectionForPaste && !this.sourceRange)
-    ) {
+    if (isEmpty(selectedCells) || (isPasting && !this.sourceRange)) {
       return null;
     }
 
@@ -156,7 +184,26 @@ class Clipboard {
       lastSelectedCell.simpleCellAddress.col
     );
 
-    if (expandSelectionForPaste) {
+    if (selectedCells.length !== 1) {
+      selectedCells.forEach((cell) => {
+        const cellId = cell.simpleCellAddress.toCellId();
+        const mergedCell =
+          this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
+
+        if (mergedCell) {
+          bottomRightSimpleCellAddress.col = Math.max(
+            mergedCell.col.y,
+            bottomRightSimpleCellAddress.col
+          );
+          bottomRightSimpleCellAddress.row = Math.max(
+            mergedCell.row.y,
+            bottomRightSimpleCellAddress.row
+          );
+        }
+      });
+    }
+
+    if (isPasting) {
       const sourceRangeColSize =
         this.sourceRange!.bottomRightSimpleCellAddress.col -
         this.sourceRange!.topLeftSimpleCellAddress.col;

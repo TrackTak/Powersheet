@@ -1,6 +1,7 @@
 import { Vector2d } from 'konva/lib/types';
 import { isNil } from 'lodash';
 import Spreadsheet from '../Spreadsheet';
+import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
 import RowColAddress, { SheetRowColId } from './cells/cell/RowColAddress';
 import SimpleCellAddress, { CellId } from './cells/cell/SimpleCellAddress';
 import { RowColId, RowColsType } from './rowCols/RowCols';
@@ -244,10 +245,7 @@ class Data {
       this.spreadsheetData.sheets![sheetId].mergedCells = {};
     }
 
-    this.spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
-      mergedCellId;
-
-    this.spreadsheetData.mergedCells[mergedCellId] = {
+    const newMergedCell = {
       ...this.spreadsheetData.mergedCells[mergedCellId],
       row: {
         ...this.spreadsheetData.mergedCells[mergedCellId]?.row,
@@ -259,6 +257,41 @@ class Data {
       },
       id: mergedCellId,
     };
+
+    const rangeSimpleCellAddress =
+      RangeSimpleCellAddress.mergedCellToAddress(newMergedCell);
+
+    this.spreadsheet.hyperformula.batch(() => {
+      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
+        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
+          const simpleCellAddress = new SimpleCellAddress(
+            rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet,
+            ri,
+            ci
+          );
+
+          const mmergedCellId =
+            this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[
+              simpleCellAddress.toCellId()
+            ];
+
+          if (simpleCellAddress.toCellId() !== mergedCellId && mmergedCellId) {
+            this.spreadsheet.data.deleteCell(
+              SimpleCellAddress.cellIdToAddress(mmergedCellId)
+            );
+          }
+
+          if (simpleCellAddress.toCellId() !== mergedCellId) {
+            this.spreadsheet.data.deleteCell(simpleCellAddress);
+          }
+        }
+      }
+    });
+
+    this.spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
+      mergedCellId;
+
+    this.spreadsheetData.mergedCells[mergedCellId] = newMergedCell;
 
     const mergedCellResult = this.spreadsheetData.mergedCells[mergedCellId];
 

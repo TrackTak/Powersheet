@@ -61,7 +61,6 @@ class Merger {
   }
 
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const sheet = rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet;
     const mergedCellId =
       rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
     const existingTopLeftCell =
@@ -81,24 +80,12 @@ class Merger {
       }
     );
 
-    this.spreadsheet.hyperformula.batch(() => {
-      for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
-        for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
-          const simpleCellAddress = new SimpleCellAddress(sheet, ri, ci);
-
-          if (simpleCellAddress.toCellId() !== mergedCellId) {
-            this.spreadsheet.data.deleteCell(simpleCellAddress);
-          }
-        }
-      }
-
-      if (existingTopLeftCell) {
-        this.spreadsheet.data.setCell(
-          rangeSimpleCellAddress.topLeftSimpleCellAddress,
-          existingTopLeftCell
-        );
-      }
-    });
+    if (existingTopLeftCell) {
+      this.spreadsheet.data.setCell(
+        rangeSimpleCellAddress.topLeftSimpleCellAddress,
+        existingTopLeftCell
+      );
+    }
 
     this.sheets.selector.selectedSimpleCellAddress =
       rangeSimpleCellAddress.topLeftSimpleCellAddress;

@@ -68,6 +68,20 @@ export const reverseVectorsIfStartBiggerThanEnd = (
   };
 };
 
+// Taken from: https://codereview.stackexchange.com/questions/16124/implement-numbering-scheme-like-a-b-c-aa-ab-aaa-similar-to-converting
+export const getColumnHeader = (number: number) => {
+  const baseChar = 'A'.charCodeAt(0);
+  let columnHeader = '';
+
+  do {
+    number -= 1;
+    columnHeader = String.fromCharCode(baseChar + (number % 26)) + columnHeader;
+    number = (number / 26) >> 0; // quick `floor`
+  } while (number > 0);
+
+  return columnHeader;
+};
+
 export const setCaretToEndOfElement = (element: HTMLElement) => {
   const range = document.createRange();
   const sel = window.getSelection();

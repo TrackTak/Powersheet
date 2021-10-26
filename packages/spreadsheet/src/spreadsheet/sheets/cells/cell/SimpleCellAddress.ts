@@ -1,3 +1,5 @@
+import { getColumnHeader } from '../../../utils';
+
 export type CellId = `${number}_${number}_${number}`;
 
 class SimpleCellAddress {
@@ -17,10 +19,10 @@ class SimpleCellAddress {
   }
 
   addressToString() {
-    const letter = String.fromCharCode('A'.charCodeAt(0) + this.col);
+    const letters = getColumnHeader(this.col + 1);
     const number = this.row + 1;
 
-    return `${letter}${number}`;
+    return `${letters}${number}`;
   }
 
   toCellId(): CellId {

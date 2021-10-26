@@ -683,16 +683,19 @@ class Sheets {
 
       scrollGroup.sheetGroup.setAttrs(this.getViewportVector());
     });
+
     this.updateSheetDimensions();
+    this.drawTopLeftOffsetRect();
 
     this.cells.resetCachedCells();
-    this.rows.clearAll();
-    this.cols.clearAll();
-
-    this.drawTopLeftOffsetRect();
     this.cells.updateViewport();
+
+    this.rows.clearAll();
     this.rows.updateViewport();
+
+    this.cols.clearAll();
     this.cols.updateViewport();
+
     this.selector.updateSelectedCells();
     this.spreadsheet.toolbar?.updateActiveStates();
     this.spreadsheet.formulaBar?.updateValue(

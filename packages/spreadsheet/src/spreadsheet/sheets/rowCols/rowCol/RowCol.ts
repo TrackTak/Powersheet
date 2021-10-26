@@ -9,7 +9,11 @@ import RowCols, { IRowColFunctions, RowColsType, RowColType } from '../RowCols';
 import Sheets from '../../Sheets';
 import RowColAddress, { SheetRowColId } from '../../cells/cell/RowColAddress';
 import { IMergedCellData } from '../../Data';
-import { centerRectTwoInRectOne, dataKeysComparer } from '../../../utils';
+import {
+  centerRectTwoInRectOne,
+  dataKeysComparer,
+  getColumnHeader,
+} from '../../../utils';
 import { Util } from 'konva/lib/Util';
 
 class RowCol {
@@ -350,10 +354,7 @@ class RowCol {
 
   getHeaderTextContent() {
     if (this.isCol) {
-      const startCharCode = 'A'.charCodeAt(0);
-      const letter = String.fromCharCode(startCharCode + this.index);
-
-      return letter;
+      return getColumnHeader(this.index + 1);
     } else {
       return (this.index + 1).toString();
     }

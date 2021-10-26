@@ -184,7 +184,7 @@ class Clipboard {
       lastSelectedCell.simpleCellAddress.col
     );
 
-    if (selectedCells.length !== 1) {
+    const setCellRangeForMerges = () => {
       selectedCells.forEach((cell) => {
         const cellId = cell.simpleCellAddress.toCellId();
         const mergedCell =
@@ -201,7 +201,7 @@ class Clipboard {
           );
         }
       });
-    }
+    };
 
     if (isPasting) {
       const sourceRangeColSize =
@@ -225,6 +225,12 @@ class Clipboard {
         bottomRightSimpleCellAddress.row =
           topLeftSimpleCellAddress.row + sourceRangeRowSize;
       }
+
+      if (selectedCells.length !== 1) {
+        setCellRangeForMerges();
+      }
+    } else {
+      setCellRangeForMerges();
     }
 
     return new RangeSimpleCellAddress(

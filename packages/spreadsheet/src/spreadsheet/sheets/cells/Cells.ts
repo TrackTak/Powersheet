@@ -245,17 +245,14 @@ class Cells {
 
   updateCell(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
+    const mergedCellId =
+      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId];
 
-    const rangeSimpleCellAddress =
-      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap.get(cellId);
-
-    if (rangeSimpleCellAddress) {
-      const mergedCellId =
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
+    if (mergedCellId) {
       const mergedCell = this.cellsMap.get(mergedCellId);
 
       if (!mergedCell) {
-        this.setStyleableCell(rangeSimpleCellAddress.topLeftSimpleCellAddress);
+        this.setStyleableCell(SimpleCellAddress.cellIdToAddress(mergedCellId));
       }
     }
 

@@ -4,19 +4,16 @@ import Spreadsheet from '../Spreadsheet';
 import Sheets from './Sheets';
 
 class Merger {
-  associatedMergedCellAddressMap: Map<CellId, RangeSimpleCellAddress>;
+  associatedMergedCellAddressMap: Record<CellId, CellId> = {};
   spreadsheet: Spreadsheet;
 
   constructor(public sheets: Sheets) {
     this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
-    this.associatedMergedCellAddressMap = new Map();
   }
 
   getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    return this.associatedMergedCellAddressMap.has(
-      simpleCellAddress.toCellId()
-    );
+    return !!this.associatedMergedCellAddressMap[simpleCellAddress.toCellId()];
   }
 
   *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
@@ -25,12 +22,8 @@ class Merger {
       this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId];
 
     if (mergedCell) {
-      const { row, col } = mergedCell;
-
-      const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-        new SimpleCellAddress(simpleCellAddress.sheet, row.x, col.x),
-        new SimpleCellAddress(simpleCellAddress.sheet, row.y, col.y)
-      );
+      const rangeSimpleCellAddress =
+        RangeSimpleCellAddress.mergedCellToAddress(mergedCell);
 
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
         for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
@@ -51,10 +44,9 @@ class Merger {
       associatedSimpleCellAddress,
       rangeSimpleCellAddress,
     } of this.iterateAssociatedMergedCells(simpleCellAddress)) {
-      this.associatedMergedCellAddressMap.set(
-        associatedSimpleCellAddress.toCellId(),
-        rangeSimpleCellAddress
-      );
+      this.associatedMergedCellAddressMap[
+        associatedSimpleCellAddress.toCellId()
+      ] = rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId();
     }
   }
 
@@ -62,9 +54,9 @@ class Merger {
     for (const {
       associatedSimpleCellAddress,
     } of this.iterateAssociatedMergedCells(simpleCellAddress)) {
-      this.associatedMergedCellAddressMap.delete(
+      delete this.associatedMergedCellAddressMap[
         associatedSimpleCellAddress.toCellId()
-      );
+      ];
     }
   }
 

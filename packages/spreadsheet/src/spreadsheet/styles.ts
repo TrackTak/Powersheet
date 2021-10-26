@@ -149,8 +149,8 @@ export const defaultStyles: IStyles = {
   cell: {
     rect: {
       fill: 'white',
-      // TODO: Remove these somehow as slows dont performance
-      // if tons of cells
+      // TODO: Remove these somehow as it might
+      // slow performance if tons of cells
       stroke: sharedStyles.gridLine.stroke,
       strokeWidth: sharedStyles.gridLine.strokeWidth,
     },

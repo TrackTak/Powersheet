@@ -1,3 +1,4 @@
+import { IMergedCellData } from '../../Data';
 import { RowColType } from '../../rowCols/RowCols';
 import Sheets from '../../Sheets';
 import Cell from './Cell';
@@ -10,6 +11,25 @@ class RangeSimpleCellAddress {
   ) {
     this.topLeftSimpleCellAddress = topLeftSimpleCellAddress;
     this.bottomRightSimpleCellAddress = bottomRightSimpleCellAddress;
+  }
+
+  static mergedCellToAddress(mergedCell: IMergedCellData) {
+    const simpleCellAddress = SimpleCellAddress.cellIdToAddress(mergedCell.id);
+
+    const rangeSimpleCellAddress = new RangeSimpleCellAddress(
+      new SimpleCellAddress(
+        simpleCellAddress.sheet,
+        mergedCell.row.x,
+        mergedCell.col.x
+      ),
+      new SimpleCellAddress(
+        simpleCellAddress.sheet,
+        mergedCell.row.y,
+        mergedCell.col.y
+      )
+    );
+
+    return rangeSimpleCellAddress;
   }
 
   height() {
@@ -103,13 +123,13 @@ class RangeSimpleCellAddress {
     }
 
     const filterOutAssociatedMergedCells = (cell: C) => {
-      const mergedCellAddress =
-        sheets.merger.associatedMergedCellAddressMap.get(
+      const mergedCellId =
+        sheets.merger.associatedMergedCellAddressMap[
           cell.simpleCellAddress.toCellId()
-        );
+        ];
 
       if (
-        !mergedCellAddress ||
+        !mergedCellId ||
         sheets.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
       ) {
         return true;

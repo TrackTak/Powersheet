@@ -73,9 +73,16 @@ class Spreadsheet {
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
     this.history = new Manager((data: string) => {
-      const currentData = this.data.spreadsheetData;
+      const currentData = {
+        data: this.data.spreadsheetData,
+        associatedMergedCellAddressMap:
+          this.sheets.merger.associatedMergedCellAddressMap,
+      };
+      const parsedData = JSON.parse(data);
 
-      this.data.spreadsheetData = JSON.parse(data);
+      this.data.spreadsheetData = parsedData.data;
+      this.sheets.merger.associatedMergedCellAddressMap =
+        parsedData.associatedMergedCellAddressMap;
 
       this.setCells();
 
@@ -166,7 +173,11 @@ class Spreadsheet {
   }
 
   pushToHistory(callback?: () => void) {
-    const data = JSON.stringify(this.data.spreadsheetData);
+    const data = JSON.stringify({
+      data: this.data.spreadsheetData,
+      associatedMergedCellAddressMap:
+        this.sheets.merger.associatedMergedCellAddressMap,
+    });
 
     this.history.push(data);
 
@@ -195,8 +206,8 @@ class Spreadsheet {
 
     this.history.undo();
 
-    this.persistData();
     this.updateViewport();
+    this.persistData();
   }
 
   redo() {
@@ -204,8 +215,8 @@ class Spreadsheet {
 
     this.history.redo();
 
-    this.persistData();
     this.updateViewport();
+    this.persistData();
   }
 
   updateViewport() {

@@ -544,12 +544,15 @@ class Sheets {
           ri,
           ci
         );
-        const existingRangeSimpleCellAddress =
-          this.merger.associatedMergedCellAddressMap.get(
-            simpleCellAddress.toCellId()
-          );
+        const cellId = simpleCellAddress.toCellId();
+        const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId];
 
-        if (existingRangeSimpleCellAddress) {
+        if (mergedCellId) {
+          const mergedCell =
+            this.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
+          const existingRangeSimpleCellAddress =
+            RangeSimpleCellAddress.mergedCellToAddress(mergedCell);
+
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
             'col',
             existingRangeSimpleCellAddress

@@ -80,14 +80,19 @@ class Cell {
       this.simpleCellAddress
     );
 
-    const mergedCellAddress =
-      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap.get(
-        this.simpleCellAddress.toCellId()
-      );
+    const cellId = this.simpleCellAddress.toCellId();
+    const mergedCellId =
+      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId];
 
-    if (!mergedCellAddress) return;
+    if (!mergedCellId) return;
 
-    this.rangeSimpleCellAddress = mergedCellAddress;
+    const mergedCell =
+      this.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
+
+    const rangeSimpleCellAddress =
+      RangeSimpleCellAddress.mergedCellToAddress(mergedCell);
+
+    this.rangeSimpleCellAddress = rangeSimpleCellAddress;
 
     let width = 0;
     let height = 0;

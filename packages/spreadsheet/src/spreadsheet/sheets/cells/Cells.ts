@@ -81,6 +81,8 @@ class Cells {
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
+        cell.group.remove();
+
         this.resetAttrs(cell);
         this.cellsMap.delete(cellId);
         this.cachedCellGroups.push(cell.group);
@@ -174,6 +176,8 @@ class Cells {
 
   resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
+      cell.group.remove();
+
       this.resetAttrs(cell);
 
       this.cellsMap.delete(cellId);
@@ -202,8 +206,6 @@ class Cells {
         this.updateCell(simpleCellAddress);
       }
     }
-    console.log(this.cellsMap);
-    console.log(this.cachedCellGroups);
   }
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {

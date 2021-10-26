@@ -85,12 +85,12 @@ class Export {
 
         worksheet['!merges'].push({
           s: {
-            r: rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
-            c: rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
+            r: mergedCell.row.x,
+            c: mergedCell.col.x,
           },
           e: {
-            r: rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-            c: rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
+            r: mergedCell.row.y,
+            c: mergedCell.col.y,
           },
         });
       }

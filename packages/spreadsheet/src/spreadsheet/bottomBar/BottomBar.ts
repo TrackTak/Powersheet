@@ -133,33 +133,21 @@ class BottomBar {
       content: sheetTabDropdownContent,
     });
 
-    sheetSelectionDropdownButton.addEventListener(
-      'click',
-      () => {
+    sheetSelectionDropdownButton.addEventListener('click', () => {
+      switchSheet();
+
+      this.sheetSelectionDropdown.hide();
+    });
+
+    sheetTab.addEventListener('click', () => {
+      if (!isActive) {
         switchSheet();
+      }
+    });
 
-        this.sheetSelectionDropdown.hide();
-      },
-      { once: true }
-    );
-
-    sheetTab.addEventListener(
-      'click',
-      () => {
-        if (!isActive) {
-          switchSheet();
-        }
-      },
-      { once: true }
-    );
-
-    sheetTab.addEventListener(
-      'dblclick',
-      () => {
-        setTabToContentEditable();
-      },
-      { once: true }
-    );
+    sheetTab.addEventListener('dblclick', () => {
+      setTabToContentEditable();
+    });
 
     sheetTab.addEventListener('contextmenu', (e) => {
       e.preventDefault();
@@ -167,39 +155,24 @@ class BottomBar {
       sheetTabDropdown.show();
     });
 
-    deleteSheetButton.addEventListener(
-      'click',
-      () => {
-        sheetTabDropdown.hide();
+    deleteSheetButton.addEventListener('click', () => {
+      sheetTabDropdown.hide();
 
-        this.spreadsheet.sheets.deleteSheet(sheetId);
-      },
-      { once: true }
-    );
+      this.spreadsheet.sheets.deleteSheet(sheetId);
+    });
 
-    renameSheetButton.addEventListener(
-      'click',
-      () => {
-        sheetTabDropdown.hide();
+    renameSheetButton.addEventListener('click', () => {
+      sheetTabDropdown.hide();
 
-        setTabToContentEditable();
-      },
-      { once: true }
-    );
+      setTabToContentEditable();
+    });
 
-    nameContainer.addEventListener(
-      'blur',
-      () => {
-        nameContainer.contentEditable = 'false';
-        nameContainer.blur();
+    nameContainer.addEventListener('blur', () => {
+      nameContainer.contentEditable = 'false';
+      nameContainer.blur();
 
-        this.spreadsheet.sheets.renameSheet(
-          sheetId,
-          nameContainer.textContent!
-        );
-      },
-      { once: true }
-    );
+      this.spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!);
+    });
 
     nameContainer.textContent =
       this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!;

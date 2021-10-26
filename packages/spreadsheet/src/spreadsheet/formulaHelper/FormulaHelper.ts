@@ -64,7 +64,7 @@ class FormulaHelper {
     this.list = list;
     this.helper.setContent(this.formulaHelperListContainerEl);
 
-    list.addEventListener('click', this.handleListItemClick, { once: true });
+    list.addEventListener('click', this.handleListItemClick);
   }
 
   handleListItemClick = (e: MouseEvent) => {

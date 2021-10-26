@@ -92,7 +92,7 @@ class Comment {
     const comment =
       this.spreadsheet.data.spreadsheetData.cells?.[
         simpleCellAddress.toCellId()
-      ].comment;
+      ]?.comment;
 
     if (comment) {
       this.textarea.value = comment;

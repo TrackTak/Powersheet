@@ -778,13 +778,9 @@ class Toolbar {
     };
 
     Object.keys(this.textFormatElements.textFormats).forEach((key) => {
-      this.textFormatElements.textFormats[key].addEventListener(
-        'click',
-        () => {
-          this.setValue('textFormatPattern', key);
-        },
-        { once: true }
-      );
+      this.textFormatElements.textFormats[key].addEventListener('click', () => {
+        this.setValue('textFormatPattern', key);
+      });
     });
   }
 
@@ -808,8 +804,7 @@ class Toolbar {
         'click',
         () => {
           this.setValue('fontSize', fontSize);
-        },
-        { once: true }
+        }
       );
     });
   }

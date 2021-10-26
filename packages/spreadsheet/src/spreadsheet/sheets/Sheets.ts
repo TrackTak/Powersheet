@@ -284,6 +284,7 @@ class Sheets {
     context.reset();
     context.translate(0.5, 0.5);
 
+    // TODO: Fix performance getting worse on resize sheet
     this.rows.setCachedRowCols();
     this.cols.setCachedRowCols();
     this.cells.setCachedCells();

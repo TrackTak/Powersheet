@@ -1,4 +1,6 @@
-import SimpleCellAddress from '../spreadsheet/sheets/cells/cell/SimpleCellAddress';
+import SimpleCellAddress, {
+  CellId,
+} from '../spreadsheet/sheets/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
@@ -121,6 +123,17 @@ const buildSpreadsheetWithEverything = (
   const formulaBar = new FormulaBar();
   const exporter = new Exporter();
   const bottomBar = new BottomBar();
+
+  const trueArgs: [string, string] = ['TRUE', '=TRUE()'];
+  const falseArgs: [string, string] = ['FALSE', '=FALSE()'];
+
+  if (hyperformula.isItPossibleToAddNamedExpression(...trueArgs)) {
+    hyperformula.addNamedExpression(...trueArgs);
+  }
+
+  if (hyperformula.isItPossibleToAddNamedExpression(...falseArgs)) {
+    hyperformula.addNamedExpression(...falseArgs);
+  }
 
   const spreadsheet = getSpreadsheet(args, {
     hyperformula,
@@ -375,15 +388,6 @@ CustomSizeSpreadsheet.args = {
   },
 };
 
-const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(
-    args,
-    getHyperformulaInstance({
-      currencySymbol: Object.values(currencySymbolMap),
-    })
-  ).spreadsheetEl;
-};
-
 const MultipleSpreadsheetsTemplate: Story = () => {
   const firstSpreadsheetArgs = {
     data: {
@@ -430,9 +434,25 @@ const MultipleSpreadsheetsTemplate: Story = () => {
 
 export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({});
 
+const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
+  return buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance({
+      currencySymbol: Object.values(currencySymbolMap),
+    })
+  ).spreadsheetEl;
+};
+
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
 
 AllCurrencySymbols.args = {
+  options: {
+    textPatternFormats: {
+      usCurrency: '$#,##0.##',
+      israeliCurrency: '₪#,##0.##',
+      gbpCurrency: '£#,##0.##',
+    },
+  },
   data: {
     sheets: {
       0: {
@@ -450,18 +470,22 @@ AllCurrencySymbols.args = {
       '0_1_0': {
         id: '0_1_0',
         value: '$33334.33',
+        textFormatPattern: '$#,##0.##',
       },
       '0_1_1': {
         id: '0_1_1',
         value: '₪22.2',
+        textFormatPattern: '₪#,##0.##',
       },
       '0_3_3': {
         id: '0_3_3',
         value: '£33.3',
+        textFormatPattern: '£#,##0.##',
       },
       '0_4_1': {
         id: '0_4_1',
         value: '=A2+B2+D4',
+        textFormatPattern: '#,##0.##',
       },
     },
   },
@@ -593,6 +617,10 @@ Formulas.args = {
   },
 };
 
+interface IExtendedCellData extends ICellData {
+  dynamicFormat: 'currency';
+}
+
 const RealExampleTemplate: Story<IArgs> = (args) => {
   let FinancialPlugin = getTTFinancialPlugin();
 
@@ -614,6 +642,16 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
     spreadsheet?.updateViewport();
   }, 2000);
 
+  Object.keys(args.data!.cells!).forEach((key) => {
+    const cellData = args.data!.cells![key as CellId] as IExtendedCellData;
+
+    if (cellData.dynamicFormat === 'currency') {
+      if (!cellData.textFormatPattern?.includes('$')) {
+        cellData.textFormatPattern = '$' + cellData.textFormatPattern;
+      }
+    }
+  });
+
   return spreadsheet.spreadsheetEl;
 };
 
@@ -621,6 +659,13 @@ export const RealExample = RealExampleTemplate.bind({});
 
 RealExample.args = {
   data: realExampleData,
+  options: {
+    textPatternFormats: {
+      currency: '$#,##0.##',
+      million: '#,###.##,,',
+      'million-currency': '$#,###.##,,',
+    },
+  },
 };
 
 const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {

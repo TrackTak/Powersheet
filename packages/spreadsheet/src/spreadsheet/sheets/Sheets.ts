@@ -239,6 +239,9 @@ class Sheets {
   switchSheet(sheetId: SheetId) {
     this.cells.clearCells();
 
+    this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
+    this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
+
     this.activeSheetId = sheetId;
 
     this.spreadsheet.updateViewport();

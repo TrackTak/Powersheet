@@ -617,10 +617,6 @@ Formulas.args = {
   },
 };
 
-interface IExtendedCellData extends ICellData {
-  dynamicFormat: 'currency';
-}
-
 const RealExampleTemplate: Story<IArgs> = (args) => {
   let FinancialPlugin = getTTFinancialPlugin();
 
@@ -642,15 +638,19 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
     spreadsheet?.updateViewport();
   }, 2000);
 
-  Object.keys(args.data!.cells!).forEach((key) => {
-    const cellData = args.data!.cells![key as CellId] as IExtendedCellData;
+  // interface IExtendedCellData extends ICellData {
+  //   dynamicFormat: 'currency';
+  // }
 
-    if (cellData.dynamicFormat === 'currency') {
-      if (!cellData.textFormatPattern?.includes('$')) {
-        cellData.textFormatPattern = '$' + cellData.textFormatPattern;
-      }
-    }
-  });
+  // Object.keys(args.data!.cells!).forEach((key) => {
+  //   const cellData = args.data!.cells![key as CellId] as IExtendedCellData;
+
+  //   if (cellData.dynamicFormat === 'currency') {
+  //     if (!cellData.textFormatPattern?.includes('$')) {
+  //       cellData.textFormatPattern = '$' + cellData.textFormatPattern;
+  //     }
+  //   }
+  // });
 
   return spreadsheet.spreadsheetEl;
 };

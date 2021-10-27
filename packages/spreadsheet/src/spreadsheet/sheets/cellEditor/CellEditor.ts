@@ -8,6 +8,8 @@ import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
 import { setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
+import { isPercent } from 'numfmt';
+import { ICellData } from '../Data';
 
 export interface ICurrentScroll {
   row: number;
@@ -59,6 +61,10 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress;
+    const cell =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ];
     const cellValue =
       this.spreadsheet.hyperformula
         .getCellValue(simpleCellAddress)
@@ -69,9 +75,19 @@ class CellEditor {
       const value = textContent ? textContent : undefined;
 
       if (cellValue !== value) {
-        this.spreadsheet.data.setCell(simpleCellAddress, {
+        const newCell: Omit<ICellData, 'id'> = {
           value,
-        });
+        };
+
+        if (isPercent(value)) {
+          if (!isPercent(cell?.textFormatPattern)) {
+            newCell.textFormatPattern = '0.00%';
+          }
+        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
+          newCell.value += '%';
+        }
+
+        this.spreadsheet.data.setCell(simpleCellAddress, newCell);
       }
     });
   }

@@ -91,10 +91,24 @@ class Cells {
   }
 
   getHasCellData(simpleCellAddress: SimpleCellAddress) {
+    const sheetName =
+      this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? '';
+
+    if (!this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
+      return false;
+    }
+
     const cellId = simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+    // Need to check hyperformula value too because some
+    // functions spill values into adjacent cells
+    const cellSerializedValueExists = !isNil(
+      this.spreadsheet.hyperformula.getCellValue(simpleCellAddress)
+    );
     const hasCellData = !!(
-      cell || this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
+      cell ||
+      cellSerializedValueExists ||
+      this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
     );
 
     return hasCellData;

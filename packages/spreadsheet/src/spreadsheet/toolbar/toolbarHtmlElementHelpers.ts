@@ -1,5 +1,5 @@
 import { ACPController, createPicker } from 'a-color-picker';
-import { sentenceCase } from 'sentence-case';
+import { sentenceCase } from 'change-case';
 import {
   createDropdownContent,
   createIconButton,

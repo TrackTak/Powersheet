@@ -1,15 +1,15 @@
-import SimpleCellAddress from './spreadsheet/sheets/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from '../spreadsheet/sheets/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';
 import TouchEmulator from 'hammer-touchemulator';
 import { action } from '@storybook/addon-actions';
 import { merge, throttle } from 'lodash';
-import { ISpreadsheetData, ICellData } from './spreadsheet/sheets/Data';
-import { IOptions } from './spreadsheet/options';
-import { IStyles } from './spreadsheet/styles';
-import { NestedPartial } from './spreadsheet/types';
-import { ISpreadsheetConstructor } from './spreadsheet/Spreadsheet';
+import { ISpreadsheetData, ICellData } from '../spreadsheet/sheets/Data';
+import { IOptions } from '../spreadsheet/options';
+import { IStyles } from '../spreadsheet/styles';
+import { NestedPartial } from '../spreadsheet/types';
+import { ISpreadsheetConstructor } from '../spreadsheet/Spreadsheet';
 import {
   defaultOptions,
   Spreadsheet,
@@ -17,10 +17,13 @@ import {
   FormulaBar,
   Exporter,
   BottomBar,
-} from '.';
-import { PowersheetEvents } from './spreadsheet/PowersheetEmitter';
+} from '..';
+import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter';
 import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
-import realExampleDataJSON from './realExampleData.json';
+// @ts-ignore
+import { getTTFinancialPlugin, finTranslations } from './getTTFinancialPlugin';
+import realExampleDataJSON from './mocks/realExampleData.json';
+import mockFinancialDataJSON from './mocks/mockFinancialData.json';
 
 const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
@@ -36,6 +39,7 @@ interface IArgs {
 
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args);
+  console.log(event, ...args);
 };
 
 const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
@@ -106,7 +110,7 @@ const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
     hyperformula,
   });
 
-  return spreadsheet.spreadsheetEl;
+  return spreadsheet;
 };
 
 const buildSpreadsheetWithEverything = (
@@ -130,11 +134,12 @@ const buildSpreadsheetWithEverything = (
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
   spreadsheet.spreadsheetEl.appendChild(bottomBar.bottomBarEl);
 
-  return spreadsheet.spreadsheetEl;
+  return spreadsheet;
 };
 
 const Template: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance())
+    .spreadsheetEl;
 };
 
 export const Default = Template.bind({});
@@ -252,7 +257,7 @@ const MobileTemplate: Story<IArgs> = (args) => {
 
   TouchEmulator.start();
 
-  return spreadsheet;
+  return spreadsheet.spreadsheetEl;
 };
 
 export const Mobile = MobileTemplate.bind({});
@@ -271,7 +276,7 @@ const MillionRowsTemplate: Story<IArgs> = (args) => {
     getHyperformulaInstance({
       maxRows: newArgs.options.row.amount,
     })
-  );
+  ).spreadsheetEl;
 };
 
 export const MillionRows = MillionRowsTemplate.bind({});
@@ -355,7 +360,7 @@ CustomOptions.args = {
 };
 
 const OnlySpreadsheet: Story<IArgs> = (args) => {
-  return buildOnlySpreadsheet(args, getHyperformulaInstance());
+  return buildOnlySpreadsheet(args, getHyperformulaInstance()).spreadsheetEl;
 };
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({});
@@ -376,7 +381,7 @@ const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
     getHyperformulaInstance({
       currencySymbol: Object.values(currencySymbolMap),
     })
-  );
+  ).spreadsheetEl;
 };
 
 const MultipleSpreadsheetsTemplate: Story = () => {
@@ -415,8 +420,8 @@ const MultipleSpreadsheetsTemplate: Story = () => {
 
   const containerEl = document.createElement('div');
 
-  containerEl.appendChild(firstSpreadsheetEl);
-  containerEl.appendChild(secondSpreadsheetEl);
+  containerEl.appendChild(firstSpreadsheetEl.spreadsheetEl);
+  containerEl.appendChild(secondSpreadsheetEl.spreadsheetEl);
 
   containerEl.style.height = '50%';
 
@@ -588,7 +593,31 @@ Formulas.args = {
   },
 };
 
-export const RealExample = Template.bind({});
+const RealExampleTemplate: Story<IArgs> = (args) => {
+  let FinancialPlugin = getTTFinancialPlugin();
+
+  HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations);
+
+  const spreadsheet = buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance()
+  );
+
+  // Simulate API call
+  setTimeout(() => {
+    FinancialPlugin = getTTFinancialPlugin(mockFinancialDataJSON);
+
+    HyperFormula.unregisterFunctionPlugin(FinancialPlugin);
+    HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations);
+
+    spreadsheet?.hyperformula.rebuildAndRecalculate();
+    spreadsheet?.updateViewport();
+  }, 2000);
+
+  return spreadsheet.spreadsheetEl;
+};
+
+export const RealExample = RealExampleTemplate.bind({});
 
 RealExample.args = {
   data: realExampleData,
@@ -637,7 +666,8 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
     }
   }
 
-  return buildSpreadsheetWithEverything(args, getHyperformulaInstance());
+  return buildSpreadsheetWithEverything(args, getHyperformulaInstance())
+    .spreadsheetEl;
 };
 
 export const SpreadsheetPerformance = SpreadsheetPerformanceTemplate.bind({});

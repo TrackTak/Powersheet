@@ -70,11 +70,11 @@
     "a-color-picker": "^1.2.1"
   },
   "dependencies": {
+    "change-case": "^4.1.2",
     "konva": "^8.2.2",
     "lodash": "^4.17.21",
     "numfmt": "^2.1.0",
     "sass": "^1.36.0",
-    "sentence-case": "^3.0.4",
     "tiny-typed-emitter": "^2.1.0",
     "tippy.js": "^6.3.1",
     "undo-redo-manager": "^1.0.0"
@@ -98,6 +98,7 @@
     "css-loader": "5.2.6",
     "currency-symbol-map": "^5.0.1",
     "cz-conventional-changelog": "^3.3.0",
+    "dayjs": "^1.10.7",
     "eslint": "^7.8.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-eslint-comments": "^3.2.0",

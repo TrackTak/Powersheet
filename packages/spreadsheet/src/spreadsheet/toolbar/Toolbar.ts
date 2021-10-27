@@ -32,7 +32,7 @@ import {
   IIconElements,
 } from '../htmlElementHelpers';
 import Spreadsheet from '../Spreadsheet';
-import { sentenceCase } from 'sentence-case';
+import { sentenceCase } from 'change-case';
 import Cell from '../sheets/cells/cell/Cell';
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import {

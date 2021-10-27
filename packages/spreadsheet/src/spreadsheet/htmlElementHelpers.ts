@@ -9,7 +9,7 @@ import {
   AddSheetIcon,
   SelectSheetsIcon,
 } from './bottomBar/bottomBarHtmlElementHelpers';
-import { sentenceCase } from 'sentence-case';
+import { sentenceCase } from 'change-case';
 
 export interface IActionElements {
   buttonContainer: HTMLDivElement;

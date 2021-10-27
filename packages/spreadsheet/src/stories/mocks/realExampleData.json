@@ -523,7 +523,10 @@
         "0_7_25": "0_7_25",
         "0_7_26": "0_7_26",
         "0_7_27": "0_7_27",
-        "0_7_28": "0_7_28"
+        "0_7_28": "0_7_28",
+        "0_12_1": "0_12_1",
+        "0_15_1": "0_15_1",
+        "0_17_7": "0_17_7"
       },
       "cols": {
         "0_0": "0_0"
@@ -39943,9 +39946,9 @@
     "0_2_0": {
       "value": "Required Inputs",
       "id": "0_2_0",
-      "bold": true,
       "fontSize": 14,
-      "horizontalTextAlign": "center"
+      "horizontalTextAlign": "center",
+      "bold": true
     },
     "0_3_0": {
       "value": "CAGR in Years 1-5",
@@ -39982,7 +39985,7 @@
       "backgroundColor": "rgba(47, 219, 171, 0.27)",
       "id": "0_6_1",
       "comment": "The efficiency of how much the company has to reinvest the business to grow. The formula is Revenue / Invested Capital. The higher the number the more efficient the company is. The default value is set to the industry average as this is usually a good starting point. You should also look at the previous years sales to capital ratio's in the above table to fine tune this value. In the DCF output we compute how much the company is going to reinvest to keep the business growing in future years. The higher you set this number, the more efficiently the business is growing and the higher the value of your growth.",
-      "value": "=FIN(\\\"sales/Capital\\\")"
+      "value": "=FIN(\"sales/Capital\")"
     },
     "0_2_3": {
       "value": "Optional Inputs",
@@ -42213,7 +42216,7 @@
     "0_12_0": {
       "value": "Shares Outstanding",
       "id": "0_12_0",
-      "textFormatPattern": "#,##0.00"
+      "textFormatPattern": ""
     },
     "0_11_3": {
       "value": "=FIN(\"description\")",
@@ -42326,6 +42329,19 @@
     "0_7_28": {
       "borders": ["borderBottom"],
       "id": "0_7_28"
+    },
+    "0_12_1": {
+      "value": "='API Millions Data'!$B$6",
+      "id": "0_12_1",
+      "textFormatPattern": "#,##0.00"
+    },
+    "0_15_1": {
+      "value": "=FIN(\"industryName\")",
+      "id": "0_15_1"
+    },
+    "0_17_7": {
+      "id": "0_17_7",
+      "bold": true
     }
   },
   "mergedCells": {
@@ -42904,5 +42920,6 @@
       "col": 0,
       "row": 0
     }
-  }
+  },
+  "showFormulas": false
 }

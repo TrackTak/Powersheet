@@ -240,10 +240,8 @@ class StyleableCell extends Cell {
   }
 
   updateStyles() {
-    const cell =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ];
+    const cellId = this.simpleCellAddress.toCellId();
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
 
     const stickyGroup = this.getStickyGroupCellBelongsTo();
 

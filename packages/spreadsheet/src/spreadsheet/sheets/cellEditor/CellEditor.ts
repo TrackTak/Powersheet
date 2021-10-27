@@ -59,18 +59,17 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress;
-    const cellData =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ];
+    const cellValue =
+      this.spreadsheet.hyperformula
+        .getCellValue(simpleCellAddress)
+        ?.toString() ?? undefined;
     const textContent = this.cellEditorEl.textContent;
 
     this.spreadsheet.pushToHistory(() => {
       const value = textContent ? textContent : undefined;
 
-      if (cellData?.value !== value) {
+      if (cellValue !== value) {
         this.spreadsheet.data.setCell(simpleCellAddress, {
-          ...cellData,
           value,
         });
       }
@@ -150,11 +149,10 @@ class CellEditor {
     this.setCellEditorElPosition(cell.group.getClientRect());
 
     if (setTextContent) {
-      this.setTextContent(
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          simpleCellAddress.toCellId()
-        ]?.value ?? null
-      );
+      const serializedValue =
+        this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
+
+      this.setTextContent(serializedValue?.toString() ?? null);
 
       setCaretToEndOfElement(this.cellEditorEl);
 

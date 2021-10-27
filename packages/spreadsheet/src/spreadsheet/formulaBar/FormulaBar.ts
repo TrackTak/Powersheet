@@ -57,23 +57,16 @@ class FormulaBar {
     let value;
 
     if (simpleCellAddress) {
-      const sheetName = this.spreadsheet.hyperformula.getSheetName(
-        simpleCellAddress.sheet
-      );
+      const sheetName =
+        this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ??
+        '';
 
-      if (
-        sheetName &&
-        this.spreadsheet.hyperformula.doesSheetExist(sheetName)
-      ) {
-        const formula = this.spreadsheet.hyperformula.getCellFormula(
+      if (this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
+        const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
           simpleCellAddress
         );
 
-        value = formula
-          ? formula
-          : this.spreadsheet.data.spreadsheetData.cells?.[
-              simpleCellAddress.toCellId()
-            ]?.value;
+        value = serializedValue?.toString();
       }
     }
 

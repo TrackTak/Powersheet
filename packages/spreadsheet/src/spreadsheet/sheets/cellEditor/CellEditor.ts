@@ -10,6 +10,7 @@ import { setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
+import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
 
 export interface ICurrentScroll {
   row: number;
@@ -150,30 +151,28 @@ class CellEditor {
     }
   };
 
-  show(cell: Cell, setTextContent = true) {
+  show(cell: Cell) {
     this.currentCell = cell;
     this.currentScroll = {
       row: this.sheet.rows.scrollBar.scroll,
       col: this.sheet.cols.scrollBar.scroll,
     };
 
-    const simpleCellAddress = cell.simpleCellAddress;
-
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
     this.setCellEditorElPosition(cell.group.getClientRect());
+  }
 
-    if (setTextContent) {
-      const serializedValue =
-        this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
+  setCellValue(simpleCellAddress: SimpleCellAddress) {
+    const serializedValue =
+      this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-      this.setTextContent(serializedValue?.toString() ?? null);
+    this.setTextContent(serializedValue?.toString() ?? null);
 
-      setCaretToEndOfElement(this.cellEditorEl);
+    setCaretToEndOfElement(this.cellEditorEl);
 
-      this.cellEditorEl.focus();
-    }
+    this.cellEditorEl.focus();
   }
 
   clear() {

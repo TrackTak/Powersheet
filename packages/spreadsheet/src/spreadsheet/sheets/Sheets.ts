@@ -389,6 +389,7 @@ class Sheets {
 
     if (this.hasDoubleClickedOnCell()) {
       this.cellEditor.show(selectedFirstcell);
+      this.cellEditor.setCellValue(selectedFirstcell.simpleCellAddress);
     }
 
     if (this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.comment) {
@@ -485,7 +486,20 @@ class Sheets {
       }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
-          this.cellEditor.show(this.selector.selectedCell!);
+          const selectedCell = this.selector.selectedCell!;
+          const serializedValue =
+            this.spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            );
+
+          if (serializedValue) {
+            this.cellEditor.clear();
+            this.cellEditor.show(selectedCell);
+            this.cellEditor.cellEditorEl.focus();
+          } else {
+            this.cellEditor.show(selectedCell);
+            this.cellEditor.setCellValue(selectedCell.simpleCellAddress);
+          }
         }
     }
 

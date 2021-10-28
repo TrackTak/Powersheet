@@ -14,6 +14,7 @@ import {
 } from '../../Data';
 import { CellValue } from 'hyperformula';
 import { Group } from 'konva/lib/Group';
+import { isNil } from 'lodash';
 
 class StyleableCell extends Cell {
   text: Text;
@@ -207,7 +208,7 @@ class StyleableCell extends Cell {
 
     const { width } = this.getClientRectWithoutStroke();
 
-    if (value) {
+    if (!isNil(value)) {
       let text = value;
 
       if (

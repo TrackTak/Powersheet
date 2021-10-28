@@ -1,0 +1,24 @@
+@use '@material/drawer';
+
+@import '../styles.scss';
+
+:global {
+  @include drawer.core-styles;
+  @include drawer.dismissible-core-styles;
+}
+
+.functionHelper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+}
+
+.closeIcon {
+  height: 23px;
+  width: 23px;
+}
+
+.closeButton {
+  @include button;
+}

@@ -24,7 +24,7 @@ import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 import { getTTFinancialPlugin, finTranslations } from './getTTFinancialPlugin';
 import realExampleDataJSON from './mocks/realExampleData.json';
 import mockFinancialDataJSON from './mocks/mockFinancialData.json';
-import FunctionHelper from '../functionHelper/FunctionHelper';
+import FunctionHelper from '../spreadsheet/functionHelper/FunctionHelper';
 
 const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
@@ -136,7 +136,7 @@ const buildSpreadsheetWithEverything = (
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
   spreadsheet.spreadsheetEl.appendChild(bottomBar.bottomBarEl);
-  spreadsheet.spreadsheetEl.appendChild(functionHelper.functionHelperEl);
+  spreadsheet.sheets.sheetEl.appendChild(functionHelper.functionHelperEl);
 
   return spreadsheet;
 };

@@ -18,7 +18,7 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
-import FunctionHelper from '../functionHelper/FunctionHelper';
+import FunctionHelper from './functionHelper/FunctionHelper';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;

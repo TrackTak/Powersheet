@@ -334,6 +334,9 @@ class Toolbar {
       {
         elements: [icons.autosave.buttonContainer],
       },
+      {
+        elements: [icons.functionHelper.buttonContainer],
+      },
     ];
 
     this.toolbarActionGroups.forEach(({ elements }) => {
@@ -547,6 +550,11 @@ class Toolbar {
     switch (name) {
       case 'functions': {
         this.setFunction(value);
+        break;
+      }
+      case 'functionHelper': {
+        this.spreadsheet.functionHelper!.drawer.open =
+          !this.spreadsheet.functionHelper!.drawer.open;
         break;
       }
       case 'formula': {

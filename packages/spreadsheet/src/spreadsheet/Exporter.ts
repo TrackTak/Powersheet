@@ -1,7 +1,7 @@
 import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx';
 import Spreadsheet from './Spreadsheet';
 import { isNil } from 'lodash';
-import { isText, isDate } from 'numfmt';
+import { isText, isDate, isPercent } from 'numfmt';
 import { SheetId } from './sheets/Sheets';
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress, {
@@ -56,7 +56,11 @@ class Export {
 
       let type;
 
-      const textFormatPattern = cell?.textFormatPattern;
+      let textFormatPattern = cell?.textFormatPattern;
+
+      if (isPercent(cell.value)) {
+        textFormatPattern = undefined;
+      }
 
       if (isNil(cell.value) && isNil(textFormatPattern)) {
         type = 'z';

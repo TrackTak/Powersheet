@@ -1,4 +1,5 @@
 {
+  "_id": "617a64ce3857bf4d5cfbe4c3",
   "general": {
     "code": "AMZN",
     "name": "Amazon.com Inc",
@@ -10,7 +11,7 @@
     "countryISO": "US",
     "industry": "Internet Retail",
     "gicSubIndustry": "Internet & Direct Marketing Retail",
-    "updatedAt": "2021-10-27"
+    "updatedAt": "2021-10-28"
   },
   "financialStatements": {
     "incomeStatements": {
@@ -2801,11 +2802,11 @@
     }
   },
   "highlights": {
-    "marketCapitalization": 1709780238336,
+    "marketCapitalization": 1718095970304,
     "mostRecentQuarter": "2021-06-30",
-    "sharesOutstanding": 506440976.5472583
+    "sharesOutstanding": 506440982.96649367
   },
-  "price": 3376.0701,
+  "price": 3392.49,
   "pastThreeYearsAverageEffectiveTaxRate": 0.14256379710326667,
   "currentEquityRiskPremium": {
     "marginalTaxRate": 0.27,
@@ -2842,11 +2843,10 @@
     "equityReinvestmentRate": 0.036000000000000004,
     "preTaxOperatingMarginLeaseAndR&DAdjusted": 0.062400000000000004
   },
-  "riskFreeRate": 0.0161,
-  "estimatedCostOfDebt": 0.0237,
+  "riskFreeRate": 0.0155,
+  "estimatedCostOfDebt": 0.0231,
   "exchangeRates": {},
-  "governmentBondTenYearYield": 0.0161,
+  "governmentBondTenYearYield": 0.0155,
   "matureMarketEquityRiskPremium": 0.0472,
-  "lastExchangeRate": 1,
-  "_id": "61790d821d02b917f72016af"
+  "lastExchangeRate": 1
 }

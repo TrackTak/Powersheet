@@ -14,6 +14,7 @@ import {
 } from '../../Data';
 import { CellValue } from 'hyperformula';
 import { Group } from 'konva/lib/Group';
+import { isNil } from 'lodash';
 
 class StyleableCell extends Cell {
   text: Text;
@@ -197,28 +198,36 @@ class StyleableCell extends Cell {
     }
   }
 
-  setCellTextValue(value?: CellValue, textFormatPattern?: string) {
-    const { width } = this.getClientRectWithoutStroke();
-    let text = value;
+  setCellTextValue(cellValue?: string, textFormatPattern?: string) {
+    let value: CellValue | undefined =
+      this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
 
-    if (
-      textFormatPattern &&
-      !this.spreadsheet.data.spreadsheetData.showFormulas
-    ) {
-      try {
-        text = format(textFormatPattern, Number(text));
-      } catch (e) {
-        text = e as string;
-      }
-
-      try {
-        text = format(textFormatPattern, text);
-      } catch (e) {
-        text = e as string;
-      }
+    if (this.spreadsheet.data.spreadsheetData.showFormulas) {
+      value = cellValue;
     }
 
-    if (text) {
+    const { width } = this.getClientRectWithoutStroke();
+
+    if (!isNil(value)) {
+      let text = value;
+
+      if (
+        textFormatPattern &&
+        !this.spreadsheet.data.spreadsheetData.showFormulas
+      ) {
+        try {
+          text = format(textFormatPattern, Number(text));
+        } catch (e) {
+          text = e as string;
+        }
+
+        try {
+          text = format(textFormatPattern, text);
+        } catch (e) {
+          text = e as string;
+        }
+      }
+
       this.text.text(text.toString());
       // Only set the width for text wrapping to work
       this.text.width(width);
@@ -247,13 +256,6 @@ class StyleableCell extends Cell {
 
     this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
 
-    let value: CellValue | undefined =
-      this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
-
-    if (this.spreadsheet.data.spreadsheetData.showFormulas) {
-      value = cell?.value;
-    }
-
     const {
       textWrap,
       fontSize,
@@ -268,6 +270,7 @@ class StyleableCell extends Cell {
       verticalTextAlign,
       textFormatPattern,
       comment,
+      value,
     } = cell ?? {};
 
     this.setCellCommentMarker(comment);

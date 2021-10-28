@@ -46,8 +46,7 @@ class FormulaBar {
 
     if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
       this.spreadsheet.sheets.cellEditor.show(
-        this.spreadsheet.sheets.selector.selectedCell!,
-        false
+        this.spreadsheet.sheets.selector.selectedCell!
       );
     }
     this.spreadsheet.sheets.cellEditor.setTextContent(textContent ?? null);

@@ -617,10 +617,6 @@ Formulas.args = {
   },
 };
 
-interface IExtendedCellData extends ICellData {
-  dynamicFormat: 'currency';
-}
-
 const RealExampleTemplate: Story<IArgs> = (args) => {
   let FinancialPlugin = getTTFinancialPlugin();
 
@@ -642,16 +638,6 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
     spreadsheet?.updateViewport();
   }, 2000);
 
-  Object.keys(args.data!.cells!).forEach((key) => {
-    const cellData = args.data!.cells![key as CellId] as IExtendedCellData;
-
-    if (cellData.dynamicFormat === 'currency') {
-      if (!cellData.textFormatPattern?.includes('$')) {
-        cellData.textFormatPattern = '$' + cellData.textFormatPattern;
-      }
-    }
-  });
-
   return spreadsheet.spreadsheetEl;
 };
 
@@ -672,7 +658,7 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
   const data = args.data;
 
   const cell: Partial<ICellData> = {
-    comment: 'Performance of the each cell',
+    comment: 'Performance of each cell',
     borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
     fontColor: 'white',
     fontSize: 13,

@@ -638,20 +638,6 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
     spreadsheet?.updateViewport();
   }, 2000);
 
-  // interface IExtendedCellData extends ICellData {
-  //   dynamicFormat: 'currency';
-  // }
-
-  // Object.keys(args.data!.cells!).forEach((key) => {
-  //   const cellData = args.data!.cells![key as CellId] as IExtendedCellData;
-
-  //   if (cellData.dynamicFormat === 'currency') {
-  //     if (!cellData.textFormatPattern?.includes('$')) {
-  //       cellData.textFormatPattern = '$' + cellData.textFormatPattern;
-  //     }
-  //   }
-  // });
-
   return spreadsheet.spreadsheetEl;
 };
 

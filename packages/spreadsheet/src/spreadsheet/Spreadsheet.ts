@@ -18,6 +18,7 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
+import FunctionHelper from '../functionHelper/FunctionHelper';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -25,6 +26,7 @@ export interface ISpreadsheetConstructor {
   formulaBar?: FormulaBar;
   exporter?: Exporter;
   bottomBar?: BottomBar;
+  functionHelper?: FunctionHelper;
 }
 
 class Spreadsheet {
@@ -36,6 +38,7 @@ class Spreadsheet {
   data: Data;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  functionHelper?: FunctionHelper;
   exporter?: Exporter;
   hyperformula: HyperFormula;
   history: any;
@@ -53,6 +56,7 @@ class Spreadsheet {
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
+    this.functionHelper = params.functionHelper;
     this.hyperformula = params.hyperformula;
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
@@ -72,6 +76,7 @@ class Spreadsheet {
     this.formulaBar?.initialize(this);
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
+    this.functionHelper?.initialize(this);
     this.history = new Manager((data: string) => {
       const currentData = {
         data: this.data.spreadsheetData,

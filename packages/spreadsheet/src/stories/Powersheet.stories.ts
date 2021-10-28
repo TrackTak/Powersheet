@@ -658,7 +658,7 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
   const data = args.data;
 
   const cell: Partial<ICellData> = {
-    comment: 'Performance of the each cell',
+    comment: 'Performance of each cell',
     borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
     fontColor: 'white',
     fontSize: 13,

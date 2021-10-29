@@ -26,7 +26,7 @@
     "build:tsc:": "run-p build:tsc:*",
     "build:tsc:main": "tsc -p tsconfig.json",
     "build:tsc:module": "tsc -p tsconfig.module.json",
-    "build": "microbundle src/index.ts -f modern,esm,cjs --no-compress",
+    "build": "microbundle src/index.ts -f modern,esm,cjs",
     "watch:build": "microbundle watch src/index.ts -f modern,esm,cjs",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",

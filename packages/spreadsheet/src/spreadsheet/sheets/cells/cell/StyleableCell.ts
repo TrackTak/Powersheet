@@ -12,7 +12,7 @@ import {
   TextWrap,
   VerticalTextAlign,
 } from '../../Data';
-import { CellValue } from 'hyperformula';
+import { CellValue, DetailedCellError } from 'hyperformula';
 import { Group } from 'konva/lib/Group';
 import { isNil } from 'lodash';
 
@@ -211,7 +211,13 @@ class StyleableCell extends Cell {
     if (!isNil(value)) {
       let text = value;
 
-      if (
+      const cellType = this.spreadsheet.hyperformula.getCellValueType(
+        this.simpleCellAddress
+      );
+
+      if (cellType === 'ERROR') {
+        value = (value as DetailedCellError).value;
+      } else if (
         textFormatPattern &&
         !this.spreadsheet.data.spreadsheetData.showFormulas
       ) {

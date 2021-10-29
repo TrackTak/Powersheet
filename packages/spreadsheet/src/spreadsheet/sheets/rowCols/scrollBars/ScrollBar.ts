@@ -54,6 +54,7 @@ class ScrollBar {
 
     this.scrollBarEl.appendChild(this.scrollEl);
 
+    // FPS chrome reports incorrect values for setTimeout with scroll
     // 60 fps: (1000ms / 60fps = 16ms);
     this.throttledScroll = throttle(this.onScroll, 16);
 

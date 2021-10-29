@@ -1,6 +1,4 @@
-import SimpleCellAddress, {
-  CellId,
-} from '../spreadsheet/sheets/cells/cell/SimpleCellAddress';
+import SimpleCellAddress from '../spreadsheet/sheets/cells/cell/SimpleCellAddress';
 import { Story, Meta } from '@storybook/html';
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map';

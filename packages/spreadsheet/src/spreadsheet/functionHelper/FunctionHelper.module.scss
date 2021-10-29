@@ -14,6 +14,11 @@
   height: 100%;
 }
 
+.drawerEl {
+  padding: 0 30px 30px;
+  width: 350px;
+}
+
 .closeIcon {
   height: 23px;
   width: 23px;
@@ -21,4 +26,26 @@
 
 .closeButton {
   @include button;
+  margin-left: auto;
+  display: block;
+}
+
+.headerEl {
+  font-size: 1.4rem;
+  line-height: 1.15;
+  @include headerColor;
+}
+
+.paragraphEl {
+  font-size: 0.8rem;
+  color: #666666;
+  line-height: 1.25rem;
+}
+
+.header {
+  @include subHeader;
+}
+
+.code {
+  color: #6240c8;
 }

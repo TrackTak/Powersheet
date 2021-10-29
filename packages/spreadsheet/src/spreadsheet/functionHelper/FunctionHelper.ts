@@ -1,21 +1,23 @@
-import { prefix } from '../utils';
 import { Spreadsheet } from '../..';
 import styles from './FunctionHelper.module.scss';
 import { MDCDrawer } from '@material/drawer';
 import closeIcon from './close-icon.svg';
-
-const functionHelperPrefix = `${prefix}-function-helper`;
-
+import {
+  createCodeText,
+  createHeader,
+  createParagraph,
+  functionHelperPrefix,
+} from './functionHelperHtmlElementHelpers';
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement;
   drawerEl!: HTMLDivElement;
   drawerContentEl!: HTMLDivElement;
   topAppBarEl!: HTMLDivElement;
-  mainContentEl!: HTMLDivElement;
   drawer!: MDCDrawer;
-  topAppBar!: HTMLDivElement;
   closeIcon!: HTMLImageElement;
   closeButton!: HTMLButtonElement;
+  headerEl!: HTMLHeadElement;
+  textWrapper!: HTMLDivElement;
   spreadsheet!: Spreadsheet;
 
   initialize(spreadsheet: Spreadsheet) {
@@ -28,7 +30,11 @@ class FunctionHelper {
     );
 
     this.drawerEl = document.createElement('div');
-    this.drawerEl.classList.add('mdc-drawer', 'mdc-drawer--dismissible');
+    this.drawerEl.classList.add(
+      styles.drawerEl,
+      'mdc-drawer',
+      'mdc-drawer--dismissible'
+    );
 
     this.functionHelperEl.appendChild(this.drawerEl);
 
@@ -40,14 +46,10 @@ class FunctionHelper {
     );
 
     this.drawerContentEl.dir = 'ltr';
-    this.drawerContentEl.textContent = 'test';
 
     this.drawerEl.appendChild(this.drawerContentEl);
 
     this.functionHelperEl.dir = 'rtl';
-
-    this.topAppBarEl = document.createElement('div');
-    this.drawer = MDCDrawer.attachTo(this.drawerEl);
 
     this.closeIcon = document.createElement('img');
     this.closeIcon.classList.add(styles.closeIcon, `${functionHelperPrefix}`);
@@ -65,6 +67,35 @@ class FunctionHelper {
 
     this.drawerContentEl.appendChild(this.closeButton);
     this.closeButton.append(this.closeIcon);
+
+    this.textWrapper = document.createElement('div');
+    this.textWrapper.classList.add(
+      styles.textWrapper,
+      `${functionHelperPrefix}`
+    );
+
+    this.headerEl = document.createElement('h1');
+    this.headerEl.classList.add(styles.headerEl, `${functionHelperPrefix}`);
+    this.headerEl.innerHTML = 'FINANCIAL - FIN';
+
+    const { paragraphEl } = createParagraph(
+      'Fetches current or historical securities information from Tracktak Finance.'
+    );
+
+    const { header: headerUsage } = createHeader('Sample Usage');
+    const { header: headerSyntax } = createHeader('Syntax');
+    const { codeEl, code } = createCodeText('=FIN([attribute])');
+
+    this.drawerContentEl.appendChild(this.textWrapper);
+    this.textWrapper.appendChild(this.headerEl);
+    this.textWrapper.appendChild(paragraphEl);
+    this.textWrapper.appendChild(headerUsage);
+    this.textWrapper.appendChild(codeEl);
+    codeEl.appendChild(code);
+    this.textWrapper.appendChild(headerSyntax);
+
+    this.topAppBarEl = document.createElement('div');
+    this.drawer = MDCDrawer.attachTo(this.drawerEl);
   }
 }
 

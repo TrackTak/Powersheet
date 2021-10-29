@@ -81,5 +81,6 @@ yarn-error.log
 tsconfig.*.tsbuildinfo
 tsconfig.tsbuildinfo
 
-# spreadsheet
+# build
 dist
+out*

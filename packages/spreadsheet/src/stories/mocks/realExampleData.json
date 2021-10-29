@@ -20266,7 +20266,7 @@
       "3_0_0": {
           "value": "Black Scholes Employee Options Results",
           "id": "3_0_0",
-          "comment": "Calculated from the inputs you entered in the Employee Options section. We use the Black Scholes methodology to work out the estimated market price per employee option. We then minus this from the 'Equity' cell in the Valuation Output (cell B34).",
+          "comment": "Calculated from the inputs you entered in the Employee Options section. We use the Black Scholes methodology to work out the estimated market price per employee option. We then minus this from the 'Equity' cell in the Valuation Output (cell B39).",
           "horizontalTextAlign": "center",
           "underline": true,
           "bold": true

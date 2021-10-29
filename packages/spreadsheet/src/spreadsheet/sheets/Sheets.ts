@@ -445,65 +445,69 @@ class Sheets {
     );
   }
 
-  keyHandler = async (e: KeyboardEvent) => {
+  keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation();
 
-    switch (e.key) {
-      case 'Escape': {
-        break;
-      }
-      case 'Delete': {
-        this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.hyperformula.batch(() => {
-            this.selector.selectedCells.forEach((cell) => {
-              const simpleCellAddress = cell.simpleCellAddress;
+    new Promise((resolve) => {
+      switch (e.key) {
+        case 'Escape': {
+          break;
+        }
+        case 'Delete': {
+          this.spreadsheet.pushToHistory(() => {
+            this.spreadsheet.hyperformula.batch(() => {
+              this.selector.selectedCells.forEach((cell) => {
+                const simpleCellAddress = cell.simpleCellAddress;
 
-              this.spreadsheet.data.deleteCell(simpleCellAddress);
+                this.spreadsheet.data.deleteCell(simpleCellAddress);
+              });
             });
           });
-        });
-        break;
-      }
-      case e.ctrlKey && 'z': {
-        this.spreadsheet.undo();
-        break;
-      }
-      case e.ctrlKey && 'y': {
-        this.spreadsheet.redo();
-        break;
-      }
-      case e.ctrlKey && 'x': {
-        await this.clipboard.cut();
-        break;
-      }
-      case e.ctrlKey && 'c': {
-        await this.clipboard.copy();
-        break;
-      }
-      case e.ctrlKey && 'v': {
-        this.clipboard.paste();
-        break;
-      }
-      default:
-        if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
-          const selectedCell = this.selector.selectedCell!;
-          const serializedValue =
-            this.spreadsheet.hyperformula.getCellSerialized(
-              selectedCell.simpleCellAddress
-            );
-
-          if (serializedValue) {
-            this.cellEditor.clear();
-            this.cellEditor.show(selectedCell);
-            this.cellEditor.cellEditorEl.focus();
-          } else {
-            this.cellEditor.show(selectedCell);
-            this.cellEditor.setCellValue(selectedCell.simpleCellAddress);
-          }
+          break;
         }
-    }
+        case e.ctrlKey && 'z': {
+          this.spreadsheet.undo();
+          break;
+        }
+        case e.ctrlKey && 'y': {
+          this.spreadsheet.redo();
+          break;
+        }
+        case e.ctrlKey && 'x': {
+          this.clipboard.cut();
+          break;
+        }
+        case e.ctrlKey && 'c': {
+          this.clipboard.copy();
+          break;
+        }
+        case e.ctrlKey && 'v': {
+          this.clipboard.paste();
+          break;
+        }
+        default:
+          if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
+            const selectedCell = this.selector.selectedCell!;
+            const serializedValue =
+              this.spreadsheet.hyperformula.getCellSerialized(
+                selectedCell.simpleCellAddress
+              );
 
-    this.spreadsheet.updateViewport();
+            if (serializedValue) {
+              this.cellEditor.clear();
+              this.cellEditor.show(selectedCell);
+              this.cellEditor.cellEditorEl.focus();
+            } else {
+              this.cellEditor.show(selectedCell);
+              this.cellEditor.setCellValue(selectedCell.simpleCellAddress);
+            }
+          }
+      }
+
+      resolve(undefined);
+    }).then(() => {
+      this.spreadsheet.updateViewport();
+    });
   };
 
   isShapeOutsideOfViewport(shape: Group | Shape, margin?: Partial<Vector2d>) {

@@ -109,7 +109,9 @@ class Spreadsheet {
         this.sheets.createNewSheet(sheet);
       }
 
-      if (this.data.spreadsheetData.sheets) this.setCells();
+      if (this.data.spreadsheetData.sheets) {
+        this.setCells();
+      }
 
       this.isSaving = false;
 

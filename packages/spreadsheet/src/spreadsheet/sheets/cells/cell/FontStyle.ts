@@ -18,7 +18,9 @@ class FontStyle {
   }
 
   setStyle() {
-    this.text.fontStyle(this.getStyle());
+    const style = this.getStyle();
+
+    this.text.fontStyle(style);
   }
 }
 

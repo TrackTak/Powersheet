@@ -28,10 +28,14 @@ class StyleableCell extends Cell {
   ) {
     super(sheets, simpleCellAddress, group);
 
-    this.text = group.findOne('.text');
-    this.commentMarker = group.findOne<Line>('.commentMarker');
+    this.text = group.children!.find((x) => x.name() === 'text') as Text;
+    this.commentMarker = group.children!.find(
+      (x) => x.name() === 'commentMarker'
+    ) as Line;
 
-    const borders = group.find<Line>('.borderLine');
+    const borders = group.children!.filter(
+      (x) => x.name() === 'borderLine'
+    ) as Line[];
 
     this.borders = {
       borderLeft: borders[0],
@@ -44,12 +48,15 @@ class StyleableCell extends Cell {
   }
 
   setBottomBorder(borders?: BorderStyle[]) {
-    const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderBottom;
 
     if (borders?.includes('borderBottom')) {
-      border.y(clientRect.height);
-      border.points([0, 0, clientRect.width, 0]);
+      const { width, height } = this.rect.size();
+      const points = [0, 0, width, 0];
+
+      border.y(height);
+      border.points(points);
+
       border.show();
     } else {
       border.hide();
@@ -57,12 +64,15 @@ class StyleableCell extends Cell {
   }
 
   setRightBorder(borders?: BorderStyle[]) {
-    const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderRight;
 
     if (borders?.includes('borderRight')) {
-      border.x(clientRect.width);
-      border.points([0, 0, 0, clientRect.height]);
+      const { width, height } = this.rect.size();
+      const points = [0, 0, 0, height];
+
+      border.x(width);
+      border.points(points);
+
       border.show();
     } else {
       border.hide();
@@ -70,11 +80,13 @@ class StyleableCell extends Cell {
   }
 
   setTopBorder(borders?: BorderStyle[]) {
-    const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderTop;
 
     if (borders?.includes('borderTop')) {
-      border.points([0, 0, clientRect.width, 0]);
+      const { width } = this.rect.size();
+      const points = [0, 0, width, 0];
+
+      border.points(points);
       border.show();
     } else {
       border.hide();
@@ -82,11 +94,13 @@ class StyleableCell extends Cell {
   }
 
   setLeftBorder(borders?: BorderStyle[]) {
-    const clientRect = this.getClientRectWithoutStroke();
     const border = this.borders.borderLeft;
 
     if (borders?.includes('borderLeft')) {
-      border.points([0, 0, 0, clientRect.height]);
+      const { height } = this.rect.size();
+      const points = [0, 0, 0, height];
+
+      border.points(points);
       border.show();
     } else {
       border.hide();
@@ -94,102 +108,91 @@ class StyleableCell extends Cell {
   }
 
   setTextWrap(textWrap?: TextWrap) {
-    if (textWrap) {
-      this.text.wrap(textWrap);
-    }
+    this.text.wrap(textWrap ?? this.sheets.spreadsheet.styles.cell.text.wrap!);
   }
 
   setBackgroundColor(backgroundColor?: string) {
-    if (backgroundColor) {
-      this.rect.fill(backgroundColor);
-    }
+    this.rect.fill(
+      backgroundColor ?? this.sheets.spreadsheet.styles.cell.rect.fill!
+    );
   }
 
   setFontColor(fontColor?: string) {
-    if (fontColor) {
-      this.text.fill(fontColor);
-    }
+    this.text.fill(fontColor ?? this.sheets.spreadsheet.styles.cell.text.fill!);
   }
 
   setFontSize(fontSize?: number) {
-    if (fontSize) {
-      this.text.fontSize(fontSize);
-    }
+    this.text.fontSize(
+      fontSize ?? this.sheets.spreadsheet.styles.cell.text.fontSize!
+    );
   }
 
   setBold(bold?: boolean) {
-    if (bold) {
-      const italic =
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          this.simpleCellAddress.toCellId()
-        ]?.italic ?? false;
-      const fontStyle = new FontStyle(this.text, bold, italic);
+    const italic =
+      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+        this.simpleCellAddress.toCellId()
+      ]?.italic ?? false;
+    const fontStyle = new FontStyle(this.text, bold ?? false, italic);
 
-      fontStyle.setStyle();
-    }
+    fontStyle.setStyle();
   }
 
   setItalic(italic?: boolean) {
-    if (italic) {
-      const bold =
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          this.simpleCellAddress.toCellId()
-        ]?.bold ?? false;
-      const fontStyle = new FontStyle(this.text, bold, italic);
+    const bold =
+      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+        this.simpleCellAddress.toCellId()
+      ]?.bold ?? false;
+    const fontStyle = new FontStyle(this.text, bold, italic ?? false);
 
-      fontStyle.setStyle();
-    }
+    fontStyle.setStyle();
   }
 
   setStrikeThrough(strikeThrough?: boolean) {
-    if (strikeThrough) {
-      const underline =
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          this.simpleCellAddress.toCellId()
-        ]?.underline ?? false;
-      const textDecoration = new TextDecoration(
-        this.text,
-        strikeThrough,
-        underline
-      );
+    const underline =
+      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+        this.simpleCellAddress.toCellId()
+      ]?.underline ?? false;
+    const textDecoration = new TextDecoration(
+      this.text,
+      strikeThrough ?? false,
+      underline
+    );
 
-      textDecoration.setStyle();
-    }
+    textDecoration.setStyle();
   }
 
   setUnderline(underline?: boolean) {
-    if (underline) {
-      const strikeThrough =
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          this.simpleCellAddress.toCellId()
-        ]?.strikeThrough ?? false;
-      const textDecoration = new TextDecoration(
-        this.text,
-        strikeThrough,
-        underline
-      );
+    const strikeThrough =
+      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+        this.simpleCellAddress.toCellId()
+      ]?.strikeThrough ?? false;
+    const textDecoration = new TextDecoration(
+      this.text,
+      strikeThrough,
+      underline ?? false
+    );
 
-      textDecoration.setStyle();
-    }
+    textDecoration.setStyle();
   }
 
   setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
-    if (horizontalTextAlign) {
-      this.text.align(horizontalTextAlign);
-    }
+    this.text.align(
+      horizontalTextAlign ?? this.sheets.spreadsheet.styles.cell.text.align!
+    );
   }
 
   setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
-    if (verticalTextAlign) {
-      this.text.verticalAlign(verticalTextAlign);
-    }
+    this.text.verticalAlign(
+      verticalTextAlign ??
+        this.sheets.spreadsheet.styles.cell.text.verticalAlign!
+    );
   }
 
   setCellCommentMarker(comment?: string) {
     if (comment) {
-      const clientRect = this.getClientRectWithoutStroke();
+      const width = this.rect.width();
 
-      this.commentMarker.x(clientRect.width - 1);
+      this.commentMarker.x(width - 1);
       this.commentMarker.y(this.commentMarker.height() + 1);
 
       this.commentMarker.show();
@@ -200,18 +203,18 @@ class StyleableCell extends Cell {
 
   setCellTextValue(cellValue?: string, textFormatPattern?: string) {
     let value: CellValue | undefined =
-      this.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
+      this.sheets.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress);
 
-    if (this.spreadsheet.data.spreadsheetData.showFormulas) {
+    if (this.sheets.spreadsheet.data.spreadsheetData.showFormulas) {
       value = cellValue;
     }
 
-    const { width } = this.getClientRectWithoutStroke();
-
     if (!isNil(value)) {
+      const width = this.rect.width();
+
       let text = value;
 
-      const cellType = this.spreadsheet.hyperformula.getCellValueType(
+      const cellType = this.sheets.spreadsheet.hyperformula.getCellValueType(
         this.simpleCellAddress
       );
 
@@ -219,7 +222,7 @@ class StyleableCell extends Cell {
         value = (value as DetailedCellError).value;
       } else if (
         textFormatPattern &&
-        !this.spreadsheet.data.spreadsheetData.showFormulas
+        !this.sheets.spreadsheet.data.spreadsheetData.showFormulas
       ) {
         try {
           text = format(textFormatPattern, Number(text));
@@ -256,13 +259,7 @@ class StyleableCell extends Cell {
 
   updateStyles() {
     const cellId = this.simpleCellAddress.toCellId();
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
-
-    if (!this.group.parent) {
-      const stickyGroup = this.getStickyGroupCellBelongsTo();
-
-      this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
-    }
+    const cell = this.sheets.spreadsheet.data.spreadsheetData.cells?.[cellId];
 
     const {
       textWrap,
@@ -281,10 +278,11 @@ class StyleableCell extends Cell {
       value,
     } = cell ?? {};
 
-    // this.setCellCommentMarker(comment);
+    this.setCellTextValue(value, textFormatPattern);
+    this.setCellCommentMarker(comment);
+    this.setBackgroundColor(backgroundColor);
     this.setTextWrap(textWrap);
     this.setFontSize(fontSize);
-    this.setBackgroundColor(backgroundColor);
     this.setFontColor(fontColor);
     this.setBold(bold);
     this.setItalic(italic);
@@ -292,12 +290,17 @@ class StyleableCell extends Cell {
     this.setUnderline(underline);
     this.setHorizontalTextAlign(horizontalTextAlign);
     this.setVerticalTextAlign(verticalTextAlign);
-    this.setCellTextValue(value, textFormatPattern);
     this.setCellTextHeight();
-    // this.setLeftBorder(borders);
-    // this.setTopBorder(borders);
-    // this.setRightBorder(borders);
-    // this.setBottomBorder(borders);
+    this.setLeftBorder(borders);
+    this.setTopBorder(borders);
+    this.setRightBorder(borders);
+    this.setBottomBorder(borders);
+
+    if (!this.group.parent) {
+      const stickyGroup = this.getStickyGroupCellBelongsTo();
+
+      this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
+    }
   }
 }
 

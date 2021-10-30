@@ -24,9 +24,7 @@ class ScrollBar {
   type: RowColType;
   isCol: boolean;
   functions: IRowColFunctions;
-  layerListeningTimeout?: NodeJS.Timeout;
   pluralType: RowColsType;
-  isScrolling = false;
 
   constructor(public rowCols: RowCols) {
     this.rowCols = rowCols;
@@ -53,19 +51,6 @@ class ScrollBar {
     );
 
     this.scrollBarEl.appendChild(this.scrollEl);
-
-    function throttle(callbackFn, limit) {
-      let wait = false;
-      return function (e) {
-        if (!wait) {
-          callbackFn(e);
-          wait = true;
-          setTimeout(function () {
-            wait = false;
-          }, limit);
-        }
-      };
-    }
 
     // FPS chrome reports incorrect values for setTimeout with scroll
     // 60 fps: (1000ms / 60fps = 16ms);
@@ -145,8 +130,6 @@ class ScrollBar {
 
     const scrollPercent = scroll / scrollSize;
 
-    this.isScrolling = true;
-
     this.sheetViewportPosition.x = Math.trunc(
       this.spreadsheet.options[this.type].amount * scrollPercent
     );
@@ -176,13 +159,13 @@ class ScrollBar {
 
     newScroll *= -1;
 
-    // if (this.isCol) {
-    //   this.sheets.scrollGroups.ySticky.group.x(newScroll);
-    // } else {
-    //   this.sheets.scrollGroups.xSticky.group.y(newScroll);
-    // }
+    if (this.isCol) {
+      this.sheets.scrollGroups.ySticky.group.x(newScroll);
+    } else {
+      this.sheets.scrollGroups.xSticky.group.y(newScroll);
+    }
 
-    // this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
+    this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
@@ -191,9 +174,9 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    //this.rowCols.cacheOutOfViewportRowCols();
-    //this.rowCols.updateViewport();
-    //this.sheets.cells.cacheOutOfViewportCells();
+    this.rowCols.cacheOutOfViewportRowCols();
+    this.rowCols.updateViewport();
+    this.sheets.cells.cacheOutOfViewportCells();
     this.sheets.cells.updateViewport();
 
     if (this.sheets.cellEditor.currentScroll?.[this.type] !== this.scroll) {
@@ -201,17 +184,6 @@ class ScrollBar {
     } else {
       this.sheets.cellEditor.hideCellTooltip();
     }
-
-    if (this.layerListeningTimeout) {
-      clearTimeout(this.layerListeningTimeout);
-    }
-
-    this.layerListeningTimeout = setTimeout(() => {
-      this.sheets.layer.listening(true);
-      this.isScrolling = false;
-    }, 40);
-    // Improves performance by ~4fps
-    this.sheets.layer.listening(false);
 
     this.spreadsheet.eventEmitter.emit(
       this.isCol ? 'scrollHorizontal' : 'scrollVertical',

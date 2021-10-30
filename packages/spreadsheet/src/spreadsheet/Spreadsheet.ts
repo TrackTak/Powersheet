@@ -18,7 +18,6 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
-import { Text } from 'konva/lib/shapes/Text';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -27,29 +26,6 @@ export interface ISpreadsheetConstructor {
   exporter?: Exporter;
   bottomBar?: BottomBar;
 }
-
-interface ITextWidthCache {
-  [index: string]: number;
-}
-
-const sizeCache: ITextWidthCache = {};
-const _getTextWidth = Text.prototype._getTextWidth;
-
-Text.prototype._getTextWidth = function (...args) {
-  const text = args[0];
-  const font = this._getContextFont();
-  const key = font + text.length;
-
-  if (sizeCache[key]) {
-    return sizeCache[key];
-  }
-
-  const result = _getTextWidth.apply(this, args);
-
-  sizeCache[key] = result;
-
-  return result;
-};
 
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement;

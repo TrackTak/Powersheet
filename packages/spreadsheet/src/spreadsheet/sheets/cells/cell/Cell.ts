@@ -37,12 +37,13 @@ class Cell {
         name: 'rect',
       });
       this.group.add(this.rect);
+      this.updatePosition();
     }
 
-    this.update();
+    this.updateSize();
   }
 
-  update() {
+  updatePosition() {
     const { row, col } = this.simpleCellAddress;
 
     const position = {
@@ -50,12 +51,16 @@ class Cell {
       y: this.sheets.rows.getAxis(row) - this.sheets.getViewportVector().y,
     };
 
+    this.group.position(position);
+  }
+
+  updateSize() {
+    const { row, col } = this.simpleCellAddress;
+
     this.rect.size({
       width: this.sheets.cols.getSize(col),
       height: this.sheets.rows.getSize(row),
     });
-
-    this.group.position(position);
 
     this.setMergedCellPropertiesIfNeeded();
   }

@@ -258,9 +258,11 @@ class StyleableCell extends Cell {
     const cellId = this.simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
 
-    const stickyGroup = this.getStickyGroupCellBelongsTo();
+    if (!this.group.parent) {
+      const stickyGroup = this.getStickyGroupCellBelongsTo();
 
-    this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
+      this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
+    }
 
     const {
       textWrap,
@@ -279,7 +281,7 @@ class StyleableCell extends Cell {
       value,
     } = cell ?? {};
 
-    this.setCellCommentMarker(comment);
+    // this.setCellCommentMarker(comment);
     this.setTextWrap(textWrap);
     this.setFontSize(fontSize);
     this.setBackgroundColor(backgroundColor);
@@ -292,10 +294,10 @@ class StyleableCell extends Cell {
     this.setVerticalTextAlign(verticalTextAlign);
     this.setCellTextValue(value, textFormatPattern);
     this.setCellTextHeight();
-    this.setLeftBorder(borders);
-    this.setTopBorder(borders);
-    this.setRightBorder(borders);
-    this.setBottomBorder(borders);
+    // this.setLeftBorder(borders);
+    // this.setTopBorder(borders);
+    // this.setRightBorder(borders);
+    // this.setBottomBorder(borders);
   }
 }
 

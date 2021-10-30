@@ -54,6 +54,19 @@ class ScrollBar {
 
     this.scrollBarEl.appendChild(this.scrollEl);
 
+    function throttle(callbackFn, limit) {
+      let wait = false;
+      return function (e) {
+        if (!wait) {
+          callbackFn(e);
+          wait = true;
+          setTimeout(function () {
+            wait = false;
+          }, limit);
+        }
+      };
+    }
+
     // FPS chrome reports incorrect values for setTimeout with scroll
     // 60 fps: (1000ms / 60fps = 16ms);
     this.throttledScroll = throttle(this.onScroll, 16);
@@ -163,13 +176,13 @@ class ScrollBar {
 
     newScroll *= -1;
 
-    if (this.isCol) {
-      this.sheets.scrollGroups.ySticky.group.x(newScroll);
-    } else {
-      this.sheets.scrollGroups.xSticky.group.y(newScroll);
-    }
+    // if (this.isCol) {
+    //   this.sheets.scrollGroups.ySticky.group.x(newScroll);
+    // } else {
+    //   this.sheets.scrollGroups.xSticky.group.y(newScroll);
+    // }
 
-    this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
+    // this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;
@@ -178,9 +191,9 @@ class ScrollBar {
       totalPreviousCustomSizeDifferences;
 
     this.setYIndex();
-    this.rowCols.cacheOutOfViewportRowCols();
-    this.rowCols.updateViewport();
-    this.sheets.cells.cacheOutOfViewportCells();
+    //this.rowCols.cacheOutOfViewportRowCols();
+    //this.rowCols.updateViewport();
+    //this.sheets.cells.cacheOutOfViewportCells();
     this.sheets.cells.updateViewport();
 
     if (this.sheets.cellEditor.currentScroll?.[this.type] !== this.scroll) {

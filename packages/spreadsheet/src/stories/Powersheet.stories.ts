@@ -38,8 +38,8 @@ interface IArgs {
 }
 
 const eventLog = (event: string, ...args: any[]) => {
-  action(event)(...args);
-  console.log(event, ...args);
+  // action(event)(...args);
+  // console.log(event, ...args);
 };
 
 const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {

@@ -6,16 +6,25 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
-import { setCaretToEndOfElement } from '../../utils';
+import { prefix, setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
+// @ts-ignore
+import { FormulaLexer } from 'hyperformula/es/parser/FormulaParser';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
+import { createToken } from 'chevrotain';
+import type { ILexerConfig } from 'hyperformula/typings/parser/LexerConfig';
 
 export interface ICurrentScroll {
   row: number;
   col: number;
 }
+
+export const AnyInputCharacter = createToken({
+  name: '@@Powersheet_AnyInputCharacter',
+  pattern: /./,
+});
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement;
@@ -25,16 +34,34 @@ class CellEditor {
   spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
+  // formulaLexer: FormulaLexer;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
+    // debugger;
+    // const f = AnyInputCharacter;
+    // // @ts-ignore
+    // const config = this.spreadsheet.hyperformula._parser.lexer.lexerConfig;
+    // const lexerConfig: ILexerConfig = {
+    //   ...config,
+    //   allTokens: [...config.allTokens, AnyInputCharacter],
+    // };
+    // try {
+    //   // TODO: We should re-instantiate whenever `buildEngine` gets called
+    //   this.formulaLexer = new FormulaLexer(lexerConfig);
+    // } catch (error) {}
 
     this.cellEditorEl = document.createElement('div');
-    this.cellEditorEl.setAttribute('contentEditable', 'true');
-    this.cellEditorEl.classList.add(styles.cellEditor);
+    this.cellEditorEl.contentEditable = 'true';
+    this.cellEditorEl.spellcheck = false;
+    this.cellEditorEl.classList.add(`${prefix}-cell-editor`, styles.cellEditor);
+
     this.cellEditorContainerEl = document.createElement('div');
-    this.cellEditorContainerEl.classList.add(styles.cellEditorContainer);
+    this.cellEditorContainerEl.classList.add(
+      `${prefix}-cell-editor-container`,
+      styles.cellEditorContainer
+    );
     this.cellEditorContainerEl.appendChild(this.cellEditorEl);
     this.cellTooltip = delegate(this.cellEditorEl, {
       target: styles.cellEditor,
@@ -114,10 +141,99 @@ class CellEditor {
   };
 
   setTextContent(value: string | null) {
-    const textContent = value ?? null;
+    const goldenRatio = 0.618033988749895;
+    let hue = 34 / 360;
 
-    this.cellEditorEl.textContent = textContent;
-    this.spreadsheet.formulaBar?.setTextContent(textContent);
+    const getSyntaxColor = () => {
+      const color = `hsl(${Math.floor(hue * 360)}, 90%, 50%)`;
+
+      hue += goldenRatio;
+      hue %= 1;
+
+      return color;
+    };
+
+    const text = value ?? '';
+
+    // @ts-ignore
+    // const lexer = this.spreadsheet.hyperformula._parser.lexer;
+    debugger;
+    const d = this.spreadsheet.hyperformula.validateFormula('=A2+A4+3A2');
+
+    // const { tokens } = lexer.tokenizeFormula(value ?? '');
+
+    // interface ISplitPart {
+    //   startOffset: number;
+    //   endOffset: number;
+    //   referenceText: string;
+    // }
+
+    // const partsToSplit: ISplitPart[] = [];
+
+    // tokens.forEach((token: any) => {
+    //   if (token.tokenType.name === 'CellReference') {
+    //     partsToSplit.push({
+    //       startOffset: token.startOffset,
+    //       endOffset: token.endOffset,
+    //       referenceText: token.image,
+    //     });
+    //   }
+    // });
+
+    // const parts = [];
+
+    // const setNonReferenceSlicedSpan = (start: number, end?: number) => {
+    //   const slicedString = text.slice(start, end);
+    //   const span = document.createElement('span');
+
+    //   if (!slicedString.length) return;
+
+    //   span.classList.add(`${prefix}-token`);
+
+    //   span.textContent = slicedString;
+
+    //   parts.push(span);
+    // };
+
+    // if (partsToSplit.length && text.length) {
+    //   let prevIndex = 0;
+
+    //   partsToSplit.forEach(({ startOffset, endOffset, referenceText }) => {
+    //     setNonReferenceSlicedSpan(prevIndex, startOffset);
+
+    //     const formulaTokenSpan = document.createElement('span');
+
+    //     formulaTokenSpan.textContent = referenceText;
+    //     formulaTokenSpan.classList.add(`${prefix}-formula-token`);
+    //     formulaTokenSpan.style.color = getSyntaxColor();
+
+    //     parts.push(formulaTokenSpan);
+
+    //     prevIndex = endOffset + 1;
+    //   });
+
+    //   setNonReferenceSlicedSpan(
+    //     partsToSplit[partsToSplit.length - 1].endOffset + 1
+    //   );
+    // } else {
+    //   const span = document.createElement('span');
+
+    //   span.classList.add(`${prefix}-token`);
+
+    //   span.textContent = text;
+
+    //   parts.push(span);
+    // }
+
+    // parts.forEach((part) => {
+    //   this.cellEditorEl.appendChild(part);
+    // });
+
+    // this.cellEditorEl.appendChild(tokenElements);
+    // this.spreadsheet.formulaBar?.editableContent.appendChild(tokenElements);
+
+    setCaretToEndOfElement(this.cellEditorEl);
+
     this.spreadsheet.eventEmitter.emit('cellEditorChange', value);
   }
 
@@ -138,7 +254,9 @@ class CellEditor {
 
   onInput = (e: Event) => {
     const target = e.target as HTMLDivElement;
-    const textContent = target.firstChild?.textContent;
+    const textContent = target.textContent;
+
+    target.textContent = null;
 
     this.setTextContent(textContent ?? null);
 
@@ -169,8 +287,6 @@ class CellEditor {
       this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
     this.setTextContent(serializedValue?.toString() ?? null);
-
-    setCaretToEndOfElement(this.cellEditorEl);
 
     this.cellEditorEl.focus();
   }

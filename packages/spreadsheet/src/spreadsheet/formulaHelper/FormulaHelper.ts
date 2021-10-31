@@ -10,13 +10,13 @@ type FormulaHelperClickHandler = (item: string) => void;
 
 class FormulaHelper {
   formulaHelperEl: HTMLDivElement;
-  private formulaHelperListContainerEl: HTMLDivElement;
-  private helper: DelegateInstance;
-  private list?: HTMLUListElement;
+  formulaHelperListContainerEl: HTMLDivElement;
+  helper: DelegateInstance;
+  list?: HTMLUListElement;
 
   constructor(
-    private formulas: string[],
-    private onItemClick: FormulaHelperClickHandler
+    public formulas: string[],
+    public onItemClick: FormulaHelperClickHandler
   ) {
     const { formulaHelperListContainerEl, formulaHelperEl } =
       createWrapperContent();

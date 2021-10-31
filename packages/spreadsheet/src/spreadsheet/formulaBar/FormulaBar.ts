@@ -69,14 +69,14 @@ class FormulaBar {
       }
     }
 
-    const cellEditorTextContent =
-      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.textContent ?? null;
+    // const cellEditorChildren =
+    //   this.spreadsheet.sheets?.cellEditor?.cellEditorEl.children ?? null;
 
-    this.setTextContent(value ?? cellEditorTextContent);
-  }
+    // if (cellEditorChildren) {
+    //   this.editableContent.append(...(cellEditorChildren as any));
+    // }
 
-  setTextContent(textContent: string | null) {
-    this.editableContent.textContent = textContent;
+    //  this.setTextContent(value ?? cellEditorTextContent);
   }
 
   onKeyDown = (e: KeyboardEvent) => {

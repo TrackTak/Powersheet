@@ -114,7 +114,7 @@ class Selector {
         this.groupedCells?.[type].rect?.destroy();
 
         if (cells.length) {
-          const topLeftCellPosition = cells[0].rect.position();
+          const topLeftCellClientRect = cells[0].getClientRectWithoutStroke();
 
           let width = 0;
           let height = 0;
@@ -138,7 +138,7 @@ class Selector {
 
           this.groupedCells![type].rect = new Rect({
             ...this.spreadsheet.styles.selection,
-            ...topLeftCellPosition,
+            ...topLeftCellClientRect,
             name: 'selectionRect',
             stroke: undefined,
             width,
@@ -204,10 +204,13 @@ class Selector {
   moveSelection() {
     if (this.isInSelectionMode) {
       const { x, y } = this.sheets.sheet.getRelativePointerPosition();
-      const selectedCellPosition = this.selectedCell!.rect.position();
+      const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke();
 
       this.selectionArea = {
-        start: selectedCellPosition,
+        start: {
+          x: selectedCellRect.x,
+          y: selectedCellRect.y,
+        },
         end: {
           x,
           y,

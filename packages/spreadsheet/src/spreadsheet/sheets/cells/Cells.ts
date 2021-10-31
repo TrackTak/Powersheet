@@ -201,7 +201,10 @@ class Cells {
       !this.spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
     ) {
       const height = this.sheets.rows.getSize(simpleCellAddress.row);
-      const cellHeight = styleableCell.rect.height();
+      const cellHeight = Math.max(
+        styleableCell.rect.height(),
+        styleableCell.text.height()
+      );
 
       if (cellHeight > height) {
         this.spreadsheet.data.setRowCol(

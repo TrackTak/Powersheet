@@ -116,8 +116,6 @@ class Selector {
         if (cells.length) {
           const topLeftCellClientRect = cells[0].getClientRectWithoutStroke();
 
-          // const topLeftCellPosition = cells[0].group.position();
-
           let width = 0;
           let height = 0;
 

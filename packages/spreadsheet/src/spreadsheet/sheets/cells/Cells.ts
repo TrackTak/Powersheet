@@ -7,9 +7,6 @@ import { Group } from 'konva/lib/Group';
 import { Text } from 'konva/lib/shapes/Text';
 import { Line } from 'konva/lib/shapes/Line';
 import { isNil } from 'lodash';
-import { Node } from 'konva/lib/Node';
-import { ICellConfig } from '../../styles';
-import { ShapeConfig } from 'konva/lib/Shape';
 import RowColAddress from './cell/RowColAddress';
 
 class Cells {
@@ -52,52 +49,17 @@ class Cells {
       this.sheets.cols.numberOfCachedRowCols;
   }
 
-  private resetNodeAttrs(node: Node) {
-    const { name, ...attrs } = node.getAttrs();
-    const cellConfigKey = name as keyof ICellConfig;
-
-    const resetValues: Partial<ShapeConfig> = {};
-
-    for (const key in attrs) {
-      resetValues[key] =
-        this.spreadsheet.styles.cell[cellConfigKey]?.[key] ?? null;
-    }
-
-    node.setAttrs(resetValues);
-  }
-
-  // The reason we do this instead of destroy() & clone()
-  // is that this is much much faster in terms of performance
-  resetAttrs(cell: StyleableCell) {
-    this.resetNodeAttrs(cell.group);
-
-    cell.group.getChildren().forEach((child) => {
-      this.resetNodeAttrs(child);
-    });
-
-    cell.rect.setAttrs(this.getDefaultCellRectAttrs());
-  }
-
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
         cell.group.remove();
 
-        this.resetAttrs(cell);
         this.cellsMap.delete(cellId);
         this.cachedCellGroups.push(cell.group);
       }
     });
   }
-
   getHasCellData(simpleCellAddress: SimpleCellAddress) {
-    const sheetName =
-      this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? '';
-
-    if (!this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-      return false;
-    }
-
     const cellId = simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
     // Need to check hyperformula value too because some
@@ -145,6 +107,10 @@ class Cells {
   }
 
   getCellGroup() {
+    const cellGroup = new Group({
+      name: 'stylableCellGroup',
+      listening: false,
+    });
     const cellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
       ...this.getDefaultCellRectAttrs(),
@@ -161,10 +127,6 @@ class Cells {
     const cellText = new Text({
       name: 'text',
       ...this.spreadsheet.styles.cell.text,
-    });
-
-    const cellGroup = new Group({
-      name: 'stylableCellGroup',
     });
 
     const borderLines = [
@@ -191,8 +153,6 @@ class Cells {
   resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
       cell.group.remove();
-
-      this.resetAttrs(cell);
 
       this.cellsMap.delete(cellId);
       this.cachedCellGroups.push(cell.group);
@@ -241,7 +201,10 @@ class Cells {
       !this.spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
     ) {
       const height = this.sheets.rows.getSize(simpleCellAddress.row);
-      const cellHeight = styleableCell.getClientRectWithoutStroke().height;
+      const cellHeight = Math.max(
+        styleableCell.rect.height(),
+        styleableCell.text.height()
+      );
 
       if (cellHeight > height) {
         this.spreadsheet.data.setRowCol(
@@ -261,6 +224,13 @@ class Cells {
     const cellId = simpleCellAddress.toCellId();
     const mergedCellId =
       this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId];
+
+    const sheetName =
+      this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? '';
+
+    if (!this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
+      return;
+    }
 
     if (mergedCellId) {
       const mergedCell = this.cellsMap.get(mergedCellId);

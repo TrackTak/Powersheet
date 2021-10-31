@@ -22,7 +22,9 @@ class TextDecoration {
   }
 
   setStyle() {
-    this.text.textDecoration(this.getStyle());
+    const style = this.getStyle();
+
+    this.text.textDecoration(style);
   }
 }
 

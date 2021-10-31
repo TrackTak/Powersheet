@@ -1,12 +1,10 @@
 import { Group } from 'konva/lib/Group';
 import { Rect } from 'konva/lib/shapes/Rect';
-import Spreadsheet from '../../../Spreadsheet';
 import Sheets from '../../Sheets';
 import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 
 class Cell {
-  spreadsheet: Spreadsheet;
   rangeSimpleCellAddress: RangeSimpleCellAddress;
   group: Group;
   rect: Rect;
@@ -17,7 +15,6 @@ class Cell {
     group?: Group
   ) {
     this.sheets = sheets;
-    this.spreadsheet = this.sheets.spreadsheet;
     this.simpleCellAddress = simpleCellAddress;
     this.rangeSimpleCellAddress = new RangeSimpleCellAddress(
       simpleCellAddress,
@@ -26,23 +23,23 @@ class Cell {
 
     if (group) {
       this.group = group;
-      this.rect = group.findOne('.rect');
+      this.rect = group.children!.find((x) => x.name() === 'rect') as Rect;
     } else {
       this.group = new Group({
         name: 'cellGroup',
       });
       this.rect = new Rect({
-        ...this.spreadsheet.styles.cell.rect,
-        ...this.sheets.cells.getDefaultCellRectAttrs(),
+        ...this.sheets.spreadsheet.styles.cell.rect,
         name: 'rect',
       });
       this.group.add(this.rect);
     }
-
-    this.update();
+    this.rect.setAttrs(this.sheets.cells.getDefaultCellRectAttrs());
+    this.updatePosition();
+    this.updateSize();
   }
 
-  update() {
+  updatePosition() {
     const { row, col } = this.simpleCellAddress;
 
     const position = {
@@ -50,12 +47,16 @@ class Cell {
       y: this.sheets.rows.getAxis(row) - this.sheets.getViewportVector().y,
     };
 
+    this.group.position(position);
+  }
+
+  updateSize() {
+    const { row, col } = this.simpleCellAddress;
+
     this.rect.size({
       width: this.sheets.cols.getSize(col),
       height: this.sheets.rows.getSize(row),
     });
-
-    this.group.position(position);
 
     this.setMergedCellPropertiesIfNeeded();
   }
@@ -76,18 +77,16 @@ class Cell {
   }
 
   private setMergedCellPropertiesIfNeeded() {
-    this.spreadsheet.sheets.merger.setAssociatedMergedCellIds(
-      this.simpleCellAddress
-    );
+    this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
 
     const cellId = this.simpleCellAddress.toCellId();
     const mergedCellId =
-      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId];
+      this.sheets.merger.associatedMergedCellAddressMap[cellId];
 
     if (!mergedCellId) return;
 
     const mergedCell =
-      this.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
+      this.sheets.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
 
     const rangeSimpleCellAddress =
       RangeSimpleCellAddress.mergedCellToAddress(mergedCell);

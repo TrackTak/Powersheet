@@ -19,7 +19,12 @@ import {
   BottomBar,
 } from '..';
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter';
-import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
+import {
+  AlwaysSparse,
+  ConfigParams,
+  FunctionPlugin,
+  HyperFormula,
+} from 'hyperformula';
 // @ts-ignore
 import { getTTFinancialPlugin, finTranslations } from './getTTFinancialPlugin';
 import realExampleDataJSON from './mocks/realExampleData.json';
@@ -115,11 +120,12 @@ const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  hyperformula: HyperFormula
+  hyperformula: HyperFormula,
+  customRegisteredPlugins: FunctionPlugin[] = []
 ) => {
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
-  const exporter = new Exporter();
+  const exporter = new Exporter(customRegisteredPlugins);
   const bottomBar = new BottomBar();
 
   const trueArgs: [string, string] = ['TRUE', '=TRUE()'];
@@ -622,7 +628,8 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
 
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance()
+    getHyperformulaInstance(),
+    [FinancialPlugin]
   );
 
   // Simulate API call

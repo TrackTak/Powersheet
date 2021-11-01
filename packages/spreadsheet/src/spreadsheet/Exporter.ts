@@ -253,16 +253,16 @@ class Exporter {
     return workbook;
   }
 
-  exportWorkbook() {
-    return import('xlsx').then(({ writeFile, utils }) => {
-      const workbook = this.getWorkbook(utils);
+  async exportWorkbook() {
+    const { writeFile, utils } = await import('xlsx');
 
-      writeFile(
-        workbook,
-        this.spreadsheet.data.spreadsheetData.exportSpreadsheetName ??
-          this.spreadsheet.options.exportSpreadsheetName
-      );
-    });
+    const workbook = this.getWorkbook(utils);
+
+    writeFile(
+      workbook,
+      this.spreadsheet.data.spreadsheetData.exportSpreadsheetName ??
+        this.spreadsheet.options.exportSpreadsheetName
+    );
   }
 }
 

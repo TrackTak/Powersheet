@@ -49,6 +49,12 @@
   @include headerColor;
 }
 
+@mixin textDescription {
+  font-size: 0.8rem;
+  color: #1f1f1f;
+  line-height: 1.25rem;
+}
+
 @mixin headerColor {
   color: #333;
 }

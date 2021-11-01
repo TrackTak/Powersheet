@@ -16,7 +16,9 @@
 
 .drawerEl {
   padding: 0 30px 30px;
-  width: 350px;
+  width: 400px;
+  overflow: auto;
+  height: 100%;
 }
 
 .closeIcon {
@@ -37,9 +39,11 @@
 }
 
 .paragraphEl {
-  font-size: 0.8rem;
-  color: #666666;
-  line-height: 1.25rem;
+  @include textDescription;
+}
+
+.list {
+  @include textDescription;
 }
 
 .header {
@@ -48,4 +52,5 @@
 
 .code {
   color: #6240c8;
+  font-weight: bold;
 }

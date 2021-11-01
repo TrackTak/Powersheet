@@ -316,18 +316,16 @@ class RowCols {
 
     let totalPreviousCustomSizeDifferences = 0;
 
-    Object.keys(rowCols)
-      .sort(dataKeysComparer)
-      .forEach((key) => {
-        const sheetRowColId = key as SheetRowColId;
-        const sheetRowColAddress =
-          RowColAddress.sheetRowColIdToAddress(sheetRowColId);
-        const rowCol = data[this.pluralType]![sheetRowColId];
+    Object.keys(rowCols).forEach((key) => {
+      const sheetRowColId = key as SheetRowColId;
+      const sheetRowColAddress =
+        RowColAddress.sheetRowColIdToAddress(sheetRowColId);
+      const rowCol = data[this.pluralType]![sheetRowColId];
 
-        if (sheetRowColAddress.rowCol >= index) return;
+      if (sheetRowColAddress.rowCol >= index) return;
 
-        totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize;
-      });
+      totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize;
+    });
 
     const axis =
       defaultSize * index +

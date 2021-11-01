@@ -10,13 +10,20 @@ import SimpleCellAddress, {
 import RowColAddress, {
   SheetRowColId,
 } from './sheets/cells/cell/RowColAddress';
-import { CellType, CellValue, FunctionPlugin } from 'hyperformula';
+import { CellType, CellValue, FunctionPluginDefinition } from 'hyperformula';
+
+export interface ICustomRegisteredPluginDefinition {
+  implementedFunctions: FunctionPluginDefinition['implementedFunctions'];
+  aliases?: FunctionPluginDefinition['aliases'];
+}
 
 class Exporter {
   spreadsheet!: Spreadsheet;
 
-  constructor(public customRegisteredPlugins: FunctionPlugin[]) {
-    this.customRegisteredPlugins = customRegisteredPlugins;
+  constructor(
+    public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[]
+  ) {
+    this.customRegisteredPluginDefinitions = customRegisteredPluginDefinitions;
   }
 
   initialize(spreadsheet: Spreadsheet) {
@@ -137,21 +144,17 @@ class Exporter {
           });
         };
 
-        this.customRegisteredPlugins.forEach((customRegisteredPlugin) => {
-          // @ts-ignore
-          const aliases = customRegisteredPlugin.aliases as Object;
-          const implementedFunctions =
-            // @ts-ignore
-            customRegisteredPlugin.implementedFunctions as Object;
+        this.customRegisteredPluginDefinitions.forEach(
+          ({ aliases, implementedFunctions }) => {
+            Object.keys(aliases ?? {}).forEach((key) => {
+              setFormula(key);
+            });
 
-          Object.keys(aliases).forEach((key) => {
-            setFormula(key);
-          });
-
-          Object.keys(implementedFunctions).forEach((key) => {
-            setFormula(key);
-          });
-        });
+            Object.keys(implementedFunctions).forEach((key) => {
+              setFormula(key);
+            });
+          }
+        );
       }
 
       const value = worksheet[cellString].v ?? cell?.value;

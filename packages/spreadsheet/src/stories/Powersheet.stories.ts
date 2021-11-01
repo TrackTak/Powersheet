@@ -19,16 +19,12 @@ import {
   BottomBar,
 } from '..';
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter';
-import {
-  AlwaysSparse,
-  ConfigParams,
-  FunctionPlugin,
-  HyperFormula,
-} from 'hyperformula';
+import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
 import { getTTFinancialPlugin, finTranslations } from './getTTFinancialPlugin';
 import realExampleDataJSON from './mocks/realExampleData.json';
 import mockFinancialDataJSON from './mocks/mockFinancialData.json';
+import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter';
 
 const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
@@ -121,11 +117,11 @@ const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
 const buildSpreadsheetWithEverything = (
   args: IArgs,
   hyperformula: HyperFormula,
-  customRegisteredPlugins: FunctionPlugin[] = []
+  customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
 ) => {
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
-  const exporter = new Exporter(customRegisteredPlugins);
+  const exporter = new Exporter(customRegisteredPluginDefinitions);
   const bottomBar = new BottomBar();
 
   const trueArgs: [string, string] = ['TRUE', '=TRUE()'];
@@ -629,7 +625,13 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
     getHyperformulaInstance(),
-    [FinancialPlugin]
+    [
+      {
+        // @ts-ignore
+        implementedFunctions: FinancialPlugin.implementedFunctions,
+        aliases: FinancialPlugin.aliases,
+      },
+    ]
   );
 
   // Simulate API call

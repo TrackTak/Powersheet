@@ -6,115 +6,365 @@ import {
   createCodeText,
   createHeader,
   createParagraph,
+  createSubHeader,
   createSyntaxList,
   functionHelperPrefix,
 } from './functionHelperHtmlElementHelpers';
 
-const listOfAttributes = [
+const incomeStatementAttributes = [
   {
-    attributeName: 'revenue',
+    attributeName: '"revenue"',
   },
   {
-    attributeName: 'operatingIncome',
+    attributeName: '"costOfRevenue"',
   },
   {
-    attributeName: 'operatingMargin',
+    attributeName: '"grossProfit"',
   },
   {
-    attributeName: 'bookValueOfEquity',
+    attributeName: '"grossMargin"',
   },
   {
-    attributeName: 'bookValueOfDebt',
+    attributeName: '"sellingGeneralAdministrative"',
   },
   {
-    attributeName: 'investedCapital',
+    attributeName: '"sellingAndMarketingExpenses"',
   },
   {
-    attributeName: 'salesToCapitalRatio',
+    attributeName: '"researchDevelopment"',
   },
   {
-    attributeName: 'salesToCapitalRatio',
+    attributeName: '"effectOfAccountingCharges"',
   },
   {
-    attributeName: 'sharesOutstanding',
+    attributeName: '"operatingExpenses"',
   },
   {
-    attributeName: 'price',
+    attributeName: '"operatingIncome"',
   },
   {
-    attributeName: 'unleveredBeta',
+    attributeName: '"operatingMargin"',
   },
   {
-    attributeName: 'riskFreeRate',
+    attributeName: '"interestIncome"',
   },
   {
-    attributeName: 'equityRiskPremium',
+    attributeName: '"interestExpense"',
   },
   {
-    attributeName: 'marginalTaxRate',
+    attributeName: '"netInterestIncome"',
   },
   {
-    attributeName: 'standardDeviationInStockPrices',
+    attributeName: '"otherIncomeExpense"',
   },
   {
-    attributeName: 'adjDefaultSpread',
+    attributeName: '"incomeBeforeTax"',
   },
   {
-    attributeName: 'minorityInterest',
+    attributeName: '"incomeTaxExpense"',
   },
   {
-    attributeName: 'cashAndShortTermInvestments',
+    attributeName: '"effectiveTaxRate"',
   },
   {
-    attributeName: 'interestExpense',
+    attributeName: '"discontinuedOperations"',
   },
   {
-    attributeName: 'capitalLeaseObligations',
+    attributeName: '"minorityInterest"',
   },
   {
-    attributeName: 'marketCapitalization',
+    attributeName: '"netIncomeFromContinuingOps"',
   },
   {
-    attributeName: 'sales/Capital',
+    attributeName: '"netIncome"',
   },
   {
-    attributeName: 'matureMarketEquityRiskPremium',
+    attributeName: '"preferredStockAndOtherAdjustments"',
   },
   {
-    attributeName: 'pastThreeYearsAverageEffectiveTaxRate',
+    attributeName: '"netIncomeApplicableToCommonShares"',
   },
   {
-    attributeName: 'equityLeveredBeta',
+    attributeName: '"netMargin"',
   },
   {
-    attributeName: 'costOfCapital',
+    attributeName: '"ebit"',
   },
   {
-    attributeName: 'afterTaxROIC',
+    attributeName: '"depreciationAndAmortization"',
   },
   {
-    attributeName: 'preTaxOperatingMarginUnadjusted',
+    attributeName: '"nonRecurring"',
   },
   {
-    attributeName: 'annualAverageCAGRLastFiveYears',
+    attributeName: '"reconciledDepreciation"',
   },
   {
-    attributeName: 'description',
+    attributeName: '"otherItems"',
   },
   {
-    attributeName: 'currencyCode',
+    attributeName: '"ebitda"',
+  },
+];
+
+const balanceSheetAttributes = [
+  {
+    attributeName: '"cash"',
   },
   {
-    attributeName: 'code',
+    attributeName: '"shortTermInvestments"',
   },
   {
-    attributeName: 'exchange',
+    attributeName: '"cashAndShortTermInvestments"',
   },
   {
-    attributeName: 'name',
+    attributeName: '"netReceivables"',
   },
   {
-    attributeName: 'industryName',
+    attributeName: '"inventory"',
+  },
+  {
+    attributeName: '"otherCurrentAssets"',
+  },
+  {
+    attributeName: '"totalCurrentAssets"',
+  },
+  {
+    attributeName: '"longTermInvestments"',
+  },
+  {
+    attributeName: '"propertyPlantEquipment"',
+  },
+  {
+    attributeName: '"intangibleAssets"',
+  },
+  {
+    attributeName: '"goodWill"',
+  },
+  {
+    attributeName: '"otherAssets"',
+  },
+  {
+    attributeName: '"nonCurrentAssetsTotal"',
+  },
+  {
+    attributeName: '"totalAssets"',
+  },
+  {
+    attributeName: '"accountsPayable"',
+  },
+  {
+    attributeName: '"shortLongTermDebt"',
+  },
+  {
+    attributeName: '"otherCurrentLiab"',
+  },
+  {
+    attributeName: '"totalCurrentLiabilities"',
+  },
+  {
+    attributeName: '"longTermDebt"',
+  },
+  {
+    attributeName: '"capitalLeaseObligations"',
+  },
+  {
+    attributeName: '"longTermDebtAndCapitalLeases"',
+  },
+  {
+    attributeName: '"deferredLongTermLiab"',
+  },
+  {
+    attributeName: '"nonCurrentLiabilitiesOther"',
+  },
+  {
+    attributeName: '"nonCurrentLiabilitiesTotal"',
+  },
+  {
+    attributeName: '"totalLiab"',
+  },
+  {
+    attributeName: '"commonStock"',
+  },
+  {
+    attributeName: '"preferredStockTotalEquity"',
+  },
+  {
+    attributeName: '"retainedEarnings"',
+  },
+  {
+    attributeName: '"accumulatedOtherComprehensiveIncome"',
+  },
+  {
+    attributeName: '"additionalPaidInCapital"',
+  },
+  {
+    attributeName: '"treasuryStock"',
+  },
+  {
+    attributeName: '"capitalSurpluse"',
+  },
+  {
+    attributeName: '"otherStockholderEquity"',
+  },
+  {
+    attributeName: '"totalStockholderEquity"',
+  },
+  {
+    attributeName: '"minorityInterest"',
+  },
+  {
+    attributeName: '"totalEquity"',
+  },
+];
+
+const cashFlowStatementAttributes = [
+  {
+    attributeName: '"netIncome"',
+  },
+  {
+    attributeName: '"depreciation"',
+  },
+  {
+    attributeName: '"changeToAccountReceivables"',
+  },
+  {
+    attributeName: '"changeReceivables"',
+  },
+  {
+    attributeName: '"changeToInventory"',
+  },
+  {
+    attributeName: '"changeToLiabilities"',
+  },
+  {
+    attributeName: '"changeInWorkingCapital"',
+  },
+  {
+    attributeName: '"totalCashFromOperatingActivities"',
+  },
+  {
+    attributeName: '"investments"',
+  },
+  {
+    attributeName: '"otherCashflowsFromInvestingActivities"',
+  },
+  {
+    attributeName: '"totalCashflowsFromInvestingActivities"',
+  },
+  {
+    attributeName: '"salePurchaseOfStock"',
+  },
+  {
+    attributeName: '"netBorrowings"',
+  },
+  {
+    attributeName: '"dividendsPaid"',
+  },
+  {
+    attributeName: '"otherCashflowsFromFinancingActivities"',
+  },
+  {
+    attributeName: '"totalCashFromFinancingActivities"',
+  },
+  {
+    attributeName: '"beginPeriodCashFlow"',
+  },
+  {
+    attributeName: '"endPeriodCashFlow"',
+  },
+  {
+    attributeName: '"changeInCash"',
+  },
+  {
+    attributeName: '"capitalExpenditures"',
+  },
+  {
+    attributeName: '"freeCashFlow"',
+  },
+];
+
+const otherAttributes = [
+  {
+    attributeName: '"bookValueOfEquity"',
+  },
+  {
+    attributeName: '"bookValueOfDebt"',
+  },
+  {
+    attributeName: '"investedCapital"',
+  },
+  {
+    attributeName: '"salesToCapitalRatio"',
+  },
+  {
+    attributeName: '"sharesOutstanding"',
+  },
+  {
+    attributeName: '"price"',
+  },
+  {
+    attributeName: '"unleveredBeta"',
+  },
+  {
+    attributeName: '"riskFreeRate"',
+  },
+  {
+    attributeName: '"equityRiskPremium"',
+  },
+  {
+    attributeName: '"marginalTaxRate"',
+  },
+  {
+    attributeName: '"standardDeviationInStockPrices"',
+  },
+  {
+    attributeName: '"adjDefaultSpread"',
+  },
+  {
+    attributeName: '"marketCapitalization"',
+  },
+  {
+    attributeName: '"sales/Capital"',
+  },
+  {
+    attributeName: '"matureMarketEquityRiskPremium"',
+  },
+  {
+    attributeName: '"pastThreeYearsAverageEffectiveTaxRate"',
+  },
+  {
+    attributeName: '"equityLeveredBeta"',
+  },
+  {
+    attributeName: '"costOfCapital"',
+  },
+  {
+    attributeName: '"afterTaxROIC"',
+  },
+  {
+    attributeName: '"preTaxOperatingMarginUnadjusted"',
+  },
+  {
+    attributeName: '"annualAverageCAGRLastFiveYears"',
+  },
+  {
+    attributeName: '"description"',
+  },
+  {
+    attributeName: '"currencyCode"',
+  },
+  {
+    attributeName: '"code"',
+  },
+  {
+    attributeName: '"exchange"',
+  },
+  {
+    attributeName: '"name"',
+  },
+  {
+    attributeName: '"industryName"',
   },
 ];
 
@@ -128,6 +378,10 @@ const codeSyntaxElements = [
     syntaxName: 'attribute',
     description:
       '1st argument is required. Fetches current or historical securities information from Tracktak.',
+  },
+  {
+    syntaxName: '[mm/dd/yyy]',
+    description: 'The start date and end date format.',
   },
   {
     syntaxName: '[startDate]',
@@ -225,6 +479,14 @@ class FunctionHelper {
     const { header: headerSyntax } = createHeader('Syntax');
     const { header: headerAttributes } = createHeader('Attributes');
 
+    const { subHeader: incomeStatementSubHeader } =
+      createSubHeader('Income Statement');
+    const { subHeader: balanceSheetSubHeader } =
+      createSubHeader('Balance Sheet');
+    const { subHeader: cashFlowStatementSubHeader } =
+      createSubHeader('Cashflow Statement');
+    const { subHeader: otherSubHeader } = createSubHeader('Other');
+
     const { codeEl: codeSyntax } = createCodeText(
       '=FIN(attribute, [startDate], [endDate])'
     );
@@ -248,8 +510,30 @@ class FunctionHelper {
     });
 
     this.textWrapper.appendChild(headerAttributes);
+    this.textWrapper.appendChild(incomeStatementSubHeader);
 
-    listOfAttributes.forEach(({ attributeName }) => {
+    incomeStatementAttributes.forEach(({ attributeName }) => {
+      const { listEl } = createSyntaxList(attributeName);
+      this.textWrapper.appendChild(listEl);
+    });
+
+    this.textWrapper.appendChild(balanceSheetSubHeader);
+
+    balanceSheetAttributes.forEach(({ attributeName }) => {
+      const { listEl } = createSyntaxList(attributeName);
+      this.textWrapper.appendChild(listEl);
+    });
+
+    this.textWrapper.appendChild(cashFlowStatementSubHeader);
+
+    cashFlowStatementAttributes.forEach(({ attributeName }) => {
+      const { listEl } = createSyntaxList(attributeName);
+      this.textWrapper.appendChild(listEl);
+    });
+
+    this.textWrapper.appendChild(otherSubHeader);
+
+    otherAttributes.forEach(({ attributeName }) => {
       const { listEl } = createSyntaxList(attributeName);
       this.textWrapper.appendChild(listEl);
     });

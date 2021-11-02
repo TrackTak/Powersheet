@@ -11,6 +11,14 @@ export const createHeader = (headerText: string) => {
   return { header };
 };
 
+export const createSubHeader = (headerText: string) => {
+  const subHeader = document.createElement('h5');
+  subHeader.classList.add(styles.subHeader, `${functionHelperPrefix}`);
+  subHeader.textContent = headerText;
+
+  return { subHeader };
+};
+
 export const createCodeText = (codeText: string) => {
   const codeEl = document.createElement('p');
   const code = document.createElement('code');

@@ -5,7 +5,7 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
-import { prefix, setCaretToEndOfElement } from '../../utils';
+import { prefix, saveCaretPosition } from '../../utils';
 import { HyperFormula } from 'hyperformula';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
@@ -26,6 +26,7 @@ class CellEditor {
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
   cellHighlighter: CellHighlighter;
+  currentCaretPosition: number | null = null;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -143,8 +144,6 @@ class CellEditor {
       );
     });
 
-    setCaretToEndOfElement(this.cellEditorEl);
-
     this.spreadsheet.eventEmitter.emit('cellEditorChange', value);
   }
 
@@ -167,7 +166,11 @@ class CellEditor {
     const target = e.target as HTMLDivElement;
     const textContent = target.textContent;
 
+    const restoreCaretPosition = saveCaretPosition(this.cellEditorEl);
+
     this.setContentEditable(textContent ?? null);
+
+    restoreCaretPosition();
 
     const isFormulaInput = textContent?.startsWith('=');
 

@@ -82,15 +82,43 @@ export const getColumnHeader = (number: number) => {
   return columnHeader;
 };
 
-export const setCaretToEndOfElement = (element: HTMLElement) => {
-  const range = document.createRange();
-  const sel = window.getSelection();
+export const saveCaretPosition = (node: Node) => {
+  const selection = window.getSelection();
+  const range = selection?.getRangeAt(0);
 
-  range.selectNodeContents(element);
-  range.collapse(false);
+  range?.setStart(node, 0);
 
-  sel?.removeAllRanges();
-  sel?.addRange(range);
+  const length = range?.toString().length;
 
-  range.detach();
+  return () => {
+    if (!length) return;
+
+    const pos = getTextNodeAtPosition(node, length);
+
+    selection?.removeAllRanges();
+
+    const range = new Range();
+
+    range.setStart(pos.node, pos.position);
+    selection?.addRange(range);
+  };
+};
+
+const getTextNodeAtPosition = (node: Node, index: number) => {
+  const NODE_TYPE = NodeFilter.SHOW_TEXT;
+  const treeWalker = document.createTreeWalker(node, NODE_TYPE, (elem) => {
+    if (elem.textContent && index > elem.textContent.length) {
+      index -= elem.textContent.length;
+
+      return NodeFilter.FILTER_REJECT;
+    }
+    return NodeFilter.FILTER_ACCEPT;
+  });
+
+  const c = treeWalker.nextNode();
+
+  return {
+    node: c ? c : node,
+    position: index,
+  };
 };

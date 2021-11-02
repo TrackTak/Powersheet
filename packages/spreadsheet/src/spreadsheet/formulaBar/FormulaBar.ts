@@ -1,7 +1,7 @@
 import CellHighlighter from '../cellHighlighter/CellHighlighter';
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
-import { prefix, setCaretToEndOfElement } from '../utils';
+import { prefix, saveCaretPosition } from '../utils';
 import styles from './FormulaBar.module.scss';
 import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
 
@@ -50,6 +50,8 @@ class FormulaBar {
     const target = e.target as HTMLDivElement;
     const textContent = target.textContent;
 
+    const restoreCaretPosition = saveCaretPosition(this.editableContent);
+
     if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
       this.spreadsheet.sheets.cellEditor.show(
         this.spreadsheet.sheets.selector.selectedCell!
@@ -57,7 +59,7 @@ class FormulaBar {
     }
     this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null);
 
-    setCaretToEndOfElement(this.editableContent);
+    restoreCaretPosition();
   };
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {

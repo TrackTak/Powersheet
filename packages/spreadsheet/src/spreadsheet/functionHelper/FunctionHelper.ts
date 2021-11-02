@@ -298,43 +298,16 @@ const otherAttributes = [
     attributeName: '"salesToCapitalRatio"',
   },
   {
-    attributeName: '"sharesOutstanding"',
-  },
-  {
-    attributeName: '"price"',
-  },
-  {
-    attributeName: '"unleveredBeta"',
-  },
-  {
-    attributeName: '"riskFreeRate"',
-  },
-  {
-    attributeName: '"equityRiskPremium"',
-  },
-  {
     attributeName: '"marginalTaxRate"',
   },
   {
     attributeName: '"standardDeviationInStockPrices"',
   },
   {
-    attributeName: '"adjDefaultSpread"',
-  },
-  {
     attributeName: '"marketCapitalization"',
   },
   {
-    attributeName: '"sales/Capital"',
-  },
-  {
-    attributeName: '"matureMarketEquityRiskPremium"',
-  },
-  {
     attributeName: '"pastThreeYearsAverageEffectiveTaxRate"',
-  },
-  {
-    attributeName: '"equityLeveredBeta"',
   },
   {
     attributeName: '"costOfCapital"',
@@ -348,6 +321,30 @@ const otherAttributes = [
   {
     attributeName: '"annualAverageCAGRLastFiveYears"',
   },
+];
+
+const riskPremiumsAndBetasAttributes = [
+  {
+    attributeName: '"unleveredBeta"',
+  },
+  {
+    attributeName: '"equityLeveredBeta"',
+  },
+  {
+    attributeName: '"riskFreeRate"',
+  },
+  {
+    attributeName: '"equityRiskPremium"',
+  },
+  {
+    attributeName: '"adjDefaultSpread"',
+  },
+  {
+    attributeName: '"matureMarketEquityRiskPremium"',
+  },
+];
+
+const generalAttributes = [
   {
     attributeName: '"description"',
   },
@@ -362,6 +359,12 @@ const otherAttributes = [
   },
   {
     attributeName: '"name"',
+  },
+  {
+    attributeName: '"price"',
+  },
+  {
+    attributeName: '"sharesOutstanding"',
   },
   {
     attributeName: '"industryName"',
@@ -485,6 +488,10 @@ class FunctionHelper {
       createSubHeader('Balance Sheet');
     const { subHeader: cashFlowStatementSubHeader } =
       createSubHeader('Cashflow Statement');
+    const { subHeader: riskPremiumsAndBetasSubHeader } = createSubHeader(
+      'Risk Premiums and Betas'
+    );
+    const { subHeader: generalSubHeader } = createSubHeader('General');
     const { subHeader: otherSubHeader } = createSubHeader('Other');
 
     const { codeEl: codeSyntax } = createCodeText(
@@ -527,6 +534,20 @@ class FunctionHelper {
     this.textWrapper.appendChild(cashFlowStatementSubHeader);
 
     cashFlowStatementAttributes.forEach(({ attributeName }) => {
+      const { listEl } = createSyntaxList(attributeName);
+      this.textWrapper.appendChild(listEl);
+    });
+
+    this.textWrapper.appendChild(riskPremiumsAndBetasSubHeader);
+
+    riskPremiumsAndBetasAttributes.forEach(({ attributeName }) => {
+      const { listEl } = createSyntaxList(attributeName);
+      this.textWrapper.appendChild(listEl);
+    });
+
+    this.textWrapper.appendChild(generalSubHeader);
+
+    generalAttributes.forEach(({ attributeName }) => {
       const { listEl } = createSyntaxList(attributeName);
       this.textWrapper.appendChild(listEl);
     });

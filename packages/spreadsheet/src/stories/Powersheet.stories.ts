@@ -25,6 +25,7 @@ import { getTTFinancialPlugin, finTranslations } from './getTTFinancialPlugin';
 import realExampleDataJSON from './mocks/realExampleData.json';
 import mockFinancialDataJSON from './mocks/mockFinancialData.json';
 import FunctionHelper from '../spreadsheet/functionHelper/FunctionHelper';
+import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter';
 
 const realExampleData = realExampleDataJSON as ISpreadsheetData;
 
@@ -116,13 +117,25 @@ const buildOnlySpreadsheet = (args: IArgs, hyperformula: HyperFormula) => {
 
 const buildSpreadsheetWithEverything = (
   args: IArgs,
-  hyperformula: HyperFormula
+  hyperformula: HyperFormula,
+  customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
 ) => {
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
-  const exporter = new Exporter();
+  const exporter = new Exporter(customRegisteredPluginDefinitions);
   const bottomBar = new BottomBar();
   const functionHelper = new FunctionHelper();
+
+  const trueArgs: [string, string] = ['TRUE', '=TRUE()'];
+  const falseArgs: [string, string] = ['FALSE', '=FALSE()'];
+
+  if (hyperformula.isItPossibleToAddNamedExpression(...trueArgs)) {
+    hyperformula.addNamedExpression(...trueArgs);
+  }
+
+  if (hyperformula.isItPossibleToAddNamedExpression(...falseArgs)) {
+    hyperformula.addNamedExpression(...falseArgs);
+  }
 
   const spreadsheet = getSpreadsheet(args, {
     hyperformula,
@@ -379,15 +392,6 @@ CustomSizeSpreadsheet.args = {
   },
 };
 
-const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
-  return buildSpreadsheetWithEverything(
-    args,
-    getHyperformulaInstance({
-      currencySymbol: Object.values(currencySymbolMap),
-    })
-  ).spreadsheetEl;
-};
-
 const MultipleSpreadsheetsTemplate: Story = () => {
   const firstSpreadsheetArgs = {
     data: {
@@ -434,9 +438,25 @@ const MultipleSpreadsheetsTemplate: Story = () => {
 
 export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({});
 
+const AllCurrencySymbolsTemplate: Story<IArgs> = (args) => {
+  return buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance({
+      currencySymbol: Object.values(currencySymbolMap),
+    })
+  ).spreadsheetEl;
+};
+
 export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({});
 
 AllCurrencySymbols.args = {
+  options: {
+    textPatternFormats: {
+      usCurrency: '$#,##0.##',
+      israeliCurrency: '₪#,##0.##',
+      gbpCurrency: '£#,##0.##',
+    },
+  },
   data: {
     sheets: {
       0: {
@@ -454,18 +474,22 @@ AllCurrencySymbols.args = {
       '0_1_0': {
         id: '0_1_0',
         value: '$33334.33',
+        textFormatPattern: '$#,##0.##',
       },
       '0_1_1': {
         id: '0_1_1',
         value: '₪22.2',
+        textFormatPattern: '₪#,##0.##',
       },
       '0_3_3': {
         id: '0_3_3',
         value: '£33.3',
+        textFormatPattern: '£#,##0.##',
       },
       '0_4_1': {
         id: '0_4_1',
         value: '=A2+B2+D4',
+        textFormatPattern: '#,##0.##',
       },
     },
   },
@@ -604,7 +628,14 @@ const RealExampleTemplate: Story<IArgs> = (args) => {
 
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance()
+    getHyperformulaInstance(),
+    [
+      {
+        // @ts-ignore
+        implementedFunctions: FinancialPlugin.implementedFunctions,
+        aliases: FinancialPlugin.aliases,
+      },
+    ]
   );
 
   // Simulate API call
@@ -625,14 +656,20 @@ export const RealExample = RealExampleTemplate.bind({});
 
 RealExample.args = {
   data: realExampleData,
+  options: {
+    textPatternFormats: {
+      currency: '$#,##0.##',
+      million: '#,###.##,,',
+      'million-currency': '$#,###.##,,',
+    },
+  },
 };
 
 const SpreadsheetPerformanceTemplate: Story<IArgs> = (args) => {
   const data = args.data;
 
   const cell: Partial<ICellData> = {
-    comment: 'Performance of the each cell',
-    borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+    comment: 'Performance of each cell',
     fontColor: 'white',
     fontSize: 13,
     textWrap: 'wrap',

@@ -395,6 +395,7 @@ class Toolbar {
       cell.group.y(cell.group.y() + viewportVector.y);
 
       this.spreadsheet.sheets.cellEditor.show(cell);
+      this.spreadsheet.sheets.cellEditor.setCellValue(cell.simpleCellAddress);
       this.spreadsheet.sheets.cellEditor.setTextContent(
         `=${functionName}(${topLeftString}:${bottomRightString})`
       );
@@ -402,6 +403,9 @@ class Toolbar {
       const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
 
       this.spreadsheet.sheets.cellEditor.show(selectedCell);
+      this.spreadsheet.sheets.cellEditor.setCellValue(
+        selectedCell.simpleCellAddress
+      );
       this.spreadsheet.sheets.cellEditor.setTextContent(`=${functionName}()`);
     }
   }

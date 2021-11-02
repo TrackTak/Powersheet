@@ -8,6 +8,9 @@ import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
 import { setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
+import { isPercent } from 'numfmt';
+import { ICellData } from '../Data';
+import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
 
 export interface ICurrentScroll {
   row: number;
@@ -59,6 +62,10 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress;
+    const cell =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ];
     const cellValue =
       this.spreadsheet.hyperformula
         .getCellValue(simpleCellAddress)
@@ -69,9 +76,19 @@ class CellEditor {
       const value = textContent ? textContent : undefined;
 
       if (cellValue !== value) {
-        this.spreadsheet.data.setCell(simpleCellAddress, {
+        const newCell: Omit<ICellData, 'id'> = {
           value,
-        });
+        };
+
+        if (isPercent(value)) {
+          if (!isPercent(cell?.textFormatPattern)) {
+            newCell.textFormatPattern = '0.00%';
+          }
+        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
+          newCell.value += '%';
+        }
+
+        this.spreadsheet.data.setCell(simpleCellAddress, newCell);
       }
     });
   }
@@ -134,30 +151,28 @@ class CellEditor {
     }
   };
 
-  show(cell: Cell, setTextContent = true) {
+  show(cell: Cell) {
     this.currentCell = cell;
     this.currentScroll = {
       row: this.sheet.rows.scrollBar.scroll,
       col: this.sheet.cols.scrollBar.scroll,
     };
 
-    const simpleCellAddress = cell.simpleCellAddress;
-
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
     this.setCellEditorElPosition(cell.group.getClientRect());
+  }
 
-    if (setTextContent) {
-      const serializedValue =
-        this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
+  setCellValue(simpleCellAddress: SimpleCellAddress) {
+    const serializedValue =
+      this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-      this.setTextContent(serializedValue?.toString() ?? null);
+    this.setTextContent(serializedValue?.toString() ?? null);
 
-      setCaretToEndOfElement(this.cellEditorEl);
+    setCaretToEndOfElement(this.cellEditorEl);
 
-      this.cellEditorEl.focus();
-    }
+    this.cellEditorEl.focus();
   }
 
   clear() {

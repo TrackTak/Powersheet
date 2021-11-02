@@ -21,11 +21,12 @@ class SelectedCell extends Cell {
   }
 
   private setInnerRectProperties() {
-    const { strokeWidth, stroke } = this.spreadsheet.styles.selectionFirstCell;
-    const rect = this.getClientRectWithoutStroke();
+    const { strokeWidth, stroke } =
+      this.sheets.spreadsheet.styles.selectionFirstCell;
+    const size = this.rect.size();
 
     const rectConfig: RectConfig = {
-      ...this.spreadsheet.styles.selectionFirstCell,
+      ...this.sheets.spreadsheet.styles.selectionFirstCell,
       stroke: undefined,
     };
 
@@ -34,8 +35,8 @@ class SelectedCell extends Cell {
     const innerRectConfig: RectConfig = {
       x: strokeWidth! / 2,
       y: strokeWidth! / 2,
-      width: rect.width - strokeWidth!,
-      height: rect.height - strokeWidth!,
+      width: size.width - strokeWidth!,
+      height: size.height - strokeWidth!,
       stroke,
       strokeWidth,
     };

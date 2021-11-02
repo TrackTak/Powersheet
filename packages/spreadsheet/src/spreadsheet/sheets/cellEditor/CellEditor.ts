@@ -1,7 +1,6 @@
 import { IRect } from 'konva/lib/types';
 import Sheet from '../Sheets';
 import styles from './CellEditor.module.scss';
-
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
@@ -9,22 +8,15 @@ import Cell from '../cells/cell/Cell';
 import { prefix, setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
 // @ts-ignore
-import { FormulaLexer } from 'hyperformula/es/parser/FormulaParser';
+import { CellReference } from 'hyperformula/es/parser/LexerConfig';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
-import { createToken } from 'chevrotain';
-import type { ILexerConfig } from 'hyperformula/typings/parser/LexerConfig';
 
 export interface ICurrentScroll {
   row: number;
   col: number;
 }
-
-export const AnyInputCharacter = createToken({
-  name: '@@Powersheet_AnyInputCharacter',
-  pattern: /./,
-});
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement;
@@ -34,23 +26,10 @@ class CellEditor {
   spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
-  // formulaLexer: FormulaLexer;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
-    // debugger;
-    // const f = AnyInputCharacter;
-    // // @ts-ignore
-    // const config = this.spreadsheet.hyperformula._parser.lexer.lexerConfig;
-    // const lexerConfig: ILexerConfig = {
-    //   ...config,
-    //   allTokens: [...config.allTokens, AnyInputCharacter],
-    // };
-    // try {
-    //   // TODO: We should re-instantiate whenever `buildEngine` gets called
-    //   this.formulaLexer = new FormulaLexer(lexerConfig);
-    // } catch (error) {}
 
     this.cellEditorEl = document.createElement('div');
     this.cellEditorEl.contentEditable = 'true';
@@ -155,81 +134,80 @@ class CellEditor {
 
     const text = value ?? '';
 
+    // TODO: Remove all this when https://github.com/handsontable/hyperformula/issues/854
+    // is done
     // @ts-ignore
-    // const lexer = this.spreadsheet.hyperformula._parser.lexer;
-    debugger;
-    const d = this.spreadsheet.hyperformula.validateFormula('=A2+A4+3A2');
+    const lexer = this.spreadsheet.hyperformula._parser.lexer;
 
-    // const { tokens } = lexer.tokenizeFormula(value ?? '');
+    const { tokens } = lexer.tokenizeFormula(text)
 
-    // interface ISplitPart {
-    //   startOffset: number;
-    //   endOffset: number;
-    //   referenceText: string;
-    // }
+    interface ISplitPart {
+      startOffset: number;
+      endOffset: number;
+      referenceText: string;
+    }
 
-    // const partsToSplit: ISplitPart[] = [];
+    const partsToSplit: ISplitPart[] = [];
 
-    // tokens.forEach((token: any) => {
-    //   if (token.tokenType.name === 'CellReference') {
-    //     partsToSplit.push({
-    //       startOffset: token.startOffset,
-    //       endOffset: token.endOffset,
-    //       referenceText: token.image,
-    //     });
-    //   }
-    // });
+    tokens.forEach((token: any) => {
+      if (token.tokenType.name === 'CellReference') {
+        partsToSplit.push({
+          startOffset: token.startOffset,
+          endOffset: token.endOffset,
+          referenceText: token.image,
+        });
+      }
+    });
 
-    // const parts = [];
+    const parts = [];
 
-    // const setNonReferenceSlicedSpan = (start: number, end?: number) => {
-    //   const slicedString = text.slice(start, end);
-    //   const span = document.createElement('span');
+    const setNonReferenceSlicedSpan = (start: number, end?: number) => {
+      const slicedString = text.slice(start, end);
+      const span = document.createElement('span');
 
-    //   if (!slicedString.length) return;
+      if (!slicedString.length) return;
 
-    //   span.classList.add(`${prefix}-token`);
+      span.classList.add(`${prefix}-token`);
 
-    //   span.textContent = slicedString;
+      span.textContent = slicedString;
 
-    //   parts.push(span);
-    // };
+      parts.push(span);
+    };
 
-    // if (partsToSplit.length && text.length) {
-    //   let prevIndex = 0;
+    if (partsToSplit.length && text.length) {
+      let prevIndex = 0;
 
-    //   partsToSplit.forEach(({ startOffset, endOffset, referenceText }) => {
-    //     setNonReferenceSlicedSpan(prevIndex, startOffset);
+      partsToSplit.forEach(({ startOffset, endOffset, referenceText }) => {
+        setNonReferenceSlicedSpan(prevIndex, startOffset);
 
-    //     const formulaTokenSpan = document.createElement('span');
+        const formulaTokenSpan = document.createElement('span');
 
-    //     formulaTokenSpan.textContent = referenceText;
-    //     formulaTokenSpan.classList.add(`${prefix}-formula-token`);
-    //     formulaTokenSpan.style.color = getSyntaxColor();
+        formulaTokenSpan.textContent = referenceText;
+        formulaTokenSpan.classList.add(`${prefix}-formula-token`);
+        formulaTokenSpan.style.color = getSyntaxColor();
 
-    //     parts.push(formulaTokenSpan);
+        parts.push(formulaTokenSpan);
 
-    //     prevIndex = endOffset + 1;
-    //   });
+        prevIndex = endOffset + 1;
+      });
 
-    //   setNonReferenceSlicedSpan(
-    //     partsToSplit[partsToSplit.length - 1].endOffset + 1
-    //   );
-    // } else {
-    //   const span = document.createElement('span');
+      setNonReferenceSlicedSpan(
+        partsToSplit[partsToSplit.length - 1].endOffset + 1
+      );
+    } else {
+      const span = document.createElement('span');
 
-    //   span.classList.add(`${prefix}-token`);
+      span.classList.add(`${prefix}-token`);
 
-    //   span.textContent = text;
+      span.textContent = text;
 
-    //   parts.push(span);
-    // }
+      parts.push(span);
+    }
 
-    // parts.forEach((part) => {
-    //   this.cellEditorEl.appendChild(part);
-    // });
+    parts.forEach((part) => {
+      this.cellEditorEl.appendChild(part);
+    });
 
-    // this.cellEditorEl.appendChild(tokenElements);
     // this.spreadsheet.formulaBar?.editableContent.appendChild(tokenElements);
 
     setCaretToEndOfElement(this.cellEditorEl);

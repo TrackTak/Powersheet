@@ -65,7 +65,6 @@
   },
   "dependencies": {
     "change-case": "^4.1.2",
-    "chevrotain": "^9.1.0",
     "konva": "^8.2.2",
     "lodash": "^4.17.21",
     "numfmt": "^2.1.0",

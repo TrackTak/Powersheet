@@ -1,6 +1,7 @@
+import CellHighlighter from '../cellHighlighter/CellHighlighter';
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
-import { prefix } from '../utils';
+import { prefix, setCaretToEndOfElement } from '../utils';
 import styles from './FormulaBar.module.scss';
 import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
 
@@ -12,9 +13,11 @@ class FormulaBar {
   editableContentContainer!: HTMLDivElement;
   editableContent!: HTMLDivElement;
   spreadsheet!: Spreadsheet;
+  cellHighlighter!: CellHighlighter;
 
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
+    this.cellHighlighter = new CellHighlighter(this.spreadsheet);
 
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
@@ -28,7 +31,6 @@ class FormulaBar {
     this.formulaBarEl.appendChild(editorArea);
 
     editableContentContainer.addEventListener('click', () => {
-      editableContent.contentEditable = 'true';
       editableContent.focus();
     });
 
@@ -40,20 +42,33 @@ class FormulaBar {
     this.editableContent.addEventListener('keydown', this.onKeyDown);
   }
 
+  clear() {
+    this.editableContent.textContent = null;
+  }
+
   onInput = (e: Event) => {
     const target = e.target as HTMLDivElement;
-    const textContent = target.firstChild?.textContent;
+    const textContent = target.textContent;
 
     if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
       this.spreadsheet.sheets.cellEditor.show(
         this.spreadsheet.sheets.selector.selectedCell!
       );
     }
-    this.spreadsheet.sheets.cellEditor.setTextContent(textContent ?? null);
+    this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null);
+
+    setCaretToEndOfElement(this.editableContent);
   };
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
-    let value;
+    this.clear();
+
+    const cellEditorContentEditableChildren = this.spreadsheet.sheets
+      ?.cellEditor?.cellEditorEl.children;
+
+    let spanElements = cellEditorContentEditableChildren
+      ? Array.from(cellEditorContentEditableChildren)
+      : [];
 
     if (simpleCellAddress) {
       const sheetName =
@@ -65,18 +80,21 @@ class FormulaBar {
           simpleCellAddress
         );
 
-        value = serializedValue?.toString();
+        const {
+          tokenParts,
+        } = this.cellHighlighter.getHighlightedCellReferenceSections(
+          serializedValue?.toString() ?? ''
+        );
+
+        if (tokenParts.length) {
+          spanElements = tokenParts;
+        }
       }
     }
 
-    // const cellEditorChildren =
-    //   this.spreadsheet.sheets?.cellEditor?.cellEditorEl.children ?? null;
-
-    // if (cellEditorChildren) {
-    //   this.editableContent.append(...(cellEditorChildren as any));
-    // }
-
-    //  this.setTextContent(value ?? cellEditorTextContent);
+    spanElements.forEach((span) => {
+      this.editableContent.appendChild(span);
+    });
   }
 
   onKeyDown = (e: KeyboardEvent) => {
@@ -86,6 +104,7 @@ class FormulaBar {
       case 'Escape': {
         this.spreadsheet.sheets.cellEditor.hide();
         this.editableContent.blur();
+
         break;
       }
       case 'Enter': {
@@ -99,6 +118,7 @@ class FormulaBar {
 
   destroy() {
     this.formulaBarEl.remove();
+    this.cellHighlighter.destroy();
     this.editableContent.removeEventListener('input', this.onInput);
     this.editableContent.removeEventListener('keydown', this.onKeyDown);
   }

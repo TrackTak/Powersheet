@@ -7,11 +7,10 @@ import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
 import { prefix, setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
-// @ts-ignore
-import { CellReference } from 'hyperformula/es/parser/LexerConfig';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
+import CellHighlighter from '../../cellHighlighter/CellHighlighter';
 
 export interface ICurrentScroll {
   row: number;
@@ -26,10 +25,13 @@ class CellEditor {
   spreadsheet: Spreadsheet;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
+  cellHighlighter: CellHighlighter;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
+
+    this.cellHighlighter = new CellHighlighter(this.spreadsheet);
 
     this.cellEditorEl = document.createElement('div');
     this.cellEditorEl.contentEditable = 'true';
@@ -101,6 +103,7 @@ class CellEditor {
 
   destroy() {
     this.cellTooltip.destroy();
+    this.cellHighlighter.destroy();
     this.cellEditorContainerEl.remove();
     this.cellEditorEl.removeEventListener('input', this.onInput);
     this.cellEditorEl.removeEventListener('keydown', this.onKeyDown);
@@ -114,101 +117,31 @@ class CellEditor {
   onItemClick = (suggestion: string) => {
     const value = `=${suggestion}()`;
 
-    this.setTextContent(value);
+    this.setContentEditable(value);
     this.cellEditorEl.focus();
     this.formulaHelper?.hide();
   };
 
-  setTextContent(value: string | null) {
-    const goldenRatio = 0.618033988749895;
-    let hue = 34 / 360;
-
-    const getSyntaxColor = () => {
-      const color = `hsl(${Math.floor(hue * 360)}, 90%, 50%)`;
-
-      hue += goldenRatio;
-      hue %= 1;
-
-      return color;
-    };
-
+  setContentEditable(value: string | null) {
     const text = value ?? '';
 
-    // TODO: Remove all this when https://github.com/handsontable/hyperformula/issues/854
-    // is done
-    // @ts-ignore
-    const lexer = this.spreadsheet.hyperformula._parser.lexer;
+    this.clear();
+    this.spreadsheet.formulaBar?.clear();
 
-    const { tokens } = lexer.tokenizeFormula(text)
+    const { tokenParts, cellReferenceParts } =
+      this.cellHighlighter.getHighlightedCellReferenceSections(text);
 
-    interface ISplitPart {
-      startOffset: number;
-      endOffset: number;
-      referenceText: string;
-    }
+    this.cellHighlighter.highlightCellReferences(
+      this.currentCell!.simpleCellAddress,
+      cellReferenceParts
+    );
 
-    const partsToSplit: ISplitPart[] = [];
-
-    tokens.forEach((token: any) => {
-      if (token.tokenType.name === 'CellReference') {
-        partsToSplit.push({
-          startOffset: token.startOffset,
-          endOffset: token.endOffset,
-          referenceText: token.image,
-        });
-      }
-    });
-
-    const parts = [];
-
-    const setNonReferenceSlicedSpan = (start: number, end?: number) => {
-      const slicedString = text.slice(start, end);
-      const span = document.createElement('span');
-
-      if (!slicedString.length) return;
-
-      span.classList.add(`${prefix}-token`);
-
-      span.textContent = slicedString;
-
-      parts.push(span);
-    };
-
-    if (partsToSplit.length && text.length) {
-      let prevIndex = 0;
-
-      partsToSplit.forEach(({ startOffset, endOffset, referenceText }) => {
-        setNonReferenceSlicedSpan(prevIndex, startOffset);
-
-        const formulaTokenSpan = document.createElement('span');
-
-        formulaTokenSpan.textContent = referenceText;
-        formulaTokenSpan.classList.add(`${prefix}-formula-token`);
-        formulaTokenSpan.style.color = getSyntaxColor();
-
-        parts.push(formulaTokenSpan);
-
-        prevIndex = endOffset + 1;
-      });
-
-      setNonReferenceSlicedSpan(
-        partsToSplit[partsToSplit.length - 1].endOffset + 1
-      );
-    } else {
-      const span = document.createElement('span');
-
-      span.classList.add(`${prefix}-token`);
-
-      span.textContent = text;
-
-      parts.push(span);
-    }
-
-    parts.forEach((part) => {
+    tokenParts.forEach((part) => {
       this.cellEditorEl.appendChild(part);
+      this.spreadsheet.formulaBar?.editableContent.appendChild(
+        part.cloneNode(true)
+      );
     });
-
-    // this.spreadsheet.formulaBar?.editableContent.appendChild(tokenElements);
 
     setCaretToEndOfElement(this.cellEditorEl);
 
@@ -234,9 +167,7 @@ class CellEditor {
     const target = e.target as HTMLDivElement;
     const textContent = target.textContent;
 
-    target.textContent = null;
-
-    this.setTextContent(textContent ?? null);
+    this.setContentEditable(textContent ?? null);
 
     const isFormulaInput = textContent?.startsWith('=');
 
@@ -264,13 +195,14 @@ class CellEditor {
     const serializedValue =
       this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-    this.setTextContent(serializedValue?.toString() ?? null);
+    this.setContentEditable(serializedValue?.toString() ?? null);
 
     this.cellEditorEl.focus();
   }
 
   clear() {
     this.cellEditorEl.textContent = null;
+    this.cellHighlighter.destroyHighlightedCells();
   }
 
   hideAndSave() {

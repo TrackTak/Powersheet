@@ -4,15 +4,17 @@ import Cell from './Cell';
 import { getInnerRectConfig } from './getInnerRectConfig';
 import SimpleCellAddress from './SimpleCellAddress';
 
-class SelectedCell extends Cell {
+class HighlightedCell extends Cell {
   innerRect: Rect;
 
   constructor(
     public sheets: Sheets,
-    public simpleCellAddress: SimpleCellAddress
+    public simpleCellAddress: SimpleCellAddress,
+    public color: string
   ) {
     super(sheets, simpleCellAddress);
 
+    this.color = color;
     this.innerRect = new Rect({
       name: 'innerRect',
     });
@@ -23,13 +25,18 @@ class SelectedCell extends Cell {
 
   private setInnerRectProperties() {
     const size = this.rect.size();
+    const stroke = this.color;
 
     const rectConfig: RectConfig = {
-      ...this.sheets.spreadsheet.styles.selectionFirstCell.rect,
+      ...this.sheets.spreadsheet.styles.highlightedCell.rect,
+      fill: this.color,
     };
 
     const innerRectConfig = getInnerRectConfig(
-      this.sheets.spreadsheet.styles.selectionFirstCell.innerRect,
+      {
+        ...this.sheets.spreadsheet.styles.highlightedCell.innerRect,
+        stroke,
+      },
       size
     );
 
@@ -38,4 +45,4 @@ class SelectedCell extends Cell {
   }
 }
 
-export default SelectedCell;
+export default HighlightedCell;

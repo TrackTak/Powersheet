@@ -27,6 +27,16 @@ export interface ICellConfig {
   borderLine: LineConfig;
 }
 
+export interface IHighlightedCellConfig {
+  rect: RectConfig;
+  innerRect: RectConfig;
+}
+
+export interface ISelectedCellConfig {
+  rect: RectConfig;
+  innerRect: RectConfig;
+}
+
 export interface IRowColConfig {
   resizeLine: LineConfig;
   resizeGuideLine: LineConfig;
@@ -39,7 +49,8 @@ export interface IRowColConfig {
 
 export interface IStyles {
   topLeftRect: RectConfig;
-  selectionFirstCell: RectConfig;
+  selectionFirstCell: ISelectedCellConfig;
+  highlightedCell: IHighlightedCellConfig;
   selection: RectConfig;
   col: IRowColConfig;
   row: IRowColConfig;
@@ -49,6 +60,7 @@ export interface IStyles {
 const resizeMarkerSize = 7;
 const resizeHitStrokeWidth = 15;
 const strokeWidth = 1;
+const cellStrokeWidth = 1.5;
 const fontFamily = 'Arial';
 
 export const sharedStyles = {
@@ -84,23 +96,14 @@ export const sharedStyles = {
   headerText: {
     fontFamily,
   },
-  selection: {
-    strokeWidth,
-  },
 };
 
 export const defaultStyles: IStyles = {
   topLeftRect: {
     fill: sharedStyles.headerRect.fill,
   },
-  selectionFirstCell: {
-    ...sharedStyles.selection,
-    fill: 'transparent',
-    stroke: '#0057ff',
-    strokeWidth: 1.5,
-  },
   selection: {
-    ...sharedStyles.selection,
+    strokeWidth,
     stroke: '#1a73e8',
     fill: 'rgb(14, 101, 235, 0.1)',
   },
@@ -145,6 +148,24 @@ export const defaultStyles: IStyles = {
       height: 20,
     },
     headerText: sharedStyles.headerText,
+  },
+  selectionFirstCell: {
+    rect: {
+      fill: 'transparent',
+    },
+    innerRect: {
+      strokeWidth: cellStrokeWidth,
+      stroke: '#0057ff',
+    },
+  },
+  highlightedCell: {
+    rect: {
+      opacity: 0.1,
+    },
+    innerRect: {
+      strokeWidth: cellStrokeWidth,
+      dash: [10, 4],
+    },
   },
   cell: {
     rect: {

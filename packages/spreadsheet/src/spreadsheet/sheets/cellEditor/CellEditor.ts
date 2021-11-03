@@ -202,7 +202,7 @@ class CellEditor {
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(cell.group.getClientRect());
+    this.setCellEditorElPosition(cell.getClientRectWithoutStroke());
   }
 
   setCellValue(simpleCellAddress: SimpleCellAddress) {
@@ -238,11 +238,11 @@ class CellEditor {
     this.spreadsheet.updateViewport();
   }
 
-  setCellEditorElPosition = (position: IRect) => {
-    this.cellEditorContainerEl.style.top = `${position.y}px`;
-    this.cellEditorContainerEl.style.left = `${position.x}px`;
-    this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
-    this.cellEditorContainerEl.style.height = `${position.height}px`;
+  setCellEditorElPosition = (rect: IRect) => {
+    this.cellEditorContainerEl.style.top = `${rect.y}px`;
+    this.cellEditorContainerEl.style.left = `${rect.x}px`;
+    this.cellEditorContainerEl.style.minWidth = `${rect.width + 1}px`;
+    this.cellEditorContainerEl.style.height = `${rect.height + 1}px`;
   };
 
   hideCellTooltip = () => {

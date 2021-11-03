@@ -102,6 +102,73 @@ export const cashFlowStatement = [
   'freeCashFlow',
 ];
 
+export const riskPremiumsAndBetas = [
+  'unleveredBeta',
+  'equityLeveredBeta',
+  'riskFreeRate',
+  'equityRiskPremium',
+  'adjDefaultSpread',
+  'matureMarketEquityRiskPremium',
+];
+
+export const general = [
+  'description',
+  'currencyCode',
+  'code',
+  'exchange',
+  'name',
+  'price',
+  'sharesOutstanding',
+  'industryName',
+];
+
+export const other = [
+  'bookValueOfEquity',
+  'bookValueOfDebt',
+  'investedCapital',
+  'salesToCapitalRatio',
+  'marginalTaxRate',
+  'standardDeviationInStockPrices',
+  'marketCapitalization',
+  'pastThreeYearsAverageEffectiveTaxRate',
+  'costOfCapital',
+  'afterTaxROIC',
+  'preTaxOperatingMarginUnadjusted',
+  'annualAverageCAGRLastFiveYears',
+];
+
+export const incomeStatementAttributes = incomeStatement
+  .filter((element) => element)
+  .map((attribute) => {
+    return `"${attribute}"`;
+  });
+
+export const balanceSheetAttributes = balanceSheet
+  .filter((element) => element)
+  .map((attribute) => {
+    return `"${attribute}"`;
+  });
+
+export const cashFlowStatementAttributes = cashFlowStatement
+  .filter((element) => element)
+  .map((attribute) => {
+    return `"${attribute}"`;
+  });
+
+export const riskPremiumsAndBetasAttributes = riskPremiumsAndBetas.map(
+  (attribute) => {
+    return `"${attribute}"`;
+  }
+);
+
+export const generalAttributes = general.map((attribute) => {
+  return `"${attribute}"`;
+});
+
+export const otherAttributes = other.map((attribute) => {
+  return `"${attribute}"`;
+});
+
 export const getStatements = (statements, statementKeys) => {
   const { date, filingDate, currencyCode, ...statement } = {
     ...statements.ttm,

@@ -7,405 +7,30 @@ import {
   createHeader,
   createParagraph,
   createSubHeader,
-  createSyntaxList,
+  createSyntaxListItem,
   functionHelperPrefix,
 } from './functionHelperHtmlElementHelpers';
 
-const incomeStatementAttributes = [
-  {
-    attributeName: '"revenue"',
-  },
-  {
-    attributeName: '"costOfRevenue"',
-  },
-  {
-    attributeName: '"grossProfit"',
-  },
-  {
-    attributeName: '"grossMargin"',
-  },
-  {
-    attributeName: '"sellingGeneralAdministrative"',
-  },
-  {
-    attributeName: '"sellingAndMarketingExpenses"',
-  },
-  {
-    attributeName: '"researchDevelopment"',
-  },
-  {
-    attributeName: '"effectOfAccountingCharges"',
-  },
-  {
-    attributeName: '"operatingExpenses"',
-  },
-  {
-    attributeName: '"operatingIncome"',
-  },
-  {
-    attributeName: '"operatingMargin"',
-  },
-  {
-    attributeName: '"interestIncome"',
-  },
-  {
-    attributeName: '"interestExpense"',
-  },
-  {
-    attributeName: '"netInterestIncome"',
-  },
-  {
-    attributeName: '"otherIncomeExpense"',
-  },
-  {
-    attributeName: '"incomeBeforeTax"',
-  },
-  {
-    attributeName: '"incomeTaxExpense"',
-  },
-  {
-    attributeName: '"effectiveTaxRate"',
-  },
-  {
-    attributeName: '"discontinuedOperations"',
-  },
-  {
-    attributeName: '"minorityInterest"',
-  },
-  {
-    attributeName: '"netIncomeFromContinuingOps"',
-  },
-  {
-    attributeName: '"netIncome"',
-  },
-  {
-    attributeName: '"preferredStockAndOtherAdjustments"',
-  },
-  {
-    attributeName: '"netIncomeApplicableToCommonShares"',
-  },
-  {
-    attributeName: '"netMargin"',
-  },
-  {
-    attributeName: '"ebit"',
-  },
-  {
-    attributeName: '"depreciationAndAmortization"',
-  },
-  {
-    attributeName: '"nonRecurring"',
-  },
-  {
-    attributeName: '"reconciledDepreciation"',
-  },
-  {
-    attributeName: '"otherItems"',
-  },
-  {
-    attributeName: '"ebitda"',
-  },
-];
+interface ICodeSyntaxElement {
+  syntaxName: string;
+  description: string;
+}
 
-const balanceSheetAttributes = [
-  {
-    attributeName: '"cash"',
-  },
-  {
-    attributeName: '"shortTermInvestments"',
-  },
-  {
-    attributeName: '"cashAndShortTermInvestments"',
-  },
-  {
-    attributeName: '"netReceivables"',
-  },
-  {
-    attributeName: '"inventory"',
-  },
-  {
-    attributeName: '"otherCurrentAssets"',
-  },
-  {
-    attributeName: '"totalCurrentAssets"',
-  },
-  {
-    attributeName: '"longTermInvestments"',
-  },
-  {
-    attributeName: '"propertyPlantEquipment"',
-  },
-  {
-    attributeName: '"intangibleAssets"',
-  },
-  {
-    attributeName: '"goodWill"',
-  },
-  {
-    attributeName: '"otherAssets"',
-  },
-  {
-    attributeName: '"nonCurrentAssetsTotal"',
-  },
-  {
-    attributeName: '"totalAssets"',
-  },
-  {
-    attributeName: '"accountsPayable"',
-  },
-  {
-    attributeName: '"shortLongTermDebt"',
-  },
-  {
-    attributeName: '"otherCurrentLiab"',
-  },
-  {
-    attributeName: '"totalCurrentLiabilities"',
-  },
-  {
-    attributeName: '"longTermDebt"',
-  },
-  {
-    attributeName: '"capitalLeaseObligations"',
-  },
-  {
-    attributeName: '"longTermDebtAndCapitalLeases"',
-  },
-  {
-    attributeName: '"deferredLongTermLiab"',
-  },
-  {
-    attributeName: '"nonCurrentLiabilitiesOther"',
-  },
-  {
-    attributeName: '"nonCurrentLiabilitiesTotal"',
-  },
-  {
-    attributeName: '"totalLiab"',
-  },
-  {
-    attributeName: '"commonStock"',
-  },
-  {
-    attributeName: '"preferredStockTotalEquity"',
-  },
-  {
-    attributeName: '"retainedEarnings"',
-  },
-  {
-    attributeName: '"accumulatedOtherComprehensiveIncome"',
-  },
-  {
-    attributeName: '"additionalPaidInCapital"',
-  },
-  {
-    attributeName: '"treasuryStock"',
-  },
-  {
-    attributeName: '"capitalSurpluse"',
-  },
-  {
-    attributeName: '"otherStockholderEquity"',
-  },
-  {
-    attributeName: '"totalStockholderEquity"',
-  },
-  {
-    attributeName: '"minorityInterest"',
-  },
-  {
-    attributeName: '"totalEquity"',
-  },
-];
-
-const cashFlowStatementAttributes = [
-  {
-    attributeName: '"netIncome"',
-  },
-  {
-    attributeName: '"depreciation"',
-  },
-  {
-    attributeName: '"changeToAccountReceivables"',
-  },
-  {
-    attributeName: '"changeReceivables"',
-  },
-  {
-    attributeName: '"changeToInventory"',
-  },
-  {
-    attributeName: '"changeToLiabilities"',
-  },
-  {
-    attributeName: '"changeInWorkingCapital"',
-  },
-  {
-    attributeName: '"totalCashFromOperatingActivities"',
-  },
-  {
-    attributeName: '"investments"',
-  },
-  {
-    attributeName: '"otherCashflowsFromInvestingActivities"',
-  },
-  {
-    attributeName: '"totalCashflowsFromInvestingActivities"',
-  },
-  {
-    attributeName: '"salePurchaseOfStock"',
-  },
-  {
-    attributeName: '"netBorrowings"',
-  },
-  {
-    attributeName: '"dividendsPaid"',
-  },
-  {
-    attributeName: '"otherCashflowsFromFinancingActivities"',
-  },
-  {
-    attributeName: '"totalCashFromFinancingActivities"',
-  },
-  {
-    attributeName: '"beginPeriodCashFlow"',
-  },
-  {
-    attributeName: '"endPeriodCashFlow"',
-  },
-  {
-    attributeName: '"changeInCash"',
-  },
-  {
-    attributeName: '"capitalExpenditures"',
-  },
-  {
-    attributeName: '"freeCashFlow"',
-  },
-];
-
-const otherAttributes = [
-  {
-    attributeName: '"bookValueOfEquity"',
-  },
-  {
-    attributeName: '"bookValueOfDebt"',
-  },
-  {
-    attributeName: '"investedCapital"',
-  },
-  {
-    attributeName: '"salesToCapitalRatio"',
-  },
-  {
-    attributeName: '"marginalTaxRate"',
-  },
-  {
-    attributeName: '"standardDeviationInStockPrices"',
-  },
-  {
-    attributeName: '"marketCapitalization"',
-  },
-  {
-    attributeName: '"pastThreeYearsAverageEffectiveTaxRate"',
-  },
-  {
-    attributeName: '"costOfCapital"',
-  },
-  {
-    attributeName: '"afterTaxROIC"',
-  },
-  {
-    attributeName: '"preTaxOperatingMarginUnadjusted"',
-  },
-  {
-    attributeName: '"annualAverageCAGRLastFiveYears"',
-  },
-];
-
-const riskPremiumsAndBetasAttributes = [
-  {
-    attributeName: '"unleveredBeta"',
-  },
-  {
-    attributeName: '"equityLeveredBeta"',
-  },
-  {
-    attributeName: '"riskFreeRate"',
-  },
-  {
-    attributeName: '"equityRiskPremium"',
-  },
-  {
-    attributeName: '"adjDefaultSpread"',
-  },
-  {
-    attributeName: '"matureMarketEquityRiskPremium"',
-  },
-];
-
-const generalAttributes = [
-  {
-    attributeName: '"description"',
-  },
-  {
-    attributeName: '"currencyCode"',
-  },
-  {
-    attributeName: '"code"',
-  },
-  {
-    attributeName: '"exchange"',
-  },
-  {
-    attributeName: '"name"',
-  },
-  {
-    attributeName: '"price"',
-  },
-  {
-    attributeName: '"sharesOutstanding"',
-  },
-  {
-    attributeName: '"industryName"',
-  },
-];
-
-const codeSyntaxElements = [
-  {
-    syntaxName: '[]',
-    description:
-      'indicates optional. If a parameter is optional it can be skipped with a comma. Example: =FIN("revenue",,"01/01/2021")',
-  },
-  {
-    syntaxName: 'attribute',
-    description:
-      '1st argument is required. Fetches current or historical securities information from Tracktak.',
-  },
-  {
-    syntaxName: '[mm/dd/yyy]',
-    description: 'The start date and end date format.',
-  },
-  {
-    syntaxName: '[startDate]',
-    description:
-      '2nd argument is optional. The start date when fetching historical data.',
-  },
-  {
-    syntaxName: '[endDate]',
-    description:
-      '3rd argument is optional. The end date when fetching historical data.',
-  },
-];
-
-const codeUsageElements = [
-  { usageName: '=FIN("revenue")' },
-  { usageName: '=FIN("revenue",,"01/01/2000")' },
-  { usageName: '=FIN("B2, B3")' },
-];
+interface ICodeSyntaxCode {
+  codeSyntax: string;
+  values: ICodeSyntaxElement[];
+}
+interface IAttribute {
+  header: string;
+  attributeNames: string[];
+}
 
 export interface IFunctionHelperData {
   header: string;
+  headerDescription: string;
+  codeSyntaxUsage: string[];
+  codeSyntaxElements: ICodeSyntaxCode[];
+  attributes: IAttribute[];
 }
 
 class FunctionHelper {
@@ -476,111 +101,51 @@ class FunctionHelper {
     this.headerEl.textContent = this.data.header;
 
     const { paragraphEl: description } = createParagraph(
-      'Fetches current or historical securities information from Tracktak Finance.'
+      this.data.headerDescription
     );
 
     const { header: headerUsage } = createHeader('Sample Usage');
     const { header: headerSyntax } = createHeader('Syntax');
     const { header: headerAttributes } = createHeader('Attributes');
 
-    const { subHeader: incomeStatementSubHeader } =
-      createSubHeader('Income Statement');
-    const { subHeader: balanceSheetSubHeader } =
-      createSubHeader('Balance Sheet');
-    const { subHeader: cashFlowStatementSubHeader } =
-      createSubHeader('Cashflow Statement');
-    const { subHeader: riskPremiumsAndBetasSubHeader } = createSubHeader(
-      'Risk Premiums and Betas'
-    );
-    const { subHeader: generalSubHeader } = createSubHeader('General');
-    const { subHeader: otherSubHeader } = createSubHeader('Other');
-
-    const { codeEl: codeSyntax } = createCodeText(
-      '=FIN(attribute, [startDate], [endDate])'
-    );
-
     this.drawerContentEl.appendChild(this.textWrapper);
     this.textWrapper.appendChild(this.headerEl);
     this.textWrapper.appendChild(description);
     this.textWrapper.appendChild(headerUsage);
 
-    codeUsageElements.forEach(({ usageName }) => {
+    this.data.codeSyntaxUsage.forEach((usageName) => {
       const { codeEl } = createCodeText(usageName);
       this.textWrapper.appendChild(codeEl);
     });
 
     this.textWrapper.appendChild(headerSyntax);
-    this.textWrapper.appendChild(codeSyntax);
 
-    const listCodeSyntax = document.createElement('ul');
-    this.textWrapper.appendChild(listCodeSyntax);
+    this.data.codeSyntaxElements.forEach(({ codeSyntax, values }) => {
+      const codeSyntaxList = document.createElement('ul');
+      const { codeEl } = createCodeText(codeSyntax);
 
-    codeSyntaxElements.forEach(({ syntaxName, description }) => {
-      const { listItem } = createSyntaxList(syntaxName, description);
+      this.textWrapper.appendChild(codeEl);
+      this.textWrapper.appendChild(codeSyntaxList);
 
-      listCodeSyntax.appendChild(listItem);
+      values.forEach(({ syntaxName, description }) => {
+        const { listItem } = createSyntaxListItem(syntaxName, description);
+        codeSyntaxList.appendChild(listItem);
+      });
     });
 
     this.textWrapper.appendChild(headerAttributes);
 
-    this.textWrapper.appendChild(incomeStatementSubHeader);
+    this.data.attributes.forEach(({ attributeNames, header }) => {
+      const attributeList = document.createElement('ul');
 
-    const listIncomeStatement = document.createElement('ul');
-    this.textWrapper.appendChild(listIncomeStatement);
+      this.textWrapper.appendChild(createSubHeader(header).subHeader);
+      this.textWrapper.appendChild(attributeList);
 
-    incomeStatementAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listIncomeStatement.appendChild(listItem);
-    });
+      attributeNames.forEach((attributeName) => {
+        const { listItem } = createSyntaxListItem(attributeName);
 
-    this.textWrapper.appendChild(balanceSheetSubHeader);
-
-    const listBalanceSheet = document.createElement('ul');
-    this.textWrapper.appendChild(listBalanceSheet);
-
-    balanceSheetAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listBalanceSheet.appendChild(listItem);
-    });
-
-    this.textWrapper.appendChild(cashFlowStatementSubHeader);
-
-    const listCashFlowStatement = document.createElement('ul');
-    this.textWrapper.appendChild(listCashFlowStatement);
-
-    cashFlowStatementAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listCashFlowStatement.appendChild(listItem);
-    });
-
-    this.textWrapper.appendChild(riskPremiumsAndBetasSubHeader);
-
-    const listRiskPremiumsAndBetas = document.createElement('ul');
-    this.textWrapper.appendChild(listRiskPremiumsAndBetas);
-
-    riskPremiumsAndBetasAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listRiskPremiumsAndBetas.appendChild(listItem);
-    });
-
-    this.textWrapper.appendChild(generalSubHeader);
-
-    const listGeneral = document.createElement('ul');
-    this.textWrapper.appendChild(listGeneral);
-
-    generalAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listGeneral.appendChild(listItem);
-    });
-
-    this.textWrapper.appendChild(otherSubHeader);
-
-    const listOther = document.createElement('ul');
-    this.textWrapper.appendChild(listOther);
-
-    otherAttributes.forEach(({ attributeName }) => {
-      const { listItem } = createSyntaxList(attributeName);
-      listOther.appendChild(listItem);
+        attributeList.appendChild(listItem);
+      });
     });
 
     this.topAppBarEl = document.createElement('div');

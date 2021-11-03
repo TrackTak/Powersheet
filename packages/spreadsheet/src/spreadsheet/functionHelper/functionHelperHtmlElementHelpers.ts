@@ -38,7 +38,10 @@ export const createParagraph = (paragraph: string) => {
   return { paragraphEl };
 };
 
-export const createSyntaxList = (codeText: string, description?: string) => {
+export const createSyntaxListItem = (
+  codeText: string,
+  description?: string
+) => {
   const listItem = document.createElement('li');
   listItem.classList.add(styles.list, `${functionHelperPrefix}`);
 

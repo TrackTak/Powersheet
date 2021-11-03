@@ -12,6 +12,14 @@ export interface ITextPatternFormats {
   [index: string]: string;
 }
 
+export interface ICellHighlight {
+  goldenRatio: number;
+  hue: number;
+  saturation: number | string;
+  lightness: number | string;
+  alpha: number | string;
+}
+
 export interface IOptions {
   width?: number;
   height?: number;
@@ -22,6 +30,7 @@ export interface IOptions {
   exportSpreadsheetName: string;
   touchScrollSpeed: number;
   undoRedoLimit: number;
+  cellHighlight: ICellHighlight;
 }
 
 export const defaultOptions: IOptions = {
@@ -40,6 +49,13 @@ export const defaultOptions: IOptions = {
     plainText: '',
     number: '#,##0.00',
     percent: '0.00%',
+  },
+  cellHighlight: {
+    goldenRatio: 0.618033988749895,
+    hue: 34 / 360,
+    saturation: '90%',
+    lightness: '50%',
+    alpha: '100%',
   },
   fontSizes: [6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 36],
   exportSpreadsheetName: 'Powersheet.xlsx',

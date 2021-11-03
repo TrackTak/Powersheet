@@ -41,11 +41,20 @@ class CellHighlighter {
       };
     }
 
-    const goldenRatio = 0.618033988749895;
-    let hue = 34 / 360;
+    const {
+      hue: defaultHue,
+      saturation,
+      lightness,
+      alpha,
+      goldenRatio,
+    } = this.spreadsheet.options.cellHighlight;
+
+    let hue = defaultHue;
 
     const getSyntaxColor = () => {
-      const color = `hsl(${Math.floor(hue * 360)}, 90%, 50%)`;
+      const color = `hsla(${Math.floor(
+        hue * 360
+      )}, ${saturation}, ${lightness}, ${alpha})`;
 
       hue += goldenRatio;
       hue %= 1;

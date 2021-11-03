@@ -85,6 +85,14 @@
     {
       "text": [
         {
+          "text": "Syntax Cell Highlighting",
+          "color": "omegaDarker"
+        }
+      ]
+    },
+    {
+      "text": [
+        {
           "text": "Undo/Redo",
           "color": "omegaDarker"
         }

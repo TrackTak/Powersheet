@@ -144,6 +144,14 @@ class Spreadsheet {
 
   private setCells() {
     this.hyperformula.batch(() => {
+      const sheetNames = this.hyperformula.getSheetNames();
+
+      sheetNames.forEach((sheetName) => {
+        const sheetId = this.hyperformula.getSheetId(sheetName)!;
+
+        this.hyperformula.clearSheet(sheetId);
+      });
+
       for (const key in this.data.spreadsheetData.cells) {
         const cellId = key as CellId;
         const cell = this.data.spreadsheetData.cells?.[cellId];

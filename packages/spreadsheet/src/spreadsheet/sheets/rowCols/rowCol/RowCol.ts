@@ -134,6 +134,18 @@ class RowCol {
         ];
       const rowCols = rest[this.pluralType];
 
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      }
+
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
 
       Object.keys(mergedCells ?? {})
@@ -224,24 +236,22 @@ class RowCol {
           if (simpleCellAddress[this.type] > this.index) {
             const cellId = simpleCellAddress.toCellId();
             const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+            const newValue = this.spreadsheet.hyperformula
+              .getCellSerialized(newSimpleCellAddress)
+              ?.toString();
 
-            this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
+            this.spreadsheet.data.setCell(
+              newSimpleCellAddress,
+              {
+                ...cell,
+                value: newValue,
+              },
+              false
+            );
           }
 
           this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
         });
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      } else {
-        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      }
     });
 
     this.spreadsheet.updateViewport();
@@ -254,6 +264,18 @@ class RowCol {
           this.sheets.activeSheetId
         ];
       const rowCols = rest[this.pluralType];
+
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      }
 
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
 
@@ -331,22 +353,20 @@ class RowCol {
           if (simpleCellAddress[this.type] < this.index) return;
 
           const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+          const newValue = this.spreadsheet.hyperformula
+            .getCellSerialized(newSimpleCellAddress)
+            ?.toString();
 
-          this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
+          this.spreadsheet.data.setCell(
+            newSimpleCellAddress,
+            {
+              ...cell,
+              value: newValue,
+            },
+            false
+          );
           this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
         });
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      } else {
-        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      }
     });
 
     this.spreadsheet.updateViewport();

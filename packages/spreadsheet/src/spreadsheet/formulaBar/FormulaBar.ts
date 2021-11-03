@@ -22,11 +22,8 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const {
-      editorArea,
-      editableContentContainer,
-      editableContent,
-    } = createFormulaEditorArea();
+    const { editorArea, editableContentContainer, editableContent } =
+      createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
@@ -65,11 +62,13 @@ class FormulaBar {
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     this.clear();
 
-    const cellEditorContentEditableChildren = this.spreadsheet.sheets
-      ?.cellEditor?.cellEditorEl.children;
+    const cellEditorContentEditableChildren =
+      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.children;
 
     let spanElements = cellEditorContentEditableChildren
-      ? Array.from(cellEditorContentEditableChildren)
+      ? Array.from(cellEditorContentEditableChildren).map((node) =>
+          node.cloneNode(true)
+        )
       : [];
 
     if (simpleCellAddress) {
@@ -78,15 +77,13 @@ class FormulaBar {
         '';
 
       if (this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
-          simpleCellAddress
-        );
+        const serializedValue =
+          this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-        const {
-          tokenParts,
-        } = this.cellHighlighter.getHighlightedCellReferenceSections(
-          serializedValue?.toString() ?? ''
-        );
+        const { tokenParts } =
+          this.cellHighlighter.getHighlightedCellReferenceSections(
+            serializedValue?.toString() ?? ''
+          );
 
         if (tokenParts.length) {
           spanElements = tokenParts;

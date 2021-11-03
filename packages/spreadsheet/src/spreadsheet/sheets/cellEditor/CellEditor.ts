@@ -121,6 +121,8 @@ class CellEditor {
     this.setContentEditable(value);
     this.cellEditorEl.focus();
     this.formulaHelper?.hide();
+
+    setCaretToEndOfElement(this.cellEditorEl);
   };
 
   setContentEditable(value: string | null) {

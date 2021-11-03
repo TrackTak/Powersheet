@@ -370,13 +370,11 @@ class Toolbar {
           this.spreadsheet.sheets.selector.selectedCells
         );
 
-      rangeSimpleCellAddress.bottomRightSimpleCellAddress.row += 1;
-
       const cell = new Cell(
         this.spreadsheet.sheets,
         new SimpleCellAddress(
           this.spreadsheet.sheets.activeSheetId,
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
           rangeSimpleCellAddress.topLeftSimpleCellAddress.col
         )
       );

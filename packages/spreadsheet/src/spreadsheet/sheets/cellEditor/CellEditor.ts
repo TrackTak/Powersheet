@@ -1,16 +1,16 @@
 import { IRect } from 'konva/lib/types';
 import Sheet from '../Sheets';
 import styles from './CellEditor.module.scss';
-
 import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
-import { setCaretToEndOfElement } from '../../utils';
+import { prefix, saveCaretPosition, setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress';
+import CellHighlighter from '../../cellHighlighter/CellHighlighter';
 
 export interface ICurrentScroll {
   row: number;
@@ -23,18 +23,28 @@ class CellEditor {
   cellTooltip: DelegateInstance;
   formulaHelper?: FormulaHelper;
   spreadsheet: Spreadsheet;
+  cellHighlighter: CellHighlighter;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
+  currentCaretPosition: number | null = null;
+  currentCellText: string | null = null;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
 
+    this.cellHighlighter = new CellHighlighter(this.spreadsheet);
+
     this.cellEditorEl = document.createElement('div');
-    this.cellEditorEl.setAttribute('contentEditable', 'true');
-    this.cellEditorEl.classList.add(styles.cellEditor);
+    this.cellEditorEl.contentEditable = 'true';
+    this.cellEditorEl.spellcheck = false;
+    this.cellEditorEl.classList.add(`${prefix}-cell-editor`, styles.cellEditor);
+
     this.cellEditorContainerEl = document.createElement('div');
-    this.cellEditorContainerEl.classList.add(styles.cellEditorContainer);
+    this.cellEditorContainerEl.classList.add(
+      `${prefix}-cell-editor-container`,
+      styles.cellEditorContainer
+    );
     this.cellEditorContainerEl.appendChild(this.cellEditorEl);
     this.cellTooltip = delegate(this.cellEditorEl, {
       target: styles.cellEditor,
@@ -68,12 +78,11 @@ class CellEditor {
       ];
     const cellValue =
       this.spreadsheet.hyperformula
-        .getCellValue(simpleCellAddress)
+        .getCellSerialized(simpleCellAddress)
         ?.toString() ?? undefined;
-    const textContent = this.cellEditorEl.textContent;
 
     this.spreadsheet.pushToHistory(() => {
-      const value = textContent ? textContent : undefined;
+      const value = this.currentCellText ? this.currentCellText : undefined;
 
       if (cellValue !== value) {
         const newCell: Omit<ICellData, 'id'> = {
@@ -95,6 +104,7 @@ class CellEditor {
 
   destroy() {
     this.cellTooltip.destroy();
+    this.cellHighlighter.destroy();
     this.cellEditorContainerEl.remove();
     this.cellEditorEl.removeEventListener('input', this.onInput);
     this.cellEditorEl.removeEventListener('keydown', this.onKeyDown);
@@ -108,16 +118,36 @@ class CellEditor {
   onItemClick = (suggestion: string) => {
     const value = `=${suggestion}()`;
 
-    this.setTextContent(value);
+    this.setContentEditable(value);
     this.cellEditorEl.focus();
     this.formulaHelper?.hide();
+
+    setCaretToEndOfElement(this.cellEditorEl);
   };
 
-  setTextContent(value: string | null) {
-    const textContent = value ?? null;
+  setContentEditable(value: string | null) {
+    this.clear();
+    this.spreadsheet.formulaBar?.clear();
 
-    this.cellEditorEl.textContent = textContent;
-    this.spreadsheet.formulaBar?.setTextContent(textContent);
+    this.currentCellText = value;
+
+    const { tokenParts, cellReferenceParts } =
+      this.cellHighlighter.getHighlightedCellReferenceSections(
+        this.currentCellText ?? ''
+      );
+
+    this.cellHighlighter.highlightCellReferences(
+      this.currentCell!.simpleCellAddress,
+      cellReferenceParts
+    );
+
+    tokenParts.forEach((part) => {
+      this.cellEditorEl.appendChild(part);
+      this.spreadsheet.formulaBar?.editableContent.appendChild(
+        part.cloneNode(true)
+      );
+    });
+
     this.spreadsheet.eventEmitter.emit('cellEditorChange', value);
   }
 
@@ -138,9 +168,13 @@ class CellEditor {
 
   onInput = (e: Event) => {
     const target = e.target as HTMLDivElement;
-    const textContent = target.firstChild?.textContent;
+    const textContent = target.textContent;
 
-    this.setTextContent(textContent ?? null);
+    const restoreCaretPosition = saveCaretPosition(this.cellEditorEl);
+
+    this.setContentEditable(textContent ?? null);
+
+    restoreCaretPosition();
 
     const isFormulaInput = textContent?.startsWith('=');
 
@@ -150,6 +184,13 @@ class CellEditor {
       this.formulaHelper?.hide();
     }
   };
+
+  showAndSetValue(cell: Cell) {
+    this.show(cell);
+    this.setCellValue(cell.simpleCellAddress);
+
+    setCaretToEndOfElement(this.cellEditorEl);
+  }
 
   show(cell: Cell) {
     this.currentCell = cell;
@@ -161,22 +202,22 @@ class CellEditor {
     this.clear();
     this.cellEditorContainerEl.style.display = 'block';
 
-    this.setCellEditorElPosition(cell.group.getClientRect());
+    this.setCellEditorElPosition(cell.getClientRectWithoutStroke());
   }
 
   setCellValue(simpleCellAddress: SimpleCellAddress) {
     const serializedValue =
       this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-    this.setTextContent(serializedValue?.toString() ?? null);
-
-    setCaretToEndOfElement(this.cellEditorEl);
+    this.setContentEditable(serializedValue?.toString() ?? null);
 
     this.cellEditorEl.focus();
   }
 
   clear() {
+    this.currentCellText = null;
     this.cellEditorEl.textContent = null;
+    this.cellHighlighter.destroyHighlightedCells();
   }
 
   hideAndSave() {
@@ -197,11 +238,11 @@ class CellEditor {
     this.spreadsheet.updateViewport();
   }
 
-  setCellEditorElPosition = (position: IRect) => {
-    this.cellEditorContainerEl.style.top = `${position.y}px`;
-    this.cellEditorContainerEl.style.left = `${position.x}px`;
-    this.cellEditorContainerEl.style.minWidth = `${position.width}px`;
-    this.cellEditorContainerEl.style.height = `${position.height}px`;
+  setCellEditorElPosition = (rect: IRect) => {
+    this.cellEditorContainerEl.style.top = `${rect.y}px`;
+    this.cellEditorContainerEl.style.left = `${rect.x}px`;
+    this.cellEditorContainerEl.style.minWidth = `${rect.width + 1}px`;
+    this.cellEditorContainerEl.style.height = `${rect.height + 1}px`;
   };
 
   hideCellTooltip = () => {

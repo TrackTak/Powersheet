@@ -1,3 +1,4 @@
+import { reverseVectorsIfStartBiggerThanEnd } from '../../../utils';
 import { IMergedCellData } from '../../Data';
 import { RowColType } from '../../rowCols/RowCols';
 import Sheets from '../../Sheets';
@@ -11,6 +12,8 @@ class RangeSimpleCellAddress {
   ) {
     this.topLeftSimpleCellAddress = topLeftSimpleCellAddress;
     this.bottomRightSimpleCellAddress = bottomRightSimpleCellAddress;
+
+    this.reverseIfTopBiggerThanBottom();
   }
 
   static mergedCellToAddress(mergedCell: IMergedCellData) {
@@ -46,6 +49,25 @@ class RangeSimpleCellAddress {
       this.topLeftSimpleCellAddress.col +
       1
     );
+  }
+
+  reverseIfTopBiggerThanBottom() {
+    const { start, end } = reverseVectorsIfStartBiggerThanEnd(
+      {
+        x: this.topLeftSimpleCellAddress.row,
+        y: this.topLeftSimpleCellAddress.col,
+      },
+      {
+        x: this.bottomRightSimpleCellAddress.row,
+        y: this.bottomRightSimpleCellAddress.col,
+      }
+    );
+
+    this.topLeftSimpleCellAddress.row = start.x;
+    this.topLeftSimpleCellAddress.col = start.y;
+
+    this.bottomRightSimpleCellAddress.row = end.x;
+    this.bottomRightSimpleCellAddress.col = end.y;
   }
 
   getArrayOfAddresses = () => {

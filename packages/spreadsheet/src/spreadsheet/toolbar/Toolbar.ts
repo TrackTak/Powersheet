@@ -370,13 +370,11 @@ class Toolbar {
           this.spreadsheet.sheets.selector.selectedCells
         );
 
-      rangeSimpleCellAddress.bottomRightSimpleCellAddress.row += 1;
-
       const cell = new Cell(
         this.spreadsheet.sheets,
         new SimpleCellAddress(
           this.spreadsheet.sheets.activeSheetId,
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
           rangeSimpleCellAddress.topLeftSimpleCellAddress.col
         )
       );
@@ -392,18 +390,16 @@ class Toolbar {
       cell.group.y(cell.group.y() + viewportVector.y);
 
       this.spreadsheet.sheets.cellEditor.show(cell);
-      this.spreadsheet.sheets.cellEditor.setCellValue(cell.simpleCellAddress);
-      this.spreadsheet.sheets.cellEditor.setTextContent(
+      this.spreadsheet.sheets.cellEditor.setContentEditable(
         `=${functionName}(${topLeftString}:${bottomRightString})`
       );
     } else {
       const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
 
       this.spreadsheet.sheets.cellEditor.show(selectedCell);
-      this.spreadsheet.sheets.cellEditor.setCellValue(
-        selectedCell.simpleCellAddress
+      this.spreadsheet.sheets.cellEditor.setContentEditable(
+        `=${functionName}()`
       );
-      this.spreadsheet.sheets.cellEditor.setTextContent(`=${functionName}()`);
     }
   }
 

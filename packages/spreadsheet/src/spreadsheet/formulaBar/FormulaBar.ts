@@ -1,6 +1,7 @@
+import CellHighlighter from '../cellHighlighter/CellHighlighter';
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
-import { prefix } from '../utils';
+import { prefix, saveCaretPosition } from '../utils';
 import styles from './FormulaBar.module.scss';
 import { createFormulaEditorArea } from './formulaBarHtmlElementHelpers';
 
@@ -12,23 +13,21 @@ class FormulaBar {
   editableContentContainer!: HTMLDivElement;
   editableContent!: HTMLDivElement;
   spreadsheet!: Spreadsheet;
+  cellHighlighter!: CellHighlighter;
 
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
+    this.cellHighlighter = new CellHighlighter(this.spreadsheet);
 
     this.formulaBarEl = document.createElement('div');
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix);
 
-    const {
-      editorArea,
-      editableContentContainer,
-      editableContent,
-    } = createFormulaEditorArea();
+    const { editorArea, editableContentContainer, editableContent } =
+      createFormulaEditorArea();
 
     this.formulaBarEl.appendChild(editorArea);
 
     editableContentContainer.addEventListener('click', () => {
-      editableContent.contentEditable = 'true';
       editableContent.focus();
     });
 
@@ -40,20 +39,37 @@ class FormulaBar {
     this.editableContent.addEventListener('keydown', this.onKeyDown);
   }
 
+  clear() {
+    this.editableContent.textContent = null;
+  }
+
   onInput = (e: Event) => {
     const target = e.target as HTMLDivElement;
-    const textContent = target.firstChild?.textContent;
+    const textContent = target.textContent;
+
+    const restoreCaretPosition = saveCaretPosition(this.editableContent);
 
     if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
       this.spreadsheet.sheets.cellEditor.show(
         this.spreadsheet.sheets.selector.selectedCell!
       );
     }
-    this.spreadsheet.sheets.cellEditor.setTextContent(textContent ?? null);
+    this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null);
+
+    restoreCaretPosition();
   };
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
-    let value;
+    this.clear();
+
+    const cellEditorContentEditableChildren =
+      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.children;
+
+    let spanElements = cellEditorContentEditableChildren
+      ? Array.from(cellEditorContentEditableChildren).map((node) =>
+          node.cloneNode(true)
+        )
+      : [];
 
     if (simpleCellAddress) {
       const sheetName =
@@ -61,22 +77,23 @@ class FormulaBar {
         '';
 
       if (this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
-          simpleCellAddress
-        );
+        const serializedValue =
+          this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress);
 
-        value = serializedValue?.toString();
+        const { tokenParts } =
+          this.cellHighlighter.getHighlightedCellReferenceSections(
+            serializedValue?.toString() ?? ''
+          );
+
+        if (tokenParts.length) {
+          spanElements = tokenParts;
+        }
       }
     }
 
-    const cellEditorTextContent =
-      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.textContent ?? null;
-
-    this.setTextContent(value ?? cellEditorTextContent);
-  }
-
-  setTextContent(textContent: string | null) {
-    this.editableContent.textContent = textContent;
+    spanElements.forEach((span) => {
+      this.editableContent.appendChild(span);
+    });
   }
 
   onKeyDown = (e: KeyboardEvent) => {
@@ -86,6 +103,7 @@ class FormulaBar {
       case 'Escape': {
         this.spreadsheet.sheets.cellEditor.hide();
         this.editableContent.blur();
+
         break;
       }
       case 'Enter': {
@@ -99,6 +117,7 @@ class FormulaBar {
 
   destroy() {
     this.formulaBarEl.remove();
+    this.cellHighlighter.destroy();
     this.editableContent.removeEventListener('input', this.onInput);
     this.editableContent.removeEventListener('keydown', this.onKeyDown);
   }

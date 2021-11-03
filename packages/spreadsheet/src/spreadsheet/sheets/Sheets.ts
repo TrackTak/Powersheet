@@ -388,8 +388,7 @@ class Sheets {
     const cellId = simpleCellAddress.toCellId();
 
     if (this.hasDoubleClickedOnCell()) {
-      this.cellEditor.show(selectedFirstcell);
-      this.cellEditor.setCellValue(selectedFirstcell.simpleCellAddress);
+      this.cellEditor.showAndSetValue(selectedFirstcell);
     }
 
     if (this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.comment) {
@@ -498,8 +497,7 @@ class Sheets {
               this.cellEditor.show(selectedCell);
               this.cellEditor.cellEditorEl.focus();
             } else {
-              this.cellEditor.show(selectedCell);
-              this.cellEditor.setCellValue(selectedCell.simpleCellAddress);
+              this.cellEditor.showAndSetValue(selectedCell);
             }
           }
       }

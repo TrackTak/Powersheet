@@ -23,6 +23,8 @@ export const createFormulaEditorArea = () => {
     styles.editableContent,
     `${formulaBarPrefix}-editable-content`
   );
+  editableContent.contentEditable = 'true';
+  editableContent.spellcheck = false;
 
   editorArea.appendChild(editableContentContainer);
   editableContentContainer.appendChild(iconContainer);

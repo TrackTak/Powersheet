@@ -2,6 +2,7 @@ import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
 import Sheets from '../../Sheets';
 import Cell from './Cell';
 import { getInnerRectConfig } from './getInnerRectConfig';
+import RangeSimpleCellAddress from './RangeSimpleCellAddress';
 import SimpleCellAddress from './SimpleCellAddress';
 
 class HighlightedCell extends Cell {
@@ -19,6 +20,12 @@ class HighlightedCell extends Cell {
       name: 'innerRect',
     });
     this.group.add(this.innerRect);
+
+    this.setInnerRectProperties();
+  }
+
+  override setRangeCellAddress(rangeSimpleCellAddress: RangeSimpleCellAddress) {
+    super.setRangeCellAddress(rangeSimpleCellAddress);
 
     this.setInnerRectProperties();
   }

@@ -76,21 +76,7 @@ class Cell {
     );
   }
 
-  private setMergedCellPropertiesIfNeeded() {
-    this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
-
-    const cellId = this.simpleCellAddress.toCellId();
-    const mergedCellId =
-      this.sheets.merger.associatedMergedCellAddressMap[cellId];
-
-    if (!mergedCellId) return;
-
-    const mergedCell =
-      this.sheets.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
-
-    const rangeSimpleCellAddress =
-      RangeSimpleCellAddress.mergedCellToAddress(mergedCell);
-
+  setRangeCellAddress(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     this.rangeSimpleCellAddress = rangeSimpleCellAddress;
 
     let width = 0;
@@ -110,6 +96,24 @@ class Cell {
 
     this.rect.width(width);
     this.rect.height(height);
+  }
+
+  private setMergedCellPropertiesIfNeeded() {
+    this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress);
+
+    const cellId = this.simpleCellAddress.toCellId();
+    const mergedCellId =
+      this.sheets.merger.associatedMergedCellAddressMap[cellId];
+
+    if (!mergedCellId) return;
+
+    const mergedCell =
+      this.sheets.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId];
+
+    const rangeSimpleCellAddress =
+      RangeSimpleCellAddress.mergedCellToAddress(mergedCell);
+
+    this.setRangeCellAddress(rangeSimpleCellAddress);
   }
 
   destroy() {

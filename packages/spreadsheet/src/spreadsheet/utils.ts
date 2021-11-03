@@ -41,15 +41,12 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 ) => {
   const newStart = { ...start };
   const newEnd = { ...end };
-  let isReversedX = false;
-  let isReversedY = false;
 
   if (start.x > end.x) {
     const temp = start.x;
 
     newStart.x = end.x;
     newEnd.x = temp;
-    isReversedX = true;
   }
 
   if (start.y > end.y) {
@@ -57,14 +54,11 @@ export const reverseVectorsIfStartBiggerThanEnd = (
 
     newStart.y = end.y;
     newEnd.y = temp;
-    isReversedY = true;
   }
 
   return {
     start: newStart,
     end: newEnd,
-    isReversedX,
-    isReversedY,
   };
 };
 
@@ -80,6 +74,19 @@ export const getColumnHeader = (number: number) => {
   } while (number > 0);
 
   return columnHeader;
+};
+
+export const setCaretToEndOfElement = (node: Node) => {
+  const range = document.createRange();
+  const sel = window.getSelection();
+
+  range.selectNodeContents(node);
+  range.collapse(false);
+
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+
+  range.detach();
 };
 
 export const saveCaretPosition = (node: Node) => {

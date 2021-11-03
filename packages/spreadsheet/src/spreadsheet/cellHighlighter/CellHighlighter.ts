@@ -1,15 +1,21 @@
-// @ts-ignore
-import { CellReference, EqualsOp } from 'hyperformula/es/parser/LexerConfig';
+import {
+  CellReference,
+  EqualsOp,
+  RangeSeparator,
+  // @ts-ignore
+} from 'hyperformula/es/parser/LexerConfig';
 import { prefix } from '../utils';
 import HighlightedCell from '../sheets/cells/cell/HighlightedCell';
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
 import Spreadsheet from '../Spreadsheet';
+import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress';
 
 export interface ICellReferencePart {
   startOffset: number;
   endOffset: number;
   referenceText: string;
   color: string;
+  type: 'simpleCellString' | 'rangeCellString';
 }
 
 class CellHighlighter {
@@ -62,14 +68,36 @@ class CellHighlighter {
       }
 
       if (token.tokenType.name === CellReference.name) {
-        const color = getSyntaxColor();
+        // Handles ranges, e.g. A2:B2
+        if (
+          tokens[index - 2]?.tokenType.name === CellReference.name &&
+          tokens[index - 1]?.tokenType.name === RangeSeparator.name
+        ) {
+          const startCellReference = cellReferenceParts.pop()!;
+          const rangeSeperator = tokens[index - 1];
+          const endCellReference = token;
 
-        cellReferenceParts.push({
-          startOffset: token.startOffset,
-          endOffset: token.endOffset,
-          referenceText: token.image,
-          color,
-        });
+          hue -= goldenRatio;
+
+          cellReferenceParts.push({
+            startOffset: startCellReference.startOffset,
+            endOffset: endCellReference.endOffset,
+            referenceText:
+              startCellReference.referenceText +
+              rangeSeperator.image +
+              endCellReference.image,
+            color: getSyntaxColor(),
+            type: 'rangeCellString',
+          });
+        } else {
+          cellReferenceParts.push({
+            startOffset: token.startOffset,
+            endOffset: token.endOffset,
+            referenceText: token.image,
+            color: getSyntaxColor(),
+            type: 'simpleCellString',
+          });
+        }
       }
     }
 
@@ -130,24 +158,63 @@ class CellHighlighter {
   ) {
     this.destroyHighlightedCells();
 
-    cellReferenceParts.forEach(({ referenceText, color }) => {
-      const precedentSimpleCellAddress =
-        this.spreadsheet.hyperformula.simpleCellAddressFromString(
-          referenceText,
-          simpleCellAddress.sheet
-        )!;
+    cellReferenceParts.forEach(({ referenceText, type, color }) => {
+      let highlightedCell;
 
-      if (simpleCellAddress.sheet === precedentSimpleCellAddress.sheet) {
-        const highlightedCell = new HighlightedCell(
-          this.spreadsheet.sheets,
-          new SimpleCellAddress(
-            precedentSimpleCellAddress.sheet,
-            precedentSimpleCellAddress.row,
-            precedentSimpleCellAddress.col
-          ),
-          color
-        );
+      if (type === 'simpleCellString') {
+        const precedentSimpleCellAddress =
+          this.spreadsheet.hyperformula.simpleCellAddressFromString(
+            referenceText,
+            simpleCellAddress.sheet
+          )!;
 
+        // Don't highlight cells if cell reference is another sheet
+        if (simpleCellAddress.sheet === precedentSimpleCellAddress.sheet) {
+          highlightedCell = new HighlightedCell(
+            this.spreadsheet.sheets,
+            new SimpleCellAddress(
+              precedentSimpleCellAddress.sheet,
+              precedentSimpleCellAddress.row,
+              precedentSimpleCellAddress.col
+            ),
+            color
+          );
+        }
+      } else {
+        const precedentSimpleCellRange =
+          this.spreadsheet.hyperformula.simpleCellRangeFromString(
+            referenceText,
+            simpleCellAddress.sheet
+          )!;
+
+        // Don't highlight cells if cell reference is another sheet
+        if (simpleCellAddress.sheet === precedentSimpleCellRange.start.sheet) {
+          const startSimpleCellAddress = new SimpleCellAddress(
+            precedentSimpleCellRange.start.sheet,
+            precedentSimpleCellRange.start.row,
+            precedentSimpleCellRange.start.col
+          );
+          const endSimpleCellAddress = new SimpleCellAddress(
+            precedentSimpleCellRange.end.sheet,
+            precedentSimpleCellRange.end.row,
+            precedentSimpleCellRange.end.col
+          );
+
+          const rangeSimpleCellAddress = new RangeSimpleCellAddress(
+            startSimpleCellAddress,
+            endSimpleCellAddress
+          );
+
+          highlightedCell = new HighlightedCell(
+            this.spreadsheet.sheets,
+            startSimpleCellAddress,
+            color
+          );
+
+          highlightedCell.setRangeCellAddress(rangeSimpleCellAddress);
+        }
+      }
+      if (highlightedCell) {
         const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo();
         const sheetGroup =
           this.spreadsheet.sheets.scrollGroups[stickyGroup].sheetGroup;

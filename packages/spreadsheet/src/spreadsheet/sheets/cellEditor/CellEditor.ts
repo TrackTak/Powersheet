@@ -5,7 +5,7 @@ import { DelegateInstance, delegate } from 'tippy.js';
 import FormulaHelper from '../../formulaHelper/FormulaHelper';
 import Spreadsheet from '../../Spreadsheet';
 import Cell from '../cells/cell/Cell';
-import { prefix, saveCaretPosition } from '../../utils';
+import { prefix, saveCaretPosition, setCaretToEndOfElement } from '../../utils';
 import { HyperFormula } from 'hyperformula';
 import { isPercent } from 'numfmt';
 import { ICellData } from '../Data';
@@ -23,10 +23,11 @@ class CellEditor {
   cellTooltip: DelegateInstance;
   formulaHelper?: FormulaHelper;
   spreadsheet: Spreadsheet;
+  cellHighlighter: CellHighlighter;
   currentCell: Cell | null = null;
   currentScroll: ICurrentScroll | null = null;
-  cellHighlighter: CellHighlighter;
   currentCaretPosition: number | null = null;
+  currentCellText: string | null = null;
 
   constructor(private sheet: Sheet) {
     this.sheet = sheet;
@@ -77,12 +78,11 @@ class CellEditor {
       ];
     const cellValue =
       this.spreadsheet.hyperformula
-        .getCellValue(simpleCellAddress)
+        .getCellSerialized(simpleCellAddress)
         ?.toString() ?? undefined;
-    const textContent = this.cellEditorEl.textContent;
 
     this.spreadsheet.pushToHistory(() => {
-      const value = textContent ? textContent : undefined;
+      const value = this.currentCellText ? this.currentCellText : undefined;
 
       if (cellValue !== value) {
         const newCell: Omit<ICellData, 'id'> = {
@@ -124,13 +124,15 @@ class CellEditor {
   };
 
   setContentEditable(value: string | null) {
-    const text = value ?? '';
-
     this.clear();
     this.spreadsheet.formulaBar?.clear();
 
+    this.currentCellText = value;
+
     const { tokenParts, cellReferenceParts } =
-      this.cellHighlighter.getHighlightedCellReferenceSections(text);
+      this.cellHighlighter.getHighlightedCellReferenceSections(
+        this.currentCellText ?? ''
+      );
 
     this.cellHighlighter.highlightCellReferences(
       this.currentCell!.simpleCellAddress,
@@ -181,6 +183,13 @@ class CellEditor {
     }
   };
 
+  showAndSetValue(cell: Cell) {
+    this.show(cell);
+    this.setCellValue(cell.simpleCellAddress);
+
+    setCaretToEndOfElement(this.cellEditorEl);
+  }
+
   show(cell: Cell) {
     this.currentCell = cell;
     this.currentScroll = {
@@ -204,6 +213,7 @@ class CellEditor {
   }
 
   clear() {
+    this.currentCellText = null;
     this.cellEditorEl.textContent = null;
     this.cellHighlighter.destroyHighlightedCells();
   }

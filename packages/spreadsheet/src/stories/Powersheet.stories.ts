@@ -124,7 +124,9 @@ const buildSpreadsheetWithEverything = (
   const formulaBar = new FormulaBar();
   const exporter = new Exporter(customRegisteredPluginDefinitions);
   const bottomBar = new BottomBar();
-  const functionHelper = new FunctionHelper();
+  const functionHelper = new FunctionHelper({
+    header: 'FINANCIAL - FIN',
+  });
 
   const trueArgs: [string, string] = ['TRUE', '=TRUE()'];
   const falseArgs: [string, string] = ['FALSE', '=FALSE()'];

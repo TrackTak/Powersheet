@@ -39,9 +39,8 @@ export const createParagraph = (paragraph: string) => {
 };
 
 export const createSyntaxList = (codeText: string, description?: string) => {
-  const listEl = document.createElement('ul');
-  const list = document.createElement('li');
-  list.classList.add(styles.list, `${functionHelperPrefix}`);
+  const listItem = document.createElement('li');
+  listItem.classList.add(styles.list, `${functionHelperPrefix}`);
 
   const codeDescriptionEl = document.createElement('p');
   const codeStyle = document.createElement('code');
@@ -54,9 +53,8 @@ export const createSyntaxList = (codeText: string, description?: string) => {
 
   codeStyle.classList.add(styles.code, `${functionHelperPrefix}`);
 
-  listEl.appendChild(list);
-  list.appendChild(codeDescriptionEl);
+  listItem.appendChild(codeDescriptionEl);
   codeDescriptionEl.prepend(codeStyle);
 
-  return { listEl, codeDescriptionEl, codeStyle };
+  return { listItem, codeDescriptionEl, codeStyle };
 };

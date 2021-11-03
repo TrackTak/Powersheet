@@ -4,14 +4,13 @@
 
 @mixin scrollBar {
   position: absolute;
-  z-index: 12;
+  z-index: 4;
   right: 0;
   background-color: #f4f5f8;
 }
 
 .verticalScrollBar {
   @include scrollBar();
-
   bottom: 0;
   top: 0;
   overflow-x: hidden;

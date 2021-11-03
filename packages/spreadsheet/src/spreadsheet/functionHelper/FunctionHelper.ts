@@ -404,9 +404,12 @@ const codeUsageElements = [
   { usageName: '=FIN("B2, B3")' },
 ];
 
+export interface IFunctionHelperData {
+  header: string;
+}
+
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement;
-  drawerEl!: HTMLDivElement;
   drawerContentEl!: HTMLDivElement;
   topAppBarEl!: HTMLDivElement;
   drawer!: MDCDrawer;
@@ -416,23 +419,20 @@ class FunctionHelper {
   textWrapper!: HTMLDivElement;
   spreadsheet!: Spreadsheet;
 
+  constructor(public data: IFunctionHelperData) {
+    this.data = data;
+  }
+
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;
 
     this.functionHelperEl = document.createElement('div');
     this.functionHelperEl.classList.add(
       styles.functionHelper,
-      `${functionHelperPrefix}`
-    );
-
-    this.drawerEl = document.createElement('div');
-    this.drawerEl.classList.add(
-      styles.drawerEl,
+      `${functionHelperPrefix}`,
       'mdc-drawer',
       'mdc-drawer--dismissible'
     );
-
-    this.functionHelperEl.appendChild(this.drawerEl);
 
     this.drawerContentEl = document.createElement('div');
     this.drawerContentEl.classList.add(
@@ -443,7 +443,7 @@ class FunctionHelper {
 
     this.drawerContentEl.dir = 'ltr';
 
-    this.drawerEl.appendChild(this.drawerContentEl);
+    this.functionHelperEl.appendChild(this.drawerContentEl);
 
     this.functionHelperEl.dir = 'rtl';
 
@@ -458,7 +458,8 @@ class FunctionHelper {
     );
 
     this.closeButton.addEventListener('click', () => {
-      this.drawer.open = !this.drawer.open;
+      const isOpen = this.drawer.open;
+      this.drawer.open = !isOpen;
     });
 
     this.drawerContentEl.appendChild(this.closeButton);
@@ -472,7 +473,7 @@ class FunctionHelper {
 
     this.headerEl = document.createElement('h1');
     this.headerEl.classList.add(styles.headerEl, `${functionHelperPrefix}`);
-    this.headerEl.textContent = 'FINANCIAL - FIN';
+    this.headerEl.textContent = this.data.header;
 
     const { paragraphEl: description } = createParagraph(
       'Fetches current or historical securities information from Tracktak Finance.'
@@ -511,56 +512,90 @@ class FunctionHelper {
     this.textWrapper.appendChild(headerSyntax);
     this.textWrapper.appendChild(codeSyntax);
 
+    const listCodeSyntax = document.createElement('ul');
+    this.textWrapper.appendChild(listCodeSyntax);
+
     codeSyntaxElements.forEach(({ syntaxName, description }) => {
-      const { listEl } = createSyntaxList(syntaxName, description);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(syntaxName, description);
+
+      listCodeSyntax.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(headerAttributes);
+
     this.textWrapper.appendChild(incomeStatementSubHeader);
 
+    const listIncomeStatement = document.createElement('ul');
+    this.textWrapper.appendChild(listIncomeStatement);
+
     incomeStatementAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listIncomeStatement.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(balanceSheetSubHeader);
 
+    const listBalanceSheet = document.createElement('ul');
+    this.textWrapper.appendChild(listBalanceSheet);
+
     balanceSheetAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listBalanceSheet.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(cashFlowStatementSubHeader);
 
+    const listCashFlowStatement = document.createElement('ul');
+    this.textWrapper.appendChild(listCashFlowStatement);
+
     cashFlowStatementAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listCashFlowStatement.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(riskPremiumsAndBetasSubHeader);
 
+    const listRiskPremiumsAndBetas = document.createElement('ul');
+    this.textWrapper.appendChild(listRiskPremiumsAndBetas);
+
     riskPremiumsAndBetasAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listRiskPremiumsAndBetas.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(generalSubHeader);
 
+    const listGeneral = document.createElement('ul');
+    this.textWrapper.appendChild(listGeneral);
+
     generalAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listGeneral.appendChild(listItem);
     });
 
     this.textWrapper.appendChild(otherSubHeader);
 
+    const listOther = document.createElement('ul');
+    this.textWrapper.appendChild(listOther);
+
     otherAttributes.forEach(({ attributeName }) => {
-      const { listEl } = createSyntaxList(attributeName);
-      this.textWrapper.appendChild(listEl);
+      const { listItem } = createSyntaxList(attributeName);
+      listOther.appendChild(listItem);
     });
 
     this.topAppBarEl = document.createElement('div');
-    this.drawer = MDCDrawer.attachTo(this.drawerEl);
+
+    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
+      once: true,
+    });
+  }
+
+  private onDOMContentLoaded = () => {
+    this.drawer = MDCDrawer.attachTo(this.functionHelperEl);
+  };
+
+  destroy() {
+    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 }
 

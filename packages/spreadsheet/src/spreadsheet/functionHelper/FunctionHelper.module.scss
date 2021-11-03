@@ -8,17 +8,28 @@
 }
 
 .functionHelper {
+  @include drawer.width(400px);
+  overflow: auto;
+  z-index: 5;
   position: absolute;
   top: 0;
   right: 0;
   height: 100%;
 }
 
-.drawerEl {
+@media only screen and (max-width: 600px) {
+  .functionHelper {
+    width: 100%;
+  }
+
+  .drawerContent {
+    padding: 0;
+    padding-left: 15px;
+  }
+}
+
+.drawerContent {
   padding: 0 30px 30px;
-  width: 400px;
-  overflow: auto;
-  height: 100%;
 }
 
 .closeIcon {

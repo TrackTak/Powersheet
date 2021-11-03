@@ -557,8 +557,9 @@ class Toolbar {
         break;
       }
       case 'functionHelper': {
-        this.spreadsheet.functionHelper!.drawer.open =
-          !this.spreadsheet.functionHelper!.drawer.open;
+        const isOpen = !this.spreadsheet.functionHelper!.drawer.open;
+
+        this.spreadsheet.functionHelper!.drawer.open = isOpen;
         break;
       }
       case 'formula': {

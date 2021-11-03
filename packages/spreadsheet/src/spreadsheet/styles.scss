@@ -58,3 +58,11 @@
 @mixin headerColor {
   color: #333;
 }
+
+@mixin functionHelper {
+  z-index: 5;
+}
+
+@mixin scrollBar {
+  z-index: 4;
+}

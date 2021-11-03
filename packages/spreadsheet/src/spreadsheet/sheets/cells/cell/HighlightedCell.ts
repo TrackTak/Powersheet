@@ -24,11 +24,13 @@ class HighlightedCell extends Cell {
     this.setInnerRectProperties();
   }
 
-  override setRangeCellAddress(rangeSimpleCellAddress: RangeSimpleCellAddress) {
+  override setRangeCellAddress = (
+    rangeSimpleCellAddress: RangeSimpleCellAddress
+  ) => {
     super.setRangeCellAddress(rangeSimpleCellAddress);
 
     this.setInnerRectProperties();
-  }
+  };
 
   private setInnerRectProperties() {
     const size = this.rect.size();

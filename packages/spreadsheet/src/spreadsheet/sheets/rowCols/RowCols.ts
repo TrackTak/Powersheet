@@ -12,7 +12,6 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Group } from 'konva/lib/Group';
 import Sheets from '../Sheets';
-import { dataKeysComparer } from '../../utils';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -219,8 +218,6 @@ class RowCols {
   }
 
   updateViewport() {
-    this.scrollBar.setScrollSize();
-
     this.frozenLine.setAttrs({
       ...this.spreadsheet.styles[this.type].frozenLine,
       visible: false,
@@ -262,7 +259,10 @@ class RowCols {
   updateRowCol(rowColAddress: RowColAddress) {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol);
 
-    if (!rowCol) {
+    if (
+      !rowCol &&
+      rowColAddress.rowCol < this.spreadsheet.options[this.type].amount
+    ) {
       this.setRowCol(rowColAddress);
     }
   }
@@ -293,10 +293,7 @@ class RowCols {
   }
 
   private getSheetSize() {
-    return (
-      this.sheets.sheetDimensions[this.oppositeFunctions.size] +
-      this.sheets.getViewportVector()[this.oppositeFunctions.axis]
-    );
+    return this.sheets.sheetDimensions[this.oppositeFunctions.size];
   }
 
   getLinePoints = (size: number) => {
@@ -364,6 +361,7 @@ class RowCols {
     }
 
     this.totalSize = sumOfSizes;
+    this.scrollBar.setScrollSize();
   }
 
   calculateSheetViewportEndPosition = (

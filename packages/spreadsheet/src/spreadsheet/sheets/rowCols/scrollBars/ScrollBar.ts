@@ -75,10 +75,7 @@ class ScrollBar {
       this.sheets.sheetDimensions[this.functions.size] +
       this.sheets.getViewportVector()[this.functions.axis];
 
-    // TODO: Remove this once scroll snap is fixed for end row/cols
-    const padding = this.spreadsheet.options[this.type].defaultSize * 4;
-
-    this.scrollEl.style[this.functions.size] = `${scrollSize + padding}px`;
+    this.scrollEl.style[this.functions.size] = `${scrollSize}px`;
   }
 
   private getNewScrollAmount(start: number, end: number) {
@@ -135,7 +132,7 @@ class ScrollBar {
     const scrollPercent = scroll / scrollSize;
 
     this.sheetViewportPosition.x = Math.trunc(
-      this.spreadsheet.options[this.type].amount * scrollPercent
+      (this.spreadsheet.options[this.type].amount + 1) * scrollPercent
     );
 
     let newScroll = Math.abs(this.scroll);

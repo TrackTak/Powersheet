@@ -259,10 +259,7 @@ class RowCols {
   updateRowCol(rowColAddress: RowColAddress) {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol);
 
-    if (
-      !rowCol &&
-      rowColAddress.rowCol < this.spreadsheet.options[this.type].amount
-    ) {
+    if (!rowCol) {
       this.setRowCol(rowColAddress);
     }
   }
@@ -399,7 +396,7 @@ class RowCols {
     }, 0);
 
     const totalSize =
-      this.spreadsheet.options[this.type].amount *
+      (this.spreadsheet.options[this.type].amount + 1) *
         this.spreadsheet.options[this.type].defaultSize +
       totalSizeDifference;
 

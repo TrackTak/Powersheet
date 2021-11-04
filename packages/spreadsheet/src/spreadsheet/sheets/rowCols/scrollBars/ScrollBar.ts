@@ -61,13 +61,17 @@ class ScrollBar {
     this.sheets.sheetEl.appendChild(this.scrollBarEl);
 
     this.setScrollSize();
+    this.moveScrollGroups(0);
   }
 
-  getIsScrollingNormal() {
-    return (
-      this.sheetViewportPosition.x >= this.previousSheetViewportPosition.x &&
-      this.sheetViewportPosition.y >= this.previousSheetViewportPosition.y
-    );
+  private moveScrollGroups(scroll: number) {
+    if (this.isCol) {
+      this.sheets.scrollGroups.ySticky.group.x(scroll);
+    } else {
+      this.sheets.scrollGroups.xSticky.group.y(scroll);
+    }
+
+    this.sheets.scrollGroups.main.group[this.functions.axis](scroll);
   }
 
   setScrollSize() {
@@ -104,7 +108,7 @@ class ScrollBar {
     };
   }
 
-  private getYIndex() {
+  setYIndex() {
     const xIndex = this.sheetViewportPosition.x;
     const stageSize =
       this.sheets.stage[this.functions.size]() -
@@ -115,11 +119,7 @@ class ScrollBar {
       xIndex
     );
 
-    return yIndex;
-  }
-
-  setYIndex() {
-    this.sheetViewportPosition.y = this.getYIndex();
+    this.sheetViewportPosition.y = yIndex;
   }
 
   onScroll = (e: Event) => {
@@ -160,13 +160,7 @@ class ScrollBar {
 
     newScroll *= -1;
 
-    if (this.isCol) {
-      this.sheets.scrollGroups.ySticky.group.x(newScroll);
-    } else {
-      this.sheets.scrollGroups.xSticky.group.y(newScroll);
-    }
-
-    this.sheets.scrollGroups.main.group[this.functions.axis](newScroll);
+    this.moveScrollGroups(newScroll);
 
     this.previousSheetViewportPosition.x = this.sheetViewportPosition.x;
     this.previousSheetViewportPosition.y = this.sheetViewportPosition.y;

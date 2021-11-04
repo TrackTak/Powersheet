@@ -53,6 +53,9 @@ class Resizer {
   }
 
   destroy() {
+    this.resizeMarker.destroy();
+    this.resizeGuideLine.destroy();
+
     this.resizeMarker.off('mouseover', this.resizeMarkerOnMouseOver);
     this.resizeMarker.off('mouseout', this.resizeMarkerOnMouseOut);
     this.resizeMarker.off('dragstart', this.resizeLineDragStart);

@@ -21,6 +21,7 @@ import Cells from './cells/Cells';
 import { ISheetData } from './Data';
 import Merger from './Merger';
 import Clipboard from '../Clipboard';
+import { Line } from 'konva/lib/shapes/Line';
 
 export interface IDimensions {
   width: number;
@@ -51,6 +52,30 @@ export interface ICustomSizes {
   size: number;
 }
 
+export interface ICachedGridLines {
+  main: Line[];
+  xFrozenLines: Line[];
+  yFrozenLines: Line[];
+  xyFrozenLines: Line[];
+}
+
+export interface ICachedRowColGroup {
+  headerGroups: Group[];
+  gridLines: ICachedGridLines;
+}
+
+export interface ICachedGroups {
+  cells: Group[];
+  rows: ICachedRowColGroup;
+  cols: ICachedRowColGroup;
+}
+
+export interface ICachedGroupsNumber {
+  cells: number;
+  rows: number;
+  cols: number;
+}
+
 class Sheets {
   scrollGroups!: IScrollGroups;
   sheetIds: SheetId[] = [];
@@ -78,6 +103,32 @@ class Sheets {
   comment: Comment;
   activeSheetId = 0;
   totalSheetCount = 0;
+  cachedGroups: ICachedGroups = {
+    cells: [],
+    rows: {
+      headerGroups: [],
+      gridLines: {
+        main: [],
+        xFrozenLines: [],
+        yFrozenLines: [],
+        xyFrozenLines: [],
+      },
+    },
+    cols: {
+      headerGroups: [],
+      gridLines: {
+        main: [],
+        xFrozenLines: [],
+        yFrozenLines: [],
+        xyFrozenLines: [],
+      },
+    },
+  };
+  cachedGroupsNumber: ICachedGroupsNumber = {
+    cells: 0,
+    rows: 0,
+    cols: 0,
+  };
   private debouncedResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
@@ -180,9 +231,6 @@ class Sheets {
     this.cols = new RowCols('col', this);
     this.rows = new RowCols('row', this);
 
-    this.rows.updateViewportSize();
-    this.cols.updateViewportSize();
-
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
     this.comment = new Comment(this);
@@ -209,9 +257,6 @@ class Sheets {
 
     this.sheet.setPosition(this.getViewportVector());
 
-    this.cols.scrollBar.setYIndex();
-    this.rows.scrollBar.setYIndex();
-
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
@@ -237,12 +282,18 @@ class Sheets {
   }
 
   switchSheet(sheetId: SheetId) {
-    this.cells.clearCells();
-
-    this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
-    this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
+    this.cells.destroy();
+    this.rows.destroy();
+    this.cols.destroy();
+    this.selector.destroy();
 
     this.activeSheetId = sheetId;
+
+    this.merger = new Merger(this);
+    this.cells = new Cells(this);
+    this.cols = new RowCols('col', this);
+    this.rows = new RowCols('row', this);
+    this.selector = new Selector(this);
 
     this.spreadsheet.updateViewport();
   }

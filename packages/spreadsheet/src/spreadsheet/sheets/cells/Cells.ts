@@ -11,9 +11,7 @@ import RowColAddress from './cell/RowColAddress';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
-  cachedCellGroups: Group[] = [];
   spreadsheet: Spreadsheet;
-  numberOfCachedCells = 0;
 
   constructor(private sheets: Sheets) {
     this.sheets = sheets;
@@ -28,37 +26,17 @@ class Cells {
     };
   }
 
-  setCachedCells() {
-    // TODO: Remove * 2 and measure the
-    // outOfViewport for freeze correctly instead
-    const currentNumberOfCachedCells =
-      this.sheets.rows.numberOfCachedRowCols *
-      this.sheets.cols.numberOfCachedRowCols *
-      2;
-
-    for (
-      let index = this.numberOfCachedCells;
-      index < currentNumberOfCachedCells;
-      index++
-    ) {
-      this.cachedCellGroups.push(this.getCellGroup());
-    }
-
-    this.numberOfCachedCells =
-      this.sheets.rows.numberOfCachedRowCols *
-      this.sheets.cols.numberOfCachedRowCols;
-  }
-
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
         cell.group.remove();
 
         this.cellsMap.delete(cellId);
-        this.cachedCellGroups.push(cell.group);
+        this.sheets.cachedGroups.cells.push(cell.group);
       }
     });
   }
+
   getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
@@ -141,13 +119,31 @@ class Cells {
     return cellGroup;
   }
 
-  clearCells() {
-    this.cellsMap.forEach((cell, cellId) => {
+  destroy() {
+    this.cellsMap.forEach((cell) => {
       cell.destroy();
 
-      this.cellsMap.delete(cellId);
-      this.cachedCellGroups.push(this.getCellGroup().clone());
+      this.sheets.cachedGroups.cells.push(this.getCellGroup().clone());
     });
+  }
+
+  setCachedCells() {
+    // TODO: Remove * 2 and measure the
+    // outOfViewport for freeze correctly instead
+    const currentNumberOfCachedCells =
+      this.sheets.cachedGroupsNumber.rows *
+      this.sheets.cachedGroupsNumber.cols *
+      2;
+
+    for (
+      let index = this.sheets.cachedGroupsNumber.cells;
+      index < currentNumberOfCachedCells;
+      index++
+    ) {
+      this.sheets.cachedGroups.cells.push(this.getCellGroup());
+    }
+
+    this.sheets.cachedGroupsNumber.cells = currentNumberOfCachedCells;
   }
 
   resetCachedCells() {
@@ -155,7 +151,7 @@ class Cells {
       cell.group.remove();
 
       this.cellsMap.delete(cellId);
-      this.cachedCellGroups.push(cell.group);
+      this.sheets.cachedGroups.cells.push(cell.group);
     });
   }
 
@@ -183,7 +179,7 @@ class Cells {
   }
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
-    const cachedCellGroup = this.cachedCellGroups.pop()!;
+    const cachedCellGroup = this.sheets.cachedGroups.cells.pop()!;
 
     if (!cachedCellGroup) return;
 

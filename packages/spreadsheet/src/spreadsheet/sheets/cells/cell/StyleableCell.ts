@@ -310,8 +310,6 @@ class StyleableCell extends Cell {
     if (!this.bordersGroup.parent) {
       this.sheets.scrollGroups[stickyGroup].cellBorders.add(this.bordersGroup);
     }
-
-    console.log(this.bordersGroup);
   }
 
   override destroy() {

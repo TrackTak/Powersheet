@@ -3,7 +3,7 @@
 @import '../styles.scss';
 @import '../variables.scss';
 
-:global  {
+:global {
   @include drawer.core-styles;
   @include drawer.dismissible-core-styles;
 }
@@ -11,7 +11,7 @@
 .functionHelper {
   @include drawer.width(400px);
   overflow: auto;
-  z-index: 5;
+  z-index: $functionHelperzIndex;
   position: absolute;
   top: 0;
   right: 0;

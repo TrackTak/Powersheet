@@ -34,6 +34,7 @@ interface IScrollGroup {
   group: Group;
   sheetGroup: Group;
   cellGroup: Group;
+  cellBorders: Group;
   rowColGroup: Group;
   headerGroup: Group;
   frozenBackground: Rect;
@@ -59,15 +60,20 @@ export interface ICachedGridLines {
   xyFrozenLines: Line[];
 }
 
-export interface ICachedRowColGroup {
+export interface ICachedRowColGroups {
   headerGroups: Group[];
   gridLines: ICachedGridLines;
 }
 
+export interface ICachedCellGroups {
+  group: Group;
+  borderGroup: Group;
+}
+
 export interface ICachedGroups {
-  cells: Group[];
-  rows: ICachedRowColGroup;
-  cols: ICachedRowColGroup;
+  cells: ICachedCellGroups[];
+  rows: ICachedRowColGroups;
+  cols: ICachedRowColGroups;
 }
 
 export interface ICachedGroupsNumber {
@@ -182,6 +188,12 @@ class Sheets {
 
       const cellGroup = new Group({
         name: 'cellGroup',
+        listening: false,
+      });
+
+      const cellBorders = new Group({
+        name: 'cellBorders',
+        listening: false,
       });
 
       const rowColGroup = new Group({
@@ -204,7 +216,7 @@ class Sheets {
       }
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(rowColGroup, cellGroup);
+      sheetGroup.add(rowColGroup, cellGroup, cellBorders);
       group.add(sheetGroup, headerGroup);
 
       this.layer.add(group);
@@ -218,6 +230,7 @@ class Sheets {
           group,
           sheetGroup,
           cellGroup,
+          cellBorders,
           rowColGroup,
           headerGroup,
           frozenBackground,

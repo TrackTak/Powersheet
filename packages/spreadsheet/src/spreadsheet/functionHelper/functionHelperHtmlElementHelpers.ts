@@ -3,6 +3,14 @@ import styles from './FunctionHelper.module.scss';
 
 export const functionHelperPrefix = `${prefix}-function-helper`;
 
+export const createMainHeader = (headerText: string) => {
+  const mainHeaderEl = document.createElement('h1');
+  mainHeaderEl.classList.add(styles.headerEl, `${functionHelperPrefix}`);
+  mainHeaderEl.textContent = headerText;
+
+  return { mainHeaderEl };
+};
+
 export const createHeader = (headerText: string) => {
   const header = document.createElement('h3');
   header.classList.add(styles.header, `${functionHelperPrefix}`);

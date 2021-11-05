@@ -1,8 +1,9 @@
 @use '@material/drawer';
 
 @import '../styles.scss';
+@import '../variables.scss';
 
-:global {
+:global  {
   @include drawer.core-styles;
   @include drawer.dismissible-core-styles;
 }

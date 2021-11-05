@@ -5,6 +5,7 @@ import closeIcon from './close-icon.svg';
 import {
   createCodeText,
   createHeader,
+  createMainHeader,
   createParagraph,
   createSubHeader,
   createSyntaxListItem,
@@ -36,7 +37,6 @@ export interface IFunctionHelperData {
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement;
   drawerContentEl!: HTMLDivElement;
-  topAppBarEl!: HTMLDivElement;
   drawer!: MDCDrawer;
   closeIcon!: HTMLImageElement;
   closeButton!: HTMLButtonElement;
@@ -96,9 +96,7 @@ class FunctionHelper {
       `${functionHelperPrefix}`
     );
 
-    this.headerEl = document.createElement('h1');
-    this.headerEl.classList.add(styles.headerEl, `${functionHelperPrefix}`);
-    this.headerEl.textContent = this.data.header;
+    const { mainHeaderEl } = createMainHeader(this.data.header);
 
     const { paragraphEl: description } = createParagraph(
       this.data.headerDescription
@@ -109,7 +107,7 @@ class FunctionHelper {
     const { header: headerAttributes } = createHeader('Attributes');
 
     this.drawerContentEl.appendChild(this.textWrapper);
-    this.textWrapper.appendChild(this.headerEl);
+    this.textWrapper.appendChild(mainHeaderEl);
     this.textWrapper.appendChild(description);
     this.textWrapper.appendChild(headerUsage);
 
@@ -147,8 +145,6 @@ class FunctionHelper {
         attributeList.appendChild(listItem);
       });
     });
-
-    this.topAppBarEl = document.createElement('div');
 
     window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
       once: true,

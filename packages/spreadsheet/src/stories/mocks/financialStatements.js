@@ -137,37 +137,35 @@ export const other = [
   'annualAverageCAGRLastFiveYears',
 ];
 
-export const incomeStatementAttributes = incomeStatement
-  .filter((element) => element)
-  .map((attribute) => {
+const getMappedArrayAttributes = (financialSecurityAttribute) => {
+  return financialSecurityAttribute.map((attribute) => {
     return `"${attribute}"`;
   });
+};
 
-export const balanceSheetAttributes = balanceSheet
-  .filter((element) => element)
-  .map((attribute) => {
-    return `"${attribute}"`;
-  });
+const getMappedFilteredArrayAttributes = (financialSecurityAttribute) => {
+  const filteredAttributes = financialSecurityAttribute.filter(
+    (element) => element
+  );
 
-export const cashFlowStatementAttributes = cashFlowStatement
-  .filter((element) => element)
-  .map((attribute) => {
-    return `"${attribute}"`;
-  });
+  return getMappedArrayAttributes(filteredAttributes);
+};
 
-export const riskPremiumsAndBetasAttributes = riskPremiumsAndBetas.map(
-  (attribute) => {
-    return `"${attribute}"`;
-  }
-);
+export const incomeStatementAttributes =
+  getMappedFilteredArrayAttributes(incomeStatement);
 
-export const generalAttributes = general.map((attribute) => {
-  return `"${attribute}"`;
-});
+export const balanceSheetAttributes =
+  getMappedFilteredArrayAttributes(balanceSheet);
 
-export const otherAttributes = other.map((attribute) => {
-  return `"${attribute}"`;
-});
+export const cashFlowStatementAttributes =
+  getMappedFilteredArrayAttributes(cashFlowStatement);
+
+export const riskPremiumsAndBetasAttributes =
+  getMappedArrayAttributes(riskPremiumsAndBetas);
+
+export const generalAttributes = getMappedArrayAttributes(general);
+
+export const otherAttributes = getMappedArrayAttributes(other);
 
 export const getStatements = (statements, statementKeys) => {
   const { date, filingDate, currencyCode, ...statement } = {

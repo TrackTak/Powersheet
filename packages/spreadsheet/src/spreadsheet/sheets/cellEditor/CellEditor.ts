@@ -119,6 +119,7 @@ class CellEditor {
     const value = `=${suggestion}()`;
 
     this.setContentEditable(value);
+
     this.cellEditorEl.focus();
     this.formulaHelper?.hide();
 
@@ -228,12 +229,16 @@ class CellEditor {
   }
 
   hide() {
+    this.clear();
+
     this.currentCell = null;
     this.currentScroll = null;
     this.cellTooltip.hide();
 
     this.cellEditorContainerEl.style.display = 'none';
-    this.clear();
+
+    this.cellEditorEl.blur();
+    this.sheet.sheetEl.focus();
 
     this.spreadsheet.updateViewport();
   }

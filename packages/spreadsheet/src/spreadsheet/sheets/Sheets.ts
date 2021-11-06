@@ -559,6 +559,7 @@ class Sheets {
             if (serializedValue) {
               this.cellEditor.clear();
               this.cellEditor.show(selectedCell);
+
               this.cellEditor.cellEditorEl.focus();
             } else {
               this.cellEditor.showAndSetValue(selectedCell);

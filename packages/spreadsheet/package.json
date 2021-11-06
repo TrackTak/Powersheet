@@ -64,9 +64,11 @@
     "a-color-picker": "^1.2.1"
   },
   "dependencies": {
+    "@material/drawer": "^13.0.0",
     "change-case": "^4.1.2",
     "konva": "^8.2.2",
     "lodash": "^4.17.21",
+    "material-components-web": "^13.0.0",
     "numfmt": "^2.1.0",
     "sass": "^1.36.0",
     "tiny-typed-emitter": "^2.1.0",

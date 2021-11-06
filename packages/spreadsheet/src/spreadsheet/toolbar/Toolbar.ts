@@ -89,7 +89,6 @@ class Toolbar {
   textFormatElements!: ITextFormatElements;
   functionElements?: IFunctionElements;
   autosaveElement!: IAutosaveElement;
-  toolbarActionGroups!: IToolbarActionGroups[];
   tooltip!: DelegateInstance;
   dropdown!: DelegateInstance;
   spreadsheet!: Spreadsheet;
@@ -284,64 +283,6 @@ class Toolbar {
       },
     });
 
-    const icons = this.iconElementsMap;
-
-    this.toolbarActionGroups = [
-      {
-        elements: [icons.undo.buttonContainer, icons.redo.buttonContainer],
-      },
-      {
-        elements: [this.buttonElementsMap.textFormatPattern.buttonContainer],
-      },
-      {
-        elements: [this.buttonElementsMap.fontSize.buttonContainer],
-      },
-      {
-        elements: [
-          icons.bold.buttonContainer,
-          icons.italic.buttonContainer,
-          icons.underline.buttonContainer,
-          icons.strikeThrough.buttonContainer,
-          icons.fontColor.buttonContainer,
-        ],
-      },
-      {
-        elements: [
-          icons.backgroundColor.buttonContainer,
-          icons.borders.buttonContainer,
-          icons.merge.buttonContainer,
-        ],
-      },
-      {
-        elements: [
-          icons.horizontalTextAlign.buttonContainer,
-          icons.verticalTextAlign.buttonContainer,
-          icons.textWrap.buttonContainer,
-        ],
-      },
-      {
-        elements: [
-          icons.freeze.buttonContainer,
-          ...(this.spreadsheet.hyperformula
-            ? [icons.functions.buttonContainer]
-            : []),
-          icons.formula.buttonContainer,
-        ],
-      },
-      {
-        elements: [icons.export.buttonContainer],
-      },
-      {
-        elements: [icons.autosave.buttonContainer],
-      },
-    ];
-
-    this.toolbarActionGroups.forEach(({ elements }) => {
-      const group = createGroup(elements, styles.group, toolbarPrefix);
-
-      this.toolbarEl.appendChild(group);
-    });
-
     Object.keys(this.iconElementsMap).forEach((key) => {
       const name = key as IconElementsName;
 
@@ -360,6 +301,14 @@ class Toolbar {
 
         this.setValue('functions', functionName);
       }
+    });
+  }
+
+  setToolbarIcons(toolbarActionGroups: IToolbarActionGroups[]) {
+    toolbarActionGroups.forEach(({ elements }) => {
+      const group = createGroup(elements, styles.group, toolbarPrefix);
+
+      this.toolbarEl.appendChild(group);
     });
   }
 
@@ -547,6 +496,12 @@ class Toolbar {
     switch (name) {
       case 'functions': {
         this.setFunction(value);
+        break;
+      }
+      case 'functionHelper': {
+        const isOpen = !this.spreadsheet.functionHelper!.drawer.open;
+
+        this.spreadsheet.functionHelper!.drawer.open = isOpen;
         break;
       }
       case 'formula': {

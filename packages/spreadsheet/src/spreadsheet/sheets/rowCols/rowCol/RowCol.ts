@@ -15,6 +15,7 @@ import {
   getColumnHeader,
 } from '../../../utils';
 import { Util } from 'konva/lib/Util';
+import { CellType } from 'hyperformula';
 
 class RowCol {
   spreadsheet: Spreadsheet;
@@ -168,14 +169,19 @@ class RowCol {
               .getCellSerialized(newSimpleCellAddress)
               ?.toString();
 
-            this.spreadsheet.data.setCell(
-              newSimpleCellAddress,
-              {
-                ...cell,
-                value: newValue,
-              },
-              false
-            );
+            const newCell = {
+              ...cell,
+            };
+
+            const cellType =
+              this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress);
+
+            // The precedent cell formula handles these ARRAY cell values
+            if (cellType !== CellType.ARRAY) {
+              newCell.value = newValue;
+            }
+
+            this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false);
           }
 
           this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
@@ -297,14 +303,19 @@ class RowCol {
             .getCellSerialized(newSimpleCellAddress)
             ?.toString();
 
-          this.spreadsheet.data.setCell(
-            newSimpleCellAddress,
-            {
-              ...cell,
-              value: newValue,
-            },
-            false
-          );
+          const newCell = {
+            ...cell,
+          };
+
+          const cellType =
+            this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress);
+
+          // The precedent cell formula handles these ARRAY cell values
+          if (cellType !== CellType.ARRAY) {
+            newCell.value = newValue;
+          }
+
+          this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false);
           this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
         });
 

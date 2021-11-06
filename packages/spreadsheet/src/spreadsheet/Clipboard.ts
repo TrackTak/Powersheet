@@ -1,4 +1,9 @@
-import { SimpleCellRange } from 'hyperformula';
+import {
+  SimpleCellAddress as HFSimpleCellAddress,
+  SimpleCellRange,
+} from 'hyperformula';
+// @ts-ignore
+import { isSimpleCellAddress } from 'hyperformula/es/Cell';
 import { isEmpty } from 'lodash';
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress';
@@ -68,23 +73,68 @@ class Clipboard {
 
   paste() {
     const targetRange = this.getCellRangeForSelection(true);
-    if (!targetRange || !this.sourceRange) {
+    const sourceRange = this.sourceRange;
+
+    if (!targetRange || !sourceRange) {
       return;
     }
 
-    const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
-      {
-        start: this.sourceRange.topLeftSimpleCellAddress,
-        end: this.sourceRange.bottomRightSimpleCellAddress,
-      },
-      {
-        start: targetRange.topLeftSimpleCellAddress,
-        end: targetRange.bottomRightSimpleCellAddress,
-      },
-      true
-    );
-
     this.spreadsheet.pushToHistory(() => {
+      const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
+        {
+          start: sourceRange.topLeftSimpleCellAddress,
+          end: sourceRange.bottomRightSimpleCellAddress,
+        },
+        {
+          start: targetRange.topLeftSimpleCellAddress,
+          end: targetRange.bottomRightSimpleCellAddress,
+        },
+        true
+      );
+
+      if (this.isCut) {
+        const cellDependents = this.spreadsheet.hyperformula.getCellDependents({
+          sheet: sourceRange.topLeftSimpleCellAddress.sheet,
+          col: sourceRange.topLeftSimpleCellAddress.col,
+          row: sourceRange.topLeftSimpleCellAddress.row,
+        });
+
+        // Because the source data changes then the formulas
+        // can also change so we must paste to update dependent formulas
+        this.spreadsheet.hyperformula.paste({
+          sheet: targetRange.topLeftSimpleCellAddress.sheet,
+          col: targetRange.topLeftSimpleCellAddress.col,
+          row: targetRange.topLeftSimpleCellAddress.row,
+        });
+
+        cellDependents.forEach((value) => {
+          if (isSimpleCellAddress(value)) {
+            const hfSimpleCelladdress = value as HFSimpleCellAddress;
+            const simpleCellAddress = new SimpleCellAddress(
+              hfSimpleCelladdress.sheet,
+              hfSimpleCelladdress.row,
+              hfSimpleCelladdress.col
+            );
+            const cellId = simpleCellAddress.toCellId();
+            const cellSerializedValue =
+              this.spreadsheet.hyperformula.getCellSerialized(
+                hfSimpleCelladdress
+              );
+            const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+
+            if (cell?.value !== cellSerializedValue) {
+              this.spreadsheet.data.setCell(
+                simpleCellAddress,
+                {
+                  value: cellSerializedValue?.toString(),
+                },
+                false
+              );
+            }
+          }
+        });
+      }
+
       rangeData.forEach((rowData, rowIndex) => {
         rowData.forEach((_, colIndex) => {
           let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;

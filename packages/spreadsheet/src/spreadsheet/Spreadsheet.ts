@@ -211,7 +211,7 @@ class Spreadsheet {
 
     this.history.push(data);
 
-    this.eventEmitter.emit('historyPush', this.data.spreadsheetData);
+    this.eventEmitter.emit('historyPush', data);
 
     if (callback) {
       callback();

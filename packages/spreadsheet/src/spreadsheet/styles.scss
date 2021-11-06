@@ -42,3 +42,19 @@
     padding: 0;
   }
 }
+
+@mixin subHeader {
+  font-size: 1rem;
+  line-height: 1.15;
+  @include headerColor;
+}
+
+@mixin textDescription {
+  font-size: 0.8rem;
+  color: #1f1f1f;
+  line-height: 1.25rem;
+}
+
+@mixin headerColor {
+  color: #333;
+}

@@ -258,4 +258,8 @@ $iconSize: 18px;
     left: -9 * $iconSize;
     top: -3 * $iconSize;
   }
+  &.functionHelper {
+    left: -10 * $iconSize;
+    top: -3 * $iconSize;
+  }
 }

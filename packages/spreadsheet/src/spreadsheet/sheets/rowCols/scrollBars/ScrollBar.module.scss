@@ -1,17 +1,18 @@
+@import '../../../variables.scss';
+
 @mixin scroll {
   background: #ddd;
 }
 
 @mixin scrollBar {
   position: absolute;
-  z-index: 12;
+  z-index: $scrollBarzIndex;
   right: 0;
   background-color: #f4f5f8;
 }
 
 .verticalScrollBar {
   @include scrollBar();
-
   bottom: 0;
   top: 0;
   overflow-x: hidden;

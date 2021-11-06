@@ -77,6 +77,7 @@ export const toggleIconNames = <const>[
   'borders',
   'export',
   'formula',
+  'functionHelper',
 ];
 
 export type IconElementsName =

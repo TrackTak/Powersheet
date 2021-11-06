@@ -18,6 +18,7 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress';
 import PowersheetEmitter from './PowersheetEmitter';
 import { NestedPartial } from './types';
+import FunctionHelper from './functionHelper/FunctionHelper';
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula;
@@ -25,6 +26,7 @@ export interface ISpreadsheetConstructor {
   formulaBar?: FormulaBar;
   exporter?: Exporter;
   bottomBar?: BottomBar;
+  functionHelper?: FunctionHelper;
 }
 
 export interface IHistoryData {
@@ -42,6 +44,7 @@ class Spreadsheet {
   data: Data;
   toolbar?: Toolbar;
   formulaBar?: FormulaBar;
+  functionHelper?: FunctionHelper;
   exporter?: Exporter;
   hyperformula: HyperFormula;
   history: any;
@@ -59,6 +62,7 @@ class Spreadsheet {
     this.formulaBar = params.formulaBar;
     this.bottomBar = params.bottomBar;
     this.exporter = params.exporter;
+    this.functionHelper = params.functionHelper;
     this.hyperformula = params.hyperformula;
     this.spreadsheetEl = document.createElement('div');
     this.spreadsheetEl.classList.add(
@@ -78,6 +82,7 @@ class Spreadsheet {
     this.formulaBar?.initialize(this);
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
+    this.functionHelper?.initialize(this);
 
     // TODO: Change to command pattern later so we don't
     // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine

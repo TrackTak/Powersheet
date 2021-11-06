@@ -1,0 +1,68 @@
+@use '@material/drawer';
+
+@import '../styles.scss';
+@import '../variables.scss';
+
+:global {
+  @include drawer.core-styles;
+  @include drawer.dismissible-core-styles;
+}
+
+.functionHelper {
+  @include drawer.width(400px);
+  overflow: auto;
+  z-index: $functionHelperzIndex;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+}
+
+@media only screen and (max-width: 600px) {
+  .functionHelper {
+    width: 100%;
+  }
+
+  .drawerContent {
+    padding: 0;
+    padding-left: 15px;
+  }
+}
+
+.drawerContent {
+  padding: 0 30px 30px;
+}
+
+.closeIcon {
+  height: 23px;
+  width: 23px;
+}
+
+.closeButton {
+  @include button;
+  margin-left: auto;
+  display: block;
+}
+
+.headerEl {
+  font-size: 1.4rem;
+  line-height: 1.15;
+  @include headerColor;
+}
+
+.paragraphEl {
+  @include textDescription;
+}
+
+.list {
+  @include textDescription;
+}
+
+.header {
+  @include subHeader;
+}
+
+.code {
+  color: #6240c8;
+  font-weight: bold;
+}

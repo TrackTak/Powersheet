@@ -529,6 +529,8 @@ class Sheets {
           break;
         }
         case e.ctrlKey && 'z': {
+          e.preventDefault();
+
           this.spreadsheet.undo();
           break;
         }

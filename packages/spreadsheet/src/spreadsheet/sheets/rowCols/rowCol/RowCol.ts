@@ -148,6 +148,39 @@ class RowCol {
 
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
 
+      Object.keys(cells ?? {})
+        .sort(dataKeysComparer)
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheets.activeSheetId,
+            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
+            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
+          );
+
+          if (simpleCellAddress[this.type] < this.index) return;
+
+          if (simpleCellAddress[this.type] > this.index) {
+            const cellId = simpleCellAddress.toCellId();
+            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+            const newValue = this.spreadsheet.hyperformula
+              .getCellSerialized(newSimpleCellAddress)
+              ?.toString();
+
+            this.spreadsheet.data.setCell(
+              newSimpleCellAddress,
+              {
+                ...cell,
+                value: newValue,
+              },
+              false
+            );
+          }
+
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+        });
+
       Object.keys(mergedCells ?? {})
         .sort(dataKeysComparer)
         .forEach((key) => {
@@ -219,39 +252,6 @@ class RowCol {
             sheetRowColAddress
           );
         });
-
-      Object.keys(cells ?? {})
-        .sort(dataKeysComparer)
-        .forEach((key) => {
-          const cellId = key as CellId;
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
-            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
-          );
-
-          if (simpleCellAddress[this.type] < this.index) return;
-
-          if (simpleCellAddress[this.type] > this.index) {
-            const cellId = simpleCellAddress.toCellId();
-            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
-            const newValue = this.spreadsheet.hyperformula
-              .getCellSerialized(newSimpleCellAddress)
-              ?.toString();
-
-            this.spreadsheet.data.setCell(
-              newSimpleCellAddress,
-              {
-                ...cell,
-                value: newValue,
-              },
-              false
-            );
-          }
-
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
-        });
     });
 
     this.spreadsheet.updateViewport();
@@ -278,6 +278,35 @@ class RowCol {
       }
 
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
+
+      Object.keys(cells ?? {})
+        .sort((a, b) => dataKeysComparer(b, a))
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheets.activeSheetId,
+            this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
+            this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
+          );
+
+          if (simpleCellAddress[this.type] < this.index) return;
+
+          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+          const newValue = this.spreadsheet.hyperformula
+            .getCellSerialized(newSimpleCellAddress)
+            ?.toString();
+
+          this.spreadsheet.data.setCell(
+            newSimpleCellAddress,
+            {
+              ...cell,
+              value: newValue,
+            },
+            false
+          );
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+        });
 
       Object.keys(mergedCells ?? {})
         .sort((a, b) => dataKeysComparer(b, a))
@@ -337,35 +366,6 @@ class RowCol {
             this.pluralType,
             sheetRowColAddress
           );
-        });
-
-      Object.keys(cells ?? {})
-        .sort((a, b) => dataKeysComparer(b, a))
-        .forEach((key) => {
-          const cellId = key as CellId;
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
-            this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
-          );
-
-          if (simpleCellAddress[this.type] < this.index) return;
-
-          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
-          const newValue = this.spreadsheet.hyperformula
-            .getCellSerialized(newSimpleCellAddress)
-            ?.toString();
-
-          this.spreadsheet.data.setCell(
-            newSimpleCellAddress,
-            {
-              ...cell,
-              value: newValue,
-            },
-            false
-          );
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
         });
     });
 

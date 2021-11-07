@@ -36,10 +36,7 @@ class RowCol {
     public rowCols: RowCols,
     public index: number,
     public headerGroup: Group,
-    public gridLine: Line,
-    public xFrozenGridLine: Line,
-    public yFrozenGridLine: Line,
-    public xyFrozenGridLine: Line
+    public gridLine: Line
   ) {
     this.rowCols = rowCols;
     this.index = index;
@@ -54,9 +51,6 @@ class RowCol {
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
     this.gridLine = gridLine;
-    this.xFrozenGridLine = xFrozenGridLine;
-    this.yFrozenGridLine = yFrozenGridLine;
-    this.xyFrozenGridLine = xyFrozenGridLine;
     this.headerRect = this.headerGroup.findOne('.headerRect');
     this.headerText = this.headerGroup.findOne('.headerText');
     this.resizeLine = this.headerGroup.findOne('.resizeLine');
@@ -90,9 +84,6 @@ class RowCol {
 
     this.headerGroup.destroy();
     this.gridLine.destroy();
-    this.xFrozenGridLine.destroy();
-    this.yFrozenGridLine.destroy();
-    this.xyFrozenGridLine.destroy();
   }
 
   getIsOutsideSheet() {
@@ -417,22 +408,9 @@ class RowCol {
 
     const frozenCell = frozenCells?.[this.type];
 
-    const size = this.sheets[this.oppositePluralType].getSizeUpToFrozenRowCol();
-
     this.gridLine[this.functions.axis](gridLineAxis);
-    this.xFrozenGridLine[this.functions.axis](gridLineAxis);
-    this.yFrozenGridLine[this.functions.axis](gridLineAxis);
-    this.xyFrozenGridLine[this.functions.axis](gridLineAxis);
-
-    this.xFrozenGridLine.hide();
-    this.yFrozenGridLine.hide();
-    this.xyFrozenGridLine.hide();
 
     this.sheets.scrollGroups.main.rowColGroup.add(this.gridLine);
-    this.sheets.scrollGroups.xSticky.rowColGroup.add(this.xFrozenGridLine);
-    this.sheets.scrollGroups.ySticky.rowColGroup.add(this.yFrozenGridLine);
-    this.sheets.scrollGroups.xySticky.rowColGroup.add(this.xyFrozenGridLine);
-
     if (this.isCol) {
       this.sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup);
     } else {
@@ -440,41 +418,8 @@ class RowCol {
     }
 
     if (!isNil(frozenCell)) {
-      if (this.isCol) {
-        if (this.index > frozenCell) {
-          this.yFrozenGridLine.points(this.rowCols.getLinePoints(size));
-          this.yFrozenGridLine.show();
-        }
-
-        if (this.index < frozenCell) {
-          this.xFrozenGridLine.y(size);
-          this.xFrozenGridLine.points(
-            this.rowCols.getLinePoints(this.sheets.sheetDimensions.height)
-          );
-          this.xFrozenGridLine.show();
-        }
-      } else {
-        if (this.index < frozenCell) {
-          this.yFrozenGridLine.x(size);
-          this.yFrozenGridLine.points(
-            this.rowCols.getLinePoints(this.sheets.sheetDimensions.width)
-          );
-          this.yFrozenGridLine.show();
-        }
-
-        if (this.index > frozenCell) {
-          this.xFrozenGridLine.points(this.rowCols.getLinePoints(size));
-          this.xFrozenGridLine.show();
-        }
-      }
-
       if (this.index <= frozenCell) {
         this.sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup);
-      }
-
-      if (this.index < frozenCell) {
-        this.xyFrozenGridLine.points(this.rowCols.getLinePoints(size));
-        this.xyFrozenGridLine.show();
       }
     }
   }

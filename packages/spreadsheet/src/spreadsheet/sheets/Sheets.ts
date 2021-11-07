@@ -12,7 +12,7 @@ import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils';
 import styles from './Sheets.module.scss';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Comment from './comment/Comment';
-import { debounce, DebouncedFunc, isNil, throttle } from 'lodash';
+import { debounce, DebouncedFunc, throttle } from 'lodash';
 import { Shape } from 'konva/lib/Shape';
 import SimpleCellAddress from './cells/cell/SimpleCellAddress';
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress';
@@ -37,7 +37,6 @@ interface IScrollGroup {
   cellBorders: Group;
   rowColGroup: Group;
   headerGroup: Group;
-  frozenBackground: Rect;
 }
 
 export const scrollGroups = ['main', 'xSticky', 'ySticky', 'xySticky'];
@@ -53,16 +52,9 @@ export interface ICustomSizes {
   size: number;
 }
 
-export interface ICachedGridLines {
-  main: Line[];
-  xFrozenLines: Line[];
-  yFrozenLines: Line[];
-  xyFrozenLines: Line[];
-}
-
 export interface ICachedRowColGroups {
   headerGroups: Group[];
-  gridLines: ICachedGridLines;
+  gridLines: Line[];
 }
 
 export interface ICachedCellGroups {
@@ -113,21 +105,11 @@ class Sheets {
     cells: [],
     rows: {
       headerGroups: [],
-      gridLines: {
-        main: [],
-        xFrozenLines: [],
-        yFrozenLines: [],
-        xyFrozenLines: [],
-      },
+      gridLines: [],
     },
     cols: {
       headerGroups: [],
-      gridLines: {
-        main: [],
-        xFrozenLines: [],
-        yFrozenLines: [],
-        xyFrozenLines: [],
-      },
+      gridLines: [],
     },
   };
   cachedGroupsNumber: ICachedGroupsNumber = {
@@ -205,16 +187,6 @@ class Sheets {
         listening: true,
       });
 
-      const frozenBackground = new Rect({
-        name: 'frozenBackgroundRect',
-        fill: 'white',
-        visible: false,
-      });
-
-      if (key !== 'main') {
-        sheetGroup.add(frozenBackground);
-      }
-
       // The order added here matters as it determines the zIndex for konva
       sheetGroup.add(rowColGroup, cellGroup, cellBorders);
       group.add(sheetGroup, headerGroup);
@@ -233,7 +205,6 @@ class Sheets {
           cellBorders,
           rowColGroup,
           headerGroup,
-          frozenBackground,
         },
       };
     });
@@ -723,51 +694,6 @@ class Sheets {
     this.topLeftRect.moveToTop();
   }
 
-  updateFrozenBackgrounds() {
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[this.activeSheetId];
-    const xStickyFrozenBackground = this.scrollGroups.xSticky.frozenBackground;
-    const yStickyFrozenBackground = this.scrollGroups.ySticky.frozenBackground;
-    const xyStickyFrozenBackground =
-      this.scrollGroups.xySticky.frozenBackground;
-    const frozenRowExists = !isNil(frozenCells?.row);
-    const frozenColExists = !isNil(frozenCells?.col);
-
-    const sizeUpToFrozenCol = this.cols.getSizeUpToFrozenRowCol();
-    const sizeUpToFrozenRow = this.rows.getSizeUpToFrozenRowCol();
-
-    xStickyFrozenBackground.hide();
-    yStickyFrozenBackground.hide();
-    xyStickyFrozenBackground.hide();
-
-    if (frozenColExists) {
-      xStickyFrozenBackground.size({
-        width: sizeUpToFrozenCol,
-        height: this.sheetDimensions.height,
-      });
-      xStickyFrozenBackground.y(sizeUpToFrozenRow);
-      xStickyFrozenBackground.show();
-    }
-
-    if (frozenRowExists) {
-      yStickyFrozenBackground.size({
-        width: this.sheetDimensions.width,
-        height: sizeUpToFrozenRow,
-      });
-      yStickyFrozenBackground.x(sizeUpToFrozenCol);
-      yStickyFrozenBackground.show();
-    }
-
-    if (frozenRowExists && frozenColExists) {
-      xyStickyFrozenBackground.show();
-
-      xyStickyFrozenBackground.size({
-        width: sizeUpToFrozenCol,
-        height: sizeUpToFrozenRow,
-      });
-    }
-  }
-
   updateViewport() {
     Object.keys(this.scrollGroups).forEach((key) => {
       const type = key as keyof IScrollGroups;
@@ -794,7 +720,6 @@ class Sheets {
     this.spreadsheet.formulaBar?.updateValue(
       this.selector.selectedCell?.simpleCellAddress
     );
-    this.updateFrozenBackgrounds();
   }
 }
 

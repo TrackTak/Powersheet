@@ -68,7 +68,7 @@ class Cells {
             ci
           );
 
-          this.updateCell(simpleCellAddress);
+          this.updateCell(simpleCellAddress, true);
         }
       }
     }
@@ -82,7 +82,7 @@ class Cells {
             ci
           );
 
-          this.updateCell(simpleCellAddress);
+          this.updateCell(simpleCellAddress, true);
         }
       }
     }
@@ -201,7 +201,7 @@ class Cells {
           ci
         );
 
-        this.updateCell(simpleCellAddress);
+        this.updateCell(simpleCellAddress, false);
       }
     }
   }
@@ -245,7 +245,7 @@ class Cells {
     }
   }
 
-  updateCell(simpleCellAddress: SimpleCellAddress) {
+  updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId();
     const mergedCellId =
       this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId];
@@ -263,9 +263,11 @@ class Cells {
       if (!mergedCell) {
         this.setStyleableCell(SimpleCellAddress.cellIdToAddress(mergedCellId));
       }
+      return;
     }
 
-    if (!this.getHasCellData(simpleCellAddress)) return;
+    // We always render frozenRowCol cells so they hide the cells beneath it
+    if (!this.getHasCellData(simpleCellAddress) && !isOnFrozenRowCol) return;
 
     const cellExists = this.cellsMap.has(cellId);
 

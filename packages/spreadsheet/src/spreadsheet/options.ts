@@ -36,7 +36,7 @@ export interface IOptions {
 export const defaultOptions: IOptions = {
   undoRedoLimit: 20,
   row: {
-    amount: 100,
+    amount: 1000,
     minSize: 25,
     defaultSize: 25,
   },

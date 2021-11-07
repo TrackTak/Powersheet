@@ -106,7 +106,6 @@ export const createColorPickerContent = () => {
   const picker = createPicker(colorPicker, {
     palette: 'PALETTE_MATERIAL_CHROME',
     paletteEditable: true,
-    showAlpha: true,
   });
 
   dropdownContent.appendChild(colorPicker);

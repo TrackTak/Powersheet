@@ -49,6 +49,16 @@ class Selector {
     );
   }
 
+  destroy() {
+    this.selectedCell?.destroy();
+
+    Object.keys(this.groupedCells ?? {}).forEach((key) => {
+      const type = key as keyof IGroupedCells;
+
+      this.groupedCells?.[type].rect?.destroy();
+    });
+  }
+
   private renderSelectedCell() {
     if (this.selectedSimpleCellAddress) {
       this.selectedCell?.destroy();

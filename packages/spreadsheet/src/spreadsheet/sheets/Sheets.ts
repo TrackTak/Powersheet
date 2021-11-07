@@ -21,6 +21,7 @@ import Cells from './cells/Cells';
 import { ISheetData } from './Data';
 import Merger from './Merger';
 import Clipboard from '../Clipboard';
+import { Line } from 'konva/lib/shapes/Line';
 
 export interface IDimensions {
   width: number;
@@ -33,6 +34,7 @@ interface IScrollGroup {
   group: Group;
   sheetGroup: Group;
   cellGroup: Group;
+  cellBorders: Group;
   rowColGroup: Group;
   headerGroup: Group;
   frozenBackground: Rect;
@@ -49,6 +51,35 @@ export interface IScrollGroups {
 
 export interface ICustomSizes {
   size: number;
+}
+
+export interface ICachedGridLines {
+  main: Line[];
+  xFrozenLines: Line[];
+  yFrozenLines: Line[];
+  xyFrozenLines: Line[];
+}
+
+export interface ICachedRowColGroups {
+  headerGroups: Group[];
+  gridLines: ICachedGridLines;
+}
+
+export interface ICachedCellGroups {
+  group: Group;
+  borderGroup: Group;
+}
+
+export interface ICachedGroups {
+  cells: ICachedCellGroups[];
+  rows: ICachedRowColGroups;
+  cols: ICachedRowColGroups;
+}
+
+export interface ICachedGroupsNumber {
+  cells: number;
+  rows: number;
+  cols: number;
 }
 
 class Sheets {
@@ -78,6 +109,32 @@ class Sheets {
   comment: Comment;
   activeSheetId = 0;
   totalSheetCount = 0;
+  cachedGroups: ICachedGroups = {
+    cells: [],
+    rows: {
+      headerGroups: [],
+      gridLines: {
+        main: [],
+        xFrozenLines: [],
+        yFrozenLines: [],
+        xyFrozenLines: [],
+      },
+    },
+    cols: {
+      headerGroups: [],
+      gridLines: {
+        main: [],
+        xFrozenLines: [],
+        yFrozenLines: [],
+        xyFrozenLines: [],
+      },
+    },
+  };
+  cachedGroupsNumber: ICachedGroupsNumber = {
+    cells: 0,
+    rows: 0,
+    cols: 0,
+  };
   private debouncedResize: DebouncedFunc<(e: Event) => void>;
   private throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
@@ -131,6 +188,12 @@ class Sheets {
 
       const cellGroup = new Group({
         name: 'cellGroup',
+        listening: false,
+      });
+
+      const cellBorders = new Group({
+        name: 'cellBorders',
+        listening: false,
       });
 
       const rowColGroup = new Group({
@@ -153,7 +216,7 @@ class Sheets {
       }
 
       // The order added here matters as it determines the zIndex for konva
-      sheetGroup.add(rowColGroup, cellGroup);
+      sheetGroup.add(rowColGroup, cellGroup, cellBorders);
       group.add(sheetGroup, headerGroup);
 
       this.layer.add(group);
@@ -167,6 +230,7 @@ class Sheets {
           group,
           sheetGroup,
           cellGroup,
+          cellBorders,
           rowColGroup,
           headerGroup,
           frozenBackground,
@@ -179,9 +243,6 @@ class Sheets {
     this.cells = new Cells(this);
     this.cols = new RowCols('col', this);
     this.rows = new RowCols('row', this);
-
-    this.rows.updateViewportSize();
-    this.cols.updateViewportSize();
 
     this.selector = new Selector(this);
     this.rightClickMenu = new RightClickMenu(this);
@@ -209,9 +270,6 @@ class Sheets {
 
     this.sheet.setPosition(this.getViewportVector());
 
-    this.cols.scrollBar.setYIndex();
-    this.rows.scrollBar.setYIndex();
-
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`;
 
@@ -237,12 +295,18 @@ class Sheets {
   }
 
   switchSheet(sheetId: SheetId) {
-    this.cells.clearCells();
-
-    this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
-    this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
+    this.cells.destroy();
+    this.rows.destroy();
+    this.cols.destroy();
+    this.selector.destroy();
 
     this.activeSheetId = sheetId;
+
+    this.merger = new Merger(this);
+    this.cells = new Cells(this);
+    this.cols = new RowCols('col', this);
+    this.rows = new RowCols('row', this);
+    this.selector = new Selector(this);
 
     this.spreadsheet.updateViewport();
   }
@@ -453,18 +517,22 @@ class Sheets {
           break;
         }
         case 'Delete': {
-          this.spreadsheet.pushToHistory(() => {
-            this.spreadsheet.hyperformula.batch(() => {
+          this.spreadsheet.hyperformula.batch(() => {
+            this.spreadsheet.pushToHistory(() => {
               this.selector.selectedCells.forEach((cell) => {
                 const simpleCellAddress = cell.simpleCellAddress;
 
-                this.spreadsheet.data.deleteCell(simpleCellAddress);
+                this.spreadsheet.data.setCell(simpleCellAddress, {
+                  value: undefined,
+                });
               });
             });
           });
           break;
         }
         case e.ctrlKey && 'z': {
+          e.preventDefault();
+
           this.spreadsheet.undo();
           break;
         }
@@ -495,6 +563,7 @@ class Sheets {
             if (serializedValue) {
               this.cellEditor.clear();
               this.cellEditor.show(selectedCell);
+
               this.cellEditor.cellEditorEl.focus();
             } else {
               this.cellEditor.showAndSetValue(selectedCell);

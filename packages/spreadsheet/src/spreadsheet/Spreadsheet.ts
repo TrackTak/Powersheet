@@ -29,6 +29,12 @@ export interface ISpreadsheetConstructor {
   functionHelper?: FunctionHelper;
 }
 
+export interface IHistoryData {
+  activeSheetId: number;
+  associatedMergedCellAddressMap: Record<CellId, CellId>;
+  data: ISpreadsheetData;
+}
+
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement;
   sheets: Sheets;
@@ -77,19 +83,34 @@ class Spreadsheet {
     this.exporter?.initialize(this);
     this.bottomBar?.initialize(this);
     this.functionHelper?.initialize(this);
+
+    // TODO: Change to command pattern later so we don't
+    // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine
     this.history = new Manager((data: string) => {
-      const currentData = {
+      const currentData: IHistoryData = {
         data: this.data.spreadsheetData,
+        activeSheetId: this.sheets.activeSheetId,
         associatedMergedCellAddressMap:
           this.sheets.merger.associatedMergedCellAddressMap,
       };
-      const parsedData = JSON.parse(data);
+
+      const parsedData: IHistoryData = JSON.parse(data);
 
       this.data.spreadsheetData = parsedData.data;
+      this.sheets.activeSheetId = parsedData.activeSheetId;
       this.sheets.merger.associatedMergedCellAddressMap =
         parsedData.associatedMergedCellAddressMap;
 
-      this.setCells();
+      this.hyperformula.batch(() => {
+        const sheetName = this.hyperformula.getSheetName(
+          this.sheets.activeSheetId
+        )!;
+
+        const sheetId = this.hyperformula.getSheetId(sheetName)!;
+
+        this.hyperformula.clearSheet(sheetId);
+        this.setCells();
+      });
 
       return JSON.stringify(currentData);
     }, this.options.undoRedoLimit);
@@ -115,7 +136,9 @@ class Spreadsheet {
       }
 
       if (this.data.spreadsheetData.sheets) {
-        this.setCells();
+        this.hyperformula.batch(() => {
+          this.setCells();
+        });
       }
 
       this.isSaving = false;
@@ -148,17 +171,15 @@ class Spreadsheet {
   }
 
   private setCells() {
-    this.hyperformula.batch(() => {
-      for (const key in this.data.spreadsheetData.cells) {
-        const cellId = key as CellId;
-        const cell = this.data.spreadsheetData.cells?.[cellId];
+    for (const key in this.data.spreadsheetData.cells) {
+      const cellId = key as CellId;
+      const cell = this.data.spreadsheetData.cells?.[cellId];
 
-        this.hyperformula.setCellContents(
-          SimpleCellAddress.cellIdToAddress(cellId),
-          cell?.value
-        );
-      }
-    });
+      this.hyperformula.setCellContents(
+        SimpleCellAddress.cellIdToAddress(cellId),
+        cell?.value
+      );
+    }
   }
 
   setData(data: ISpreadsheetData) {
@@ -180,15 +201,17 @@ class Spreadsheet {
   }
 
   pushToHistory(callback?: () => void) {
-    const data = JSON.stringify({
+    const historyData: IHistoryData = {
+      activeSheetId: this.sheets.activeSheetId,
       data: this.data.spreadsheetData,
       associatedMergedCellAddressMap:
         this.sheets.merger.associatedMergedCellAddressMap,
-    });
+    };
+    const data = JSON.stringify(historyData);
 
     this.history.push(data);
 
-    this.eventEmitter.emit('historyPush', this.data.spreadsheetData);
+    this.eventEmitter.emit('historyPush', data);
 
     if (callback) {
       callback();

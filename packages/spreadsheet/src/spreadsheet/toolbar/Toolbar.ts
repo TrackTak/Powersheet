@@ -425,13 +425,13 @@ class Toolbar {
       cells,
       (cell, rangeSimpleCellAddress) => {
         return (
-          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >
+          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
             rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
-          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <=
+          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <
             rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
         );
       },
-      'borderLeft'
+      'borderRight'
     );
   }
 
@@ -439,11 +439,11 @@ class Toolbar {
     this.setBorderStyles(
       cells,
       (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
           rangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <=
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <
           rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-      'borderTop'
+      'borderBottom'
     );
   }
 

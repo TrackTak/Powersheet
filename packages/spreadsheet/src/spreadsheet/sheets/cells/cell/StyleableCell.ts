@@ -24,16 +24,21 @@ class StyleableCell extends Cell {
   constructor(
     public sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
-    public group: Group
+    public group: Group,
+    public bordersGroup: Group
   ) {
     super(sheets, simpleCellAddress, group);
+
+    this.bordersGroup = bordersGroup;
+
+    bordersGroup.position(group.position());
 
     this.text = group.children!.find((x) => x.name() === 'text') as Text;
     this.commentMarker = group.children!.find(
       (x) => x.name() === 'commentMarker'
     ) as Line;
 
-    const borders = group.children!.filter(
+    const borders = bordersGroup.children!.filter(
       (x) => x.name() === 'borderLine'
     ) as Line[];
 
@@ -296,11 +301,21 @@ class StyleableCell extends Cell {
     this.setRightBorder(borders);
     this.setBottomBorder(borders);
 
-    if (!this.group.parent) {
-      const stickyGroup = this.getStickyGroupCellBelongsTo();
+    const stickyGroup = this.getStickyGroupCellBelongsTo();
 
+    if (!this.group.parent) {
       this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group);
     }
+
+    if (!this.bordersGroup.parent) {
+      this.sheets.scrollGroups[stickyGroup].cellBorders.add(this.bordersGroup);
+    }
+  }
+
+  override destroy() {
+    super.destroy();
+
+    this.bordersGroup.destroy();
   }
 }
 

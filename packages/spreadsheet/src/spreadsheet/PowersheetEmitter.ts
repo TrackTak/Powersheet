@@ -8,13 +8,13 @@ export interface PowersheetEvents {
   scrollHorizontal: (e: Event, scroll: number) => void;
   scrollVerticalWheel: (e: KonvaEventObject<WheelEvent>) => void;
   cellEditorChange: (value: string | null) => void;
-  historyPush: (spreadsheetData: ISpreadsheetData) => void;
   resizeRowStart: (e: KonvaEventObject<DragEvent>) => void;
   resizeRowMove: (e: KonvaEventObject<DragEvent>, axis: number) => void;
   resizeRowEnd: (e: KonvaEventObject<DragEvent>, size: number) => void;
   resizeColStart: (e: KonvaEventObject<DragEvent>) => void;
   resizeColMove: (e: KonvaEventObject<DragEvent>, axis: number) => void;
   resizeColEnd: (e: KonvaEventObject<DragEvent>, size: number) => void;
+  historyPush: (stringifiedSpreadsheetData: string) => void;
   persistData: (spreadsheetData: ISpreadsheetData, done: () => void) => void;
   startSelection: (selectionArea: ISelectionArea) => void;
   moveSelection: (selectionArea: ISelectionArea) => void;

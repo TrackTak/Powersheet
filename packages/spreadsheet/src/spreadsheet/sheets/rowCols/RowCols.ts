@@ -12,7 +12,6 @@ import { Rect } from 'konva/lib/shapes/Rect';
 import { Text } from 'konva/lib/shapes/Text';
 import { Group } from 'konva/lib/Group';
 import Sheets from '../Sheets';
-import { dataKeysComparer } from '../../utils';
 
 export type RowColType = 'row' | 'col';
 export type RowColsType = 'rows' | 'cols';
@@ -25,18 +24,6 @@ export interface IRowColFunctions {
 export type HeaderGroupId = number;
 
 export type RowColId = number;
-
-interface ICachedGridLines {
-  main: Line[];
-  xFrozenLines: Line[];
-  yFrozenLines: Line[];
-  xyFrozenLines: Line[];
-}
-
-interface ICachedRowColGroup {
-  headerGroups: Group[];
-  gridLines: ICachedGridLines;
-}
 
 class RowCols {
   scrollBar: ScrollBar;
@@ -51,16 +38,6 @@ class RowCols {
   resizer: Resizer;
   pluralType: RowColsType;
   oppositePluralType: RowColsType;
-  cachedRowColGroups: ICachedRowColGroup = {
-    headerGroups: [],
-    gridLines: {
-      main: [],
-      xFrozenLines: [],
-      yFrozenLines: [],
-      xyFrozenLines: [],
-    },
-  };
-  numberOfCachedRowCols = 0;
 
   constructor(public type: RowColType, public sheets: Sheets) {
     this.type = type;
@@ -103,21 +80,27 @@ class RowCols {
     });
 
     this.sheets.scrollGroups.xySticky.sheetGroup.add(this.frozenLine);
+
+    this.updateViewportSize();
   }
 
   cacheOutOfViewportRowCols() {
     this.rowColMap.forEach((rowCol, index) => {
       if (rowCol.getIsOutsideSheet()) {
         this.rowColMap.delete(index);
-        this.cachedRowColGroups.headerGroups.push(rowCol.headerGroup);
-        this.cachedRowColGroups.gridLines.main.push(rowCol.gridLine);
-        this.cachedRowColGroups.gridLines.xFrozenLines.push(
+        this.sheets.cachedGroups[this.pluralType].headerGroups.push(
+          rowCol.headerGroup
+        );
+        this.sheets.cachedGroups[this.pluralType].gridLines.main.push(
+          rowCol.gridLine
+        );
+        this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.push(
           rowCol.xFrozenGridLine
         );
-        this.cachedRowColGroups.gridLines.yFrozenLines.push(
+        this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.push(
           rowCol.yFrozenGridLine
         );
-        this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+        this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.push(
           rowCol.xyFrozenGridLine
         );
       }
@@ -166,25 +149,30 @@ class RowCols {
       visible: false,
     }) as Line;
 
-    this.cachedRowColGroups.headerGroups.push(headerGroup);
-    this.cachedRowColGroups.gridLines.main.push(gridLine);
-    this.cachedRowColGroups.gridLines.xFrozenLines.push(clonedXFrozenGridLine);
-    this.cachedRowColGroups.gridLines.yFrozenLines.push(clonedYFrozenGridLine);
-    this.cachedRowColGroups.gridLines.xyFrozenLines.push(
+    this.sheets.cachedGroups[this.pluralType].headerGroups.push(headerGroup);
+    this.sheets.cachedGroups[this.pluralType].gridLines.main.push(gridLine);
+    this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.push(
+      clonedXFrozenGridLine
+    );
+    this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.push(
+      clonedYFrozenGridLine
+    );
+    this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.push(
       clonedXYFrozenGridLine
     );
   }
 
   setCachedRowCols() {
-    const numberOfCachedRowCols = this.numberOfCachedRowCols;
+    const numberOfCachedRowCols =
+      this.sheets.cachedGroupsNumber[this.pluralType];
 
     const maxNumberOfCachedRoCols = Math.max(
       this.sheets.stage[this.functions.size]() /
         this.spreadsheet.options[this.type].minSize,
-      this.numberOfCachedRowCols
+      this.sheets.cachedGroupsNumber[this.pluralType]
     );
 
-    this.numberOfCachedRowCols = maxNumberOfCachedRoCols;
+    this.sheets.cachedGroupsNumber[this.pluralType] = maxNumberOfCachedRoCols;
 
     for (
       let index = numberOfCachedRowCols;
@@ -219,8 +207,6 @@ class RowCols {
   }
 
   updateViewport() {
-    this.scrollBar.setScrollSize();
-
     this.frozenLine.setAttrs({
       ...this.spreadsheet.styles[this.type].frozenLine,
       visible: false,
@@ -268,14 +254,16 @@ class RowCols {
   }
 
   setRowCol(rowColAddress: RowColAddress) {
-    const cachedHeaderGroup = this.cachedRowColGroups.headerGroups.pop()!;
-    const cachedGridLine = this.cachedRowColGroups.gridLines.main.pop()!;
+    const cachedHeaderGroup =
+      this.sheets.cachedGroups[this.pluralType].headerGroups.pop()!;
+    const cachedGridLine =
+      this.sheets.cachedGroups[this.pluralType].gridLines.main.pop()!;
     const cachedXFrozenGridLine =
-      this.cachedRowColGroups.gridLines.xFrozenLines.pop()!;
+      this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.pop()!;
     const cachedYFrozenGridLine =
-      this.cachedRowColGroups.gridLines.yFrozenLines.pop()!;
+      this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.pop()!;
     const cachedXYFrozenGridLine =
-      this.cachedRowColGroups.gridLines.xyFrozenLines.pop()!;
+      this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.pop()!;
 
     if (!cachedHeaderGroup) return;
 
@@ -293,10 +281,7 @@ class RowCols {
   }
 
   private getSheetSize() {
-    return (
-      this.sheets.sheetDimensions[this.oppositeFunctions.size] +
-      this.sheets.getViewportVector()[this.oppositeFunctions.axis]
-    );
+    return this.sheets.sheetDimensions[this.oppositeFunctions.size];
   }
 
   getLinePoints = (size: number) => {
@@ -304,8 +289,10 @@ class RowCols {
   };
 
   destroy() {
+    this.clearAll();
     this.scrollBar.destroy();
     this.frozenLine.destroy();
+    this.resizer.destroy();
   }
 
   getAxis(index: number) {
@@ -364,6 +351,7 @@ class RowCols {
     }
 
     this.totalSize = sumOfSizes;
+    this.scrollBar.setScrollSize();
   }
 
   calculateSheetViewportEndPosition = (
@@ -401,7 +389,7 @@ class RowCols {
     }, 0);
 
     const totalSize =
-      this.spreadsheet.options[this.type].amount *
+      (this.spreadsheet.options[this.type].amount + 1) *
         this.spreadsheet.options[this.type].defaultSize +
       totalSizeDifference;
 

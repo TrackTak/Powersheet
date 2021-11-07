@@ -69,11 +69,11 @@ export interface IRowColData {
   size: number;
 }
 
-export interface IRow {
+export interface IRowsData {
   [index: SheetRowColId]: IRowColData;
 }
 
-export interface ICol {
+export interface IColsData {
   [index: SheetRowColId]: IRowColData;
 }
 
@@ -97,8 +97,8 @@ export interface ISpreadsheetData {
   exportSpreadsheetName?: string;
   frozenCells?: IFrozenCellsData;
   mergedCells?: IMergedCellsData;
-  rows?: IRow;
-  cols?: ICol;
+  rows?: IRowsData;
+  cols?: IColsData;
   cells?: ICellsData;
   sheets?: ISheetsData;
   showFormulas?: boolean;
@@ -270,14 +270,17 @@ class Data {
             ci
           );
 
-          const mmergedCellId =
+          const associatedTopLeftMergedCellId =
             this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[
               simpleCellAddress.toCellId()
             ];
 
-          if (simpleCellAddress.toCellId() !== mergedCellId && mmergedCellId) {
+          if (
+            simpleCellAddress.toCellId() !== mergedCellId &&
+            associatedTopLeftMergedCellId
+          ) {
             this.spreadsheet.data.deleteCell(
-              SimpleCellAddress.cellIdToAddress(mmergedCellId)
+              SimpleCellAddress.cellIdToAddress(associatedTopLeftMergedCellId)
             );
           }
 

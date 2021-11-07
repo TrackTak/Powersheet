@@ -11,9 +11,7 @@ import RowColAddress from './cell/RowColAddress';
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>;
-  cachedCellGroups: Group[] = [];
   spreadsheet: Spreadsheet;
-  numberOfCachedCells = 0;
 
   constructor(private sheets: Sheets) {
     this.sheets = sheets;
@@ -28,37 +26,21 @@ class Cells {
     };
   }
 
-  setCachedCells() {
-    // TODO: Remove * 2 and measure the
-    // outOfViewport for freeze correctly instead
-    const currentNumberOfCachedCells =
-      this.sheets.rows.numberOfCachedRowCols *
-      this.sheets.cols.numberOfCachedRowCols *
-      2;
-
-    for (
-      let index = this.numberOfCachedCells;
-      index < currentNumberOfCachedCells;
-      index++
-    ) {
-      this.cachedCellGroups.push(this.getCellGroup());
-    }
-
-    this.numberOfCachedCells =
-      this.sheets.rows.numberOfCachedRowCols *
-      this.sheets.cols.numberOfCachedRowCols;
-  }
-
   cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
         cell.group.remove();
+        cell.bordersGroup.remove();
 
         this.cellsMap.delete(cellId);
-        this.cachedCellGroups.push(cell.group);
+        this.sheets.cachedGroups.cells.push({
+          group: cell.group,
+          borderGroup: cell.bordersGroup,
+        });
       }
     });
   }
+
   getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId();
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
@@ -109,7 +91,6 @@ class Cells {
   getCellGroup() {
     const cellGroup = new Group({
       name: 'stylableCellGroup',
-      listening: false,
     });
     const cellRect = new Rect({
       ...this.spreadsheet.styles.cell.rect,
@@ -136,26 +117,69 @@ class Cells {
       borderLine.clone(),
     ];
 
-    cellGroup.add(cellRect, cellText, commentMarker, ...borderLines);
+    // Cell borders must be in a seperate group as they
+    // need to take precedent over all cell strokes in their zIndex
+    const cellBordersGroup = new Group({
+      name: 'stylableCellBordersGroup',
+    });
 
-    return cellGroup;
+    cellBordersGroup.add(...borderLines);
+
+    cellGroup.add(cellRect, cellText, commentMarker);
+
+    return {
+      cellGroup,
+      cellBordersGroup,
+    };
   }
 
-  clearCells() {
-    this.cellsMap.forEach((cell, cellId) => {
+  destroy() {
+    this.cellsMap.forEach((cell) => {
+      const { cellGroup, cellBordersGroup } = this.getCellGroup();
+
       cell.destroy();
 
-      this.cellsMap.delete(cellId);
-      this.cachedCellGroups.push(this.getCellGroup().clone());
+      this.sheets.cachedGroups.cells.push({
+        group: cellGroup,
+        borderGroup: cellBordersGroup,
+      });
     });
+  }
+
+  setCachedCells() {
+    // TODO: Remove * 2 and measure the
+    // outOfViewport for freeze correctly instead
+    const currentNumberOfCachedCells =
+      this.sheets.cachedGroupsNumber.rows *
+      this.sheets.cachedGroupsNumber.cols *
+      2;
+
+    for (
+      let index = this.sheets.cachedGroupsNumber.cells;
+      index < currentNumberOfCachedCells;
+      index++
+    ) {
+      const { cellGroup, cellBordersGroup } = this.getCellGroup();
+
+      this.sheets.cachedGroups.cells.push({
+        group: cellGroup,
+        borderGroup: cellBordersGroup,
+      });
+    }
+
+    this.sheets.cachedGroupsNumber.cells = currentNumberOfCachedCells;
   }
 
   resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
       cell.group.remove();
+      cell.bordersGroup.remove();
 
       this.cellsMap.delete(cellId);
-      this.cachedCellGroups.push(cell.group);
+      this.sheets.cachedGroups.cells.push({
+        group: cell.group,
+        borderGroup: cell.bordersGroup,
+      });
     });
   }
 
@@ -183,14 +207,15 @@ class Cells {
   }
 
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
-    const cachedCellGroup = this.cachedCellGroups.pop()!;
+    const { group, borderGroup } = this.sheets.cachedGroups.cells.pop() ?? {};
 
-    if (!cachedCellGroup) return;
+    if (!group || !borderGroup) return;
 
     const styleableCell = new StyleableCell(
       this.sheets,
       simpleCellAddress,
-      cachedCellGroup
+      group,
+      borderGroup
     );
 
     const cellId = simpleCellAddress.toCellId();

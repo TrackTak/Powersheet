@@ -1,9 +1,21 @@
-import { SimpleCellRange } from 'hyperformula';
+import {
+  SimpleCellAddress as HFSimpleCellAddress,
+  SimpleCellRange as HFSimpleCellRange,
+} from 'hyperformula';
+// @ts-ignore
+import { isSimpleCellAddress } from 'hyperformula/es/Cell';
 import { isEmpty } from 'lodash';
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress';
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress';
+import { ICellData, IMergedCellData } from './sheets/Data';
 import Sheets from './sheets/Sheets';
 import Spreadsheet from './Spreadsheet';
+
+export interface IClipboardCachedCells {
+  targetSimpleCellAddress: SimpleCellAddress;
+  cell?: ICellData;
+  mergedCell?: IMergedCellData;
+}
 
 class Clipboard {
   sourceRange: RangeSimpleCellAddress | null = null;
@@ -15,7 +27,7 @@ class Clipboard {
     this.spreadsheet = this.sheets.spreadsheet;
   }
 
-  private async writeToClipboard(source: SimpleCellRange) {
+  private async writeToClipboard(source: HFSimpleCellRange) {
     const rangeData = this.spreadsheet.hyperformula.getRangeSerialized(source);
 
     let clipboardText = '';
@@ -68,29 +80,99 @@ class Clipboard {
 
   paste() {
     const targetRange = this.getCellRangeForSelection(true);
-    if (!targetRange || !this.sourceRange) {
+    const sourceRange = this.sourceRange;
+
+    if (!targetRange || !sourceRange) {
       return;
     }
 
-    const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
-      {
-        start: this.sourceRange.topLeftSimpleCellAddress,
-        end: this.sourceRange.bottomRightSimpleCellAddress,
-      },
-      {
-        start: targetRange.topLeftSimpleCellAddress,
-        end: targetRange.bottomRightSimpleCellAddress,
-      },
-      true
-    );
-
     this.spreadsheet.pushToHistory(() => {
-      rangeData.forEach((rowData, rowIndex) => {
-        rowData.forEach((_, colIndex) => {
+      const rangeData = this.spreadsheet.hyperformula.getFillRangeData(
+        {
+          start: sourceRange.topLeftSimpleCellAddress,
+          end: sourceRange.bottomRightSimpleCellAddress,
+        },
+        {
+          start: targetRange.topLeftSimpleCellAddress,
+          end: targetRange.bottomRightSimpleCellAddress,
+        },
+        true
+      );
+
+      if (this.isCut) {
+        const allCellDependents: (HFSimpleCellRange | HFSimpleCellAddress)[][] =
+          [];
+
+        // We must update spreadsheet data to keep in sync with hf values
+        // TODO: Find a better way of keeping our data in sync with hyperformula values
+        // such as an event from hyperformula
+
+        for (const ri of sourceRange.iterateFromTopToBottom('row')) {
+          const rowDependents: (HFSimpleCellRange | HFSimpleCellAddress)[] = [];
+
+          for (const ci of sourceRange.iterateFromTopToBottom('col')) {
+            const cellDependents =
+              this.spreadsheet.hyperformula.getCellDependents({
+                sheet: sourceRange.topLeftSimpleCellAddress.sheet,
+                col: ci,
+                row: ri,
+              });
+
+            rowDependents.push(...cellDependents);
+          }
+
+          allCellDependents.push(rowDependents);
+        }
+
+        // Because the source data changes then the formulas
+        // can also change so we must paste to update dependent formulas
+        this.spreadsheet.hyperformula.paste({
+          sheet: targetRange.topLeftSimpleCellAddress.sheet,
+          col: targetRange.topLeftSimpleCellAddress.col,
+          row: targetRange.topLeftSimpleCellAddress.row,
+        });
+
+        allCellDependents.forEach((rowData) => {
+          rowData.forEach((value) => {
+            if (isSimpleCellAddress(value)) {
+              const hfSimpleCelladdress = value as HFSimpleCellAddress;
+              const simpleCellAddress = new SimpleCellAddress(
+                hfSimpleCelladdress.sheet,
+                hfSimpleCelladdress.row,
+                hfSimpleCelladdress.col
+              );
+              const cellId = simpleCellAddress.toCellId();
+              const cellSerializedValue =
+                this.spreadsheet.hyperformula.getCellSerialized(
+                  hfSimpleCelladdress
+                );
+              const cell =
+                this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+
+              if (cell?.value !== cellSerializedValue) {
+                this.spreadsheet.data.setCell(
+                  simpleCellAddress,
+                  {
+                    value: cellSerializedValue?.toString(),
+                  },
+                  false
+                );
+              }
+            }
+          });
+        });
+      }
+
+      // We must split out the logic for setting/deleting the cells
+      // because otherwise it will affect the next loop iteration
+      const cachedCells: IClipboardCachedCells[] = [];
+
+      rangeData.forEach((rowData, ri) => {
+        rowData.forEach((_, ci) => {
           let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
 
-          row += rowIndex % this.sourceRange!.height();
-          col += colIndex % this.sourceRange!.width();
+          row += ri % this.sourceRange!.height();
+          col += ci % this.sourceRange!.width();
 
           const soureSimpleCellAddress = new SimpleCellAddress(
             this.sourceRange!.topLeftSimpleCellAddress.sheet,
@@ -100,55 +182,60 @@ class Clipboard {
 
           const targetSimpleCellAddress = new SimpleCellAddress(
             targetRange.topLeftSimpleCellAddress.sheet,
-            targetRange.topLeftSimpleCellAddress.row + rowIndex,
-            targetRange.topLeftSimpleCellAddress.col + colIndex
+            targetRange.topLeftSimpleCellAddress.row + ri,
+            targetRange.topLeftSimpleCellAddress.col + ci
           );
+
           const sourceCellId = soureSimpleCellAddress.toCellId();
           const data = this.spreadsheet.data.spreadsheetData;
           const cell = data.cells?.[sourceCellId];
           const mergedCell = data.mergedCells?.[sourceCellId];
 
-          if (rangeData.length !== 1 || rowData.length !== 1) {
-            this.spreadsheet.data.deleteMergedCell(targetSimpleCellAddress);
-          }
-
-          this.spreadsheet.data.deleteCell(
+          cachedCells.push({
             targetSimpleCellAddress,
-            true,
-            false
-          );
-
-          if (mergedCell) {
-            const newMergedCell = {
-              ...mergedCell,
-              row: {
-                x: targetSimpleCellAddress.row,
-                y:
-                  targetSimpleCellAddress.row +
-                  (mergedCell.row.y - mergedCell.row.x),
-              },
-              col: {
-                x: targetSimpleCellAddress.col,
-                y:
-                  targetSimpleCellAddress.col +
-                  (mergedCell.col.y - mergedCell.col.x),
-              },
-            };
-
-            this.spreadsheet.data.setMergedCell(
-              targetSimpleCellAddress,
-              newMergedCell
-            );
-          }
-
-          if (cell) {
-            this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
-          }
+            cell,
+            mergedCell,
+          });
 
           if (this.isCut) {
             this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
           }
         });
+      });
+
+      cachedCells.forEach(({ targetSimpleCellAddress, cell, mergedCell }) => {
+        if (rangeData.length !== 1 || rangeData[0]?.length !== 1) {
+          this.spreadsheet.data.deleteMergedCell(targetSimpleCellAddress);
+        }
+
+        this.spreadsheet.data.deleteCell(targetSimpleCellAddress, true, false);
+
+        if (mergedCell) {
+          const newMergedCell = {
+            ...mergedCell,
+            row: {
+              x: targetSimpleCellAddress.row,
+              y:
+                targetSimpleCellAddress.row +
+                (mergedCell.row.y - mergedCell.row.x),
+            },
+            col: {
+              x: targetSimpleCellAddress.col,
+              y:
+                targetSimpleCellAddress.col +
+                (mergedCell.col.y - mergedCell.col.x),
+            },
+          };
+
+          this.spreadsheet.data.setMergedCell(
+            targetSimpleCellAddress,
+            newMergedCell
+          );
+        }
+
+        if (cell) {
+          this.spreadsheet.data.setCell(targetSimpleCellAddress, cell);
+        }
       });
     });
 

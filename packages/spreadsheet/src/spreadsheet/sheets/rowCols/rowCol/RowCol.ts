@@ -15,6 +15,7 @@ import {
   getColumnHeader,
 } from '../../../utils';
 import { Util } from 'konva/lib/Util';
+import { CellType } from 'hyperformula';
 
 class RowCol {
   spreadsheet: Spreadsheet;
@@ -134,7 +135,57 @@ class RowCol {
         ];
       const rowCols = rest[this.pluralType];
 
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      }
+
       this.shiftFrozenCells((frozenCell) => frozenCell - amount);
+
+      Object.keys(cells ?? {})
+        .sort(dataKeysComparer)
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheets.activeSheetId,
+            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
+            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
+          );
+
+          if (simpleCellAddress[this.type] < this.index) return;
+
+          if (simpleCellAddress[this.type] > this.index) {
+            const cellId = simpleCellAddress.toCellId();
+            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+            const newValue = this.spreadsheet.hyperformula
+              .getCellSerialized(newSimpleCellAddress)
+              ?.toString();
+
+            const newCell = {
+              ...cell,
+            };
+
+            const cellType =
+              this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress);
+
+            // The precedent cell formula handles these ARRAY cell values
+            if (cellType !== CellType.ARRAY) {
+              newCell.value = newValue;
+            }
+
+            this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false);
+          }
+
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+        });
 
       Object.keys(mergedCells ?? {})
         .sort(dataKeysComparer)
@@ -207,41 +258,6 @@ class RowCol {
             sheetRowColAddress
           );
         });
-
-      Object.keys(cells ?? {})
-        .sort(dataKeysComparer)
-        .forEach((key) => {
-          const cellId = key as CellId;
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
-            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
-          );
-
-          if (simpleCellAddress[this.type] < this.index) return;
-
-          if (simpleCellAddress[this.type] > this.index) {
-            const cellId = simpleCellAddress.toCellId();
-            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
-
-            this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
-          }
-
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
-        });
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      } else {
-        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      }
     });
 
     this.spreadsheet.updateViewport();
@@ -255,7 +271,53 @@ class RowCol {
         ];
       const rowCols = rest[this.pluralType];
 
+      if (this.isCol) {
+        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      } else {
+        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
+          this.index,
+          amount,
+        ]);
+      }
+
       this.shiftFrozenCells((frozenCell) => frozenCell + amount);
+
+      Object.keys(cells ?? {})
+        .sort((a, b) => dataKeysComparer(b, a))
+        .forEach((key) => {
+          const cellId = key as CellId;
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this.sheets.activeSheetId,
+            this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
+            this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
+          );
+
+          if (simpleCellAddress[this.type] < this.index) return;
+
+          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
+          const newValue = this.spreadsheet.hyperformula
+            .getCellSerialized(newSimpleCellAddress)
+            ?.toString();
+
+          const newCell = {
+            ...cell,
+          };
+
+          const cellType =
+            this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress);
+
+          // The precedent cell formula handles these ARRAY cell values
+          if (cellType !== CellType.ARRAY) {
+            newCell.value = newValue;
+          }
+
+          this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false);
+          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
+        });
 
       Object.keys(mergedCells ?? {})
         .sort((a, b) => dataKeysComparer(b, a))
@@ -316,37 +378,6 @@ class RowCol {
             sheetRowColAddress
           );
         });
-
-      Object.keys(cells ?? {})
-        .sort((a, b) => dataKeysComparer(b, a))
-        .forEach((key) => {
-          const cellId = key as CellId;
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId);
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
-            this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
-          );
-
-          if (simpleCellAddress[this.type] < this.index) return;
-
-          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId];
-
-          this.spreadsheet.data.setCell(newSimpleCellAddress, cell, false);
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false);
-        });
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      } else {
-        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
-          this.index,
-          amount,
-        ]);
-      }
     });
 
     this.spreadsheet.updateViewport();

@@ -91,17 +91,8 @@ class RowCols {
         this.sheets.cachedGroups[this.pluralType].headerGroups.push(
           rowCol.headerGroup
         );
-        this.sheets.cachedGroups[this.pluralType].gridLines.main.push(
+        this.sheets.cachedGroups[this.pluralType].gridLines.push(
           rowCol.gridLine
-        );
-        this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.push(
-          rowCol.xFrozenGridLine
-        );
-        this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.push(
-          rowCol.yFrozenGridLine
-        );
-        this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.push(
-          rowCol.xyFrozenGridLine
         );
       }
     });
@@ -139,27 +130,8 @@ class RowCols {
       name: 'gridLine',
     });
 
-    const clonedXFrozenGridLine = gridLine.clone({
-      visible: false,
-    }) as Line;
-    const clonedYFrozenGridLine = gridLine.clone({
-      visible: false,
-    }) as Line;
-    const clonedXYFrozenGridLine = gridLine.clone({
-      visible: false,
-    }) as Line;
-
     this.sheets.cachedGroups[this.pluralType].headerGroups.push(headerGroup);
-    this.sheets.cachedGroups[this.pluralType].gridLines.main.push(gridLine);
-    this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.push(
-      clonedXFrozenGridLine
-    );
-    this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.push(
-      clonedYFrozenGridLine
-    );
-    this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.push(
-      clonedXYFrozenGridLine
-    );
+    this.sheets.cachedGroups[this.pluralType].gridLines.push(gridLine);
   }
 
   setCachedRowCols() {
@@ -257,13 +229,7 @@ class RowCols {
     const cachedHeaderGroup =
       this.sheets.cachedGroups[this.pluralType].headerGroups.pop()!;
     const cachedGridLine =
-      this.sheets.cachedGroups[this.pluralType].gridLines.main.pop()!;
-    const cachedXFrozenGridLine =
-      this.sheets.cachedGroups[this.pluralType].gridLines.xFrozenLines.pop()!;
-    const cachedYFrozenGridLine =
-      this.sheets.cachedGroups[this.pluralType].gridLines.yFrozenLines.pop()!;
-    const cachedXYFrozenGridLine =
-      this.sheets.cachedGroups[this.pluralType].gridLines.xyFrozenLines.pop()!;
+      this.sheets.cachedGroups[this.pluralType].gridLines.pop()!;
 
     if (!cachedHeaderGroup) return;
 
@@ -271,10 +237,7 @@ class RowCols {
       this,
       rowColAddress.rowCol,
       cachedHeaderGroup,
-      cachedGridLine,
-      cachedXFrozenGridLine,
-      cachedYFrozenGridLine,
-      cachedXYFrozenGridLine
+      cachedGridLine
     );
 
     this.rowColMap.set(rowColAddress.rowCol, rowCol);

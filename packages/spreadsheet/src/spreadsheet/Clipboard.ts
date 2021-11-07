@@ -1,6 +1,6 @@
 import {
   SimpleCellAddress as HFSimpleCellAddress,
-  SimpleCellRange,
+  SimpleCellRange as HFSimpleCellRange,
 } from 'hyperformula';
 // @ts-ignore
 import { isSimpleCellAddress } from 'hyperformula/es/Cell';
@@ -27,7 +27,7 @@ class Clipboard {
     this.spreadsheet = this.sheets.spreadsheet;
   }
 
-  private async writeToClipboard(source: SimpleCellRange) {
+  private async writeToClipboard(source: HFSimpleCellRange) {
     const rangeData = this.spreadsheet.hyperformula.getRangeSerialized(source);
 
     let clipboardText = '';
@@ -100,11 +100,29 @@ class Clipboard {
       );
 
       if (this.isCut) {
-        const cellDependents = this.spreadsheet.hyperformula.getCellDependents({
-          sheet: sourceRange.topLeftSimpleCellAddress.sheet,
-          col: sourceRange.topLeftSimpleCellAddress.col,
-          row: sourceRange.topLeftSimpleCellAddress.row,
-        });
+        const allCellDependents: (HFSimpleCellRange | HFSimpleCellAddress)[][] =
+          [];
+
+        // We must update spreadsheet data to keep in sync with hf values
+        // TODO: Find a better way of keeping our data in sync with hyperformula values
+        // such as an event from hyperformula
+
+        for (const ri of sourceRange.iterateFromTopToBottom('row')) {
+          const rowDependents: (HFSimpleCellRange | HFSimpleCellAddress)[] = [];
+
+          for (const ci of sourceRange.iterateFromTopToBottom('col')) {
+            const cellDependents =
+              this.spreadsheet.hyperformula.getCellDependents({
+                sheet: sourceRange.topLeftSimpleCellAddress.sheet,
+                col: ci,
+                row: ri,
+              });
+
+            rowDependents.push(...cellDependents);
+          }
+
+          allCellDependents.push(rowDependents);
+        }
 
         // Because the source data changes then the formulas
         // can also change so we must paste to update dependent formulas
@@ -114,31 +132,34 @@ class Clipboard {
           row: targetRange.topLeftSimpleCellAddress.row,
         });
 
-        cellDependents.forEach((value) => {
-          if (isSimpleCellAddress(value)) {
-            const hfSimpleCelladdress = value as HFSimpleCellAddress;
-            const simpleCellAddress = new SimpleCellAddress(
-              hfSimpleCelladdress.sheet,
-              hfSimpleCelladdress.row,
-              hfSimpleCelladdress.col
-            );
-            const cellId = simpleCellAddress.toCellId();
-            const cellSerializedValue =
-              this.spreadsheet.hyperformula.getCellSerialized(
-                hfSimpleCelladdress
+        allCellDependents.forEach((rowData) => {
+          rowData.forEach((value) => {
+            if (isSimpleCellAddress(value)) {
+              const hfSimpleCelladdress = value as HFSimpleCellAddress;
+              const simpleCellAddress = new SimpleCellAddress(
+                hfSimpleCelladdress.sheet,
+                hfSimpleCelladdress.row,
+                hfSimpleCelladdress.col
               );
-            const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+              const cellId = simpleCellAddress.toCellId();
+              const cellSerializedValue =
+                this.spreadsheet.hyperformula.getCellSerialized(
+                  hfSimpleCelladdress
+                );
+              const cell =
+                this.spreadsheet.data.spreadsheetData.cells?.[cellId];
 
-            if (cell?.value !== cellSerializedValue) {
-              this.spreadsheet.data.setCell(
-                simpleCellAddress,
-                {
-                  value: cellSerializedValue?.toString(),
-                },
-                false
-              );
+              if (cell?.value !== cellSerializedValue) {
+                this.spreadsheet.data.setCell(
+                  simpleCellAddress,
+                  {
+                    value: cellSerializedValue?.toString(),
+                  },
+                  false
+                );
+              }
             }
-          }
+          });
         });
       }
 

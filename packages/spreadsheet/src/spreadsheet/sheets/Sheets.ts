@@ -517,12 +517,14 @@ class Sheets {
           break;
         }
         case 'Delete': {
-          this.spreadsheet.pushToHistory(() => {
-            this.spreadsheet.hyperformula.batch(() => {
+          this.spreadsheet.hyperformula.batch(() => {
+            this.spreadsheet.pushToHistory(() => {
               this.selector.selectedCells.forEach((cell) => {
                 const simpleCellAddress = cell.simpleCellAddress;
 
-                this.spreadsheet.data.deleteCell(simpleCellAddress);
+                this.spreadsheet.data.setCell(simpleCellAddress, {
+                  value: undefined,
+                });
               });
             });
           });

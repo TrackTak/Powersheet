@@ -135,12 +135,16 @@ class Clipboard {
         });
       }
 
-      rangeData.forEach((rowData, rowIndex) => {
-        rowData.forEach((_, colIndex) => {
+      // Loop backwards because otherwise setting subsequent
+      // cells will incorrectly mess up iteration after it
+      for (let ri = rangeData.length - 1; ri >= 0; ri--) {
+        const rowData = rangeData[ri];
+
+        for (let ci = rowData.length - 1; ci >= 0; ci--) {
           let { row, col } = this.sourceRange!.topLeftSimpleCellAddress;
 
-          row += rowIndex % this.sourceRange!.height();
-          col += colIndex % this.sourceRange!.width();
+          row += ri % this.sourceRange!.height();
+          col += ci % this.sourceRange!.width();
 
           const soureSimpleCellAddress = new SimpleCellAddress(
             this.sourceRange!.topLeftSimpleCellAddress.sheet,
@@ -150,8 +154,8 @@ class Clipboard {
 
           const targetSimpleCellAddress = new SimpleCellAddress(
             targetRange.topLeftSimpleCellAddress.sheet,
-            targetRange.topLeftSimpleCellAddress.row + rowIndex,
-            targetRange.topLeftSimpleCellAddress.col + colIndex
+            targetRange.topLeftSimpleCellAddress.row + ri,
+            targetRange.topLeftSimpleCellAddress.col + ci
           );
           const sourceCellId = soureSimpleCellAddress.toCellId();
           const data = this.spreadsheet.data.spreadsheetData;
@@ -198,8 +202,8 @@ class Clipboard {
           if (this.isCut) {
             this.spreadsheet.data.deleteCell(soureSimpleCellAddress);
           }
-        });
-      });
+        }
+      }
     });
 
     this.spreadsheet.updateViewport();

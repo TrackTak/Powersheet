@@ -8,7 +8,7 @@ import {
   otherAttributes,
 } from './financialStatements';
 
-export const functionHelper = {
+export const functionHelperData = {
   header: 'FINANCIAL - FIN',
   headerDescription:
     'Fetches current or historical securities information from Tracktak Finance.',

@@ -22,7 +22,6 @@
     "sheets"
   ],
   "scripts": {
-    "copy-icons": "copyfiles -f \"./src/spreadsheet/icons.svg\" ./dist/",
     "build:tsc:": "run-p build:tsc:*",
     "build:tsc:main": "tsc -p tsconfig.json",
     "build:tsc:module": "tsc -p tsconfig.module.json",
@@ -48,7 +47,7 @@
     "doc:html": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --out dist/docs",
     "doc:json": "typedoc src/ --exclude **/*.spec.ts --target ES6 --mode file --json dist/docs/typedoc.json",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d dist/docs",
-    "prepublishOnly": "run-s build copy-icons",
+    "prepublishOnly": "run-s build",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "deploy-storybook": "storybook-to-aws-s3 --bucket-path=storybook.powersheet.io/"
@@ -92,7 +91,6 @@
     "ava": "^3.12.1",
     "babel-loader": "^8.2.2",
     "codecov": "^3.5.0",
-    "copyfiles": "^2.4.1",
     "css-loader": "5.2.6",
     "currency-symbol-map": "^5.0.1",
     "cz-conventional-changelog": "^3.3.0",

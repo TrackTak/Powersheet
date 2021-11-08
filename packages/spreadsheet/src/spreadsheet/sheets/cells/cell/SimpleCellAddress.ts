@@ -3,11 +3,7 @@ import { getColumnHeader } from '../../../utils';
 export type CellId = `${number}_${number}_${number}`;
 
 class SimpleCellAddress {
-  constructor(public sheet: number, public row: number, public col: number) {
-    this.sheet = sheet;
-    this.row = row;
-    this.col = col;
-  }
+  constructor(public sheet: number, public row: number, public col: number) {}
 
   static cellIdToAddress(cellId: CellId) {
     const sections = cellId.split('_');

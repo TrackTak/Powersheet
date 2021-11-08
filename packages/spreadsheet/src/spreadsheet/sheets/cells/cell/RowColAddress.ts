@@ -4,10 +4,7 @@ import { SheetId } from '../../Sheets';
 export type SheetRowColId = `${SheetId}_${RowColId}`;
 
 class RowColAddress {
-  constructor(public sheet: number, public rowCol: number) {
-    this.sheet = sheet;
-    this.rowCol = rowCol;
-  }
+  constructor(public sheet: number, public rowCol: number) {}
 
   static sheetRowColIdToAddress(sheetRowColId: SheetRowColId) {
     const sections = sheetRowColId.split('_');

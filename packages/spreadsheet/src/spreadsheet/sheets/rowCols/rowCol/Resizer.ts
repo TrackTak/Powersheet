@@ -14,7 +14,6 @@ class Resizer {
   currentIndex = 0;
 
   constructor(public rowCols: RowCols) {
-    this.rowCols = rowCols;
     this.sheets = this.rowCols.sheets;
     this.spreadsheet = this.sheets.spreadsheet;
 

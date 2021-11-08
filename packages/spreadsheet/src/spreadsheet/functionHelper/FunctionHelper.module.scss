@@ -1,7 +1,6 @@
 @use '@material/drawer';
-
-@import '../styles.scss';
-@import '../variables.scss';
+@use '../variables';
+@use '../styles.scss';
 
 :global {
   @include drawer.core-styles;
@@ -11,7 +10,7 @@
 .functionHelper {
   @include drawer.width(400px);
   overflow: auto;
-  z-index: $functionHelperzIndex;
+  z-index: variables.$functionHelperZIndex;
   position: absolute;
   top: 0;
   right: 0;
@@ -39,7 +38,7 @@
 }
 
 .closeButton {
-  @include button;
+  @include styles.button;
   margin-left: auto;
   display: block;
 }
@@ -47,19 +46,19 @@
 .headerEl {
   font-size: 1.4rem;
   line-height: 1.15;
-  @include headerColor;
+  @include styles.headerColor;
 }
 
 .paragraphEl {
-  @include textDescription;
+  @include styles.textDescription;
 }
 
 .list {
-  @include textDescription;
+  @include styles.textDescription;
 }
 
 .header {
-  @include subHeader;
+  @include styles.subHeader;
 }
 
 .code {

@@ -38,9 +38,6 @@ class RowCol {
     public headerGroup: Group,
     public gridLine: Line
   ) {
-    this.rowCols = rowCols;
-    this.index = index;
-    this.headerGroup = headerGroup;
     this.sheets = rowCols.sheets;
     this.spreadsheet = this.sheets.spreadsheet;
     this.type = rowCols.type;
@@ -50,7 +47,6 @@ class RowCol {
     this.oppositePluralType = rowCols.oppositePluralType;
     this.functions = rowCols.functions;
     this.oppositeFunctions = rowCols.oppositeFunctions;
-    this.gridLine = gridLine;
     this.headerRect = this.headerGroup.findOne('.headerRect');
     this.headerText = this.headerGroup.findOne('.headerText');
     this.resizeLine = this.headerGroup.findOne('.resizeLine');

@@ -1,11 +1,11 @@
 import { Text } from 'konva/lib/shapes/Text';
 
 class FontStyle {
-  constructor(public text: Text, public bold: boolean, public italic: boolean) {
-    this.text = text;
-    this.bold = bold;
-    this.italic = italic;
-  }
+  constructor(
+    public text: Text,
+    public bold: boolean,
+    public italic: boolean
+  ) {}
 
   getStyle() {
     if (this.bold && this.italic) return 'italic bold';

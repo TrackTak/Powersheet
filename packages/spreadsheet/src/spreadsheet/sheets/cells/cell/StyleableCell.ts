@@ -29,8 +29,6 @@ class StyleableCell extends Cell {
   ) {
     super(sheets, simpleCellAddress, group);
 
-    this.bordersGroup = bordersGroup;
-
     bordersGroup.position(group.position());
 
     this.text = group.children!.find((x) => x.name() === 'text') as Text;

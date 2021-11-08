@@ -20,7 +20,6 @@ class RightClickMenu {
   rightClickMenuActionGroups: IRightClickMenuActionGroups[];
 
   constructor(private sheets: Sheets) {
-    this.sheets = sheets;
     this.buttonMap = {
       comment: createButtonContent('Comment', 'comment'),
       copy: createButtonContent('Copy', 'copy'),

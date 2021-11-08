@@ -40,9 +40,7 @@ class RowCols {
   oppositePluralType: RowColsType;
 
   constructor(public type: RowColType, public sheets: Sheets) {
-    this.type = type;
     this.isCol = this.type === 'col';
-    this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
     this.rowColMap = new Map();
 

@@ -15,7 +15,6 @@ class HighlightedCell extends Cell {
   ) {
     super(sheets, simpleCellAddress);
 
-    this.color = color;
     this.innerRect = new Rect({
       name: 'innerRect',
     });

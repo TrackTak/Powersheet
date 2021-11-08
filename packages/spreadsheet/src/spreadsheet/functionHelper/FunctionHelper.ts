@@ -44,9 +44,7 @@ class FunctionHelper {
   textWrapper!: HTMLDivElement;
   spreadsheet!: Spreadsheet;
 
-  constructor(public data: IFunctionHelperData) {
-    this.data = data;
-  }
+  constructor(public data: IFunctionHelperData) {}
 
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;

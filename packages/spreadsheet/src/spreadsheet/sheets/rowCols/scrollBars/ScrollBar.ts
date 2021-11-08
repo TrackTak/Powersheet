@@ -27,7 +27,6 @@ class ScrollBar {
   pluralType: RowColsType;
 
   constructor(public rowCols: RowCols) {
-    this.rowCols = rowCols;
     this.sheets = this.rowCols.sheets;
     this.type = this.rowCols.type;
     this.pluralType = this.rowCols.pluralType;

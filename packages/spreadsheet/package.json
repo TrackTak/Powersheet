@@ -75,11 +75,12 @@
     "xlsx": "^0.17.3"
   },
   "devDependencies": {
-    "@parcel/transformer-sass": "^2.0.0",
-    "@parcel/transformer-typescript-types": "^2.0.0",
     "@ava/typescript": "^1.1.1",
     "@babel/core": "^7.14.8",
+    "@babel/plugin-transform-typescript": "^7.16.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@parcel/transformer-sass": "^2.0.0",
+    "@parcel/transformer-typescript-types": "^2.0.0",
     "@storybook/addon-actions": "^6.3.6",
     "@storybook/addon-essentials": "^6.3.6",
     "@storybook/addon-links": "^6.3.6",
@@ -133,6 +134,12 @@
     },
     "files": [
       "!build/module/**"
+    ]
+  },
+  "sass": {
+    "includePaths": [
+      "../../node_modules",
+      "./node_modules"
     ]
   },
   "config": {

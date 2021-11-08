@@ -35,6 +35,8 @@
 .closeIcon {
   height: 23px;
   width: 23px;
+  display: block;
+  background-image: url(close-icon.svg);
 }
 
 .closeButton {
@@ -64,4 +66,5 @@
 .code {
   color: #6240c8;
   font-weight: bold;
+  font-size: 13px;
 }

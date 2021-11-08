@@ -17,10 +17,7 @@ import {
   FormulaBar,
   Exporter,
   BottomBar,
-  FunctionHelper,
 } from '..';
-// @ts-ignore
-import { functionHelperData } from './mocks/functionHelperData';
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter';
 import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula';
 // @ts-ignore
@@ -122,7 +119,6 @@ const buildSpreadsheetWithEverything = (
   hyperformula: HyperFormula,
   customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
 ) => {
-  const functionHelper = new FunctionHelper(functionHelperData);
   const toolbar = new Toolbar();
   const formulaBar = new FormulaBar();
   const exporter = new Exporter(customRegisteredPluginDefinitions);
@@ -145,7 +141,6 @@ const buildSpreadsheetWithEverything = (
     formulaBar,
     exporter,
     bottomBar,
-    functionHelper,
   });
 
   toolbar.setToolbarIcons([
@@ -205,7 +200,6 @@ const buildSpreadsheetWithEverything = (
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl);
   spreadsheet.spreadsheetEl.appendChild(bottomBar.bottomBarEl);
-  spreadsheet.sheets.sheetEl.appendChild(functionHelper.functionHelperEl);
 
   return spreadsheet;
 };

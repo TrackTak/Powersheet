@@ -1,7 +1,6 @@
 import { Spreadsheet } from '../..';
 import styles from './FunctionHelper.module.scss';
 import { MDCDrawer } from '@material/drawer';
-import closeIcon from './close-icon.svg';
 import {
   createCodeText,
   createHeader,
@@ -38,7 +37,7 @@ class FunctionHelper {
   functionHelperEl!: HTMLDivElement;
   drawerContentEl!: HTMLDivElement;
   drawer!: MDCDrawer;
-  closeIcon!: HTMLImageElement;
+  closeIcon!: HTMLSpanElement;
   closeButton!: HTMLButtonElement;
   headerEl!: HTMLHeadElement;
   textWrapper!: HTMLDivElement;
@@ -60,7 +59,7 @@ class FunctionHelper {
     this.drawerContentEl = document.createElement('div');
     this.drawerContentEl.classList.add(
       styles.drawerContent,
-      `${functionHelperPrefix}`,
+      `${functionHelperPrefix}-drawer-content`,
       'mdc-drawer__content'
     );
 
@@ -70,9 +69,11 @@ class FunctionHelper {
 
     this.functionHelperEl.dir = 'rtl';
 
-    this.closeIcon = document.createElement('img');
-    this.closeIcon.classList.add(styles.closeIcon, `${functionHelperPrefix}`);
-    this.closeIcon.src = closeIcon;
+    this.closeIcon = document.createElement('span');
+    this.closeIcon.classList.add(
+      styles.closeIcon,
+      `${functionHelperPrefix}-close-icon`
+    );
 
     this.closeButton = document.createElement('button');
     this.closeButton.classList.add(
@@ -91,7 +92,7 @@ class FunctionHelper {
     this.textWrapper = document.createElement('div');
     this.textWrapper.classList.add(
       styles.textWrapper,
-      `${functionHelperPrefix}`
+      `${functionHelperPrefix}-text-wrapper`
     );
 
     const { mainHeaderEl } = createMainHeader(this.data.header);
@@ -143,18 +144,10 @@ class FunctionHelper {
         attributeList.appendChild(listItem);
       });
     });
-
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
-      once: true,
-    });
   }
 
-  private onDOMContentLoaded = () => {
+  setDrawer() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl);
-  };
-
-  destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded);
   }
 }
 

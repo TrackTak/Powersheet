@@ -252,6 +252,11 @@ class Spreadsheet {
   updateViewport() {
     this.bottomBar?.updateSheetTabs();
     this.sheets.updateViewport();
+    this.toolbar?.updateActiveStates();
+    this.functionHelper?.updateOpenState();
+    this.formulaBar?.updateValue(
+      this.sheets.selector.selectedCell?.simpleCellAddress
+    );
   }
 }
 

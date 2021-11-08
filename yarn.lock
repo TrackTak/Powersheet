@@ -3948,7 +3948,7 @@
     "@parcel/transformer-react-refresh-wrap" "2.0.0-nightly.907+d2a9b6bd"
     "@parcel/transformer-svg" "2.0.1-nightly.2529+d2a9b6bd"
 
-"@parcel/core@2.0.0-nightly.905+d2a9b6bd":
+"@parcel/core@2.0.0-nightly.905", "@parcel/core@2.0.0-nightly.905+d2a9b6bd":
   version "2.0.0-nightly.905"
   resolved "https://registry.yarnpkg.com/@parcel/core/-/core-2.0.0-nightly.905.tgz#fde63084b5a052f48befd2c4c91db5f0cc005fe0"
   integrity sha512-6tLMbjF4mAvkOzfMgFHqQsq/vUax5ArVS/TlSB+zVdI5a4yqxB6vyayFvPb6GmePlVaWKlk9PZyyRVILHk+93A==

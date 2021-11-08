@@ -499,9 +499,8 @@ class Toolbar {
         break;
       }
       case 'functionHelper': {
-        const isOpen = !this.spreadsheet.functionHelper!.drawer.open;
-
-        this.spreadsheet.functionHelper!.drawer.open = isOpen;
+        this.spreadsheet.options.showFunctionHelper =
+          !this.spreadsheet.options.showFunctionHelper;
         break;
       }
       case 'formula': {
@@ -800,6 +799,10 @@ class Toolbar {
     this.setActive(
       this.iconElementsMap.formula,
       this.spreadsheet.data.spreadsheetData.showFormulas ?? false
+    );
+    this.setActive(
+      this.iconElementsMap.functionHelper,
+      this.spreadsheet.options.showFunctionHelper
     );
     this.setActiveHorizontalIcon(selectedCell);
     this.setActiveVerticalIcon(selectedCell);

@@ -714,10 +714,6 @@ class Sheets {
     this.cols.updateViewport();
 
     this.selector.updateSelectedCells();
-    this.spreadsheet.toolbar?.updateActiveStates();
-    this.spreadsheet.formulaBar?.updateValue(
-      this.selector.selectedCell?.simpleCellAddress
-    );
   }
 }
 

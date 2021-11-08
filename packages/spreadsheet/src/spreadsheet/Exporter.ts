@@ -11,6 +11,9 @@ import RowColAddress, {
   SheetRowColId,
 } from './sheets/cells/cell/RowColAddress';
 import { CellType, CellValue, FunctionPluginDefinition } from 'hyperformula';
+// TODO: Make dynamic async import when https://github.com/parcel-bundler/parcel/issues/7268 is fixed
+// @ts-ignore
+import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min';
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions'];
@@ -254,9 +257,7 @@ class Exporter {
     return workbook;
   }
 
-  async exportWorkbook() {
-    const { writeFile, utils } = await import('xlsx');
-
+  exportWorkbook() {
     const workbook = this.getWorkbook(utils);
 
     writeFile(

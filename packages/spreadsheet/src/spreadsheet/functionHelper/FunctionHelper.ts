@@ -36,7 +36,7 @@ export interface IFunctionHelperData {
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement;
   drawerContentEl!: HTMLDivElement;
-  drawer!: MDCDrawer;
+  drawer?: MDCDrawer;
   closeIcon!: HTMLSpanElement;
   closeButton!: HTMLButtonElement;
   headerEl!: HTMLHeadElement;
@@ -82,8 +82,9 @@ class FunctionHelper {
     );
 
     this.closeButton.addEventListener('click', () => {
-      const isOpen = this.drawer.open;
-      this.drawer.open = !isOpen;
+      this.spreadsheet.options.showFunctionHelper = false;
+
+      this.spreadsheet.updateViewport();
     });
 
     this.drawerContentEl.appendChild(this.closeButton);
@@ -148,6 +149,14 @@ class FunctionHelper {
 
   setDrawer() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl);
+
+    this.spreadsheet.updateViewport();
+  }
+
+  updateOpenState() {
+    if (this.drawer) {
+      this.drawer.open = this.spreadsheet.options.showFunctionHelper;
+    }
   }
 }
 

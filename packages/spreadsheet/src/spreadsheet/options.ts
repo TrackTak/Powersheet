@@ -31,6 +31,7 @@ export interface IOptions {
   touchScrollSpeed: number;
   undoRedoLimit: number;
   cellHighlight: ICellHighlight;
+  showFunctionHelper: boolean;
 }
 
 export const defaultOptions: IOptions = {
@@ -57,6 +58,7 @@ export const defaultOptions: IOptions = {
     lightness: '50%',
     alpha: '100%',
   },
+  showFunctionHelper: false,
   fontSizes: [6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 24, 36],
   exportSpreadsheetName: 'Powersheet.xlsx',
   touchScrollSpeed: 1.2,

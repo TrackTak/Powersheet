@@ -80,6 +80,7 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@parcel/transformer-sass": "2.0.0-nightly.907",
     "@parcel/transformer-typescript-types": "2.0.0-nightly.907",
+    "@parcel/core": "2.0.0-nightly.905",
     "@storybook/addon-actions": "^6.3.6",
     "@storybook/addon-essentials": "^6.3.6",
     "@storybook/addon-links": "^6.3.6",

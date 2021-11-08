@@ -192,9 +192,6 @@ const buildSpreadsheetWithEverything = (
     {
       elements: [toolbar.iconElementsMap.autosave.buttonContainer],
     },
-    {
-      elements: [toolbar.iconElementsMap.functionHelper.buttonContainer],
-    },
   ]);
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl);

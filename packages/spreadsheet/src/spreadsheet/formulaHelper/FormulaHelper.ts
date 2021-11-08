@@ -22,7 +22,6 @@ class FormulaHelper {
       createWrapperContent();
     this.formulaHelperListContainerEl = formulaHelperListContainerEl;
     this.formulaHelperEl = formulaHelperEl;
-    this.formulas = formulas;
     this.helper = delegate(formulaHelperEl, {
       target: styles.formulaHelper,
       arrow: false,
@@ -30,7 +29,6 @@ class FormulaHelper {
       theme: 'formula-helper',
       interactive: true,
     });
-    this.onItemClick = onItemClick;
   }
 
   show(filterText?: string) {

@@ -123,8 +123,6 @@ class Sheets {
   >;
 
   constructor(public spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
-
     this.sheetElContainer = document.createElement('div');
     this.sheetElContainer.classList.add(
       `${prefix}-sheet-container`,

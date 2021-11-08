@@ -20,7 +20,6 @@ class Comment {
   spreadsheet: Spreadsheet;
 
   constructor(private sheets: Sheets) {
-    this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
     this.content = createContent();
     this.textarea = createTextarea();

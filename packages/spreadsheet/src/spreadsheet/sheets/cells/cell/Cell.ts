@@ -15,8 +15,6 @@ class Cell {
     public simpleCellAddress: SimpleCellAddress,
     group?: Group
   ) {
-    this.sheets = sheets;
-    this.simpleCellAddress = simpleCellAddress;
     this.rangeSimpleCellAddress = new RangeSimpleCellAddress(
       simpleCellAddress,
       simpleCellAddress

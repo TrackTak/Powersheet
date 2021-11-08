@@ -30,7 +30,6 @@ class CellEditor {
   currentCellText: string | null = null;
 
   constructor(private sheet: Sheet) {
-    this.sheet = sheet;
     this.spreadsheet = this.sheet.spreadsheet;
 
     this.cellHighlighter = new CellHighlighter(this.spreadsheet);

@@ -21,9 +21,7 @@ export interface ICellReferencePart {
 class CellHighlighter {
   highlightedCells: HighlightedCell[] = [];
 
-  constructor(private spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
-  }
+  constructor(private spreadsheet: Spreadsheet) {}
 
   destroy() {
     this.destroyHighlightedCells();

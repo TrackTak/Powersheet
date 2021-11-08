@@ -14,7 +14,6 @@ class Cells {
   spreadsheet: Spreadsheet;
 
   constructor(private sheets: Sheets) {
-    this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
     this.cellsMap = new Map();
   }

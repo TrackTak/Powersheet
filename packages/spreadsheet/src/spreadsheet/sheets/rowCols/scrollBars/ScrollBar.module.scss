@@ -1,4 +1,4 @@
-@import '../../../variables.scss';
+@use '../../../variables';
 
 @mixin scroll {
   background: #ddd;
@@ -6,7 +6,7 @@
 
 @mixin scrollBar {
   position: absolute;
-  z-index: $scrollBarzIndex;
+  z-index: variables.$scrollBarZIndex;
   right: 0;
   background-color: #f4f5f8;
 }

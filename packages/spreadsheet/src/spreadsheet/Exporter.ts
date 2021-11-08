@@ -22,9 +22,7 @@ class Exporter {
 
   constructor(
     public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[]
-  ) {
-    this.customRegisteredPluginDefinitions = customRegisteredPluginDefinitions;
-  }
+  ) {}
 
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet;

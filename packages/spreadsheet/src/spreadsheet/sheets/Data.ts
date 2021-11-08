@@ -107,9 +107,7 @@ export interface ISpreadsheetData {
 class Data {
   spreadsheetData: ISpreadsheetData = {};
 
-  constructor(public spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
-  }
+  constructor(public spreadsheet: Spreadsheet) {}
 
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
     const mergedCells = this.spreadsheetData.mergedCells;

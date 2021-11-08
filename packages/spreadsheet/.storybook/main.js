@@ -5,4 +5,8 @@ module.exports = {
     '@storybook/addon-essentials',
     '@storybook/preset-scss',
   ],
+  babel: async (options) => ({
+    ...options,
+    plugins: ['@babel/plugin-transform-typescript', ...options.plugins],
+  }),
 };

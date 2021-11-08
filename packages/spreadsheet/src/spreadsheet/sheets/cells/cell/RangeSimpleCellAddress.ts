@@ -10,9 +10,6 @@ class RangeSimpleCellAddress {
     public topLeftSimpleCellAddress: SimpleCellAddress,
     public bottomRightSimpleCellAddress: SimpleCellAddress
   ) {
-    this.topLeftSimpleCellAddress = topLeftSimpleCellAddress;
-    this.bottomRightSimpleCellAddress = bottomRightSimpleCellAddress;
-
     this.reverseIfTopBiggerThanBottom();
   }
 

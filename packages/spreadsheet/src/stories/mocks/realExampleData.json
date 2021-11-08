@@ -42074,7 +42074,7 @@
       "id": "0_2_0"
     },
     "0_2_1": {
-      "backgroundColor": "#baffc2",
+      "backgroundColor": "#8ff1d2",
       "id": "0_2_1",
       "comment": "Compound Annual Growth Rate - look at: a. Revenue growth in your company in recent years b. Your company's revenues, relative to the overall market size and larger players in the sector.",
       "textFormatPattern": "0.00%"
@@ -42084,7 +42084,7 @@
       "id": "0_3_0"
     },
     "0_3_1": {
-      "backgroundColor": "#baffc2",
+      "backgroundColor": "#8ff1d2",
       "id": "0_3_1",
       "comment": "Start by looking at your company's current pre-tax operating margin but also look at the average for your industry.",
       "textFormatPattern": "0.00%"
@@ -42098,13 +42098,13 @@
       "id": "0_3_2"
     },
     "0_2_4": {
-      "backgroundColor": "#baffc2",
+      "backgroundColor": "#8ff1d2",
       "id": "0_2_4",
       "comment": "The forecasted number of years until the company’s current Operating Margin will converge on the target Operating Margin. For example, if today's year is 2021 and the year of convergence is 5 then it will converge in year 2026.",
       "textFormatPattern": "#,##0.00"
     },
     "0_3_4": {
-      "backgroundColor": "#baffc2",
+      "backgroundColor": "#8ff1d2",
       "id": "0_3_4",
       "comment": "The efficiency of how much the company has to reinvest the business to grow. The formula is Revenue / Invested Capital. The higher the number the more efficient the company is. The default value is set to the industry average as this is usually a good starting point. You should also look at the previous years sales to capital ratio's in the above table to fine tune this value. In the DCF output we compute how much the company is going to reinvest to keep the business growing in future years. The higher you set this number, the more efficiently the business is growing and the higher the value of your growth.",
       "value": "=FIN(\"sales/Capital\")",

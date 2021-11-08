@@ -8,7 +8,6 @@ class Merger {
   spreadsheet: Spreadsheet;
 
   constructor(public sheets: Sheets) {
-    this.sheets = sheets;
     this.spreadsheet = this.sheets.spreadsheet;
   }
 

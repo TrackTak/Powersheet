@@ -158,6 +158,10 @@ class FunctionHelper {
       this.drawer.open = this.spreadsheet.options.showFunctionHelper;
     }
   }
+
+  destroy() {
+    this.drawer?.destroy();
+  }
 }
 
 export default FunctionHelper;

@@ -167,6 +167,7 @@ class Spreadsheet {
     this.toolbar?.destroy();
     this.formulaBar?.destroy();
     this.bottomBar?.destroy();
+    this.functionHelper?.destroy();
     this.sheets.destroy();
   }
 
@@ -189,13 +190,13 @@ class Spreadsheet {
   }
 
   setOptions(options: NestedPartial<IOptions>) {
-    this.options = merge({}, defaultOptions, options);
+    this.options = merge({}, this.options, options);
 
     this.updateViewport();
   }
 
   setStyles(styles: NestedPartial<IStyles>) {
-    this.styles = merge({}, defaultStyles, styles);
+    this.styles = merge({}, this.styles, styles);
 
     this.updateViewport();
   }

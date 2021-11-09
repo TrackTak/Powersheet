@@ -15,7 +15,7 @@ export const functionHelperData = {
   codeSyntaxUsage: [
     '=FIN("revenue")',
     '=FIN("revenue",,"01/01/2000")',
-    '=FIN("B2, B3")',
+    '=FIN(B2, B3)',
   ],
   codeSyntaxElements: [
     {

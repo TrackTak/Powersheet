@@ -303,7 +303,7 @@
     {
       "buttons": [
         {
-          "text": "Contact Us",
+          "text": "BUY NOW",
           "type": "MODAL",
           "link": "contact",
           "variant": "secondary"

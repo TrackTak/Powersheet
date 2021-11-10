@@ -1,149 +1,149 @@
-import { Shape } from 'konva/lib/Shape';
-import { Rect } from 'konva/lib/shapes/Rect';
-import { Vector2d } from 'konva/lib/types';
-import Spreadsheet from '../Spreadsheet';
-import SelectedCell from './cells/cell/SelectedCell';
-import SimpleCellAddress from './cells/cell/SimpleCellAddress';
-import Sheets from './Sheets';
+import { Shape } from 'konva/lib/Shape'
+import { Rect } from 'konva/lib/shapes/Rect'
+import { Vector2d } from 'konva/lib/types'
+import Spreadsheet from '../Spreadsheet'
+import SelectedCell from './cells/cell/SelectedCell'
+import SimpleCellAddress from './cells/cell/SimpleCellAddress'
+import Sheets from './Sheets'
 
 export interface ISelectedRowCols {
-  rows: Shape[];
-  cols: Shape[];
+  rows: Shape[]
+  cols: Shape[]
 }
 
 export interface ISelectionArea {
-  start: Vector2d;
-  end: Vector2d;
+  start: Vector2d
+  end: Vector2d
 }
 
 interface IGroupedCell {
-  cells: SelectedCell[];
-  rect?: Rect;
+  cells: SelectedCell[]
+  rect?: Rect
 }
 
 interface IGroupedCells {
-  main: IGroupedCell;
-  xSticky: IGroupedCell;
-  ySticky: IGroupedCell;
-  xySticky: IGroupedCell;
+  main: IGroupedCell
+  xSticky: IGroupedCell
+  ySticky: IGroupedCell
+  xySticky: IGroupedCell
 }
 
 class Selector {
-  isInSelectionMode = false;
-  selectedCell?: SelectedCell;
-  selectedCells: SelectedCell[] = [];
-  selectedSimpleCellAddress: SimpleCellAddress;
-  previousSelectedSimpleCellAddress?: SimpleCellAddress;
-  groupedCells?: IGroupedCells | null;
-  selectionArea?: ISelectionArea | null;
-  private spreadsheet: Spreadsheet;
+  isInSelectionMode = false
+  selectedCell?: SelectedCell
+  selectedCells: SelectedCell[] = []
+  selectedSimpleCellAddress: SimpleCellAddress
+  previousSelectedSimpleCellAddress?: SimpleCellAddress
+  groupedCells?: IGroupedCells | null
+  selectionArea?: ISelectionArea | null
+  private spreadsheet: Spreadsheet
 
   constructor(private sheets: Sheets) {
-    this.spreadsheet = this.sheets.spreadsheet;
+    this.spreadsheet = this.sheets.spreadsheet
 
     this.selectedSimpleCellAddress = new SimpleCellAddress(
       this.sheets.activeSheetId,
       0,
       0
-    );
+    )
   }
 
   destroy() {
-    this.selectedCell?.destroy();
+    this.selectedCell?.destroy()
 
-    Object.keys(this.groupedCells ?? {}).forEach((key) => {
-      const type = key as keyof IGroupedCells;
+    Object.keys(this.groupedCells ?? {}).forEach(key => {
+      const type = key as keyof IGroupedCells
 
-      this.groupedCells?.[type].rect?.destroy();
-    });
+      this.groupedCells?.[type].rect?.destroy()
+    })
   }
 
   private renderSelectedCell() {
     if (this.selectedSimpleCellAddress) {
-      this.selectedCell?.destroy();
+      this.selectedCell?.destroy()
 
       this.selectedCell = new SelectedCell(
         this.sheets,
         this.selectedSimpleCellAddress
-      );
+      )
 
-      const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo();
-      const sheetGroup = this.sheets.scrollGroups[stickyGroup].sheetGroup;
+      const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo()
+      const sheetGroup = this.sheets.scrollGroups[stickyGroup].sheetGroup
 
-      sheetGroup.add(this.selectedCell.group);
+      sheetGroup.add(this.selectedCell.group)
     }
   }
 
   private renderSelectionArea() {
     if (this.selectionArea) {
-      Object.keys(this.groupedCells ?? {}).forEach((key) => {
-        const type = key as keyof IGroupedCells;
+      Object.keys(this.groupedCells ?? {}).forEach(key => {
+        const type = key as keyof IGroupedCells
 
-        this.groupedCells?.[type].rect?.destroy();
-      });
+        this.groupedCells?.[type].rect?.destroy()
+      })
 
       const rangeSimpleCellAddress =
         this.sheets.convertVectorsToRangeSimpleCellAddress(
           this.selectionArea.start,
           this.selectionArea.end
-        );
+        )
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this.sheets,
-        (simpleCellAddress) => {
-          return new SelectedCell(this.sheets, simpleCellAddress);
+        simpleCellAddress => {
+          return new SelectedCell(this.sheets, simpleCellAddress)
         }
-      );
+      )
 
       this.groupedCells = {
         main: {
-          cells: [],
+          cells: []
         },
         xSticky: {
-          cells: [],
+          cells: []
         },
         ySticky: {
-          cells: [],
+          cells: []
         },
         xySticky: {
-          cells: [],
-        },
-      };
+          cells: []
+        }
+      }
 
-      this.selectedCells.forEach((cell) => {
-        const stickyGroup = cell.getStickyGroupCellBelongsTo();
+      this.selectedCells.forEach(cell => {
+        const stickyGroup = cell.getStickyGroupCellBelongsTo()
 
-        this.groupedCells![stickyGroup].cells.push(cell);
-      });
+        this.groupedCells![stickyGroup].cells.push(cell)
+      })
 
-      Object.keys(this.groupedCells).forEach((key) => {
-        const type = key as keyof IGroupedCells;
-        const cells = this.groupedCells![type].cells;
+      Object.keys(this.groupedCells).forEach(key => {
+        const type = key as keyof IGroupedCells
+        const cells = this.groupedCells![type].cells
 
-        this.groupedCells?.[type].rect?.destroy();
+        this.groupedCells?.[type].rect?.destroy()
 
         if (cells.length) {
-          const topLeftCellClientRect = cells[0].getClientRectWithoutStroke();
+          const topLeftCellClientRect = cells[0].getClientRectWithoutStroke()
 
-          let width = 0;
-          let height = 0;
+          let width = 0
+          let height = 0
 
           const minMaxRangeSimpleCellAddress =
-            this.sheets.getMinMaxRangeSimpleCellAddress(cells);
+            this.sheets.getMinMaxRangeSimpleCellAddress(cells)
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
           )) {
-            height += this.sheets.rows.getSize(index);
+            height += this.sheets.rows.getSize(index)
           }
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'col'
           )) {
-            width += this.sheets.cols.getSize(index);
+            width += this.sheets.cols.getSize(index)
           }
 
-          const sheetGroup = this.sheets.scrollGroups[type].sheetGroup;
+          const sheetGroup = this.sheets.scrollGroups[type].sheetGroup
 
           this.groupedCells![type].rect = new Rect({
             ...this.spreadsheet.styles.selection,
@@ -151,110 +151,110 @@ class Selector {
             name: 'selectionRect',
             stroke: undefined,
             width,
-            height,
-          });
+            height
+          })
 
-          sheetGroup.add(this.groupedCells![type].rect!);
+          sheetGroup.add(this.groupedCells![type].rect!)
         }
-      });
+      })
     }
   }
 
   updateSelectedCells() {
-    this.renderSelectionArea();
-    this.renderSelectedCell();
+    this.renderSelectionArea()
+    this.renderSelectedCell()
   }
 
   startSelection(vector: Vector2d) {
     this.previousSelectedSimpleCellAddress =
-      this.selectedCell?.simpleCellAddress;
-    this.selectionArea = null;
+      this.selectedCell?.simpleCellAddress
+    this.selectionArea = null
 
     const rangeSimpleCellAddress =
-      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector);
+      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector)
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
       this.sheets,
-      (simpleCellAddress) => {
-        return new SelectedCell(this.sheets, simpleCellAddress);
+      simpleCellAddress => {
+        return new SelectedCell(this.sheets, simpleCellAddress)
       }
-    )[0];
+    )[0]
 
-    const rect = cell.getClientRectWithoutStroke();
+    const rect = cell.getClientRectWithoutStroke()
 
     if (!cell.isCellOnFrozenCol()) {
-      rect.x -= Math.abs(this.sheets.cols.scrollBar.scroll);
+      rect.x -= Math.abs(this.sheets.cols.scrollBar.scroll)
     }
 
     if (!cell.isCellOnFrozenRow()) {
-      rect.y -= Math.abs(this.sheets.rows.scrollBar.scroll);
+      rect.y -= Math.abs(this.sheets.rows.scrollBar.scroll)
     }
 
     this.selectionArea = {
       start: {
         x: rect.x + 0.1,
-        y: rect.y + 0.1,
+        y: rect.y + 0.1
       },
       end: {
         x: rect.x + rect.width,
-        y: rect.y + rect.height,
-      },
-    };
+        y: rect.y + rect.height
+      }
+    }
 
-    this.isInSelectionMode = true;
+    this.isInSelectionMode = true
 
-    this.selectedSimpleCellAddress = cell.simpleCellAddress;
+    this.selectedSimpleCellAddress = cell.simpleCellAddress
 
-    this.spreadsheet.updateViewport();
+    this.spreadsheet.updateViewport()
 
-    this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea);
+    this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
   }
 
   moveSelection() {
     if (this.isInSelectionMode) {
-      const { x, y } = this.sheets.sheet.getRelativePointerPosition();
-      const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke();
+      const { x, y } = this.sheets.sheet.getRelativePointerPosition()
+      const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke()
 
       this.selectionArea = {
         start: {
           x: selectedCellRect.x,
-          y: selectedCellRect.y,
+          y: selectedCellRect.y
         },
         end: {
           x,
-          y,
-        },
-      };
+          y
+        }
+      }
 
       // We don't update sheet viewport for performance reasons
-      this.updateSelectedCells();
-      this.spreadsheet.toolbar?.updateActiveStates();
+      this.updateSelectedCells()
+      this.spreadsheet.toolbar?.updateActiveStates()
 
-      this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea);
+      this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea)
     }
   }
 
   endSelection() {
-    this.isInSelectionMode = false;
+    this.isInSelectionMode = false
 
-    Object.keys(this.groupedCells ?? {}).forEach((key) => {
-      const type = key as keyof IGroupedCells;
-      const value = this.groupedCells![type];
+    Object.keys(this.groupedCells ?? {}).forEach(key => {
+      const type = key as keyof IGroupedCells
+      const value = this.groupedCells![type]
 
       if (value.cells.length > 1) {
-        value.rect?.stroke(this.spreadsheet.styles.selection.stroke as string);
+        value.rect?.stroke(this.spreadsheet.styles.selection.stroke as string)
       }
-    });
+    })
 
-    this.spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!);
+    this.spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!)
   }
 
   hasChangedCellSelection() {
     return (
       this.selectedCell?.simpleCellAddress.toCellId() !==
       this.previousSelectedSimpleCellAddress?.toCellId()
-    );
+    )
   }
 }
 
-export default Selector;
+export default Selector

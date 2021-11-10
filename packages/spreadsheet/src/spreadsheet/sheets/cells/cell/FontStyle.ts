@@ -1,4 +1,4 @@
-import { Text } from 'konva/lib/shapes/Text';
+import { Text } from 'konva/lib/shapes/Text'
 
 class FontStyle {
   constructor(
@@ -8,20 +8,20 @@ class FontStyle {
   ) {}
 
   getStyle() {
-    if (this.bold && this.italic) return 'italic bold';
+    if (this.bold && this.italic) return 'italic bold'
 
-    if (this.bold && !this.italic) return 'bold';
+    if (this.bold && !this.italic) return 'bold'
 
-    if (!this.bold && this.italic) return 'italic';
+    if (!this.bold && this.italic) return 'italic'
 
-    return 'normal';
+    return 'normal'
   }
 
   setStyle() {
-    const style = this.getStyle();
+    const style = this.getStyle()
 
-    this.text.fontStyle(style);
+    this.text.fontStyle(style)
   }
 }
 
-export default FontStyle;
+export default FontStyle

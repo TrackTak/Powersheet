@@ -3,5 +3,5 @@ export type NestedPartial<T> = {
     ? Array<NestedPartial<R>>
     : T[K] extends unknown
     ? unknown
-    : NestedPartial<T[K]>;
-};
+    : NestedPartial<T[K]>
+}

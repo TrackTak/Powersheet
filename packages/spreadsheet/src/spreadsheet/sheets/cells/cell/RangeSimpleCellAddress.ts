@@ -1,20 +1,20 @@
-import { reverseVectorsIfStartBiggerThanEnd } from '../../../utils';
-import { IMergedCellData } from '../../Data';
-import { RowColType } from '../../rowCols/RowCols';
-import Sheets from '../../Sheets';
-import Cell from './Cell';
-import SimpleCellAddress from './SimpleCellAddress';
+import { reverseVectorsIfStartBiggerThanEnd } from '../../../utils'
+import { IMergedCellData } from '../../Data'
+import { RowColType } from '../../rowCols/RowCols'
+import Sheets from '../../Sheets'
+import Cell from './Cell'
+import SimpleCellAddress from './SimpleCellAddress'
 
 class RangeSimpleCellAddress {
   constructor(
     public topLeftSimpleCellAddress: SimpleCellAddress,
     public bottomRightSimpleCellAddress: SimpleCellAddress
   ) {
-    this.reverseIfTopBiggerThanBottom();
+    this.reverseIfTopBiggerThanBottom()
   }
 
   static mergedCellToAddress(mergedCell: IMergedCellData) {
-    const simpleCellAddress = SimpleCellAddress.cellIdToAddress(mergedCell.id);
+    const simpleCellAddress = SimpleCellAddress.cellIdToAddress(mergedCell.id)
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
       new SimpleCellAddress(
@@ -27,9 +27,9 @@ class RangeSimpleCellAddress {
         mergedCell.row.y,
         mergedCell.col.y
       )
-    );
+    )
 
-    return rangeSimpleCellAddress;
+    return rangeSimpleCellAddress
   }
 
   height() {
@@ -37,7 +37,7 @@ class RangeSimpleCellAddress {
       this.bottomRightSimpleCellAddress.row -
       this.topLeftSimpleCellAddress.row +
       1
-    );
+    )
   }
 
   width() {
@@ -45,45 +45,45 @@ class RangeSimpleCellAddress {
       this.bottomRightSimpleCellAddress.col -
       this.topLeftSimpleCellAddress.col +
       1
-    );
+    )
   }
 
   reverseIfTopBiggerThanBottom() {
     const { start, end } = reverseVectorsIfStartBiggerThanEnd(
       {
         x: this.topLeftSimpleCellAddress.row,
-        y: this.topLeftSimpleCellAddress.col,
+        y: this.topLeftSimpleCellAddress.col
       },
       {
         x: this.bottomRightSimpleCellAddress.row,
-        y: this.bottomRightSimpleCellAddress.col,
+        y: this.bottomRightSimpleCellAddress.col
       }
-    );
+    )
 
-    this.topLeftSimpleCellAddress.row = start.x;
-    this.topLeftSimpleCellAddress.col = start.y;
+    this.topLeftSimpleCellAddress.row = start.x
+    this.topLeftSimpleCellAddress.col = start.y
 
-    this.bottomRightSimpleCellAddress.row = end.x;
-    this.bottomRightSimpleCellAddress.col = end.y;
+    this.bottomRightSimpleCellAddress.row = end.x
+    this.bottomRightSimpleCellAddress.col = end.y
   }
 
   getArrayOfAddresses = () => {
-    const addresses: SimpleCellAddress[][] = [];
+    const addresses: SimpleCellAddress[][] = []
 
     for (let y = 0; y < this.height(); ++y) {
-      addresses[y] = [];
+      addresses[y] = []
 
       for (let x = 0; x < this.width(); ++x) {
         const simpleCellAddress = new SimpleCellAddress(
           this.topLeftSimpleCellAddress.sheet,
           this.topLeftSimpleCellAddress.row + y,
           this.topLeftSimpleCellAddress.col + x
-        );
+        )
 
-        addresses[y].push(simpleCellAddress);
+        addresses[y].push(simpleCellAddress)
       }
     }
-    return addresses;
+    return addresses
   };
 
   *iterateFromTopToBottom(type: RowColType) {
@@ -92,7 +92,7 @@ class RangeSimpleCellAddress {
       index <= this.bottomRightSimpleCellAddress[type];
       index++
     ) {
-      yield index;
+      yield index
     }
   }
 
@@ -105,7 +105,7 @@ class RangeSimpleCellAddress {
       this.topLeftSimpleCellAddress[rowColType]
     ) {
       this.topLeftSimpleCellAddress[rowColType] =
-        rangeSimpleCellAddress.topLeftSimpleCellAddress[rowColType];
+        rangeSimpleCellAddress.topLeftSimpleCellAddress[rowColType]
     }
   }
 
@@ -118,7 +118,7 @@ class RangeSimpleCellAddress {
       this.bottomRightSimpleCellAddress[rowColType]
     ) {
       this.bottomRightSimpleCellAddress[rowColType] =
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress[rowColType];
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress[rowColType]
     }
   }
 
@@ -126,7 +126,7 @@ class RangeSimpleCellAddress {
     sheets: Sheets,
     getCell: (simpleCellAddress: SimpleCellAddress) => C
   ) {
-    const cells: C[] = [];
+    const cells: C[] = []
 
     for (const ri of this.iterateFromTopToBottom('row')) {
       for (const ci of this.iterateFromTopToBottom('col')) {
@@ -134,10 +134,10 @@ class RangeSimpleCellAddress {
           sheets.activeSheetId,
           ri,
           ci
-        );
-        const cell = getCell(simpleCellAddress);
+        )
+        const cell = getCell(simpleCellAddress)
 
-        cells.push(cell);
+        cells.push(cell)
       }
     }
 
@@ -145,20 +145,20 @@ class RangeSimpleCellAddress {
       const mergedCellId =
         sheets.merger.associatedMergedCellAddressMap[
           cell.simpleCellAddress.toCellId()
-        ];
+        ]
 
       if (
         !mergedCellId ||
         sheets.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
       ) {
-        return true;
+        return true
       }
 
-      return false;
-    };
+      return false
+    }
 
-    return cells.filter(filterOutAssociatedMergedCells);
+    return cells.filter(filterOutAssociatedMergedCells)
   }
 }
 
-export default RangeSimpleCellAddress;
+export default RangeSimpleCellAddress

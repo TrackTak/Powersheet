@@ -2,88 +2,88 @@ import {
   BorderIconFirstRowsName,
   BorderIconSecondRowsName,
   ColorPickerIconName,
-  IconElementsName,
-} from './toolbar/toolbarHtmlElementHelpers';
-import styles from './HtmlElementHelpers.module.scss';
+  IconElementsName
+} from './toolbar/toolbarHtmlElementHelpers'
+import styles from './HtmlElementHelpers.module.scss'
 import {
   AddSheetIcon,
-  SelectSheetsIcon,
-} from './bottomBar/bottomBarHtmlElementHelpers';
-import { sentenceCase } from 'change-case';
+  SelectSheetsIcon
+} from './bottomBar/bottomBarHtmlElementHelpers'
+import { sentenceCase } from 'change-case'
 
 export interface IActionElements {
-  buttonContainer: HTMLDivElement;
-  button: HTMLButtonElement;
-  tooltip?: HTMLSpanElement;
-  active?: boolean;
-  arrowContainer?: HTMLSpanElement;
-  arrowIcon?: HTMLElement;
+  buttonContainer: HTMLDivElement
+  button: HTMLButtonElement
+  tooltip?: HTMLSpanElement
+  active?: boolean
+  arrowContainer?: HTMLSpanElement
+  arrowIcon?: HTMLElement
 }
 
 export interface IButtonElements extends IActionElements {
-  text: HTMLSpanElement;
+  text: HTMLSpanElement
 }
 
 export interface IIconElements extends IActionElements {
-  iconContainer: HTMLSpanElement;
-  icon: HTMLElement;
+  iconContainer: HTMLSpanElement
+  icon: HTMLElement
 }
 
-export type DropdownButtonName = 'fontSize' | 'textFormatPattern';
+export type DropdownButtonName = 'fontSize' | 'textFormatPattern'
 
-export type DropdownName = DropdownIconName | DropdownButtonName;
+export type DropdownName = DropdownIconName | DropdownButtonName
 
 export type DropdownIconName =
   | ColorPickerIconName
   | 'functions'
   | 'verticalTextAlign'
   | 'horizontalTextAlign'
-  | 'borders';
+  | 'borders'
 
-export type BorderIconName = BorderIconFirstRowsName | BorderIconSecondRowsName;
+export type BorderIconName = BorderIconFirstRowsName | BorderIconSecondRowsName
 
 export const createGroup = (
   elements: HTMLElement[],
   classNames: string,
   classNamePrefix: string
 ) => {
-  const group = document.createElement('div');
+  const group = document.createElement('div')
 
-  group.classList.add(classNames, `${classNamePrefix}-group`);
+  group.classList.add(classNames, `${classNamePrefix}-group`)
 
-  elements.forEach((element) => {
-    group.appendChild(element);
-  });
+  elements.forEach(element => {
+    group.appendChild(element)
+  })
 
-  return group;
-};
+  return group
+}
 
 export const createTooltip = (name: string, classNamePrefix: string) => {
-  const tooltip = document.createElement('span');
+  const tooltip = document.createElement('span')
 
-  tooltip.dataset.tippyContent = sentenceCase(name);
-  tooltip.classList.add(styles.tooltip, `${classNamePrefix}-tooltip`);
+  tooltip.dataset.tippyContent = sentenceCase(name)
+  tooltip.classList.add(styles.tooltip, `${classNamePrefix}-tooltip`)
 
-  return tooltip;
-};
+  return tooltip
+}
 
 export const createDropdownContent = (
   classNamePrefix: string,
   className?: string
 ) => {
-  const dropdownContent = document.createElement('div');
+  const dropdownContent = document.createElement('div')
 
   dropdownContent.classList.add(
     styles.dropdownContent,
     `${classNamePrefix}-dropdown-content`
-  );
+  )
 
   if (className) {
-    dropdownContent.classList.add(className);
+    dropdownContent.classList.add(className)
   }
 
-  return dropdownContent;
-};
+  return dropdownContent
+}
 
 const createDropdownActionElement = (
   name: DropdownName,
@@ -91,134 +91,134 @@ const createDropdownActionElement = (
   classNamePrefix: string,
   createArrow = false
 ) => {
-  const tooltip = createTooltip(name, classNamePrefix);
+  const tooltip = createTooltip(name, classNamePrefix)
 
-  let arrowIconValues;
+  let arrowIconValues
 
   if (createArrow) {
-    const iconValues = createIcon('arrowDown', classNamePrefix);
+    const iconValues = createIcon('arrowDown', classNamePrefix)
     arrowIconValues = {
       arrowIcon: iconValues.icon,
-      arrowIconContainer: iconValues.iconContainer,
-    };
+      arrowIconContainer: iconValues.iconContainer
+    }
 
-    element.appendChild(arrowIconValues.arrowIconContainer);
+    element.appendChild(arrowIconValues.arrowIconContainer)
   }
 
-  element.appendChild(tooltip);
+  element.appendChild(tooltip)
 
-  return { arrowIconValues, tooltip };
-};
+  return { arrowIconValues, tooltip }
+}
 
 export const createDropdownButton = (
   name: DropdownButtonName,
   classNamePrefix: string,
   createArrow = false
 ) => {
-  const buttonContainer = createButtonContainer(classNamePrefix);
-  const button = document.createElement('button');
-  const text = document.createElement('span');
+  const buttonContainer = createButtonContainer(classNamePrefix)
+  const button = document.createElement('button')
+  const text = document.createElement('span')
 
-  button.dataset.name = name;
+  button.dataset.name = name
 
   button.classList.add(
     styles.dropdownButton,
     `${classNamePrefix}-dropdown-button`
-  );
+  )
 
-  text.classList.add(styles.text, `${classNamePrefix}-text`);
+  text.classList.add(styles.text, `${classNamePrefix}-text`)
 
-  button.appendChild(text);
+  button.appendChild(text)
 
   const { arrowIconValues, tooltip } = createDropdownActionElement(
     name,
     button,
     classNamePrefix,
     createArrow
-  );
+  )
 
-  buttonContainer.append(button);
+  buttonContainer.append(button)
 
-  return { buttonContainer, button, text, arrowIconValues, tooltip };
-};
+  return { buttonContainer, button, text, arrowIconValues, tooltip }
+}
 
 export const createDropdownIconButton = (
   name: DropdownIconName,
   classNamePrefix: string,
   createArrow = false
 ) => {
-  const iconButtonValues = createIconButton(name, classNamePrefix);
+  const iconButtonValues = createIconButton(name, classNamePrefix)
 
   iconButtonValues.button.classList.add(
     styles.dropdownIconButton,
     `${classNamePrefix}-dropdown-button`,
     `${classNamePrefix}-dropdown-icon-button`
-  );
+  )
 
   const { arrowIconValues, tooltip } = createDropdownActionElement(
     name,
     iconButtonValues.button,
     classNamePrefix,
     createArrow
-  );
+  )
 
-  return { iconButtonValues, arrowIconValues, tooltip };
-};
+  return { iconButtonValues, arrowIconValues, tooltip }
+}
 
 export const createDropdown = (classNamePrefix: string) => {
-  const dropdown = document.createElement('div');
+  const dropdown = document.createElement('div')
 
-  dropdown.classList.add(styles.dropdown, `${classNamePrefix}-dropdown`);
+  dropdown.classList.add(styles.dropdown, `${classNamePrefix}-dropdown`)
 
-  return dropdown;
-};
+  return dropdown
+}
 
 export const createButtonContainer = (classNamePrefix: string) => {
-  const buttonContainer = document.createElement('div');
+  const buttonContainer = document.createElement('div')
 
-  buttonContainer.classList.add(`${classNamePrefix}-button-container`);
+  buttonContainer.classList.add(`${classNamePrefix}-button-container`)
 
-  return buttonContainer;
-};
+  return buttonContainer
+}
 
 export const createIconButton = (
   name: IconElementsName | SelectSheetsIcon | AddSheetIcon,
   classNamePrefix: string
 ) => {
-  const buttonContainer = createButtonContainer(classNamePrefix);
-  const button = document.createElement('button');
+  const buttonContainer = createButtonContainer(classNamePrefix)
+  const button = document.createElement('button')
 
-  button.dataset.name = name;
+  button.dataset.name = name
 
-  button.classList.add(styles.iconButton, `${classNamePrefix}-icon-button`);
+  button.classList.add(styles.iconButton, `${classNamePrefix}-icon-button`)
 
-  const iconValues = createIcon(name, classNamePrefix);
+  const iconValues = createIcon(name, classNamePrefix)
 
-  button.appendChild(iconValues.iconContainer);
-  buttonContainer.appendChild(button);
+  button.appendChild(iconValues.iconContainer)
+  buttonContainer.appendChild(button)
 
-  return { buttonContainer, button, ...iconValues };
-};
+  return { buttonContainer, button, ...iconValues }
+}
 
 export const createIcon = (name: string, classNamePrefix: string) => {
-  const iconContainer = document.createElement('span');
-  const icon = document.createElement('span');
+  const iconContainer = document.createElement('span')
+  const icon = document.createElement('span')
 
   iconContainer.classList.add(
     styles.iconContainer,
     styles[`${name}IconContainer`],
     `${classNamePrefix}-icon-container`,
     `${classNamePrefix}-${name}-icon-container`
-  );
+  )
 
   icon.classList.add(
     styles.icon,
     styles[name],
     `${classNamePrefix}-icon`,
     `${classNamePrefix}-${name}`
-  );
+  )
 
-  iconContainer.appendChild(icon);
+  iconContainer.appendChild(icon)
 
-  return { icon, iconContainer };
-};
+  return { icon, iconContainer }
+}

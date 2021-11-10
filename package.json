@@ -1,14 +1,13 @@
 {
-  "name": "elegantstack",
+  "name": "powersheet",
   "private": true,
   "workspaces": [
-    "packages/**",
-    "website"
+    "packages/**"
   ],
   "scripts": {
     "clean": "lerna clean",
     "release": "lerna version",
-    "prettier:windows": "./node_modules/.bin/prettier --write \"{packages,starters}/**/*.{jsx,js}\""
+    "prettier:windows": "./node_modules/.bin/prettier --write \"{packages}/**/*.{jsx,js}\""
   },
   "devDependencies": {
     "@parcel/core": "2.0.0-nightly.905",

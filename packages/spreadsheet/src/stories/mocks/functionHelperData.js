@@ -5,8 +5,8 @@ import {
   cashFlowStatementAttributes,
   riskPremiumsAndBetasAttributes,
   generalAttributes,
-  otherAttributes,
-} from './financialStatements';
+  otherAttributes
+} from './financialStatements'
 
 export const functionHelperData = {
   header: 'FINANCIAL - FIN',
@@ -15,7 +15,7 @@ export const functionHelperData = {
   codeSyntaxUsage: [
     '=FIN("revenue")',
     '=FIN("revenue",,"01/01/2000")',
-    '=FIN("B2, B3")',
+    '=FIN(B2, B3)'
   ],
   codeSyntaxElements: [
     {
@@ -24,54 +24,54 @@ export const functionHelperData = {
         {
           syntaxName: '[]',
           description:
-            'indicates optional. If a parameter is optional it can be skipped with a comma. Example: =FIN("revenue",,"01/01/2021")',
+            'indicates optional. If a parameter is optional it can be skipped with a comma. Example: =FIN("revenue",,"01/01/2021")'
         },
         {
           syntaxName: 'attribute',
           description:
-            '1st argument is required. Fetches current or historical securities information from Tracktak.',
+            '1st argument is required. Fetches current or historical securities information from Tracktak.'
         },
         {
           syntaxName: '[startDate]',
           description:
-            '2nd argument is optional. The start date when fetching historical data.',
+            '2nd argument is optional. The start date when fetching historical data.'
         },
         {
           syntaxName: '[endDate]',
           description:
-            '3rd argument is optional. The end date when fetching historical data.',
+            '3rd argument is optional. The end date when fetching historical data.'
         },
         {
           syntaxName: '[mm/dd/yyy]',
-          description: 'The start date and end date format.',
-        },
-      ],
-    },
+          description: 'The start date and end date format.'
+        }
+      ]
+    }
   ],
   attributes: [
     {
       header: 'Income Statement',
-      attributeNames: incomeStatementAttributes,
+      attributeNames: incomeStatementAttributes
     },
     {
       header: 'Balance Sheet',
-      attributeNames: balanceSheetAttributes,
+      attributeNames: balanceSheetAttributes
     },
     {
       header: 'Cashflow Statement',
-      attributeNames: cashFlowStatementAttributes,
+      attributeNames: cashFlowStatementAttributes
     },
     {
       header: 'Risk Premiums and Betas',
-      attributeNames: riskPremiumsAndBetasAttributes,
+      attributeNames: riskPremiumsAndBetasAttributes
     },
     {
       header: 'General',
-      attributeNames: generalAttributes,
+      attributeNames: generalAttributes
     },
     {
       header: 'Other',
-      attributeNames: otherAttributes,
-    },
-  ],
-};
+      attributeNames: otherAttributes
+    }
+  ]
+}

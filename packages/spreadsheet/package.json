@@ -4,7 +4,7 @@
   "description": "A Lightning Fast Spreadsheet for Businesses",
   "author": "TRACKTAK LTD",
   "source": "src/index.ts",
-  "exports": "./src/index.ts",
+  "exports": "./dist/index.modern.js",
   "main": "./dist/index.js",
   "module": "./dist/index.module.js",
   "types": "dist/index.d.ts",

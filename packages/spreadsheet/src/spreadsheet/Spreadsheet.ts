@@ -90,8 +90,8 @@ class Spreadsheet {
       const currentData: IHistoryData = {
         data: this.data.spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap:
-          this.sheets.merger.associatedMergedCellAddressMap
+        associatedMergedCellAddressMap: this.sheets.merger
+          .associatedMergedCellAddressMap
       }
 
       const parsedData: IHistoryData = JSON.parse(data)
@@ -205,8 +205,8 @@ class Spreadsheet {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
       data: this.data.spreadsheetData,
-      associatedMergedCellAddressMap:
-        this.sheets.merger.associatedMergedCellAddressMap
+      associatedMergedCellAddressMap: this.sheets.merger
+        .associatedMergedCellAddressMap
     }
     const data = JSON.stringify(historyData)
 

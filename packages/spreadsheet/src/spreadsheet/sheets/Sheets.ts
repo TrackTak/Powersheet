@@ -523,10 +523,9 @@ class Sheets {
         default:
           if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
             const selectedCell = this.selector.selectedCell!
-            const serializedValue =
-              this.spreadsheet.hyperformula.getCellSerialized(
-                selectedCell.simpleCellAddress
-              )
+            const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
             if (serializedValue) {
               this.cellEditor.clear()
@@ -604,10 +603,12 @@ class Sheets {
         const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId]
 
         if (mergedCellId) {
-          const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId]
-          const existingRangeSimpleCellAddress =
-            RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
+          const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells![
+            mergedCellId
+          ]
+          const existingRangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+            mergedCell
+          )
 
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
             'col',

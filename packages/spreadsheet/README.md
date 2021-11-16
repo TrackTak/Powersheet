@@ -1,3 +1,0 @@
-# spreadsheet
-
-Powersheet app.

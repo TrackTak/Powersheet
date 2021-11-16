@@ -22,7 +22,7 @@ class Exporter {
   spreadsheet!: Spreadsheet
 
   constructor(
-    public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[]
+    public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
   ) {}
 
   initialize(spreadsheet: Spreadsheet) {
@@ -37,8 +37,8 @@ class Exporter {
       new SimpleCellAddress(sheetId, 0, 0)
     )
 
-    const cellIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].cells
+    const cellIds = this.spreadsheet.data.spreadsheetData.sheets?.[sheetId]
+      .cells
 
     for (const key in cellIds) {
       const cellId = key as CellId
@@ -46,8 +46,9 @@ class Exporter {
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
       const cell = { ...cells[cellId] }
       const cellString = simpleCellAddress.addressToString()
-      const mergedCell =
-        this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
+      const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells?.[
+        cellId
+      ]
 
       rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
         simpleCellAddress.row,
@@ -90,8 +91,9 @@ class Exporter {
               simpleCellAddress.sheet
             )
 
-            const cellType =
-              this.spreadsheet.hyperformula.getCellType(simpleCellAddress)
+            const cellType = this.spreadsheet.hyperformula.getCellType(
+              simpleCellAddress
+            )
 
             if (
               cellType === CellType.ARRAY ||
@@ -244,8 +246,9 @@ class Exporter {
     Object.keys(this.spreadsheet.data.spreadsheetData.sheets ?? {}).forEach(
       key => {
         const sheetIndex = parseInt(key, 10)
-        const sheetData =
-          this.spreadsheet.data.spreadsheetData.sheets![sheetIndex]
+        const sheetData = this.spreadsheet.data.spreadsheetData.sheets![
+          sheetIndex
+        ]
         const worksheet = this.getWorksheet(sheetData.id)
 
         utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)

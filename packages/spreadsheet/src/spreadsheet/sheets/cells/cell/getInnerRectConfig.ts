@@ -1,13 +1,13 @@
-import { RectConfig } from 'konva/lib/shapes/Rect';
+import { RectConfig } from 'konva/lib/shapes/Rect'
 
 export const getInnerRectConfig = (
   attrs: RectConfig,
   size: {
-    width: number;
-    height: number;
+    width: number
+    height: number
   }
 ) => {
-  const { strokeWidth } = attrs;
+  const { strokeWidth } = attrs
 
   // We must have another Rect for the inside borders
   // as konva does not allow stroke positioning
@@ -17,8 +17,8 @@ export const getInnerRectConfig = (
     y: strokeWidth! / 2,
     width: size.width - strokeWidth!,
     height: size.height - strokeWidth!,
-    strokeWidth,
-  };
+    strokeWidth
+  }
 
-  return innerRectConfig;
-};
+  return innerRectConfig
+}

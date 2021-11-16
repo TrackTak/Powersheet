@@ -1,42 +1,42 @@
 import {
   CellReference,
   EqualsOp,
-  RangeSeparator,
+  RangeSeparator
   // @ts-ignore
-} from 'hyperformula/es/parser/LexerConfig';
-import { prefix } from '../utils';
-import HighlightedCell from '../sheets/cells/cell/HighlightedCell';
-import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
-import Spreadsheet from '../Spreadsheet';
-import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress';
+} from 'hyperformula/es/parser/LexerConfig'
+import { prefix } from '../utils'
+import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
+import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
+import Spreadsheet from '../Spreadsheet'
+import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 
 export interface ICellReferencePart {
-  startOffset: number;
-  endOffset: number;
-  referenceText: string;
-  color: string;
-  type: 'simpleCellString' | 'rangeCellString';
+  startOffset: number
+  endOffset: number
+  referenceText: string
+  color: string
+  type: 'simpleCellString' | 'rangeCellString'
 }
 
 class CellHighlighter {
-  highlightedCells: HighlightedCell[] = [];
+  highlightedCells: HighlightedCell[] = []
 
   constructor(private spreadsheet: Spreadsheet) {}
 
   destroy() {
-    this.destroyHighlightedCells();
+    this.destroyHighlightedCells()
   }
 
   destroyHighlightedCells() {
-    this.highlightedCells.forEach((cell) => cell.destroy());
+    this.highlightedCells.forEach(cell => cell.destroy())
   }
 
   getHighlightedCellReferenceSections(text: string) {
     if (!text) {
       return {
         tokenParts: [],
-        cellReferenceParts: [],
-      };
+        cellReferenceParts: []
+      }
     }
 
     const {
@@ -44,34 +44,34 @@ class CellHighlighter {
       saturation,
       lightness,
       alpha,
-      goldenRatio,
-    } = this.spreadsheet.options.cellHighlight;
+      goldenRatio
+    } = this.spreadsheet.options.cellHighlight
 
-    let hue = defaultHue;
+    let hue = defaultHue
 
     const getSyntaxColor = () => {
       const color = `hsla(${Math.floor(
         hue * 360
-      )}, ${saturation}, ${lightness}, ${alpha})`;
+      )}, ${saturation}, ${lightness}, ${alpha})`
 
-      hue += goldenRatio;
-      hue %= 1;
+      hue += goldenRatio
+      hue %= 1
 
-      return color;
-    };
+      return color
+    }
 
     // TODO: Remove all this when https://github.com/handsontable/hyperformula/issues/854 is done
     // @ts-ignore
-    const lexer = this.spreadsheet.hyperformula._parser.lexer;
+    const lexer = this.spreadsheet.hyperformula._parser.lexer
 
-    const { tokens } = lexer.tokenizeFormula(text);
+    const { tokens } = lexer.tokenizeFormula(text)
 
-    const cellReferenceParts: ICellReferencePart[] = [];
-    const tokenParts = [];
+    const cellReferenceParts: ICellReferencePart[] = []
+    const tokenParts = []
 
     for (const [index, token] of tokens.entries()) {
       if (index === 0 && token.tokenType.name !== EqualsOp.name) {
-        break;
+        break
       }
 
       if (token.tokenType.name === CellReference.name) {
@@ -80,11 +80,11 @@ class CellHighlighter {
           tokens[index - 2]?.tokenType.name === CellReference.name &&
           tokens[index - 1]?.tokenType.name === RangeSeparator.name
         ) {
-          const startCellReference = cellReferenceParts.pop()!;
-          const rangeSeperator = tokens[index - 1];
-          const endCellReference = token;
+          const startCellReference = cellReferenceParts.pop()!
+          const rangeSeperator = tokens[index - 1]
+          const endCellReference = token
 
-          hue -= goldenRatio;
+          hue -= goldenRatio
 
           cellReferenceParts.push({
             startOffset: startCellReference.startOffset,
@@ -94,86 +94,86 @@ class CellHighlighter {
               rangeSeperator.image +
               endCellReference.image,
             color: getSyntaxColor(),
-            type: 'rangeCellString',
-          });
+            type: 'rangeCellString'
+          })
         } else {
           cellReferenceParts.push({
             startOffset: token.startOffset,
             endOffset: token.endOffset,
             referenceText: token.image,
             color: getSyntaxColor(),
-            type: 'simpleCellString',
-          });
+            type: 'simpleCellString'
+          })
         }
       }
     }
 
     const setNonReferenceSlicedSpan = (start: number, end?: number) => {
-      const slicedString = text.slice(start, end);
-      const span = document.createElement('span');
+      const slicedString = text.slice(start, end)
+      const span = document.createElement('span')
 
-      if (!slicedString.length) return;
+      if (!slicedString.length) return
 
-      span.classList.add(`${prefix}-token`);
+      span.classList.add(`${prefix}-token`)
 
-      span.textContent = slicedString;
+      span.textContent = slicedString
 
-      tokenParts.push(span);
-    };
+      tokenParts.push(span)
+    }
 
     if (cellReferenceParts.length && text.length) {
-      let prevIndex = 0;
+      let prevIndex = 0
 
       cellReferenceParts.forEach(
         ({ startOffset, endOffset, referenceText, color }) => {
-          setNonReferenceSlicedSpan(prevIndex, startOffset);
+          setNonReferenceSlicedSpan(prevIndex, startOffset)
 
-          const formulaTokenSpan = document.createElement('span');
+          const formulaTokenSpan = document.createElement('span')
 
-          formulaTokenSpan.textContent = referenceText;
-          formulaTokenSpan.classList.add(`${prefix}-formula-token`);
-          formulaTokenSpan.style.color = color;
+          formulaTokenSpan.textContent = referenceText
+          formulaTokenSpan.classList.add(`${prefix}-formula-token`)
+          formulaTokenSpan.style.color = color
 
-          tokenParts.push(formulaTokenSpan);
+          tokenParts.push(formulaTokenSpan)
 
-          prevIndex = endOffset + 1;
+          prevIndex = endOffset + 1
         }
-      );
+      )
 
       setNonReferenceSlicedSpan(
         cellReferenceParts[cellReferenceParts.length - 1].endOffset + 1
-      );
+      )
     } else {
-      const span = document.createElement('span');
+      const span = document.createElement('span')
 
-      span.classList.add(`${prefix}-token`);
+      span.classList.add(`${prefix}-token`)
 
-      span.textContent = text;
+      span.textContent = text
 
-      tokenParts.push(span);
+      tokenParts.push(span)
     }
 
     return {
       tokenParts,
-      cellReferenceParts,
-    };
+      cellReferenceParts
+    }
   }
 
   highlightCellReferences(
     simpleCellAddress: SimpleCellAddress,
     cellReferenceParts: ICellReferencePart[]
   ) {
-    this.destroyHighlightedCells();
+    this.destroyHighlightedCells()
 
     cellReferenceParts.forEach(({ referenceText, type, color }) => {
-      let highlightedCell;
+      let highlightedCell
 
       if (type === 'simpleCellString') {
         const precedentSimpleCellAddress =
           this.spreadsheet.hyperformula.simpleCellAddressFromString(
             referenceText,
             simpleCellAddress.sheet
-          )!;
+          )!
 
         // Don't highlight cells if cell reference is another sheet
         if (simpleCellAddress.sheet === precedentSimpleCellAddress.sheet) {
@@ -185,14 +185,14 @@ class CellHighlighter {
               precedentSimpleCellAddress.col
             ),
             color
-          );
+          )
         }
       } else {
         const precedentSimpleCellRange =
           this.spreadsheet.hyperformula.simpleCellRangeFromString(
             referenceText,
             simpleCellAddress.sheet
-          )!;
+          )!
 
         // Don't highlight cells if cell reference is another sheet
         if (simpleCellAddress.sheet === precedentSimpleCellRange.start.sheet) {
@@ -200,38 +200,38 @@ class CellHighlighter {
             precedentSimpleCellRange.start.sheet,
             precedentSimpleCellRange.start.row,
             precedentSimpleCellRange.start.col
-          );
+          )
           const endSimpleCellAddress = new SimpleCellAddress(
             precedentSimpleCellRange.end.sheet,
             precedentSimpleCellRange.end.row,
             precedentSimpleCellRange.end.col
-          );
+          )
 
           const rangeSimpleCellAddress = new RangeSimpleCellAddress(
             startSimpleCellAddress,
             endSimpleCellAddress
-          );
+          )
 
           highlightedCell = new HighlightedCell(
             this.spreadsheet.sheets,
             startSimpleCellAddress,
             color
-          );
+          )
 
-          highlightedCell.setRangeCellAddress(rangeSimpleCellAddress);
+          highlightedCell.setRangeCellAddress(rangeSimpleCellAddress)
         }
       }
       if (highlightedCell) {
-        const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo();
+        const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
         const sheetGroup =
-          this.spreadsheet.sheets.scrollGroups[stickyGroup].sheetGroup;
+          this.spreadsheet.sheets.scrollGroups[stickyGroup].sheetGroup
 
-        sheetGroup.add(highlightedCell.group);
+        sheetGroup.add(highlightedCell.group)
 
-        this.highlightedCells.push(highlightedCell);
+        this.highlightedCells.push(highlightedCell)
       }
-    });
+    })
   }
 }
 
-export default CellHighlighter;
+export default CellHighlighter

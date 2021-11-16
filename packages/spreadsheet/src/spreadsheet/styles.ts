@@ -1,111 +1,111 @@
-import { LineConfig } from 'konva/lib/shapes/Line';
-import { RectConfig } from 'konva/lib/shapes/Rect';
-import { TextConfig } from 'konva/lib/shapes/Text';
+import { LineConfig } from 'konva/lib/shapes/Line'
+import { RectConfig } from 'konva/lib/shapes/Rect'
+import { TextConfig } from 'konva/lib/shapes/Text'
 
 export interface IRowHeaderRectConfig extends RectConfig {
-  width: number;
+  width: number
 }
 
 export interface IColHeaderRectConfig extends RectConfig {
-  height: number;
+  height: number
 }
 
 export interface IRowHeaderConfig {
-  rect: IRowHeaderRectConfig;
-  text: TextConfig;
+  rect: IRowHeaderRectConfig
+  text: TextConfig
 }
 
 export interface IColHeaderConfig {
-  rect: IColHeaderRectConfig;
-  text: TextConfig;
+  rect: IColHeaderRectConfig
+  text: TextConfig
 }
 
 export interface ICellConfig {
-  rect: RectConfig;
-  text: TextConfig;
-  commentMarker: LineConfig;
-  borderLine: LineConfig;
+  rect: RectConfig
+  text: TextConfig
+  commentMarker: LineConfig
+  borderLine: LineConfig
 }
 
 export interface IHighlightedCellConfig {
-  rect: RectConfig;
-  innerRect: RectConfig;
+  rect: RectConfig
+  innerRect: RectConfig
 }
 
 export interface ISelectedCellConfig {
-  rect: RectConfig;
-  innerRect: RectConfig;
+  rect: RectConfig
+  innerRect: RectConfig
 }
 
 export interface IRowColConfig {
-  resizeLine: LineConfig;
-  resizeGuideLine: LineConfig;
-  resizeMarker: LineConfig;
-  gridLine: LineConfig;
-  frozenLine: LineConfig;
-  headerRect: RectConfig;
-  headerText: TextConfig;
+  resizeLine: LineConfig
+  resizeGuideLine: LineConfig
+  resizeMarker: LineConfig
+  gridLine: LineConfig
+  frozenLine: LineConfig
+  headerRect: RectConfig
+  headerText: TextConfig
 }
 
 export interface IStyles {
-  topLeftRect: RectConfig;
-  selection: RectConfig;
-  col: IRowColConfig;
-  row: IRowColConfig;
-  cell: ICellConfig;
-  selectionFirstCell: ISelectedCellConfig;
-  highlightedCell: IHighlightedCellConfig;
+  topLeftRect: RectConfig
+  selection: RectConfig
+  col: IRowColConfig
+  row: IRowColConfig
+  cell: ICellConfig
+  selectionFirstCell: ISelectedCellConfig
+  highlightedCell: IHighlightedCellConfig
 }
 
-const resizeMarkerSize = 7;
-const resizeHitStrokeWidth = 15;
-const strokeWidth = 1;
-const cellStrokeWidth = 1.5;
-const fontFamily = 'Arial';
+const resizeMarkerSize = 7
+const resizeHitStrokeWidth = 15
+const strokeWidth = 1
+const cellStrokeWidth = 1.5
+const fontFamily = 'Arial'
 
 export const sharedStyles = {
   gridLine: {
     stroke: '#e3e3e3',
-    strokeWidth,
+    strokeWidth
   },
   resizeMarker: {
     fill: '#0057ff',
     opacity: 0.3,
     visible: false,
     hitStrokeWidth: resizeHitStrokeWidth,
-    draggable: true,
+    draggable: true
   },
   resizeGuideLine: {
     strokeWidth,
     visible: false,
-    stroke: 'blue',
+    stroke: 'blue'
   },
   resizeLine: {
     stroke: '#8a8a8a',
     strokeWidth,
     hitStrokeWidth: resizeHitStrokeWidth,
-    opacity: 0.7,
+    opacity: 0.7
   },
   frozenLine: {
     strokeWidth,
-    stroke: 'blue',
+    stroke: 'blue'
   },
   headerRect: {
-    fill: '#f4f5f8',
+    fill: '#f4f5f8'
   },
   headerText: {
-    fontFamily,
-  },
-};
+    fontFamily
+  }
+}
 
 export const defaultStyles: IStyles = {
   topLeftRect: {
-    fill: sharedStyles.headerRect.fill,
+    fill: sharedStyles.headerRect.fill
   },
   selection: {
     strokeWidth,
     stroke: '#1a73e8',
-    fill: 'rgb(14, 101, 235, 0.1)',
+    fill: 'rgb(14, 101, 235, 0.1)'
   },
   row: {
     frozenLine: sharedStyles.frozenLine,
@@ -116,17 +116,17 @@ export const defaultStyles: IStyles = {
       dragBoundFunc: function (pos) {
         return {
           ...pos,
-          x: this.absolutePosition().x,
-        };
-      },
+          x: this.absolutePosition().x
+        }
+      }
     },
     resizeLine: sharedStyles.resizeLine,
     gridLine: sharedStyles.gridLine,
     headerRect: {
       ...sharedStyles.headerRect,
-      width: 25,
+      width: 25
     },
-    headerText: sharedStyles.headerText,
+    headerText: sharedStyles.headerText
   },
   col: {
     frozenLine: sharedStyles.frozenLine,
@@ -137,41 +137,41 @@ export const defaultStyles: IStyles = {
       dragBoundFunc: function (pos) {
         return {
           ...pos,
-          y: this.absolutePosition().y,
-        };
-      },
+          y: this.absolutePosition().y
+        }
+      }
     },
     resizeLine: sharedStyles.resizeLine,
     gridLine: sharedStyles.gridLine,
     headerRect: {
       ...sharedStyles.headerRect,
-      height: 20,
+      height: 20
     },
-    headerText: sharedStyles.headerText,
+    headerText: sharedStyles.headerText
   },
   selectionFirstCell: {
     rect: {
-      fill: 'transparent',
+      fill: 'transparent'
     },
     innerRect: {
       strokeWidth: cellStrokeWidth,
-      stroke: '#0057ff',
-    },
+      stroke: '#0057ff'
+    }
   },
   highlightedCell: {
     rect: {
-      opacity: 0.1,
+      opacity: 0.1
     },
     innerRect: {
       strokeWidth: cellStrokeWidth,
-      dash: [10, 4],
-    },
+      dash: [10, 4]
+    }
   },
   cell: {
     rect: {
       fill: 'white',
       stroke: sharedStyles.gridLine.stroke,
-      strokeWidth: sharedStyles.gridLine.strokeWidth,
+      strokeWidth: sharedStyles.gridLine.strokeWidth
     },
     text: {
       fontFamily,
@@ -181,7 +181,7 @@ export const defaultStyles: IStyles = {
       verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
-      visible: false,
+      visible: false
     },
     commentMarker: {
       stroke: 'orange',
@@ -189,12 +189,12 @@ export const defaultStyles: IStyles = {
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,
-      visible: false,
+      visible: false
     },
     borderLine: {
       stroke: 'black',
       strokeWidth: sharedStyles.gridLine.strokeWidth,
-      visible: false,
-    },
-  },
-};
+      visible: false
+    }
+  }
+}

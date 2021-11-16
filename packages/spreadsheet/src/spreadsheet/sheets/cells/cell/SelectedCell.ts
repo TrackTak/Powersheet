@@ -1,41 +1,41 @@
-import { Rect, RectConfig } from 'konva/lib/shapes/Rect';
-import Sheets from '../../Sheets';
-import Cell from './Cell';
-import { getInnerRectConfig } from './getInnerRectConfig';
-import SimpleCellAddress from './SimpleCellAddress';
+import { Rect, RectConfig } from 'konva/lib/shapes/Rect'
+import Sheets from '../../Sheets'
+import Cell from './Cell'
+import { getInnerRectConfig } from './getInnerRectConfig'
+import SimpleCellAddress from './SimpleCellAddress'
 
 class SelectedCell extends Cell {
-  innerRect: Rect;
+  innerRect: Rect
 
   constructor(
     public sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress
   ) {
-    super(sheets, simpleCellAddress);
+    super(sheets, simpleCellAddress)
 
     this.innerRect = new Rect({
-      name: 'innerRect',
-    });
-    this.group.add(this.innerRect);
+      name: 'innerRect'
+    })
+    this.group.add(this.innerRect)
 
-    this.setInnerRectProperties();
+    this.setInnerRectProperties()
   }
 
   private setInnerRectProperties() {
-    const size = this.rect.size();
+    const size = this.rect.size()
 
     const rectConfig: RectConfig = {
-      ...this.sheets.spreadsheet.styles.selectionFirstCell.rect,
-    };
+      ...this.sheets.spreadsheet.styles.selectionFirstCell.rect
+    }
 
     const innerRectConfig = getInnerRectConfig(
       this.sheets.spreadsheet.styles.selectionFirstCell.innerRect,
       size
-    );
+    )
 
-    this.rect.setAttrs(rectConfig);
-    this.innerRect.setAttrs(innerRectConfig);
+    this.rect.setAttrs(rectConfig)
+    this.innerRect.setAttrs(innerRectConfig)
   }
 }
 
-export default SelectedCell;
+export default SelectedCell

@@ -13,6 +13,10 @@ module.exports = {
         project: ['./tsconfig.json'], // Specify it only for TypeScript files
       },
     },
+    {
+      files: '*.mdx',
+      parser: 'eslint-mdx',
+    },
   ],
   env: { es6: true },
   ignorePatterns: ['node_modules', 'build', 'coverage', '.eslintrc.js'],
@@ -25,6 +29,7 @@ module.exports = {
     'plugin:functional/lite',
     'prettier',
     'prettier/@typescript-eslint',
+    'plugin:mdx/recommended',
   ],
   globals: { BigInt: true, console: true, WebAssembly: true },
   rules: {

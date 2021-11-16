@@ -1,6 +1,6 @@
-import styles from './Toolbar.module.scss';
-import { delegate, DelegateInstance } from 'tippy.js';
-import { ACPController } from 'a-color-picker';
+import styles from './Toolbar.module.scss'
+import { delegate, DelegateInstance } from 'tippy.js'
+import { ACPController } from 'a-color-picker'
 import {
   ColorPickerIconName,
   createAutosave,
@@ -16,8 +16,8 @@ import {
   IconElementsName,
   toggleIconNames,
   toolbarPrefix,
-  VerticalTextAlignName,
-} from './toolbarHtmlElementHelpers';
+  VerticalTextAlignName
+} from './toolbarHtmlElementHelpers'
 import {
   createDropdownButton,
   createDropdownIconButton,
@@ -29,182 +29,181 @@ import {
   DropdownName,
   IActionElements,
   IButtonElements,
-  IIconElements,
-} from '../htmlElementHelpers';
-import Spreadsheet from '../Spreadsheet';
-import { sentenceCase } from 'change-case';
-import Cell from '../sheets/cells/cell/Cell';
-import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress';
+  IIconElements
+} from '../htmlElementHelpers'
+import Spreadsheet from '../Spreadsheet'
+import { sentenceCase } from 'change-case'
+import Cell from '../sheets/cells/cell/Cell'
+import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import {
   BorderStyle,
   HorizontalTextAlign,
   ICellData,
   TextWrap,
-  VerticalTextAlign,
-} from '../sheets/Data';
-import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress';
-import SelectedCell from '../sheets/cells/cell/SelectedCell';
-import { SheetId } from '../sheets/Sheets';
-import { HyperFormula } from 'hyperformula';
+  VerticalTextAlign
+} from '../sheets/Data'
+import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
+import SelectedCell from '../sheets/cells/cell/SelectedCell'
+import { SheetId } from '../sheets/Sheets'
+import { HyperFormula } from 'hyperformula'
 
 export interface IToolbarActionGroups {
-  elements: HTMLElement[];
-  className?: string;
+  elements: HTMLElement[]
+  className?: string
 }
 
 interface IColorPickerElements {
-  picker: ACPController;
-  colorPicker: HTMLDivElement;
-  colorBar: HTMLSpanElement;
+  picker: ACPController
+  colorPicker: HTMLDivElement
+  colorBar: HTMLSpanElement
 }
 
 interface IBorderElements {
-  borderGroups: [HTMLDivElement, HTMLDivElement];
+  borderGroups: [HTMLDivElement, HTMLDivElement]
 }
 
 interface IFunctionElements {
-  registeredFunctionButtons: HTMLButtonElement[];
+  registeredFunctionButtons: HTMLButtonElement[]
 }
 
 interface IFontSizeElements {
-  fontSizes: Record<number, HTMLButtonElement>;
+  fontSizes: Record<number, HTMLButtonElement>
 }
 
 interface ITextFormatElements {
-  textFormats: Record<string, HTMLButtonElement>;
+  textFormats: Record<string, HTMLButtonElement>
 }
 
 interface IAutosaveElement {
-  text: HTMLDivElement;
+  text: HTMLDivElement
 }
 
 class Toolbar {
-  toolbarEl!: HTMLDivElement;
-  iconElementsMap!: Record<IconElementsName, IIconElements>;
-  buttonElementsMap!: Record<DropdownButtonName, IButtonElements>;
-  dropdownMap!: Record<DropdownName, HTMLDivElement>;
-  colorPickerElementsMap!: Record<ColorPickerIconName, IColorPickerElements>;
-  borderElements!: IBorderElements;
-  fontSizeElements!: IFontSizeElements;
-  textFormatElements!: ITextFormatElements;
-  functionElements?: IFunctionElements;
-  autosaveElement!: IAutosaveElement;
-  tooltip!: DelegateInstance;
-  dropdown!: DelegateInstance;
-  spreadsheet!: Spreadsheet;
+  toolbarEl!: HTMLDivElement
+  iconElementsMap!: Record<IconElementsName, IIconElements>
+  buttonElementsMap!: Record<DropdownButtonName, IButtonElements>
+  dropdownMap!: Record<DropdownName, HTMLDivElement>
+  colorPickerElementsMap!: Record<ColorPickerIconName, IColorPickerElements>
+  borderElements!: IBorderElements
+  fontSizeElements!: IFontSizeElements
+  textFormatElements!: ITextFormatElements
+  functionElements?: IFunctionElements
+  autosaveElement!: IAutosaveElement
+  tooltip!: DelegateInstance
+  dropdown!: DelegateInstance
+  spreadsheet!: Spreadsheet
 
   initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet;
-    this.toolbarEl = document.createElement('div');
-    this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix);
+    this.spreadsheet = spreadsheet
+    this.toolbarEl = document.createElement('div')
+    this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix)
 
-    this.iconElementsMap = {} as Record<string, IIconElements>;
-    this.dropdownMap = {} as Record<DropdownName, HTMLDivElement>;
+    this.iconElementsMap = {} as Record<string, IIconElements>
+    this.dropdownMap = {} as Record<DropdownName, HTMLDivElement>
     this.colorPickerElementsMap = {} as Record<
       ColorPickerIconName,
       IColorPickerElements
-    >;
-    this.borderElements = {} as IBorderElements;
-    this.textFormatElements = {} as ITextFormatElements;
-    this.functionElements = {} as IFunctionElements;
-    this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>;
+    >
+    this.borderElements = {} as IBorderElements
+    this.textFormatElements = {} as ITextFormatElements
+    this.functionElements = {} as IFunctionElements
+    this.buttonElementsMap = {} as Record<DropdownButtonName, IButtonElements>
 
-    this.setDropdownButton('textFormatPattern', true);
-    this.setDropdownButton('fontSize', true);
+    this.setDropdownButton('textFormatPattern', true)
+    this.setDropdownButton('fontSize', true)
 
-    const { text, autosave } = createAutosave();
+    const { text, autosave } = createAutosave()
 
-    this.iconElementsMap.autosave = autosave;
+    this.iconElementsMap.autosave = autosave
     this.autosaveElement = {
-      text,
-    };
+      text
+    }
 
-    toggleIconNames.forEach((name) => {
+    toggleIconNames.forEach(name => {
       switch (name) {
         case 'backgroundColor': {
-          this.setDropdownColorPicker(name);
+          this.setDropdownColorPicker(name)
 
           this.colorPickerElementsMap.backgroundColor.picker.on(
             'change',
             (_, color) => {
-              this.setValue(name, color);
+              this.setValue(name, color)
             }
-          );
-          break;
+          )
+          break
         }
         case 'fontColor': {
-          this.setDropdownColorPicker(name);
+          this.setDropdownColorPicker(name)
 
           this.colorPickerElementsMap.fontColor.picker.on(
             'change',
             (_, fontColor) => {
-              this.setValue(name, fontColor);
+              this.setValue(name, fontColor)
             }
-          );
-          break;
+          )
+          break
         }
         case 'borders': {
           const {
             dropdownContent,
             borderGroups,
             firstBordersRow,
-            secondBordersRow,
-          } = createBordersContent();
+            secondBordersRow
+          } = createBordersContent()
 
-          this.setDropdownIconButton(name, true);
+          this.setDropdownIconButton(name, true)
 
-          this.dropdownMap.borders = dropdownContent;
+          this.dropdownMap.borders = dropdownContent
 
           this.borderElements = {
-            borderGroups,
-          };
+            borderGroups
+          }
 
           const setBorders = (bordersRow: Object) => {
-            Object.keys(bordersRow).forEach((key) => {
-              const name = key as IconElementsName;
+            Object.keys(bordersRow).forEach(key => {
+              const name = key as IconElementsName
               // @ts-ignore
-              const value = bordersRow[key];
+              const value = bordersRow[key]
 
-              this.iconElementsMap[name] = value;
-            });
-          };
+              this.iconElementsMap[name] = value
+            })
+          }
 
-          setBorders(firstBordersRow);
-          setBorders(secondBordersRow);
+          setBorders(firstBordersRow)
+          setBorders(secondBordersRow)
 
-          break;
+          break
         }
         case 'horizontalTextAlign': {
-          const { dropdownContent, aligns } =
-            createHorizontalTextAlignContent();
+          const { dropdownContent, aligns } = createHorizontalTextAlignContent()
 
-          this.setDropdownIconButton(name, true);
+          this.setDropdownIconButton(name, true)
 
-          this.dropdownMap.horizontalTextAlign = dropdownContent;
+          this.dropdownMap.horizontalTextAlign = dropdownContent
 
-          Object.keys(aligns).forEach((key) => {
-            const name = key as HorizontalTextAlignName;
-            const value = aligns[name];
+          Object.keys(aligns).forEach(key => {
+            const name = key as HorizontalTextAlignName
+            const value = aligns[name]
 
-            this.iconElementsMap[name] = value;
-          });
+            this.iconElementsMap[name] = value
+          })
 
-          break;
+          break
         }
         case 'verticalTextAlign': {
-          const { dropdownContent, aligns } = createVerticalTextAlignContent();
+          const { dropdownContent, aligns } = createVerticalTextAlignContent()
 
-          this.setDropdownIconButton(name, true);
+          this.setDropdownIconButton(name, true)
 
-          this.dropdownMap.verticalTextAlign = dropdownContent;
+          this.dropdownMap.verticalTextAlign = dropdownContent
 
-          Object.keys(aligns).forEach((key) => {
-            const name = key as VerticalTextAlignName;
-            const value = aligns[name];
+          Object.keys(aligns).forEach(key => {
+            const name = key as VerticalTextAlignName
+            const value = aligns[name]
 
-            this.iconElementsMap[name] = value;
-          });
-          break;
+            this.iconElementsMap[name] = value
+          })
+          break
         }
         case 'functions': {
           const { dropdownContent, registeredFunctionButtons } =
@@ -212,49 +211,49 @@ class Toolbar {
               HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
                 a.localeCompare(b)
               )
-            );
+            )
 
-          this.setDropdownIconButton(name, true);
+          this.setDropdownIconButton(name, true)
 
-          this.dropdownMap.functions = dropdownContent;
+          this.dropdownMap.functions = dropdownContent
 
           this.functionElements = {
-            registeredFunctionButtons,
-          };
-          break;
+            registeredFunctionButtons
+          }
+          break
         }
         default: {
-          const iconElements = createIconButton(name, toolbarPrefix);
-          const tooltip = createTooltip(name, toolbarPrefix);
+          const iconElements = createIconButton(name, toolbarPrefix)
+          const tooltip = createTooltip(name, toolbarPrefix)
 
-          iconElements.button.appendChild(tooltip);
+          iconElements.button.appendChild(tooltip)
 
           this.iconElementsMap[name] = {
             ...iconElements,
-            tooltip,
-          };
-          break;
+            tooltip
+          }
+          break
         }
       }
-    });
+    })
 
     this.tooltip = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-tooltip`,
       touch: false,
-      delay: 300,
-    });
+      delay: 300
+    })
 
     const setDropdownActive = (element: HTMLButtonElement, active: boolean) => {
-      const button = element as HTMLButtonElement;
-      const name = button.dataset.name!;
+      const button = element as HTMLButtonElement
+      const name = button.dataset.name!
 
       // @ts-ignore
       const actionElements = (this.buttonElementsMap[name] ??
         // @ts-ignore
-        this.iconElementsMap[name]) as IActionElements;
+        this.iconElementsMap[name]) as IActionElements
 
-      this.setActive(actionElements, active);
-    };
+      this.setActive(actionElements, active)
+    }
 
     this.dropdown = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-dropdown-button`,
@@ -264,52 +263,52 @@ class Toolbar {
       interactive: true,
       arrow: false,
       onHide: ({ reference }) => {
-        setDropdownActive(reference as HTMLButtonElement, false);
+        setDropdownActive(reference as HTMLButtonElement, false)
 
-        this.spreadsheet.updateViewport();
+        this.spreadsheet.updateViewport()
       },
       onShow: ({ reference }) => {
-        setDropdownActive(reference as HTMLButtonElement, true);
+        setDropdownActive(reference as HTMLButtonElement, true)
       },
-      content: (e) => {
-        const button = e as HTMLButtonElement;
-        const name = button.dataset.name as DropdownIconName;
+      content: e => {
+        const button = e as HTMLButtonElement
+        const name = button.dataset.name as DropdownIconName
 
-        if (!name) return '';
+        if (!name) return ''
 
-        setDropdownActive(e as HTMLButtonElement, true);
+        setDropdownActive(e as HTMLButtonElement, true)
 
-        return this.dropdownMap[name];
-      },
-    });
+        return this.dropdownMap[name]
+      }
+    })
 
-    Object.keys(this.iconElementsMap).forEach((key) => {
-      const name = key as IconElementsName;
+    Object.keys(this.iconElementsMap).forEach(key => {
+      const name = key as IconElementsName
 
       if (!this.dropdownMap[key as DropdownName]) {
         this.iconElementsMap[name].button.addEventListener('click', () => {
-          this.setValue(name);
-        });
+          this.setValue(name)
+        })
       }
-    });
+    })
 
     this.dropdownMap.functions?.addEventListener('click', (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement
 
       if (target?.matches('button')) {
-        const functionName = target.dataset.function;
+        const functionName = target.dataset.function
 
-        this.setValue('functions', functionName);
+        this.setValue('functions', functionName)
       }
-    });
+    })
   }
 
   setToolbarIcons(toolbarActionGroups: IToolbarActionGroups[]) {
     toolbarActionGroups.forEach(({ elements }) => {
-      const group = createGroup(elements, styles.group, toolbarPrefix);
+      const group = createGroup(elements, styles.group, toolbarPrefix)
 
-      this.toolbarEl.appendChild(group);
-    });
+      this.toolbarEl.appendChild(group)
+    })
   }
 
   setFunction(functionName: string) {
@@ -317,7 +316,7 @@ class Toolbar {
       const rangeSimpleCellAddress =
         this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
           this.spreadsheet.sheets.selector.selectedCells
-        );
+        )
 
       const cell = new Cell(
         this.spreadsheet.sheets,
@@ -326,29 +325,29 @@ class Toolbar {
           rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
           rangeSimpleCellAddress.topLeftSimpleCellAddress.col
         )
-      );
+      )
 
       const topLeftString =
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString();
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
       const bottomRightString =
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString();
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
 
-      const viewportVector = this.spreadsheet.sheets.getViewportVector();
+      const viewportVector = this.spreadsheet.sheets.getViewportVector()
 
-      cell.group.x(cell.group.x() + viewportVector.x);
-      cell.group.y(cell.group.y() + viewportVector.y);
+      cell.group.x(cell.group.x() + viewportVector.x)
+      cell.group.y(cell.group.y() + viewportVector.y)
 
-      this.spreadsheet.sheets.cellEditor.show(cell);
+      this.spreadsheet.sheets.cellEditor.show(cell)
       this.spreadsheet.sheets.cellEditor.setContentEditable(
         `=${functionName}(${topLeftString}:${bottomRightString})`
-      );
+      )
     } else {
-      const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
+      const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
 
-      this.spreadsheet.sheets.cellEditor.show(selectedCell);
+      this.spreadsheet.sheets.cellEditor.show(selectedCell)
       this.spreadsheet.sheets.cellEditor.setContentEditable(
         `=${functionName}()`
-      );
+      )
     }
   }
 
@@ -360,24 +359,24 @@ class Toolbar {
     ) => boolean,
     borderType: BorderStyle
   ) {
-    const borderCells = cells.filter((cell) =>
+    const borderCells = cells.filter(cell =>
       cellsFilter(
         cell,
         this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(cells)
       )
-    );
+    )
 
-    borderCells.forEach((cell) => {
-      const cellId = cell.simpleCellAddress.toCellId();
+    borderCells.forEach(cell => {
+      const cellId = cell.simpleCellAddress.toCellId()
       const borders =
-        this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.borders ?? [];
+        this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.borders ?? []
 
       if (borders.indexOf(borderType) === -1) {
         this.spreadsheet.data.setCell(cell.simpleCellAddress, {
-          borders: [...borders, borderType],
-        });
+          borders: [...borders, borderType]
+        })
       }
-    });
+    })
   }
 
   setBottomBorders(cells: Cell[]) {
@@ -387,7 +386,7 @@ class Toolbar {
         cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row ===
         rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
       'borderBottom'
-    );
+    )
   }
 
   setRightBorders(cells: Cell[]) {
@@ -397,7 +396,7 @@ class Toolbar {
         cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col ===
         rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
       'borderRight'
-    );
+    )
   }
 
   setTopBorders(cells: Cell[]) {
@@ -407,7 +406,7 @@ class Toolbar {
         cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row ===
         rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
       'borderTop'
-    );
+    )
   }
 
   setLeftBorders(cells: Cell[]) {
@@ -417,7 +416,7 @@ class Toolbar {
         cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col ===
         rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
       'borderLeft'
-    );
+    )
   }
 
   setVerticalBorders(cells: Cell[]) {
@@ -429,10 +428,10 @@ class Toolbar {
             rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
           cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <
             rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
-        );
+        )
       },
       'borderRight'
-    );
+    )
   }
 
   setHorizontalBorders(cells: Cell[]) {
@@ -444,562 +443,559 @@ class Toolbar {
         cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <
           rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
       'borderBottom'
-    );
+    )
   }
 
   setInsideBorders(cells: Cell[]) {
-    this.setHorizontalBorders(cells);
-    this.setVerticalBorders(cells);
+    this.setHorizontalBorders(cells)
+    this.setVerticalBorders(cells)
   }
 
   setOutsideBorders(cells: Cell[]) {
-    this.setBottomBorders(cells);
-    this.setLeftBorders(cells);
-    this.setRightBorders(cells);
-    this.setTopBorders(cells);
+    this.setBottomBorders(cells)
+    this.setLeftBorders(cells)
+    this.setRightBorders(cells)
+    this.setTopBorders(cells)
   }
 
   setAllBorders(cells: Cell[]) {
-    this.setOutsideBorders(cells);
-    this.setInsideBorders(cells);
+    this.setOutsideBorders(cells)
+    this.setInsideBorders(cells)
   }
 
   clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
-    simpleCellAddresses.forEach((simpleCellAddress) => {
-      const cellId = simpleCellAddress.toCellId();
+    simpleCellAddresses.forEach(simpleCellAddress => {
+      const cellId = simpleCellAddress.toCellId()
 
-      delete this.spreadsheet.data.spreadsheetData.cells?.[cellId].borders;
-    });
+      delete this.spreadsheet.data.spreadsheetData.cells?.[cellId].borders
+    })
   }
 
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const setStyle = <T>(key: keyof ICellData, value: T) => {
       this.spreadsheet.pushToHistory(() => {
-        this.spreadsheet.sheets.selector.selectedCells.forEach((cell) => {
+        this.spreadsheet.sheets.selector.selectedCells.forEach(cell => {
           this.spreadsheet.data.setCell(cell.simpleCellAddress, {
-            [key]: value,
-          });
-        });
-      });
-    };
+            [key]: value
+          })
+        })
+      })
+    }
 
     const deleteStyle = (key: keyof ICellData) => {
       this.spreadsheet.pushToHistory(() => {
-        this.spreadsheet.sheets.selector.selectedCells.forEach((cell) => {
-          const cellId = cell.simpleCellAddress.toCellId();
+        this.spreadsheet.sheets.selector.selectedCells.forEach(cell => {
+          const cellId = cell.simpleCellAddress.toCellId()
 
-          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId][key];
-        });
-      });
-    };
+          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId][key]
+        })
+      })
+    }
 
     switch (name) {
       case 'functions': {
-        this.setFunction(value);
-        break;
+        this.setFunction(value)
+        break
       }
       case 'functionHelper': {
         this.spreadsheet.options.showFunctionHelper =
-          !this.spreadsheet.options.showFunctionHelper;
-        break;
+          !this.spreadsheet.options.showFunctionHelper
+        break
       }
       case 'formula': {
         this.spreadsheet.pushToHistory(() => {
           this.spreadsheet.data.spreadsheetData.showFormulas =
-            !this.spreadsheet.data.spreadsheetData.showFormulas;
-        });
-        break;
+            !this.spreadsheet.data.spreadsheetData.showFormulas
+        })
+        break
       }
       case 'alignLeft': {
-        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'left');
-        break;
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'left')
+        break
       }
       case 'alignCenter': {
-        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'center');
-        break;
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'center')
+        break
       }
       case 'alignRight': {
-        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'right');
-        break;
+        setStyle<HorizontalTextAlign>('horizontalTextAlign', 'right')
+        break
       }
       case 'alignTop': {
-        setStyle<VerticalTextAlign>('verticalTextAlign', 'top');
-        break;
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'top')
+        break
       }
       case 'alignMiddle': {
-        setStyle<VerticalTextAlign>('verticalTextAlign', 'middle');
-        break;
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'middle')
+        break
       }
       case 'alignBottom': {
-        setStyle<VerticalTextAlign>('verticalTextAlign', 'bottom');
-        break;
+        setStyle<VerticalTextAlign>('verticalTextAlign', 'bottom')
+        break
       }
       case 'fontSize': {
-        setStyle<number>('fontSize', value);
-        break;
+        setStyle<number>('fontSize', value)
+        break
       }
       case 'textWrap': {
         if (this.iconElementsMap.textWrap.active) {
-          deleteStyle('textWrap');
+          deleteStyle('textWrap')
         } else {
-          setStyle<TextWrap>('textWrap', 'wrap');
+          setStyle<TextWrap>('textWrap', 'wrap')
         }
-        break;
+        break
       }
       case 'textFormatPattern': {
-        const format = value;
+        const format = value
 
         setStyle<string>(
           'textFormatPattern',
           this.spreadsheet.options.textPatternFormats[format]
-        );
-        break;
+        )
+        break
       }
       case 'backgroundColor': {
-        if (!value) break;
+        if (!value) break
 
-        const backgroundColor = value;
+        const backgroundColor = value
 
-        setStyle<string>('backgroundColor', backgroundColor);
-        break;
+        setStyle<string>('backgroundColor', backgroundColor)
+        break
       }
       case 'fontColor': {
-        if (!value) break;
+        if (!value) break
 
-        const fontColor = value;
+        const fontColor = value
 
-        setStyle<string>('fontColor', fontColor);
-        break;
+        setStyle<string>('fontColor', fontColor)
+        break
       }
       case 'bold': {
         if (this.iconElementsMap.bold.active) {
-          deleteStyle('bold');
+          deleteStyle('bold')
         } else {
-          setStyle<true>('bold', true);
+          setStyle<true>('bold', true)
         }
-        break;
+        break
       }
       case 'italic': {
         if (this.iconElementsMap.italic.active) {
-          deleteStyle('italic');
+          deleteStyle('italic')
         } else {
-          setStyle<true>('italic', true);
+          setStyle<true>('italic', true)
         }
-        break;
+        break
       }
       case 'strikeThrough': {
         if (this.iconElementsMap.strikeThrough.active) {
-          deleteStyle('strikeThrough');
+          deleteStyle('strikeThrough')
         } else {
-          setStyle<true>('strikeThrough', true);
+          setStyle<true>('strikeThrough', true)
         }
-        break;
+        break
       }
       case 'underline': {
         if (this.iconElementsMap.underline.active) {
-          deleteStyle('underline');
+          deleteStyle('underline')
         } else {
-          setStyle<true>('underline', true);
+          setStyle<true>('underline', true)
         }
-        break;
+        break
       }
       case 'merge': {
         if (this.iconElementsMap.merge.active) {
-          this.spreadsheet.sheets.merger.unMergeSelectedCells();
+          this.spreadsheet.sheets.merger.unMergeSelectedCells()
         } else if (!this.iconElementsMap.merge.button.disabled) {
-          this.spreadsheet.sheets.merger.mergeSelectedCells();
+          this.spreadsheet.sheets.merger.mergeSelectedCells()
         }
 
-        break;
+        break
       }
       case 'freeze': {
         this.spreadsheet.pushToHistory(() => {
           if (this.iconElementsMap.freeze.active) {
             this.spreadsheet.data.deleteFrozenCell(
               this.spreadsheet.sheets.activeSheetId
-            );
+            )
           } else {
             const simpleCellAddress =
-              this.spreadsheet.sheets.selector.selectedCell!.simpleCellAddress;
+              this.spreadsheet.sheets.selector.selectedCell!.simpleCellAddress
 
             this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
               row: simpleCellAddress.row,
-              col: simpleCellAddress.col,
-            });
+              col: simpleCellAddress.col
+            })
           }
-        });
+        })
 
-        this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0);
-        this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0);
+        this.spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0)
+        this.spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0)
 
-        break;
+        break
       }
       case 'export': {
-        this.spreadsheet.exporter?.exportWorkbook();
-        break;
+        this.spreadsheet.exporter?.exportWorkbook()
+        break
       }
       case 'borderBottom': {
         this.spreadsheet.pushToHistory(() => {
-          this.setBottomBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setBottomBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderRight': {
         this.spreadsheet.pushToHistory(() => {
-          this.setRightBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setRightBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderTop': {
         this.spreadsheet.pushToHistory(() => {
-          this.setTopBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setTopBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderLeft': {
         this.spreadsheet.pushToHistory(() => {
-          this.setLeftBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setLeftBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderVertical': {
         this.spreadsheet.pushToHistory(() => {
           this.setVerticalBorders(
             this.spreadsheet.sheets.selector.selectedCells
-          );
-        });
-        break;
+          )
+        })
+        break
       }
       case 'borderHorizontal': {
         this.spreadsheet.pushToHistory(() => {
           this.setHorizontalBorders(
             this.spreadsheet.sheets.selector.selectedCells
-          );
-        });
-        break;
+          )
+        })
+        break
       }
       case 'borderInside': {
         this.spreadsheet.pushToHistory(() => {
-          this.setInsideBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setInsideBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderOutside': {
         this.spreadsheet.pushToHistory(() => {
-          this.setOutsideBorders(
-            this.spreadsheet.sheets.selector.selectedCells
-          );
-        });
-        break;
+          this.setOutsideBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderAll': {
         this.spreadsheet.pushToHistory(() => {
-          this.setAllBorders(this.spreadsheet.sheets.selector.selectedCells);
-        });
-        break;
+          this.setAllBorders(this.spreadsheet.sheets.selector.selectedCells)
+        })
+        break
       }
       case 'borderNone': {
         this.spreadsheet.pushToHistory(() => {
           this.clearBorders(
             this.spreadsheet.sheets.selector.selectedCells.map(
-              (cell) => cell.simpleCellAddress
+              cell => cell.simpleCellAddress
             )
-          );
-        });
-        break;
+          )
+        })
+        break
       }
       case 'undo': {
-        this.spreadsheet.undo();
-        break;
+        this.spreadsheet.undo()
+        break
       }
       case 'redo': {
-        this.spreadsheet.redo();
-        break;
+        this.spreadsheet.redo()
+        break
       }
     }
 
-    this.spreadsheet.updateViewport();
-  };
+    this.spreadsheet.updateViewport()
+  }
 
   private setTextFormatPatterns() {
     const { dropdownContent: textFormatDropdownContent, textFormats } =
-      createTextFormatContent(this.spreadsheet.options.textPatternFormats);
+      createTextFormatContent(this.spreadsheet.options.textPatternFormats)
 
-    this.dropdownMap.textFormatPattern = textFormatDropdownContent;
+    this.dropdownMap.textFormatPattern = textFormatDropdownContent
 
     this.textFormatElements = {
-      textFormats,
-    };
+      textFormats
+    }
 
-    Object.keys(this.textFormatElements.textFormats).forEach((key) => {
+    Object.keys(this.textFormatElements.textFormats).forEach(key => {
       this.textFormatElements.textFormats[key].addEventListener('click', () => {
-        this.setValue('textFormatPattern', key);
-      });
-    });
+        this.setValue('textFormatPattern', key)
+      })
+    })
   }
 
   private setFontSizes() {
     const sortedFontSizes = this.spreadsheet.options.fontSizes.sort(
       (a, b) => a - b
-    );
+    )
     const { dropdownContent: fontSizeDropdownContent, fontSizes } =
-      createFontSizeContent(sortedFontSizes);
+      createFontSizeContent(sortedFontSizes)
 
-    this.dropdownMap.fontSize = fontSizeDropdownContent;
+    this.dropdownMap.fontSize = fontSizeDropdownContent
 
     this.fontSizeElements = {
-      fontSizes,
-    };
+      fontSizes
+    }
 
-    Object.keys(this.fontSizeElements.fontSizes).forEach((key) => {
-      const fontSize = parseInt(key, 10);
+    Object.keys(this.fontSizeElements.fontSizes).forEach(key => {
+      const fontSize = parseInt(key, 10)
 
       this.fontSizeElements.fontSizes[fontSize].addEventListener(
         'click',
         () => {
-          this.setValue('fontSize', fontSize);
+          this.setValue('fontSize', fontSize)
         }
-      );
-    });
+      )
+    })
   }
 
   updateActiveStates = () => {
-    const selectedCells = this.spreadsheet.sheets.selector.selectedCells;
-    const selectedCell = this.spreadsheet.sheets.selector.selectedCell!;
+    const selectedCells = this.spreadsheet.sheets.selector.selectedCells
+    const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
 
-    this.setTextFormatPatterns();
-    this.setFontSizes();
+    this.setTextFormatPatterns()
+    this.setFontSizes()
 
-    this.setActiveColor(selectedCell, 'backgroundColor');
-    this.setActiveColor(selectedCell, 'fontColor');
+    this.setActiveColor(selectedCell, 'backgroundColor')
+    this.setActiveColor(selectedCell, 'fontColor')
     this.setActive(
       this.iconElementsMap.freeze,
       this.isFreezeActive(this.spreadsheet.sheets.activeSheetId)
-    );
+    )
     this.setActive(
       this.iconElementsMap.textWrap,
       this.isActive(selectedCell, 'textWrap')
-    );
+    )
     this.setActive(
       this.iconElementsMap.bold,
       this.isActive(selectedCell, 'bold')
-    );
+    )
     this.setActive(
       this.iconElementsMap.italic,
       this.isActive(selectedCell, 'italic')
-    );
+    )
     this.setActive(
       this.iconElementsMap.strikeThrough,
       this.isActive(selectedCell, 'strikeThrough')
-    );
+    )
     this.setActive(
       this.iconElementsMap.underline,
       this.isActive(selectedCell, 'underline')
-    );
+    )
     this.setActive(
       this.iconElementsMap.formula,
       this.spreadsheet.data.spreadsheetData.showFormulas ?? false
-    );
+    )
     this.setActive(
       this.iconElementsMap.functionHelper,
       this.spreadsheet.options.showFunctionHelper
-    );
-    this.setActiveHorizontalIcon(selectedCell);
-    this.setActiveVerticalIcon(selectedCell);
-    this.setActiveFontSize(selectedCell);
-    this.setActiveTextFormat(selectedCell);
-    this.setActiveMergedCells(selectedCells, selectedCell);
-    this.setActiveHistoryIcons(this.spreadsheet.history);
-    this.setActiveSaveState();
-  };
+    )
+    this.setActiveHorizontalIcon(selectedCell)
+    this.setActiveVerticalIcon(selectedCell)
+    this.setActiveFontSize(selectedCell)
+    this.setActiveTextFormat(selectedCell)
+    this.setActiveMergedCells(selectedCells, selectedCell)
+    this.setActiveHistoryIcons(this.spreadsheet.history)
+    this.setActiveSaveState()
+  }
 
   destroy() {
-    this.toolbarEl.remove();
-    this.tooltip.destroy();
+    this.toolbarEl.remove()
+    this.tooltip.destroy()
   }
 
   setDropdownIconButton(name: DropdownIconName, createArrow?: boolean) {
     const { iconButtonValues, arrowIconValues, tooltip } =
-      createDropdownIconButton(name, toolbarPrefix, createArrow);
+      createDropdownIconButton(name, toolbarPrefix, createArrow)
 
     this.iconElementsMap[name] = {
       ...iconButtonValues,
       ...arrowIconValues,
-      tooltip,
-    };
+      tooltip
+    }
   }
 
   setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
     const { buttonContainer, button, text, arrowIconValues, tooltip } =
-      createDropdownButton(name, toolbarPrefix, createArrow);
+      createDropdownButton(name, toolbarPrefix, createArrow)
 
     this.buttonElementsMap[name] = {
       buttonContainer,
       button,
       text,
       tooltip,
-      ...arrowIconValues,
-    };
+      ...arrowIconValues
+    }
   }
 
   setDropdownColorPicker(name: ColorPickerIconName) {
-    const { dropdownContent, colorPicker, picker } = createColorPickerContent();
+    const { dropdownContent, colorPicker, picker } = createColorPickerContent()
 
-    this.setDropdownIconButton(name);
+    this.setDropdownIconButton(name)
 
-    this.dropdownMap[name] = dropdownContent;
+    this.dropdownMap[name] = dropdownContent
 
-    const colorBar = createColorBar(picker);
+    const colorBar = createColorBar(picker)
 
-    this.iconElementsMap[name].button.appendChild(colorBar);
+    this.iconElementsMap[name].button.appendChild(colorBar)
 
     this.colorPickerElementsMap[name] = {
       colorBar,
       picker,
-      colorPicker,
-    };
+      colorPicker
+    }
   }
 
   private setActiveColor(
     selectedCell: SelectedCell,
     colorPickerIconName: ColorPickerIconName
   ) {
-    let fill;
+    let fill
 
-    const cellId = selectedCell.simpleCellAddress.toCellId();
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId];
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
 
     if (colorPickerIconName === 'backgroundColor') {
-      fill = cell?.backgroundColor ?? '';
+      fill = cell?.backgroundColor ?? ''
     } else {
-      fill = cell?.fontColor ?? this.spreadsheet.styles.cell.text.fill!;
+      fill = cell?.fontColor ?? this.spreadsheet.styles.cell.text.fill!
     }
 
     this.colorPickerElementsMap[
       colorPickerIconName
-    ].colorBar.style.backgroundColor = fill;
+    ].colorBar.style.backgroundColor = fill
   }
 
   setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
     const isMerged =
       this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
         selectedCell.simpleCellAddress
-      ) && selectedCells.length === 1;
+      ) && selectedCells.length === 1
 
     if (isMerged) {
-      this.iconElementsMap.merge.button.disabled = false;
+      this.iconElementsMap.merge.button.disabled = false
     } else {
-      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1;
+      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1
     }
 
-    this.setActive(this.iconElementsMap.merge, isMerged);
+    this.setActive(this.iconElementsMap.merge, isMerged)
   }
 
   setActiveSaveState() {
     if (this.spreadsheet.isSaving) {
-      this.autosaveElement.text.textContent = 'Saving...';
+      this.autosaveElement.text.textContent = 'Saving...'
     } else {
-      this.autosaveElement.text.textContent = 'Saved';
+      this.autosaveElement.text.textContent = 'Saved'
     }
   }
 
   setActiveHorizontalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const cellId = selectedCell.simpleCellAddress.toCellId()
     const horizontalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]
-        ?.horizontalTextAlign;
-    const icon = this.iconElementsMap.horizontalTextAlign.icon;
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.horizontalTextAlign
+    const icon = this.iconElementsMap.horizontalTextAlign.icon
 
     switch (horizontalTextAlign) {
       case 'center':
-        icon.dataset.activeIcon = 'center';
-        break;
+        icon.dataset.activeIcon = 'center'
+        break
       case 'right':
-        icon.dataset.activeIcon = 'right';
-        break;
+        icon.dataset.activeIcon = 'right'
+        break
       default:
-        icon.dataset.activeIcon = 'left';
-        break;
+        icon.dataset.activeIcon = 'left'
+        break
     }
   }
 
   setActiveVerticalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const cellId = selectedCell.simpleCellAddress.toCellId()
     const verticalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.verticalTextAlign;
-    const icon = this.iconElementsMap.verticalTextAlign.icon;
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.verticalTextAlign
+    const icon = this.iconElementsMap.verticalTextAlign.icon
 
     switch (verticalTextAlign) {
       case 'top':
-        icon.dataset.activeIcon = 'top';
-        break;
+        icon.dataset.activeIcon = 'top'
+        break
       case 'bottom':
-        icon.dataset.activeIcon = 'bottom';
-        break;
+        icon.dataset.activeIcon = 'bottom'
+        break
       default:
-        icon.dataset.activeIcon = 'middle';
-        break;
+        icon.dataset.activeIcon = 'middle'
+        break
     }
   }
 
   setActiveFontSize(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const cellId = selectedCell.simpleCellAddress.toCellId()
     const fontSize =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.fontSize;
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.fontSize
 
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
-    ).toString();
+    ).toString()
   }
 
   setActiveTextFormat(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId();
+    const cellId = selectedCell.simpleCellAddress.toCellId()
     const textFormatPattern =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.textFormatPattern;
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.textFormatPattern
 
-    let textFormat = 'plainText';
+    let textFormat = 'plainText'
 
-    Object.keys(this.spreadsheet.options.textPatternFormats).forEach((key) => {
-      const value = this.spreadsheet.options.textPatternFormats[key];
+    Object.keys(this.spreadsheet.options.textPatternFormats).forEach(key => {
+      const value = this.spreadsheet.options.textPatternFormats[key]
 
       if (textFormatPattern === value) {
-        textFormat = key;
+        textFormat = key
       }
-    });
+    })
 
     this.buttonElementsMap.textFormatPattern.text.textContent =
-      sentenceCase(textFormat);
+      sentenceCase(textFormat)
   }
 
   setActiveHistoryIcons(history: any) {
-    this.setDisabled(this.iconElementsMap.undo, !history.canUndo);
-    this.setDisabled(this.iconElementsMap.redo, !history.canRedo);
+    this.setDisabled(this.iconElementsMap.undo, !history.canUndo)
+    this.setDisabled(this.iconElementsMap.redo, !history.canRedo)
   }
 
   isFreezeActive(sheetId: SheetId) {
-    return !!this.spreadsheet.data.spreadsheetData.frozenCells?.[sheetId];
+    return !!this.spreadsheet.data.spreadsheetData.frozenCells?.[sheetId]
   }
 
   isActive(selectedCell: SelectedCell, key: keyof ICellData) {
-    const cellId = selectedCell.simpleCellAddress.toCellId();
-    const style = this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.[key];
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const style = this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.[key]
 
-    return !!style;
+    return !!style
   }
 
   setActive(actionElements: IActionElements, active: boolean) {
-    actionElements.active = active;
+    actionElements.active = active
 
     if (active) {
-      actionElements.button.classList.add('active');
+      actionElements.button.classList.add('active')
     } else {
-      actionElements.button.classList.remove('active');
+      actionElements.button.classList.remove('active')
     }
   }
 
   setDisabled(iconElements: IIconElements, disabled: boolean) {
-    iconElements.button.disabled = disabled;
+    iconElements.button.disabled = disabled
   }
 }
 
-export default Toolbar;
+export default Toolbar

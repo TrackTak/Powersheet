@@ -2,7 +2,7 @@
   "version": "independent",
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "packages": ["packages/**", "starters/**", "site"],
+  "packages": ["packages/**"],
   "command": {
     "version": {
       "message": "chore(release): Publish",

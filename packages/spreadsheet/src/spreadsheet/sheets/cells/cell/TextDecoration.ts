@@ -1,4 +1,4 @@
-import { Text } from 'konva/lib/shapes/Text';
+import { Text } from 'konva/lib/shapes/Text'
 
 class TextDecoration {
   constructor(
@@ -8,20 +8,20 @@ class TextDecoration {
   ) {}
 
   getStyle() {
-    if (this.strikeThrough && this.underline) return 'line-through underline';
+    if (this.strikeThrough && this.underline) return 'line-through underline'
 
-    if (this.strikeThrough && !this.underline) return 'line-through';
+    if (this.strikeThrough && !this.underline) return 'line-through'
 
-    if (!this.strikeThrough && this.underline) return 'underline';
+    if (!this.strikeThrough && this.underline) return 'underline'
 
-    return '';
+    return ''
   }
 
   setStyle() {
-    const style = this.getStyle();
+    const style = this.getStyle()
 
-    this.text.textDecoration(style);
+    this.text.textDecoration(style)
   }
 }
 
-export default TextDecoration;
+export default TextDecoration

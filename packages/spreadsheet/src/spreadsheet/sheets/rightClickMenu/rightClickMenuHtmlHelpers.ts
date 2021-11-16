@@ -1,7 +1,7 @@
-import { prefix } from '../../utils';
-import styles from './RightClickMenu.module.scss';
+import { prefix } from '../../utils'
+import styles from './RightClickMenu.module.scss'
 
-export const rightClickMenuPrefix = `${prefix}-right-click-menu`;
+export const rightClickMenuPrefix = `${prefix}-right-click-menu`
 
 export type ButtonName =
   | 'comment'
@@ -11,19 +11,19 @@ export type ButtonName =
   | 'insertRow'
   | 'insertColumn'
   | 'deleteRow'
-  | 'deleteColumn';
+  | 'deleteColumn'
 
 export const createButtonContent = (name: string, className: string) => {
-  const button = document.createElement('button');
+  const button = document.createElement('button')
 
-  button.textContent = name;
+  button.textContent = name
 
   button.classList.add(
     styles.buttonContent,
     styles[className],
     `${rightClickMenuPrefix}-${className}`,
     `${rightClickMenuPrefix}-button-content`
-  );
+  )
 
-  return button;
-};
+  return button
+}

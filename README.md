@@ -172,7 +172,6 @@ const Index = () => {
 
     return () => {
       spreadsheet?.destroy()
-      spreadsheet?.hyperformula.destroy()
     }
   }, [])
 

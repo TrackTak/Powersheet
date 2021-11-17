@@ -124,6 +124,31 @@ class Spreadsheet {
     })
   }
 
+  private setCells() {
+    for (const key in this.data.spreadsheetData.cells) {
+      const cellId = key as CellId
+      const cell = this.data.spreadsheetData.cells?.[cellId]
+
+      this.hyperformula.setCellContents(
+        SimpleCellAddress.cellIdToAddress(cellId),
+        cell?.value
+      )
+    }
+  }
+
+  private updateSheetSizes() {
+    this.sheets.updateSize()
+  }
+
+  private onDOMContentLoaded = () => {
+    this.updateSheetSizes()
+  }
+
+  /**
+   * Creates the spreadsheets sheets from the data and sets
+   * hyperformula cells if powersheet has not been initialized yet.
+   * This must be called after `setData()`
+   */
   initialize() {
     if (!this.isInitialized) {
       this.isInitialized = true
@@ -151,15 +176,13 @@ class Spreadsheet {
     }
   }
 
-  private updateSheetSizes() {
-    this.sheets.updateSize()
-  }
-
-  private onDOMContentLoaded = () => {
-    this.updateSheetSizes()
-  }
-
-  destroy() {
+  /**
+   * Destroys the spreadsheet, it's children & removes all DOM elements.
+   *
+   * @param destroyHyperformula - This should only be set to false
+   * when you are using multiple spreadsheets with a shared hyperformula instance.
+   */
+  destroy(destroyHyperformula = true) {
     window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded)
 
     this.spreadsheetEl.remove()
@@ -169,38 +192,50 @@ class Spreadsheet {
     this.bottomBar?.destroy()
     this.functionHelper?.destroy()
     this.sheets.destroy()
-  }
 
-  private setCells() {
-    for (const key in this.data.spreadsheetData.cells) {
-      const cellId = key as CellId
-      const cell = this.data.spreadsheetData.cells?.[cellId]
-
-      this.hyperformula.setCellContents(
-        SimpleCellAddress.cellIdToAddress(cellId),
-        cell?.value
-      )
+    if (destroyHyperformula) {
+      this.hyperformula.destroy()
     }
   }
 
+  /**
+   * Must be called before `initialize()`.
+   *
+   * @param data - The persisted data that sets the spreadsheet.
+   */
   setData(data: ISpreadsheetData) {
     this.data.spreadsheetData = data
 
     this.updateViewport()
   }
 
+  /**
+   *
+   * @param options - Custom options that you want for the spreadsheet.
+   */
   setOptions(options: NestedPartial<IOptions>) {
     this.options = merge({}, this.options, options)
 
     this.updateViewport()
   }
 
+  /**
+   *
+   * @param styles - Customs styling specifically for the canvas elements.
+   */
   setStyles(styles: NestedPartial<IStyles>) {
     this.styles = merge({}, this.styles, styles)
 
     this.updateViewport()
   }
 
+  /**
+   * This adds to the stack for the undo/redo functionality.
+   * `persistData()` is automatically called at the end of this method.
+   *
+   * @param callback - A function that you want to be called after the history is pushed
+   * onto the stack.
+   */
   pushToHistory(callback?: () => void) {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
@@ -221,6 +256,10 @@ class Spreadsheet {
     this.persistData()
   }
 
+  /**
+   * Provides a way for developers to save the `spreadsheetData` to their database.
+   * This function should be called after an action by the user or a custom function.
+   */
   persistData() {
     const done = () => {
       this.isSaving = false
@@ -232,6 +271,10 @@ class Spreadsheet {
     this.eventEmitter.emit('persistData', this.data.spreadsheetData, done)
   }
 
+  /**
+   * Reverts the state of the spreadsheet to the previously pushed `spreadsheetData`
+   * that was done in `pushToHistory()` if an undo exists in the stack.
+   */
   undo() {
     if (!this.history.canUndo) return
 
@@ -241,6 +284,10 @@ class Spreadsheet {
     this.persistData()
   }
 
+  /**
+   * Forwards the state of the spreadsheet to the previously undone `spreadsheetData`
+   * that was done in `undo()` if an redo exists in the stack.
+   */
   redo() {
     if (!this.history.canRedo) return
 
@@ -250,6 +297,11 @@ class Spreadsheet {
     this.persistData()
   }
 
+  /**
+   * This updates the viewport that the user is looking at on the screen and all
+   * sub-components. This function should be called after you need to refresh
+   * the spreadsheet. This is equivalent to React's `render()` method.
+   */
   updateViewport() {
     this.bottomBar?.updateSheetTabs()
     this.sheets.updateViewport()

@@ -238,7 +238,7 @@ class CellEditor {
     this.cellEditorEl.blur()
     this.sheet.sheetEl.focus()
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   setCellEditorElPosition = (rect: IRect) => {

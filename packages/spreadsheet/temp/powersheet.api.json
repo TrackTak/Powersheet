@@ -2581,12 +2581,12 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@tracktak/powersheet!Spreadsheet#updateViewport:member(1)",
+              "canonicalReference": "@tracktak/powersheet!Spreadsheet#render:member(1)",
               "docComment": "/**\n * This updates the viewport that the user is looking at on the screen and all sub-components. This function should be called after you need to refresh the spreadsheet. This is equivalent to React's `render()` method.\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "updateViewport(): "
+                  "text": "render(): "
                 },
                 {
                   "kind": "Content",
@@ -2606,7 +2606,7 @@
               "releaseTag": "Public",
               "overloadIndex": 1,
               "parameters": [],
-              "name": "updateViewport"
+              "name": "render"
             }
           ],
           "implementsTokenRanges": []

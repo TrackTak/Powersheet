@@ -512,7 +512,7 @@ const RealExampleTemplate: Story<IArgs> = args => {
     HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations)
 
     spreadsheet?.hyperformula.rebuildAndRecalculate()
-    spreadsheet?.updateViewport()
+    spreadsheet?.render()
   }, 2000)
 
   return spreadsheet.spreadsheetEl

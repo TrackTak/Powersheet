@@ -61,15 +61,15 @@ class Comment {
 
   successButtonOnClick = () => {
     this.spreadsheet.pushToHistory(() => {
-      const simpleCellAddress =
-        this.sheets.selector.selectedCell!.simpleCellAddress
+      const simpleCellAddress = this.sheets.selector.selectedCell!
+        .simpleCellAddress
 
       this.spreadsheet.data.setCell(simpleCellAddress, {
         comment: this.textarea.value
       })
     })
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
     this.hide()
   }
 
@@ -88,10 +88,9 @@ class Comment {
     this.container.unmount()
     this.container.show()
 
-    const comment =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ]?.comment
+    const comment = this.spreadsheet.data.spreadsheetData.cells?.[
+      simpleCellAddress.toCellId()
+    ]?.comment
 
     if (comment) {
       this.textarea.value = comment

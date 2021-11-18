@@ -182,11 +182,10 @@ class Cells {
     })
   }
 
-  updateViewport() {
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
-        this.sheets.activeSheetId
-      ]
+  render() {
+    const frozenCells = this.spreadsheet.data.spreadsheetData.frozenCells?.[
+      this.sheets.activeSheetId
+    ]
     const frozenRow = frozenCells?.row
     const frozenCol = frozenCells?.col
 
@@ -239,15 +238,15 @@ class Cells {
           }
         )
 
-        this.spreadsheet.updateViewport()
+        this.spreadsheet.render()
       }
     }
   }
 
   updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCellId =
-      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId]
+    const mergedCellId = this.spreadsheet.sheets.merger
+      .associatedMergedCellAddressMap[cellId]
 
     const sheetName =
       this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''

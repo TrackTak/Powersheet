@@ -168,7 +168,7 @@ class Spreadsheet {
 
       this.isSaving = false
 
-      this.updateViewport()
+      this.render()
 
       if (document.readyState === 'complete') {
         this.updateSheetSizes()
@@ -207,7 +207,7 @@ class Spreadsheet {
   setData(data: ISpreadsheetData) {
     this.data.spreadsheetData = data
 
-    this.updateViewport()
+    this.render()
   }
 
   /**
@@ -217,7 +217,7 @@ class Spreadsheet {
   setOptions(options: NestedPartial<IOptions>) {
     this.options = merge({}, this.options, options)
 
-    this.updateViewport()
+    this.render()
   }
 
   /**
@@ -227,7 +227,7 @@ class Spreadsheet {
   setStyles(styles: NestedPartial<IStyles>) {
     this.styles = merge({}, this.styles, styles)
 
-    this.updateViewport()
+    this.render()
   }
 
   /**
@@ -264,7 +264,9 @@ class Spreadsheet {
   persistData() {
     const done = () => {
       this.isSaving = false
-      this.toolbar?.updateActiveStates()
+
+      // We don't update sheet viewport for performance reasons
+      this.toolbar?._render()
     }
 
     this.isSaving = true
@@ -281,7 +283,7 @@ class Spreadsheet {
 
     this.history.undo()
 
-    this.updateViewport()
+    this.render()
     this.persistData()
   }
 
@@ -294,23 +296,21 @@ class Spreadsheet {
 
     this.history.redo()
 
-    this.updateViewport()
+    this.render()
     this.persistData()
   }
 
   /**
-   * This updates the viewport that the user is looking at on the screen and all
+   * This updates the viewport visible on the user's screen and all
    * sub-components. This function should be called after you need to refresh
-   * the spreadsheet. This is equivalent to React's `render()` method.
+   * the spreadsheet. This is basically equivalent to React's `render()` method.
    */
-  updateViewport() {
+  render() {
+    this.sheets._render()
     this.bottomBar?._render()
-    this.sheets.updateViewport()
-    this.toolbar?.updateActiveStates()
-    this.functionHelper?.updateOpenState()
-    this.formulaBar?.updateValue(
-      this.sheets.selector.selectedCell?.simpleCellAddress
-    )
+    this.toolbar?._render()
+    this.functionHelper?._render()
+    this.formulaBar?._render()
   }
 }
 

@@ -82,11 +82,10 @@ class Selector {
         this.groupedCells?.[type].rect?.destroy()
       })
 
-      const rangeSimpleCellAddress =
-        this.sheets.convertVectorsToRangeSimpleCellAddress(
-          this.selectionArea.start,
-          this.selectionArea.end
-        )
+      const rangeSimpleCellAddress = this.sheets.convertVectorsToRangeSimpleCellAddress(
+        this.selectionArea.start,
+        this.selectionArea.end
+      )
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this.sheets,
@@ -128,8 +127,9 @@ class Selector {
           let width = 0
           let height = 0
 
-          const minMaxRangeSimpleCellAddress =
-            this.sheets.getMinMaxRangeSimpleCellAddress(cells)
+          const minMaxRangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
+            cells
+          )
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
@@ -166,12 +166,13 @@ class Selector {
   }
 
   startSelection(vector: Vector2d) {
-    this.previousSelectedSimpleCellAddress =
-      this.selectedCell?.simpleCellAddress
+    this.previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
     this.selectionArea = null
 
-    const rangeSimpleCellAddress =
-      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector)
+    const rangeSimpleCellAddress = this.sheets.convertVectorsToRangeSimpleCellAddress(
+      vector,
+      vector
+    )
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
       this.sheets,
@@ -205,7 +206,7 @@ class Selector {
 
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
 
     this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
   }
@@ -228,7 +229,7 @@ class Selector {
 
       // We don't update sheet viewport for performance reasons
       this.updateSelectedCells()
-      this.spreadsheet.toolbar?.updateActiveStates()
+      this.spreadsheet.toolbar?._render()
 
       this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea)
     }

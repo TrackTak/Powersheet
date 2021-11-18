@@ -17,12 +17,14 @@ class Merger {
 
   *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCell =
-      this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
+    const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells?.[
+      cellId
+    ]
 
     if (mergedCell) {
-      const rangeSimpleCellAddress =
-        RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
+      const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+        mergedCell
+      )
 
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
         for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
@@ -60,10 +62,10 @@ class Merger {
   }
 
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const mergedCellId =
-      rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-    const existingTopLeftCell =
-      this.spreadsheet.data.spreadsheetData.cells?.[mergedCellId]
+    const mergedCellId = rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+    const existingTopLeftCell = this.spreadsheet.data.spreadsheetData.cells?.[
+      mergedCellId
+    ]
 
     this.spreadsheet.data.setMergedCell(
       rangeSimpleCellAddress.topLeftSimpleCellAddress,
@@ -89,7 +91,7 @@ class Merger {
     this.sheets.selector.selectedSimpleCellAddress =
       rangeSimpleCellAddress.topLeftSimpleCellAddress
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
@@ -101,10 +103,9 @@ class Merger {
         rangeSimpleCellAddress.topLeftSimpleCellAddress
       )
     ) {
-      const cell =
-        this.spreadsheet.data.spreadsheetData.cells?.[
-          rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-        ]
+      const cell = this.spreadsheet.data.spreadsheetData.cells?.[
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+      ]
 
       if (cell) {
         this.spreadsheet.hyperformula.batch(() => {
@@ -145,7 +146,7 @@ class Merger {
       }
     })
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   getAreMergedCellsOverlapping(
@@ -180,8 +181,9 @@ class Merger {
 
     if (!selectedCells.length) return
 
-    const rangeSimpleCellAddress =
-      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
+    const rangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
+      selectedCells
+    )
 
     this.spreadsheet.pushToHistory(() => {
       this.addMergedCells(rangeSimpleCellAddress)
@@ -193,8 +195,9 @@ class Merger {
 
     if (!selectedCells.length) return
 
-    const rangeSimpleCellAddress =
-      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
+    const rangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
+      selectedCells
+    )
 
     this.spreadsheet.pushToHistory(() => {
       this.removeMergedCells(rangeSimpleCellAddress)

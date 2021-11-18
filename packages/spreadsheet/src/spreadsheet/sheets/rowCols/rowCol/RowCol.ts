@@ -103,10 +103,8 @@ class RowCol {
 
   private shiftFrozenCells(getValue: (frozenCell: number) => number) {
     if (this.rowCols.getIsFrozen(this.index)) {
-      const existingFrozenCells =
-        this.spreadsheet.data.spreadsheetData.frozenCells![
-          this.sheets.activeSheetId
-        ]
+      const existingFrozenCells = this.spreadsheet.data.spreadsheetData
+        .frozenCells![this.sheets.activeSheetId]
 
       this.spreadsheet.data.setFrozenCell(this.sheets.activeSheetId, {
         [this.type]: getValue(existingFrozenCells![this.type]!)
@@ -116,8 +114,13 @@ class RowCol {
 
   delete(amount: number) {
     this.spreadsheet.pushToHistory(() => {
-      const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
+      const {
+        cells,
+        mergedCells,
+        ...rest
+      } = this.spreadsheet.data.spreadsheetData.sheets![
+        this.sheets.activeSheetId
+      ]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -158,8 +161,9 @@ class RowCol {
               ...cell
             }
 
-            const cellType =
-              this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
+            const cellType = this.spreadsheet.hyperformula.getCellType(
+              newSimpleCellAddress
+            )
 
             // The precedent cell formula handles these ARRAY cell values
             if (cellType !== CellType.ARRAY) {
@@ -176,8 +180,9 @@ class RowCol {
         .sort(dataKeysComparer)
         .forEach(key => {
           const topLeftCellId = key as CellId
-          const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
+          const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells![
+            topLeftCellId
+          ]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -219,17 +224,17 @@ class RowCol {
         .sort(dataKeysComparer)
         .forEach(key => {
           const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress =
-            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
+          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+            sheetRowColId
+          )
           const rowColIndex = sheetRowColAddress.rowCol
 
           if (rowColIndex < this.index) return
 
           if (rowColIndex > this.index) {
-            const rowCol =
-              this.spreadsheet.data.spreadsheetData[this.pluralType]![
-                sheetRowColId
-              ]
+            const rowCol = this.spreadsheet.data.spreadsheetData[
+              this.pluralType
+            ]![sheetRowColId]
             const newRowColIndex = rowColIndex - amount
 
             this.spreadsheet.data.setRowCol(
@@ -245,13 +250,18 @@ class RowCol {
         })
     })
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   insert(amount: number) {
     this.spreadsheet.pushToHistory(() => {
-      const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
+      const {
+        cells,
+        mergedCells,
+        ...rest
+      } = this.spreadsheet.data.spreadsheetData.sheets![
+        this.sheets.activeSheetId
+      ]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -290,8 +300,9 @@ class RowCol {
             ...cell
           }
 
-          const cellType =
-            this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
+          const cellType = this.spreadsheet.hyperformula.getCellType(
+            newSimpleCellAddress
+          )
 
           // The precedent cell formula handles these ARRAY cell values
           if (cellType !== CellType.ARRAY) {
@@ -306,8 +317,9 @@ class RowCol {
         .sort((a, b) => dataKeysComparer(b, a))
         .forEach(key => {
           const topLeftCellId = key as CellId
-          const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
+          const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells![
+            topLeftCellId
+          ]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -339,16 +351,16 @@ class RowCol {
         .sort((a, b) => dataKeysComparer(b, a))
         .forEach(key => {
           const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress =
-            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
+          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+            sheetRowColId
+          )
           const rowColIndex = sheetRowColAddress.rowCol
 
           if (rowColIndex < this.index) return
 
-          const rowCol =
-            this.spreadsheet.data.spreadsheetData[this.pluralType]![
-              sheetRowColId
-            ]
+          const rowCol = this.spreadsheet.data.spreadsheetData[
+            this.pluralType
+          ]![sheetRowColId]
           const newRowColIndex = rowColIndex + amount
 
           this.spreadsheet.data.setRowCol(
@@ -363,7 +375,7 @@ class RowCol {
         })
     })
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   getHeaderTextContent() {
@@ -393,10 +405,9 @@ class RowCol {
 
     this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index))
 
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
-        this.sheets.activeSheetId
-      ]
+    const frozenCells = this.spreadsheet.data.spreadsheetData.frozenCells?.[
+      this.sheets.activeSheetId
+    ]
 
     const frozenCell = frozenCells?.[this.type]
 

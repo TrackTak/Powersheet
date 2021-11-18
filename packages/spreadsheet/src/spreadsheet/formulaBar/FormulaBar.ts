@@ -31,6 +31,25 @@ class FormulaBar {
     restoreCaretPosition()
   }
 
+  private onKeyDown = (e: KeyboardEvent) => {
+    e.stopPropagation()
+
+    switch (e.key) {
+      case 'Escape': {
+        this.spreadsheet.sheets.cellEditor.hide()
+        this.editableContent.blur()
+
+        break
+      }
+      case 'Enter': {
+        this.spreadsheet.sheets.cellEditor.hideAndSave()
+        this.editableContent.blur()
+
+        break
+      }
+    }
+  }
+
   /**
    * @param spreadsheet - The spreadsheet that this FormulaBar is connected to
    */
@@ -65,6 +84,21 @@ class FormulaBar {
     this.editableContent.textContent = null
   }
 
+  /**
+   * @internal
+   */
+  _render() {
+    this.updateValue(
+      this.spreadsheet.sheets.selector.selectedCell?.simpleCellAddress
+    )
+  }
+
+  /**
+   * Updates the FormulaBar's value from the passed in cell address.
+   *
+   * @param simpleCellAddress - The cell address that you want the value
+   * to be taken from.
+   */
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     this.clear()
 
@@ -102,25 +136,9 @@ class FormulaBar {
     })
   }
 
-  onKeyDown = (e: KeyboardEvent) => {
-    e.stopPropagation()
-
-    switch (e.key) {
-      case 'Escape': {
-        this.spreadsheet.sheets.cellEditor.hide()
-        this.editableContent.blur()
-
-        break
-      }
-      case 'Enter': {
-        this.spreadsheet.sheets.cellEditor.hideAndSave()
-        this.editableContent.blur()
-
-        break
-      }
-    }
-  }
-
+  /**
+   * Unregister's event listeners & removes all DOM elements
+   */
   destroy() {
     this.formulaBarEl.remove()
     this.cellHighlighter.destroy()

@@ -267,7 +267,7 @@ class Toolbar {
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false)
 
-        this.spreadsheet.updateViewport()
+        this.spreadsheet.render()
       },
       onShow: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, true)
@@ -714,7 +714,7 @@ class Toolbar {
       }
     }
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   private setTextFormatPatterns() {
@@ -763,7 +763,7 @@ class Toolbar {
     })
   }
 
-  updateActiveStates = () => {
+  _render = () => {
     const selectedCells = this.spreadsheet.sheets.selector.selectedCells
     const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
 

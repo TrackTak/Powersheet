@@ -260,7 +260,7 @@ class Sheets {
 
     delete this.sheetIds[sheetId]
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   switchSheet(sheetId: SheetId) {
@@ -277,7 +277,7 @@ class Sheets {
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
@@ -286,7 +286,7 @@ class Sheets {
     })
     this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName)
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   createNewSheet(data: ISheetData) {
@@ -297,7 +297,7 @@ class Sheets {
 
     this.sheetIds[data.id] = data.id
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   getSheetName() {
@@ -326,7 +326,7 @@ class Sheets {
     this.cols.setCachedRowCols()
     this.cells.setCachedCells()
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
   onResize = () => {
@@ -540,7 +540,7 @@ class Sheets {
 
       resolve(undefined)
     }).then(() => {
-      this.spreadsheet.updateViewport()
+      this.spreadsheet.render()
     })
   }
 
@@ -692,7 +692,7 @@ class Sheets {
     this.topLeftRect.moveToTop()
   }
 
-  updateViewport() {
+  _render() {
     Object.keys(this.scrollGroups).forEach(key => {
       const type = key as keyof IScrollGroups
 
@@ -705,13 +705,13 @@ class Sheets {
     this.drawTopLeftOffsetRect()
 
     this.cells.resetCachedCells()
-    this.cells.updateViewport()
+    this.cells.render()
 
     this.rows.clearAll()
-    this.rows.updateViewport()
+    this.rows.render()
 
     this.cols.clearAll()
-    this.cols.updateViewport()
+    this.cols.render()
 
     this.selector.updateSelectedCells()
   }

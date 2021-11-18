@@ -17,10 +17,9 @@ class Resizer {
     this.sheets = this.rowCols.sheets
     this.spreadsheet = this.sheets.spreadsheet
 
-    const size =
-      this.rowCols.sheets.getViewportVector()[
-        this.rowCols.oppositeFunctions.axis
-      ]
+    const size = this.rowCols.sheets.getViewportVector()[
+      this.rowCols.oppositeFunctions.axis
+    ]
     this.resizeMarker = new Rect({
       ...this.spreadsheet.styles[this.rowCols.type].resizeMarker,
       name: 'resizeMarker',
@@ -169,7 +168,7 @@ class Resizer {
     )
 
     this.spreadsheet.persistData()
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
 
     this.spreadsheet.eventEmitter.emit(
       this.rowCols.isCol ? 'resizeColEnd' : 'resizeRowEnd',

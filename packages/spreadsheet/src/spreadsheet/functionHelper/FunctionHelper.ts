@@ -89,7 +89,7 @@ class FunctionHelper {
     this.closeButton.addEventListener('click', () => {
       this.spreadsheet.options.showFunctionHelper = false
 
-      this.spreadsheet.updateViewport()
+      this.spreadsheet.render()
     })
 
     this.drawerContentEl.appendChild(this.closeButton)
@@ -155,10 +155,10 @@ class FunctionHelper {
   setDrawer() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
 
-    this.spreadsheet.updateViewport()
+    this.spreadsheet.render()
   }
 
-  updateOpenState() {
+  _render() {
     if (this.drawer) {
       this.drawer.open = this.spreadsheet.options.showFunctionHelper
     }

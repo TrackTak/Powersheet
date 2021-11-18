@@ -169,9 +169,9 @@ class ScrollBar {
     this.setYIndex()
 
     this.rowCols.cacheOutOfViewportRowCols()
-    this.rowCols.updateViewport()
+    this.rowCols.render()
     this.sheets.cells.cacheOutOfViewportCells()
-    this.sheets.cells.updateViewport()
+    this.sheets.cells.render()
 
     if (this.sheets.cellEditor.currentScroll?.[this.type] !== this.scroll) {
       this.sheets.cellEditor.showCellTooltip()

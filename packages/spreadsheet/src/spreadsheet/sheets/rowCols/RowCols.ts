@@ -133,8 +133,9 @@ class RowCols {
   }
 
   setCachedRowCols() {
-    const numberOfCachedRowCols =
-      this.sheets.cachedGroupsNumber[this.pluralType]
+    const numberOfCachedRowCols = this.sheets.cachedGroupsNumber[
+      this.pluralType
+    ]
 
     const maxNumberOfCachedRoCols = Math.max(
       this.sheets.stage[this.functions.size]() /
@@ -176,16 +177,15 @@ class RowCols {
     })
   }
 
-  updateViewport() {
+  render() {
     this.frozenLine.setAttrs({
       ...this.spreadsheet.styles[this.type].frozenLine,
       visible: false
     })
 
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
-        this.sheets.activeSheetId
-      ]
+    const frozenCells = this.spreadsheet.data.spreadsheetData.frozenCells?.[
+      this.sheets.activeSheetId
+    ]
     const frozenRowCol = frozenCells?.[this.type]
 
     this.updateFrozenRowCols(frozenRowCol)
@@ -224,10 +224,12 @@ class RowCols {
   }
 
   setRowCol(rowColAddress: RowColAddress) {
-    const cachedHeaderGroup =
-      this.sheets.cachedGroups[this.pluralType].headerGroups.pop()!
-    const cachedGridLine =
-      this.sheets.cachedGroups[this.pluralType].gridLines.pop()!
+    const cachedHeaderGroup = this.sheets.cachedGroups[
+      this.pluralType
+    ].headerGroups.pop()!
+    const cachedGridLine = this.sheets.cachedGroups[
+      this.pluralType
+    ].gridLines.pop()!
 
     if (!cachedHeaderGroup) return
 
@@ -266,8 +268,9 @@ class RowCols {
 
     Object.keys(rowCols).forEach(key => {
       const sheetRowColId = key as SheetRowColId
-      const sheetRowColAddress =
-        RowColAddress.sheetRowColIdToAddress(sheetRowColId)
+      const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+        sheetRowColId
+      )
       const rowCol = data[this.pluralType]![sheetRowColId]
 
       if (sheetRowColAddress.rowCol >= index) return

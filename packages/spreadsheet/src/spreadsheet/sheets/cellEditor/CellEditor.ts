@@ -71,10 +71,9 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ]
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[
+      simpleCellAddress.toCellId()
+    ]
     const cellValue =
       this.spreadsheet.hyperformula
         .getCellSerialized(simpleCellAddress)
@@ -131,15 +130,14 @@ class CellEditor {
 
     this.currentCellText = value
 
-    const { tokenParts, cellReferenceParts } =
-      this.cellHighlighter.getHighlightedCellReferenceSections(
-        this.currentCellText ?? ''
-      )
-
-    this.cellHighlighter.highlightCellReferences(
-      this.currentCell!.simpleCellAddress,
+    const {
+      tokenParts,
       cellReferenceParts
+    } = this.cellHighlighter.getHighlightedCellReferenceSections(
+      this.currentCellText ?? ''
     )
+
+    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
@@ -206,8 +204,9 @@ class CellEditor {
   }
 
   setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue =
-      this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+    const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
+      simpleCellAddress
+    )
 
     this.setContentEditable(serializedValue?.toString() ?? null)
 

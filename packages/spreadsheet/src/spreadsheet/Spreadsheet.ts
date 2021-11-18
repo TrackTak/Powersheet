@@ -177,7 +177,8 @@ class Spreadsheet {
   }
 
   /**
-   * Destroys the spreadsheet, it's children & removes all DOM elements.
+   * Unregister's event listeners and removes all DOM elements for
+   * the Spreadsheet and all it's children
    *
    * @param destroyHyperformula - This should only be set to false
    * when you are using multiple spreadsheets with a shared hyperformula instance.
@@ -303,7 +304,7 @@ class Spreadsheet {
    * the spreadsheet. This is equivalent to React's `render()` method.
    */
   updateViewport() {
-    this.bottomBar?.updateSheetTabs()
+    this.bottomBar?._render()
     this.sheets.updateViewport()
     this.toolbar?.updateActiveStates()
     this.functionHelper?.updateOpenState()

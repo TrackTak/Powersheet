@@ -11,7 +11,7 @@ import { createIconButton, IIconElements } from '../htmlElementHelpers'
 import { SheetId } from '../sheets/Sheets'
 import Spreadsheet from '../Spreadsheet'
 
-interface ISheetTabElements {
+export interface ISheetTabElements {
   sheetTabContainer: HTMLDivElement
   sheetTab: HTMLDivElement
   nameContainer: HTMLSpanElement
@@ -31,6 +31,127 @@ class BottomBar {
   sheetTabElementsMap!: Map<SheetId, ISheetTabElements>
   private spreadsheet!: Spreadsheet
 
+  private setSheetTabElements(sheetId: SheetId) {
+    const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab()
+    const sheetSelectionDropdownButton = createSheetSelectionDropdownButton()
+    const isActive = sheetId === this.spreadsheet.sheets.activeSheetId
+
+    if (isActive) {
+      sheetTab.classList.add('active')
+    } else {
+      sheetTab.classList.remove('active')
+    }
+
+    sheetSelectionDropdownButton.textContent = this.spreadsheet.data.spreadsheetData.sheets![
+      sheetId
+    ].sheetName!
+
+    const switchSheet = () => {
+      this.spreadsheet.sheets.switchSheet(sheetId)
+    }
+
+    const setTabToContentEditable = () => {
+      nameContainer.contentEditable = 'true'
+      nameContainer.focus()
+    }
+
+    const {
+      sheetTabDropdownContent,
+      deleteSheetButton,
+      renameSheetButton
+    } = createSheetTabDropdownContent()
+
+    deleteSheetButton.disabled = this.spreadsheet.sheets.sheetIds.length === 1
+
+    const sheetTabDropdown = tippy(sheetTab, {
+      placement: 'top',
+      interactive: true,
+      arrow: false,
+      trigger: 'manual',
+      theme: 'dropdown',
+      showOnCreate: false,
+      hideOnClick: true,
+      content: sheetTabDropdownContent
+    })
+
+    sheetSelectionDropdownButton.addEventListener('click', () => {
+      switchSheet()
+
+      this.sheetSelectionDropdown.hide()
+    })
+
+    sheetTab.addEventListener('click', () => {
+      if (!isActive) {
+        switchSheet()
+      }
+    })
+
+    sheetTab.addEventListener('dblclick', () => {
+      setTabToContentEditable()
+    })
+
+    sheetTab.addEventListener('contextmenu', e => {
+      e.preventDefault()
+
+      sheetTabDropdown.show()
+    })
+
+    deleteSheetButton.addEventListener('click', () => {
+      sheetTabDropdown.hide()
+
+      this.spreadsheet.sheets.deleteSheet(sheetId)
+    })
+
+    renameSheetButton.addEventListener('click', () => {
+      sheetTabDropdown.hide()
+
+      setTabToContentEditable()
+    })
+
+    nameContainer.addEventListener('blur', () => {
+      nameContainer.contentEditable = 'false'
+      nameContainer.blur()
+
+      this.spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
+    })
+
+    nameContainer.textContent = this.spreadsheet.data.spreadsheetData.sheets![
+      sheetId
+    ].sheetName!
+
+    this.tabContainer.appendChild(sheetTabContainer)
+    this.sheetSelectionDropdownContent.appendChild(sheetSelectionDropdownButton)
+
+    this.sheetTabElementsMap.set(sheetId, {
+      sheetTabContainer,
+      sheetTab,
+      nameContainer,
+      sheetSelectionDropdownButton,
+      isActive
+    })
+  }
+
+  private sheetSelectionOnClick = () => {
+    this.sheetSelectionDropdown.show()
+  }
+
+  private createNewSheetButtonOnClick = () => {
+    const sheetName = this.spreadsheet.sheets.getSheetName()
+    const id = this.spreadsheet.sheets.sheetIds.length
+
+    this.spreadsheet.sheets.createNewSheet({
+      id,
+      sheetName
+    })
+
+    this.spreadsheet.sheets.switchSheet(id)
+
+    this.spreadsheet.sheets.updateSize()
+  }
+
+  /**
+   * @param spreadsheet - The spreadsheet that this BottomBar is connected to
+   */
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet
 
@@ -91,102 +212,10 @@ class BottomBar {
     this.bottomBarEl.appendChild(this.tabContainer)
   }
 
-  setSheetTabElements(sheetId: SheetId) {
-    const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab()
-    const sheetSelectionDropdownButton = createSheetSelectionDropdownButton()
-    const isActive = sheetId === this.spreadsheet.sheets.activeSheetId
-
-    if (isActive) {
-      sheetTab.classList.add('active')
-    } else {
-      sheetTab.classList.remove('active')
-    }
-
-    sheetSelectionDropdownButton.textContent =
-      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!
-
-    const switchSheet = () => {
-      this.spreadsheet.sheets.switchSheet(sheetId)
-    }
-
-    const setTabToContentEditable = () => {
-      nameContainer.contentEditable = 'true'
-      nameContainer.focus()
-    }
-
-    const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
-      createSheetTabDropdownContent()
-
-    deleteSheetButton.disabled = this.spreadsheet.sheets.sheetIds.length === 1
-
-    const sheetTabDropdown = tippy(sheetTab, {
-      placement: 'top',
-      interactive: true,
-      arrow: false,
-      trigger: 'manual',
-      theme: 'dropdown',
-      showOnCreate: false,
-      hideOnClick: true,
-      content: sheetTabDropdownContent
-    })
-
-    sheetSelectionDropdownButton.addEventListener('click', () => {
-      switchSheet()
-
-      this.sheetSelectionDropdown.hide()
-    })
-
-    sheetTab.addEventListener('click', () => {
-      if (!isActive) {
-        switchSheet()
-      }
-    })
-
-    sheetTab.addEventListener('dblclick', () => {
-      setTabToContentEditable()
-    })
-
-    sheetTab.addEventListener('contextmenu', e => {
-      e.preventDefault()
-
-      sheetTabDropdown.show()
-    })
-
-    deleteSheetButton.addEventListener('click', () => {
-      sheetTabDropdown.hide()
-
-      this.spreadsheet.sheets.deleteSheet(sheetId)
-    })
-
-    renameSheetButton.addEventListener('click', () => {
-      sheetTabDropdown.hide()
-
-      setTabToContentEditable()
-    })
-
-    nameContainer.addEventListener('blur', () => {
-      nameContainer.contentEditable = 'false'
-      nameContainer.blur()
-
-      this.spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
-    })
-
-    nameContainer.textContent =
-      this.spreadsheet.data.spreadsheetData.sheets![sheetId].sheetName!
-
-    this.tabContainer.appendChild(sheetTabContainer)
-    this.sheetSelectionDropdownContent.appendChild(sheetSelectionDropdownButton)
-
-    this.sheetTabElementsMap.set(sheetId, {
-      sheetTabContainer,
-      sheetTab,
-      nameContainer,
-      sheetSelectionDropdownButton,
-      isActive
-    })
-  }
-
-  updateSheetTabs() {
+  /**
+   * @internal
+   */
+  _render() {
     this.tabContainer.innerHTML = ''
     this.sheetSelectionDropdownContent.innerHTML = ''
 
@@ -195,24 +224,9 @@ class BottomBar {
     })
   }
 
-  sheetSelectionOnClick = () => {
-    this.sheetSelectionDropdown.show()
-  }
-
-  createNewSheetButtonOnClick = () => {
-    const sheetName = this.spreadsheet.sheets.getSheetName()
-    const id = this.spreadsheet.sheets.sheetIds.length
-
-    this.spreadsheet.sheets.createNewSheet({
-      id,
-      sheetName
-    })
-
-    this.spreadsheet.sheets.switchSheet(id)
-
-    this.spreadsheet.sheets.updateSize()
-  }
-
+  /**
+   * Unregister's event listeners & removes all DOM elements
+   */
   destroy() {
     this.bottomBarEl.remove()
     this.createNewSheetButtonElements.button.removeEventListener(

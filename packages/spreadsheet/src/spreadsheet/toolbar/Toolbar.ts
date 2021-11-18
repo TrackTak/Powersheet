@@ -206,12 +206,14 @@ class Toolbar {
           break
         }
         case 'functions': {
-          const { dropdownContent, registeredFunctionButtons } =
-            createFunctionDropdownContent(
-              HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
-                a.localeCompare(b)
-              )
+          const {
+            dropdownContent,
+            registeredFunctionButtons
+          } = createFunctionDropdownContent(
+            HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
+              a.localeCompare(b)
             )
+          )
 
           this.setDropdownIconButton(name, true)
 
@@ -313,10 +315,9 @@ class Toolbar {
 
   setFunction(functionName: string) {
     if (this.spreadsheet.sheets.selector.selectedCells.length > 1) {
-      const rangeSimpleCellAddress =
-        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
-          this.spreadsheet.sheets.selector.selectedCells
-        )
+      const rangeSimpleCellAddress = this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
+        this.spreadsheet.sheets.selector.selectedCells
+      )
 
       const cell = new Cell(
         this.spreadsheet.sheets,
@@ -327,10 +328,8 @@ class Toolbar {
         )
       )
 
-      const topLeftString =
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
-      const bottomRightString =
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
+      const topLeftString = rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
+      const bottomRightString = rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
 
       const viewportVector = this.spreadsheet.sheets.getViewportVector()
 
@@ -498,14 +497,14 @@ class Toolbar {
         break
       }
       case 'functionHelper': {
-        this.spreadsheet.options.showFunctionHelper =
-          !this.spreadsheet.options.showFunctionHelper
+        this.spreadsheet.options.showFunctionHelper = !this.spreadsheet.options
+          .showFunctionHelper
         break
       }
       case 'formula': {
         this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.data.spreadsheetData.showFormulas =
-            !this.spreadsheet.data.spreadsheetData.showFormulas
+          this.spreadsheet.data.spreadsheetData.showFormulas = !this.spreadsheet
+            .data.spreadsheetData.showFormulas
         })
         break
       }
@@ -618,8 +617,8 @@ class Toolbar {
               this.spreadsheet.sheets.activeSheetId
             )
           } else {
-            const simpleCellAddress =
-              this.spreadsheet.sheets.selector.selectedCell!.simpleCellAddress
+            const simpleCellAddress = this.spreadsheet.sheets.selector
+              .selectedCell!.simpleCellAddress
 
             this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
               row: simpleCellAddress.row,
@@ -719,8 +718,10 @@ class Toolbar {
   }
 
   private setTextFormatPatterns() {
-    const { dropdownContent: textFormatDropdownContent, textFormats } =
-      createTextFormatContent(this.spreadsheet.options.textPatternFormats)
+    const {
+      dropdownContent: textFormatDropdownContent,
+      textFormats
+    } = createTextFormatContent(this.spreadsheet.options.textPatternFormats)
 
     this.dropdownMap.textFormatPattern = textFormatDropdownContent
 
@@ -739,8 +740,10 @@ class Toolbar {
     const sortedFontSizes = this.spreadsheet.options.fontSizes.sort(
       (a, b) => a - b
     )
-    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
-      createFontSizeContent(sortedFontSizes)
+    const {
+      dropdownContent: fontSizeDropdownContent,
+      fontSizes
+    } = createFontSizeContent(sortedFontSizes)
 
     this.dropdownMap.fontSize = fontSizeDropdownContent
 
@@ -816,8 +819,11 @@ class Toolbar {
   }
 
   setDropdownIconButton(name: DropdownIconName, createArrow?: boolean) {
-    const { iconButtonValues, arrowIconValues, tooltip } =
-      createDropdownIconButton(name, toolbarPrefix, createArrow)
+    const {
+      iconButtonValues,
+      arrowIconValues,
+      tooltip
+    } = createDropdownIconButton(name, toolbarPrefix, createArrow)
 
     this.iconElementsMap[name] = {
       ...iconButtonValues,
@@ -827,8 +833,13 @@ class Toolbar {
   }
 
   setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
-    const { buttonContainer, button, text, arrowIconValues, tooltip } =
-      createDropdownButton(name, toolbarPrefix, createArrow)
+    const {
+      buttonContainer,
+      button,
+      text,
+      arrowIconValues,
+      tooltip
+    } = createDropdownButton(name, toolbarPrefix, createArrow)
 
     this.buttonElementsMap[name] = {
       buttonContainer,
@@ -902,8 +913,9 @@ class Toolbar {
 
   setActiveHorizontalIcon(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const horizontalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.horizontalTextAlign
+    const horizontalTextAlign = this.spreadsheet.data.spreadsheetData.cells?.[
+      cellId
+    ]?.horizontalTextAlign
     const icon = this.iconElementsMap.horizontalTextAlign.icon
 
     switch (horizontalTextAlign) {
@@ -921,8 +933,9 @@ class Toolbar {
 
   setActiveVerticalIcon(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const verticalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.verticalTextAlign
+    const verticalTextAlign = this.spreadsheet.data.spreadsheetData.cells?.[
+      cellId
+    ]?.verticalTextAlign
     const icon = this.iconElementsMap.verticalTextAlign.icon
 
     switch (verticalTextAlign) {
@@ -940,8 +953,8 @@ class Toolbar {
 
   setActiveFontSize(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const fontSize =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.fontSize
+    const fontSize = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
+      ?.fontSize
 
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
@@ -950,8 +963,9 @@ class Toolbar {
 
   setActiveTextFormat(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const textFormatPattern =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.textFormatPattern
+    const textFormatPattern = this.spreadsheet.data.spreadsheetData.cells?.[
+      cellId
+    ]?.textFormatPattern
 
     let textFormat = 'plainText'
 
@@ -963,8 +977,9 @@ class Toolbar {
       }
     })
 
-    this.buttonElementsMap.textFormatPattern.text.textContent =
-      sentenceCase(textFormat)
+    this.buttonElementsMap.textFormatPattern.text.textContent = sentenceCase(
+      textFormat
+    )
   }
 
   setActiveHistoryIcons(history: any) {

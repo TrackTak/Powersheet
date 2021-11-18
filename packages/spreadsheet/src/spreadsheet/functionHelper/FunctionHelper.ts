@@ -33,6 +33,11 @@ export interface IFunctionHelperData {
   attributes: IAttribute[]
 }
 
+/**
+ * Internal for now until we fully complete all
+ * functions
+ * @internal
+ */
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement
   drawerContentEl!: HTMLDivElement

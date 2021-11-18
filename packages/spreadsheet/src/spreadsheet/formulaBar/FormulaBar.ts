@@ -12,9 +12,28 @@ class FormulaBar {
   editorArea!: HTMLDivElement
   editableContentContainer!: HTMLDivElement
   editableContent!: HTMLDivElement
-  spreadsheet!: Spreadsheet
   cellHighlighter!: CellHighlighter
+  private spreadsheet!: Spreadsheet
 
+  private onInput = (e: Event) => {
+    const target = e.target as HTMLDivElement
+    const textContent = target.textContent
+
+    const restoreCaretPosition = saveCaretPosition(this.editableContent)
+
+    if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
+      this.spreadsheet.sheets.cellEditor.show(
+        this.spreadsheet.sheets.selector.selectedCell!
+      )
+    }
+    this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
+
+    restoreCaretPosition()
+  }
+
+  /**
+   * @param spreadsheet - The spreadsheet that this FormulaBar is connected to
+   */
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet
     this.cellHighlighter = new CellHighlighter(this.spreadsheet)
@@ -39,24 +58,11 @@ class FormulaBar {
     this.editableContent.addEventListener('keydown', this.onKeyDown)
   }
 
+  /**
+   * Clears the FormulaBar's editable content
+   */
   clear() {
     this.editableContent.textContent = null
-  }
-
-  onInput = (e: Event) => {
-    const target = e.target as HTMLDivElement
-    const textContent = target.textContent
-
-    const restoreCaretPosition = saveCaretPosition(this.editableContent)
-
-    if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
-      this.spreadsheet.sheets.cellEditor.show(
-        this.spreadsheet.sheets.selector.selectedCell!
-      )
-    }
-    this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
-
-    restoreCaretPosition()
   }
 
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {

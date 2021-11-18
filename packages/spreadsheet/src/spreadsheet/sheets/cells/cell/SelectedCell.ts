@@ -4,11 +4,14 @@ import Cell from './Cell'
 import { getInnerRectConfig } from './getInnerRectConfig'
 import SimpleCellAddress from './SimpleCellAddress'
 
+/**
+ * @internal
+ */
 class SelectedCell extends Cell {
   innerRect: Rect
 
   constructor(
-    public sheets: Sheets,
+    protected sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress
   ) {
     super(sheets, simpleCellAddress)

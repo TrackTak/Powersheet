@@ -1,5 +1,8 @@
 import { Vector2d } from 'konva/lib/types'
 
+/**
+ * @internal
+ */
 class ViewportPosition implements Vector2d {
   constructor(public x = 0, public y = 0) {}
 

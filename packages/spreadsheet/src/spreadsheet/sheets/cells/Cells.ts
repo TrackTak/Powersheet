@@ -11,36 +11,14 @@ import RowColAddress from './cell/RowColAddress'
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>
-  spreadsheet: Spreadsheet
+  private spreadsheet: Spreadsheet
 
   constructor(private sheets: Sheets) {
     this.spreadsheet = this.sheets.spreadsheet
     this.cellsMap = new Map()
   }
 
-  getDefaultCellRectAttrs() {
-    return {
-      width: this.spreadsheet.options.col.defaultSize,
-      height: this.spreadsheet.options.row.defaultSize
-    }
-  }
-
-  cacheOutOfViewportCells() {
-    this.cellsMap.forEach((cell, cellId) => {
-      if (!cell.group.isClientRectOnScreen()) {
-        cell.group.remove()
-        cell.bordersGroup.remove()
-
-        this.cellsMap.delete(cellId)
-        this.sheets.cachedGroups.cells.push({
-          group: cell.group,
-          borderGroup: cell.bordersGroup
-        })
-      }
-    })
-  }
-
-  getHasCellData(simpleCellAddress: SimpleCellAddress) {
+  private getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
     const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
     // Need to check hyperformula value too because some
@@ -87,7 +65,7 @@ class Cells {
     }
   }
 
-  getCellGroup() {
+  private getCellGroup() {
     const cellGroup = new Group({
       name: 'stylableCellGroup'
     })
@@ -132,6 +110,37 @@ class Cells {
     }
   }
 
+  /**
+   * @internal
+   */
+  getDefaultCellRectAttrs() {
+    return {
+      width: this.spreadsheet.options.col.defaultSize,
+      height: this.spreadsheet.options.row.defaultSize
+    }
+  }
+
+  /**
+   * @internal
+   */
+  cacheOutOfViewportCells() {
+    this.cellsMap.forEach((cell, cellId) => {
+      if (!cell.group.isClientRectOnScreen()) {
+        cell.group.remove()
+        cell.bordersGroup.remove()
+
+        this.cellsMap.delete(cellId)
+        this.sheets.cachedGroups.cells.push({
+          group: cell.group,
+          borderGroup: cell.bordersGroup
+        })
+      }
+    })
+  }
+
+  /**
+   * @internal
+   */
   destroy() {
     this.cellsMap.forEach(cell => {
       const { cellGroup, cellBordersGroup } = this.getCellGroup()
@@ -145,6 +154,9 @@ class Cells {
     })
   }
 
+  /**
+   * @internal
+   */
   setCachedCells() {
     // TODO: Remove * 2 and measure the
     // outOfViewport for freeze correctly instead
@@ -169,6 +181,9 @@ class Cells {
     this.sheets.cachedGroupsNumber.cells = currentNumberOfCachedCells
   }
 
+  /**
+   * @internal
+   */
   resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
       cell.group.remove()
@@ -182,10 +197,14 @@ class Cells {
     })
   }
 
+  /**
+   * @internal
+   */
   render() {
-    const frozenCells = this.spreadsheet.data.spreadsheetData.frozenCells?.[
-      this.sheets.activeSheetId
-    ]
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+        this.sheets.activeSheetId
+      ]
     const frozenRow = frozenCells?.row
     const frozenCol = frozenCells?.col
 
@@ -204,6 +223,9 @@ class Cells {
     }
   }
 
+  /**
+   * @internal
+   */
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
     const { group, borderGroup } = this.sheets.cachedGroups.cells.pop() ?? {}
 
@@ -243,10 +265,13 @@ class Cells {
     }
   }
 
+  /**
+   * @internal
+   */
   updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCellId = this.spreadsheet.sheets.merger
-      .associatedMergedCellAddressMap[cellId]
+    const mergedCellId =
+      this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId]
 
     const sheetName =
       this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''

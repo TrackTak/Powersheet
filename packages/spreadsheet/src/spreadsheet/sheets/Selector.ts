@@ -30,14 +30,20 @@ interface IGroupedCells {
 
 class Selector {
   isInSelectionMode = false
+  /**
+   * The first selected cell.
+   */
   selectedCell?: SelectedCell
   selectedCells: SelectedCell[] = []
   selectedSimpleCellAddress: SimpleCellAddress
-  previousSelectedSimpleCellAddress?: SimpleCellAddress
   groupedCells?: IGroupedCells | null
   selectionArea?: ISelectionArea | null
   private spreadsheet: Spreadsheet
+  private previousSelectedSimpleCellAddress?: SimpleCellAddress
 
+  /**
+   * @internal
+   */
   constructor(private sheets: Sheets) {
     this.spreadsheet = this.sheets.spreadsheet
 
@@ -46,16 +52,6 @@ class Selector {
       0,
       0
     )
-  }
-
-  destroy() {
-    this.selectedCell?.destroy()
-
-    Object.keys(this.groupedCells ?? {}).forEach(key => {
-      const type = key as keyof IGroupedCells
-
-      this.groupedCells?.[type].rect?.destroy()
-    })
   }
 
   private renderSelectedCell() {
@@ -82,10 +78,11 @@ class Selector {
         this.groupedCells?.[type].rect?.destroy()
       })
 
-      const rangeSimpleCellAddress = this.sheets.convertVectorsToRangeSimpleCellAddress(
-        this.selectionArea.start,
-        this.selectionArea.end
-      )
+      const rangeSimpleCellAddress =
+        this.sheets.convertVectorsToRangeSimpleCellAddress(
+          this.selectionArea.start,
+          this.selectionArea.end
+        )
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this.sheets,
@@ -127,9 +124,8 @@ class Selector {
           let width = 0
           let height = 0
 
-          const minMaxRangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
-            cells
-          )
+          const minMaxRangeSimpleCellAddress =
+            this.sheets.getMinMaxRangeSimpleCellAddress(cells)
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
@@ -160,19 +156,38 @@ class Selector {
     }
   }
 
-  updateSelectedCells() {
+  /**
+   * @internal
+   */
+  destroy() {
+    this.selectedCell?.destroy()
+
+    Object.keys(this.groupedCells ?? {}).forEach(key => {
+      const type = key as keyof IGroupedCells
+
+      this.groupedCells?.[type].rect?.destroy()
+    })
+  }
+
+  /**
+   * @internal
+   */
+  _render() {
     this.renderSelectionArea()
     this.renderSelectedCell()
   }
 
+  /**
+   *
+   * @param vector The X,Y co-ordinates to start the selection at
+   */
   startSelection(vector: Vector2d) {
-    this.previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
+    this.previousSelectedSimpleCellAddress =
+      this.selectedCell?.simpleCellAddress
     this.selectionArea = null
 
-    const rangeSimpleCellAddress = this.sheets.convertVectorsToRangeSimpleCellAddress(
-      vector,
-      vector
-    )
+    const rangeSimpleCellAddress =
+      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector)
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
       this.sheets,
@@ -211,6 +226,9 @@ class Selector {
     this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
   }
 
+  /**
+   * Moves the selection to the relative pointer co-ords
+   */
   moveSelection() {
     if (this.isInSelectionMode) {
       const { x, y } = this.sheets.sheet.getRelativePointerPosition()
@@ -228,7 +246,7 @@ class Selector {
       }
 
       // We don't update sheet viewport for performance reasons
-      this.updateSelectedCells()
+      this._render()
       this.spreadsheet.toolbar?._render()
 
       this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea)
@@ -250,6 +268,10 @@ class Selector {
     this.spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!)
   }
 
+  /**
+   *
+   * @returns If the cell has changed selection from the previous selection
+   */
   hasChangedCellSelection() {
     return (
       this.selectedCell?.simpleCellAddress.toCellId() !==

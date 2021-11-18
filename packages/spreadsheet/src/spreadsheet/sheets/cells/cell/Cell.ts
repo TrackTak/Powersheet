@@ -10,8 +10,11 @@ class Cell {
   rect: Rect
   isMerged = false
 
+  /**
+   * @internal
+   */
   constructor(
-    public sheets: Sheets,
+    protected sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     group?: Group
   ) {
@@ -59,21 +62,6 @@ class Cell {
     })
   }
 
-  isCellOnFrozenRow() {
-    return this.sheets.rows.getIsFrozen(this.simpleCellAddress.row)
-  }
-
-  isCellOnFrozenCol() {
-    return this.sheets.cols.getIsFrozen(this.simpleCellAddress.col)
-  }
-
-  getStickyGroupCellBelongsTo() {
-    return this.sheets.getStickyGroupType(
-      this.isCellOnFrozenRow(),
-      this.isCellOnFrozenCol()
-    )
-  }
-
   private setIsMergedCell() {
     this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress)
 
@@ -118,10 +106,34 @@ class Cell {
     this.rect.height(height)
   }
 
+  isCellOnFrozenRow() {
+    return this.sheets.rows.getIsFrozen(this.simpleCellAddress.row)
+  }
+
+  isCellOnFrozenCol() {
+    return this.sheets.cols.getIsFrozen(this.simpleCellAddress.col)
+  }
+
+  /**
+   * @internal
+   */
+  getStickyGroupCellBelongsTo() {
+    return this.sheets.getStickyGroupType(
+      this.isCellOnFrozenRow(),
+      this.isCellOnFrozenCol()
+    )
+  }
+
+  /**
+   * @internal
+   */
   destroy() {
     this.group.destroy()
   }
 
+  /**
+   * @internal
+   */
   getClientRectWithoutStroke() {
     return this.group.getClientRect({
       skipStroke: true

@@ -105,10 +105,19 @@ export interface ISpreadsheetData {
 }
 
 class Data {
+  /**
+   * @internal
+   */
   spreadsheetData: ISpreadsheetData = {}
 
-  constructor(public spreadsheet: Spreadsheet) {}
+  /**
+   * @internal
+   */
+  constructor(private spreadsheet: Spreadsheet) {}
 
+  /**
+   * Checks to see if the cell is the top left merged cell
+   */
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
     const mergedCells = this.spreadsheetData.mergedCells
 

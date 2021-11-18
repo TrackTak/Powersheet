@@ -91,8 +91,387 @@ class Toolbar {
   autosaveElement!: IAutosaveElement
   tooltip!: DelegateInstance
   dropdown!: DelegateInstance
-  spreadsheet!: Spreadsheet
+  private spreadsheet!: Spreadsheet
 
+  private setFunction(functionName: string) {
+    if (this.spreadsheet.sheets.selector.selectedCells.length > 1) {
+      const rangeSimpleCellAddress =
+        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
+          this.spreadsheet.sheets.selector.selectedCells
+        )
+
+      const cell = new Cell(
+        this.spreadsheet.sheets,
+        new SimpleCellAddress(
+          this.spreadsheet.sheets.activeSheetId,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+        )
+      )
+
+      const topLeftString =
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
+      const bottomRightString =
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
+
+      const viewportVector = this.spreadsheet.sheets.getViewportVector()
+
+      cell.group.x(cell.group.x() + viewportVector.x)
+      cell.group.y(cell.group.y() + viewportVector.y)
+
+      this.spreadsheet.sheets.cellEditor.show(cell)
+      this.spreadsheet.sheets.cellEditor.setContentEditable(
+        `=${functionName}(${topLeftString}:${bottomRightString})`
+      )
+    } else {
+      const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
+
+      this.spreadsheet.sheets.cellEditor.show(selectedCell)
+      this.spreadsheet.sheets.cellEditor.setContentEditable(
+        `=${functionName}()`
+      )
+    }
+  }
+
+  private setBorderStyles(
+    cells: Cell[],
+    cellsFilter: (
+      cell: Cell,
+      rangeSimpleCellAddress: RangeSimpleCellAddress
+    ) => boolean,
+    borderType: BorderStyle
+  ) {
+    const borderCells = cells.filter(cell =>
+      cellsFilter(
+        cell,
+        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(cells)
+      )
+    )
+
+    borderCells.forEach(cell => {
+      const cellId = cell.simpleCellAddress.toCellId()
+      const borders =
+        this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.borders ?? []
+
+      if (borders.indexOf(borderType) === -1) {
+        this.spreadsheet.data.setCell(cell.simpleCellAddress, {
+          borders: [...borders, borderType]
+        })
+      }
+    })
+  }
+
+  private setBottomBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row ===
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+      'borderBottom'
+    )
+  }
+
+  private setRightBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col ===
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
+      'borderRight'
+    )
+  }
+
+  private setTopBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row ===
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
+      'borderTop'
+    )
+  }
+
+  private setLeftBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col ===
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
+      'borderLeft'
+    )
+  }
+
+  private setVerticalBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) => {
+        return (
+          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
+            rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
+          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <
+            rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
+        )
+      },
+      'borderRight'
+    )
+  }
+
+  private setHorizontalBorders(cells: Cell[]) {
+    this.setBorderStyles(
+      cells,
+      (cell, rangeSimpleCellAddress) =>
+        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
+        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
+      'borderBottom'
+    )
+  }
+
+  private setInsideBorders(cells: Cell[]) {
+    this.setHorizontalBorders(cells)
+    this.setVerticalBorders(cells)
+  }
+
+  private setOutsideBorders(cells: Cell[]) {
+    this.setBottomBorders(cells)
+    this.setLeftBorders(cells)
+    this.setRightBorders(cells)
+    this.setTopBorders(cells)
+  }
+
+  private setAllBorders(cells: Cell[]) {
+    this.setOutsideBorders(cells)
+    this.setInsideBorders(cells)
+  }
+
+  private clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
+    simpleCellAddresses.forEach(simpleCellAddress => {
+      const cellId = simpleCellAddress.toCellId()
+
+      delete this.spreadsheet.data.spreadsheetData.cells?.[cellId].borders
+    })
+  }
+
+  private setTextFormatPatterns() {
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent(this.spreadsheet.options.textPatternFormats)
+
+    this.dropdownMap.textFormatPattern = textFormatDropdownContent
+
+    this.textFormatElements = {
+      textFormats
+    }
+
+    Object.keys(this.textFormatElements.textFormats).forEach(key => {
+      this.textFormatElements.textFormats[key].addEventListener('click', () => {
+        this.setValue('textFormatPattern', key)
+      })
+    })
+  }
+
+  private setFontSizes() {
+    const sortedFontSizes = this.spreadsheet.options.fontSizes.sort(
+      (a, b) => a - b
+    )
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent(sortedFontSizes)
+
+    this.dropdownMap.fontSize = fontSizeDropdownContent
+
+    this.fontSizeElements = {
+      fontSizes
+    }
+
+    Object.keys(this.fontSizeElements.fontSizes).forEach(key => {
+      const fontSize = parseInt(key, 10)
+
+      this.fontSizeElements.fontSizes[fontSize].addEventListener(
+        'click',
+        () => {
+          this.setValue('fontSize', fontSize)
+        }
+      )
+    })
+  }
+
+  private setDropdownIconButton(name: DropdownIconName, createArrow?: boolean) {
+    const { iconButtonValues, arrowIconValues, tooltip } =
+      createDropdownIconButton(name, toolbarPrefix, createArrow)
+
+    this.iconElementsMap[name] = {
+      ...iconButtonValues,
+      ...arrowIconValues,
+      tooltip
+    }
+  }
+
+  private setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
+    const { buttonContainer, button, text, arrowIconValues, tooltip } =
+      createDropdownButton(name, toolbarPrefix, createArrow)
+
+    this.buttonElementsMap[name] = {
+      buttonContainer,
+      button,
+      text,
+      tooltip,
+      ...arrowIconValues
+    }
+  }
+
+  private setDropdownColorPicker(name: ColorPickerIconName) {
+    const { dropdownContent, colorPicker, picker } = createColorPickerContent()
+
+    this.setDropdownIconButton(name)
+
+    this.dropdownMap[name] = dropdownContent
+
+    const colorBar = createColorBar(picker)
+
+    this.iconElementsMap[name].button.appendChild(colorBar)
+
+    this.colorPickerElementsMap[name] = {
+      colorBar,
+      picker,
+      colorPicker
+    }
+  }
+
+  private setActiveColor(
+    selectedCell: SelectedCell,
+    colorPickerIconName: ColorPickerIconName
+  ) {
+    let fill
+
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
+
+    if (colorPickerIconName === 'backgroundColor') {
+      fill = cell?.backgroundColor ?? ''
+    } else {
+      fill = cell?.fontColor ?? this.spreadsheet.styles.cell.text.fill!
+    }
+
+    this.colorPickerElementsMap[
+      colorPickerIconName
+    ].colorBar.style.backgroundColor = fill
+  }
+
+  private setActiveMergedCells(
+    selectedCells: Cell[],
+    selectedCell: SelectedCell
+  ) {
+    const isMerged =
+      this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
+        selectedCell.simpleCellAddress
+      ) && selectedCells.length === 1
+
+    if (isMerged) {
+      this.iconElementsMap.merge.button.disabled = false
+    } else {
+      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1
+    }
+
+    this.setActive(this.iconElementsMap.merge, isMerged)
+  }
+
+  private setActiveSaveState() {
+    if (this.spreadsheet.isSaving) {
+      this.autosaveElement.text.textContent = 'Saving...'
+    } else {
+      this.autosaveElement.text.textContent = 'Saved'
+    }
+  }
+
+  private setActiveHorizontalIcon(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const horizontalTextAlign =
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.horizontalTextAlign
+    const icon = this.iconElementsMap.horizontalTextAlign.icon
+
+    switch (horizontalTextAlign) {
+      case 'center':
+        icon.dataset.activeIcon = 'center'
+        break
+      case 'right':
+        icon.dataset.activeIcon = 'right'
+        break
+      default:
+        icon.dataset.activeIcon = 'left'
+        break
+    }
+  }
+
+  private setActiveVerticalIcon(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const verticalTextAlign =
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.verticalTextAlign
+    const icon = this.iconElementsMap.verticalTextAlign.icon
+
+    switch (verticalTextAlign) {
+      case 'top':
+        icon.dataset.activeIcon = 'top'
+        break
+      case 'bottom':
+        icon.dataset.activeIcon = 'bottom'
+        break
+      default:
+        icon.dataset.activeIcon = 'middle'
+        break
+    }
+  }
+
+  private setActiveFontSize(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const fontSize =
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.fontSize
+
+    this.buttonElementsMap.fontSize.text.textContent = (
+      fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
+    ).toString()
+  }
+
+  private setActiveTextFormat(selectedCell: SelectedCell) {
+    const cellId = selectedCell.simpleCellAddress.toCellId()
+    const textFormatPattern =
+      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.textFormatPattern
+
+    let textFormat = 'plainText'
+
+    Object.keys(this.spreadsheet.options.textPatternFormats).forEach(key => {
+      const value = this.spreadsheet.options.textPatternFormats[key]
+
+      if (textFormatPattern === value) {
+        textFormat = key
+      }
+    })
+
+    this.buttonElementsMap.textFormatPattern.text.textContent =
+      sentenceCase(textFormat)
+  }
+
+  private setActiveHistoryIcons(history: any) {
+    this.setDisabled(this.iconElementsMap.undo, !history.canUndo)
+    this.setDisabled(this.iconElementsMap.redo, !history.canRedo)
+  }
+
+  private setActive(actionElements: IActionElements, active: boolean) {
+    actionElements.active = active
+
+    if (active) {
+      actionElements.button.classList.add('active')
+    } else {
+      actionElements.button.classList.remove('active')
+    }
+  }
+
+  private setDisabled(iconElements: IIconElements, disabled: boolean) {
+    iconElements.button.disabled = disabled
+  }
+
+  /**
+   * @param spreadsheet - The spreadsheet that this Toolbar is connected to.
+   */
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet
     this.toolbarEl = document.createElement('div')
@@ -206,14 +585,12 @@ class Toolbar {
           break
         }
         case 'functions': {
-          const {
-            dropdownContent,
-            registeredFunctionButtons
-          } = createFunctionDropdownContent(
-            HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
-              a.localeCompare(b)
+          const { dropdownContent, registeredFunctionButtons } =
+            createFunctionDropdownContent(
+              HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
+                a.localeCompare(b)
+              )
             )
-          )
 
           this.setDropdownIconButton(name, true)
 
@@ -305,6 +682,11 @@ class Toolbar {
     })
   }
 
+  /**
+   *
+   * @param toolbarActionGroups The toolbar icon elements that
+   * you want to be displayed.
+   */
   setToolbarIcons(toolbarActionGroups: IToolbarActionGroups[]) {
     toolbarActionGroups.forEach(({ elements }) => {
       const group = createGroup(elements, styles.group, toolbarPrefix)
@@ -313,163 +695,12 @@ class Toolbar {
     })
   }
 
-  setFunction(functionName: string) {
-    if (this.spreadsheet.sheets.selector.selectedCells.length > 1) {
-      const rangeSimpleCellAddress = this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
-        this.spreadsheet.sheets.selector.selectedCells
-      )
-
-      const cell = new Cell(
-        this.spreadsheet.sheets,
-        new SimpleCellAddress(
-          this.spreadsheet.sheets.activeSheetId,
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
-          rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-        )
-      )
-
-      const topLeftString = rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
-      const bottomRightString = rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
-
-      const viewportVector = this.spreadsheet.sheets.getViewportVector()
-
-      cell.group.x(cell.group.x() + viewportVector.x)
-      cell.group.y(cell.group.y() + viewportVector.y)
-
-      this.spreadsheet.sheets.cellEditor.show(cell)
-      this.spreadsheet.sheets.cellEditor.setContentEditable(
-        `=${functionName}(${topLeftString}:${bottomRightString})`
-      )
-    } else {
-      const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
-
-      this.spreadsheet.sheets.cellEditor.show(selectedCell)
-      this.spreadsheet.sheets.cellEditor.setContentEditable(
-        `=${functionName}()`
-      )
-    }
-  }
-
-  private setBorderStyles(
-    cells: Cell[],
-    cellsFilter: (
-      cell: Cell,
-      rangeSimpleCellAddress: RangeSimpleCellAddress
-    ) => boolean,
-    borderType: BorderStyle
-  ) {
-    const borderCells = cells.filter(cell =>
-      cellsFilter(
-        cell,
-        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(cells)
-      )
-    )
-
-    borderCells.forEach(cell => {
-      const cellId = cell.simpleCellAddress.toCellId()
-      const borders =
-        this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.borders ?? []
-
-      if (borders.indexOf(borderType) === -1) {
-        this.spreadsheet.data.setCell(cell.simpleCellAddress, {
-          borders: [...borders, borderType]
-        })
-      }
-    })
-  }
-
-  setBottomBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row ===
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-      'borderBottom'
-    )
-  }
-
-  setRightBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col ===
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col,
-      'borderRight'
-    )
-  }
-
-  setTopBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row ===
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.row,
-      'borderTop'
-    )
-  }
-
-  setLeftBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col ===
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.col,
-      'borderLeft'
-    )
-  }
-
-  setVerticalBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) => {
-        return (
-          cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
-            rangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
-          cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.col <
-            rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
-        )
-      },
-      'borderRight'
-    )
-  }
-
-  setHorizontalBorders(cells: Cell[]) {
-    this.setBorderStyles(
-      cells,
-      (cell, rangeSimpleCellAddress) =>
-        cell.rangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
-          rangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
-        cell.rangeSimpleCellAddress.bottomRightSimpleCellAddress.row <
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row,
-      'borderBottom'
-    )
-  }
-
-  setInsideBorders(cells: Cell[]) {
-    this.setHorizontalBorders(cells)
-    this.setVerticalBorders(cells)
-  }
-
-  setOutsideBorders(cells: Cell[]) {
-    this.setBottomBorders(cells)
-    this.setLeftBorders(cells)
-    this.setRightBorders(cells)
-    this.setTopBorders(cells)
-  }
-
-  setAllBorders(cells: Cell[]) {
-    this.setOutsideBorders(cells)
-    this.setInsideBorders(cells)
-  }
-
-  clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
-    simpleCellAddresses.forEach(simpleCellAddress => {
-      const cellId = simpleCellAddress.toCellId()
-
-      delete this.spreadsheet.data.spreadsheetData.cells?.[cellId].borders
-    })
-  }
-
+  /**
+   *
+   * @param name The name of the toolbar element to set.
+   * @param value Some styles require this value and it depends on
+   * the element as to what value this should be.
+   */
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const setStyle = <T>(key: keyof ICellData, value: T) => {
       this.spreadsheet.pushToHistory(() => {
@@ -497,14 +728,14 @@ class Toolbar {
         break
       }
       case 'functionHelper': {
-        this.spreadsheet.options.showFunctionHelper = !this.spreadsheet.options
-          .showFunctionHelper
+        this.spreadsheet.options.showFunctionHelper =
+          !this.spreadsheet.options.showFunctionHelper
         break
       }
       case 'formula': {
         this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.data.spreadsheetData.showFormulas = !this.spreadsheet
-            .data.spreadsheetData.showFormulas
+          this.spreadsheet.data.spreadsheetData.showFormulas =
+            !this.spreadsheet.data.spreadsheetData.showFormulas
         })
         break
       }
@@ -617,8 +848,8 @@ class Toolbar {
               this.spreadsheet.sheets.activeSheetId
             )
           } else {
-            const simpleCellAddress = this.spreadsheet.sheets.selector
-              .selectedCell!.simpleCellAddress
+            const simpleCellAddress =
+              this.spreadsheet.sheets.selector.selectedCell!.simpleCellAddress
 
             this.spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
               row: simpleCellAddress.row,
@@ -717,52 +948,9 @@ class Toolbar {
     this.spreadsheet.render()
   }
 
-  private setTextFormatPatterns() {
-    const {
-      dropdownContent: textFormatDropdownContent,
-      textFormats
-    } = createTextFormatContent(this.spreadsheet.options.textPatternFormats)
-
-    this.dropdownMap.textFormatPattern = textFormatDropdownContent
-
-    this.textFormatElements = {
-      textFormats
-    }
-
-    Object.keys(this.textFormatElements.textFormats).forEach(key => {
-      this.textFormatElements.textFormats[key].addEventListener('click', () => {
-        this.setValue('textFormatPattern', key)
-      })
-    })
-  }
-
-  private setFontSizes() {
-    const sortedFontSizes = this.spreadsheet.options.fontSizes.sort(
-      (a, b) => a - b
-    )
-    const {
-      dropdownContent: fontSizeDropdownContent,
-      fontSizes
-    } = createFontSizeContent(sortedFontSizes)
-
-    this.dropdownMap.fontSize = fontSizeDropdownContent
-
-    this.fontSizeElements = {
-      fontSizes
-    }
-
-    Object.keys(this.fontSizeElements.fontSizes).forEach(key => {
-      const fontSize = parseInt(key, 10)
-
-      this.fontSizeElements.fontSizes[fontSize].addEventListener(
-        'click',
-        () => {
-          this.setValue('fontSize', fontSize)
-        }
-      )
-    })
-  }
-
+  /**
+   * @internal
+   */
   _render = () => {
     const selectedCells = this.spreadsheet.sheets.selector.selectedCells
     const selectedCell = this.spreadsheet.sheets.selector.selectedCell!
@@ -813,178 +1001,12 @@ class Toolbar {
     this.setActiveSaveState()
   }
 
+  /**
+   * Unregister's event listeners & removes all DOM elements.
+   */
   destroy() {
     this.toolbarEl.remove()
     this.tooltip.destroy()
-  }
-
-  setDropdownIconButton(name: DropdownIconName, createArrow?: boolean) {
-    const {
-      iconButtonValues,
-      arrowIconValues,
-      tooltip
-    } = createDropdownIconButton(name, toolbarPrefix, createArrow)
-
-    this.iconElementsMap[name] = {
-      ...iconButtonValues,
-      ...arrowIconValues,
-      tooltip
-    }
-  }
-
-  setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
-    const {
-      buttonContainer,
-      button,
-      text,
-      arrowIconValues,
-      tooltip
-    } = createDropdownButton(name, toolbarPrefix, createArrow)
-
-    this.buttonElementsMap[name] = {
-      buttonContainer,
-      button,
-      text,
-      tooltip,
-      ...arrowIconValues
-    }
-  }
-
-  setDropdownColorPicker(name: ColorPickerIconName) {
-    const { dropdownContent, colorPicker, picker } = createColorPickerContent()
-
-    this.setDropdownIconButton(name)
-
-    this.dropdownMap[name] = dropdownContent
-
-    const colorBar = createColorBar(picker)
-
-    this.iconElementsMap[name].button.appendChild(colorBar)
-
-    this.colorPickerElementsMap[name] = {
-      colorBar,
-      picker,
-      colorPicker
-    }
-  }
-
-  private setActiveColor(
-    selectedCell: SelectedCell,
-    colorPickerIconName: ColorPickerIconName
-  ) {
-    let fill
-
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
-
-    if (colorPickerIconName === 'backgroundColor') {
-      fill = cell?.backgroundColor ?? ''
-    } else {
-      fill = cell?.fontColor ?? this.spreadsheet.styles.cell.text.fill!
-    }
-
-    this.colorPickerElementsMap[
-      colorPickerIconName
-    ].colorBar.style.backgroundColor = fill
-  }
-
-  setActiveMergedCells(selectedCells: Cell[], selectedCell: SelectedCell) {
-    const isMerged =
-      this.spreadsheet.sheets.merger.getIsCellPartOfMerge(
-        selectedCell.simpleCellAddress
-      ) && selectedCells.length === 1
-
-    if (isMerged) {
-      this.iconElementsMap.merge.button.disabled = false
-    } else {
-      this.iconElementsMap.merge.button.disabled = selectedCells.length <= 1
-    }
-
-    this.setActive(this.iconElementsMap.merge, isMerged)
-  }
-
-  setActiveSaveState() {
-    if (this.spreadsheet.isSaving) {
-      this.autosaveElement.text.textContent = 'Saving...'
-    } else {
-      this.autosaveElement.text.textContent = 'Saved'
-    }
-  }
-
-  setActiveHorizontalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const horizontalTextAlign = this.spreadsheet.data.spreadsheetData.cells?.[
-      cellId
-    ]?.horizontalTextAlign
-    const icon = this.iconElementsMap.horizontalTextAlign.icon
-
-    switch (horizontalTextAlign) {
-      case 'center':
-        icon.dataset.activeIcon = 'center'
-        break
-      case 'right':
-        icon.dataset.activeIcon = 'right'
-        break
-      default:
-        icon.dataset.activeIcon = 'left'
-        break
-    }
-  }
-
-  setActiveVerticalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const verticalTextAlign = this.spreadsheet.data.spreadsheetData.cells?.[
-      cellId
-    ]?.verticalTextAlign
-    const icon = this.iconElementsMap.verticalTextAlign.icon
-
-    switch (verticalTextAlign) {
-      case 'top':
-        icon.dataset.activeIcon = 'top'
-        break
-      case 'bottom':
-        icon.dataset.activeIcon = 'bottom'
-        break
-      default:
-        icon.dataset.activeIcon = 'middle'
-        break
-    }
-  }
-
-  setActiveFontSize(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const fontSize = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
-      ?.fontSize
-
-    this.buttonElementsMap.fontSize.text.textContent = (
-      fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
-    ).toString()
-  }
-
-  setActiveTextFormat(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const textFormatPattern = this.spreadsheet.data.spreadsheetData.cells?.[
-      cellId
-    ]?.textFormatPattern
-
-    let textFormat = 'plainText'
-
-    Object.keys(this.spreadsheet.options.textPatternFormats).forEach(key => {
-      const value = this.spreadsheet.options.textPatternFormats[key]
-
-      if (textFormatPattern === value) {
-        textFormat = key
-      }
-    })
-
-    this.buttonElementsMap.textFormatPattern.text.textContent = sentenceCase(
-      textFormat
-    )
-  }
-
-  setActiveHistoryIcons(history: any) {
-    this.setDisabled(this.iconElementsMap.undo, !history.canUndo)
-    this.setDisabled(this.iconElementsMap.redo, !history.canRedo)
   }
 
   isFreezeActive(sheetId: SheetId) {
@@ -996,20 +1018,6 @@ class Toolbar {
     const style = this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.[key]
 
     return !!style
-  }
-
-  setActive(actionElements: IActionElements, active: boolean) {
-    actionElements.active = active
-
-    if (active) {
-      actionElements.button.classList.add('active')
-    } else {
-      actionElements.button.classList.remove('active')
-    }
-  }
-
-  setDisabled(iconElements: IIconElements, disabled: boolean) {
-    iconElements.button.disabled = disabled
   }
 }
 

@@ -90,8 +90,8 @@ class Spreadsheet {
       const currentData: IHistoryData = {
         data: this.data.spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap: this.sheets.merger
-          .associatedMergedCellAddressMap
+        associatedMergedCellAddressMap:
+          this.sheets.merger.associatedMergedCellAddressMap
       }
 
       const parsedData: IHistoryData = JSON.parse(data)
@@ -191,7 +191,7 @@ class Spreadsheet {
     this.toolbar?.destroy()
     this.formulaBar?.destroy()
     this.bottomBar?.destroy()
-    this.functionHelper?.destroy()
+    this.functionHelper?._destroy()
     this.sheets.destroy()
 
     if (destroyHyperformula) {
@@ -241,8 +241,8 @@ class Spreadsheet {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
       data: this.data.spreadsheetData,
-      associatedMergedCellAddressMap: this.sheets.merger
-        .associatedMergedCellAddressMap
+      associatedMergedCellAddressMap:
+        this.sheets.merger.associatedMergedCellAddressMap
     }
     const data = JSON.stringify(historyData)
 

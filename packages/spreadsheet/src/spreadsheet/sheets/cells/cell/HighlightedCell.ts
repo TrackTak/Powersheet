@@ -5,11 +5,14 @@ import { getInnerRectConfig } from './getInnerRectConfig'
 import RangeSimpleCellAddress from './RangeSimpleCellAddress'
 import SimpleCellAddress from './SimpleCellAddress'
 
+/**
+ * @internal
+ */
 class HighlightedCell extends Cell {
   innerRect: Rect
 
   constructor(
-    public sheets: Sheets,
+    protected sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     public color: string
   ) {
@@ -19,14 +22,6 @@ class HighlightedCell extends Cell {
       name: 'innerRect'
     })
     this.group.add(this.innerRect)
-
-    this.setInnerRectProperties()
-  }
-
-  override setRangeCellAddress = (
-    rangeSimpleCellAddress: RangeSimpleCellAddress
-  ) => {
-    super.setRangeCellAddress(rangeSimpleCellAddress)
 
     this.setInnerRectProperties()
   }
@@ -50,6 +45,14 @@ class HighlightedCell extends Cell {
 
     this.rect.setAttrs(rectConfig)
     this.innerRect.setAttrs(innerRectConfig)
+  }
+
+  override setRangeCellAddress = (
+    rangeSimpleCellAddress: RangeSimpleCellAddress
+  ) => {
+    super.setRangeCellAddress(rangeSimpleCellAddress)
+
+    this.setInnerRectProperties()
   }
 }
 

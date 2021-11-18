@@ -21,6 +21,9 @@ export interface ICellReferencePart {
 class CellHighlighter {
   highlightedCells: HighlightedCell[] = []
 
+  /**
+   * @internal
+   */
   constructor(private spreadsheet: Spreadsheet) {}
 
   /**

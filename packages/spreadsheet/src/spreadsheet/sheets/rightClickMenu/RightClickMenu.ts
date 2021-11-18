@@ -19,6 +19,9 @@ class RightClickMenu {
   buttonMap: Record<ButtonName, HTMLElement>
   rightClickMenuActionGroups: IRightClickMenuActionGroups[]
 
+  /**
+   * @internal
+   */
   constructor(private sheets: Sheets) {
     this.buttonMap = {
       comment: createButtonContent('Comment', 'comment'),
@@ -47,17 +50,20 @@ class RightClickMenu {
 
     content.classList.add(styles.content, `${rightClickMenuPrefix}-content`)
 
-    const buttons = this.buttonMap
-
     this.rightClickMenuActionGroups = [
       {
-        elements: [buttons.comment, buttons.copy, buttons.cut, buttons.paste]
+        elements: [
+          this.buttonMap.comment,
+          this.buttonMap.copy,
+          this.buttonMap.cut,
+          this.buttonMap.paste
+        ]
       },
       {
-        elements: [buttons.insertRow, buttons.insertColumn]
+        elements: [this.buttonMap.insertRow, this.buttonMap.insertColumn]
       },
       {
-        elements: [buttons.deleteRow, buttons.deleteColumn]
+        elements: [this.buttonMap.deleteRow, this.buttonMap.deleteColumn]
       }
     ]
 
@@ -67,27 +73,27 @@ class RightClickMenu {
       content.appendChild(group)
     })
 
-    Object.values(buttons).forEach(button => {
+    Object.values(this.buttonMap).forEach(button => {
       button.addEventListener('click', () => {
         this.dropdown.hide()
       })
     })
 
-    buttons.comment.addEventListener('click', this.commentOnClick)
-    buttons.deleteRow.addEventListener('click', this.deleteRowOnClick)
-    buttons.deleteColumn.addEventListener('click', this.deleteColOnClick)
-    buttons.insertRow.addEventListener('click', this.insertRowOnClick)
-    buttons.insertColumn.addEventListener('click', this.insertColOnClick)
+    this.buttonMap.comment.addEventListener('click', this.commentOnClick)
+    this.buttonMap.deleteRow.addEventListener('click', this.deleteRowOnClick)
+    this.buttonMap.deleteColumn.addEventListener('click', this.deleteColOnClick)
+    this.buttonMap.insertRow.addEventListener('click', this.insertRowOnClick)
+    this.buttonMap.insertColumn.addEventListener('click', this.insertColOnClick)
 
-    buttons.cut.addEventListener('click', async () => {
+    this.buttonMap.cut.addEventListener('click', async () => {
       await this.sheets.clipboard.cut()
     })
 
-    buttons.copy.addEventListener('click', async () => {
+    this.buttonMap.copy.addEventListener('click', async () => {
       await this.sheets.clipboard.copy()
     })
 
-    buttons.paste.addEventListener('click', () => {
+    this.buttonMap.paste.addEventListener('click', () => {
       this.sheets.clipboard.paste()
     })
 
@@ -110,6 +116,56 @@ class RightClickMenu {
     this.rightClickMenuEl.appendChild(this.menuItem)
   }
 
+  private commentOnClick = () => {
+    const simpleCellAddress =
+      this.sheets.selector.selectedCell!.simpleCellAddress
+
+    this.sheets.comment?.show(simpleCellAddress)
+  }
+
+  private insertRowOnClick = () => {
+    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress
+
+    this.sheets.rows.rowColMap.get(row)!.insert(1)
+  }
+
+  private insertColOnClick = () => {
+    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress
+
+    this.sheets.cols.rowColMap.get(col)!.insert(1)
+  }
+
+  private deleteRowOnClick = () => {
+    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress
+
+    this.sheets.rows.rowColMap.get(row)!.delete(1)
+  }
+
+  private deleteColOnClick = () => {
+    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress
+
+    this.sheets.cols.rowColMap.get(col)!.delete(1)
+  }
+
+  /**
+   * @internal
+   */
+  destroy() {
+    this.rightClickMenuEl.remove()
+    this.dropdown.destroy()
+    this.buttonMap.comment.removeEventListener('click', this.commentOnClick)
+    this.buttonMap.deleteRow.removeEventListener('click', this.deleteRowOnClick)
+    this.buttonMap.deleteColumn.removeEventListener(
+      'click',
+      this.deleteColOnClick
+    )
+    this.buttonMap.insertRow.removeEventListener('click', this.insertRowOnClick)
+    this.buttonMap.insertColumn.removeEventListener(
+      'click',
+      this.insertColOnClick
+    )
+  }
+
   hide() {
     this.dropdown.disable()
     this.dropdown.hide()
@@ -118,37 +174,6 @@ class RightClickMenu {
   show() {
     this.dropdown.enable()
     this.dropdown.show()
-  }
-
-  commentOnClick = () => {
-    const simpleCellAddress =
-      this.sheets.selector.selectedCell!.simpleCellAddress
-
-    this.sheets.comment?.show(simpleCellAddress)
-  }
-
-  insertRowOnClick = () => {
-    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress
-
-    this.sheets.rows.rowColMap.get(row)!.insert(1)
-  }
-
-  insertColOnClick = () => {
-    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress
-
-    this.sheets.cols.rowColMap.get(col)!.insert(1)
-  }
-
-  deleteRowOnClick = () => {
-    const { row } = this.sheets.selector.selectedCell!.simpleCellAddress
-
-    this.sheets.rows.rowColMap.get(row)!.delete(1)
-  }
-
-  deleteColOnClick = () => {
-    const { col } = this.sheets.selector.selectedCell!.simpleCellAddress
-
-    this.sheets.cols.rowColMap.get(col)!.delete(1)
   }
 }
 

@@ -16,13 +16,16 @@ import { CellValue, DetailedCellError } from 'hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
 
+/**
+ * @internal
+ */
 class StyleableCell extends Cell {
   text: Text
   commentMarker: Line
   borders: Record<BorderStyle, Line>
 
   constructor(
-    public sheets: Sheets,
+    protected sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     public group: Group,
     public bordersGroup: Group
@@ -50,7 +53,7 @@ class StyleableCell extends Cell {
     this.updateStyles()
   }
 
-  setBottomBorder(borders?: BorderStyle[]) {
+  private setBottomBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderBottom
 
     if (borders?.includes('borderBottom')) {
@@ -66,7 +69,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  setRightBorder(borders?: BorderStyle[]) {
+  private setRightBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderRight
 
     if (borders?.includes('borderRight')) {
@@ -82,7 +85,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  setTopBorder(borders?: BorderStyle[]) {
+  private setTopBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderTop
 
     if (borders?.includes('borderTop')) {
@@ -96,7 +99,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  setLeftBorder(borders?: BorderStyle[]) {
+  private setLeftBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderLeft
 
     if (borders?.includes('borderLeft')) {
@@ -110,27 +113,27 @@ class StyleableCell extends Cell {
     }
   }
 
-  setTextWrap(textWrap?: TextWrap) {
+  private setTextWrap(textWrap?: TextWrap) {
     this.text.wrap(textWrap ?? this.sheets.spreadsheet.styles.cell.text.wrap!)
   }
 
-  setBackgroundColor(backgroundColor?: string) {
+  private setBackgroundColor(backgroundColor?: string) {
     this.rect.fill(
       backgroundColor ?? this.sheets.spreadsheet.styles.cell.rect.fill!
     )
   }
 
-  setFontColor(fontColor?: string) {
+  private setFontColor(fontColor?: string) {
     this.text.fill(fontColor ?? this.sheets.spreadsheet.styles.cell.text.fill!)
   }
 
-  setFontSize(fontSize?: number) {
+  private setFontSize(fontSize?: number) {
     this.text.fontSize(
       fontSize ?? this.sheets.spreadsheet.styles.cell.text.fontSize!
     )
   }
 
-  setBold(bold?: boolean) {
+  private setBold(bold?: boolean) {
     const italic =
       this.sheets.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -140,7 +143,7 @@ class StyleableCell extends Cell {
     fontStyle.setStyle()
   }
 
-  setItalic(italic?: boolean) {
+  private setItalic(italic?: boolean) {
     const bold =
       this.sheets.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -150,7 +153,7 @@ class StyleableCell extends Cell {
     fontStyle.setStyle()
   }
 
-  setStrikeThrough(strikeThrough?: boolean) {
+  private setStrikeThrough(strikeThrough?: boolean) {
     const underline =
       this.sheets.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -164,7 +167,7 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  setUnderline(underline?: boolean) {
+  private setUnderline(underline?: boolean) {
     const strikeThrough =
       this.sheets.spreadsheet.data.spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
@@ -178,20 +181,20 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
+  private setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
     this.text.align(
       horizontalTextAlign ?? this.sheets.spreadsheet.styles.cell.text.align!
     )
   }
 
-  setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
+  private setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
     this.text.verticalAlign(
       verticalTextAlign ??
         this.sheets.spreadsheet.styles.cell.text.verticalAlign!
     )
   }
 
-  setCellCommentMarker(comment?: string) {
+  private setCellCommentMarker(comment?: string) {
     if (comment) {
       const width = this.rect.width()
 
@@ -204,7 +207,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  setCellTextValue(cellValue?: string, textFormatPattern?: string) {
+  private setCellTextValue(cellValue?: string, textFormatPattern?: string) {
     let value: CellValue | undefined =
       this.sheets.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress)
 
@@ -249,7 +252,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  setCellTextHeight() {
+  private setCellTextHeight() {
     const height = this.sheets.rows.getSize(this.simpleCellAddress.row)
 
     if (this.text.wrap() === 'none') {
@@ -260,7 +263,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  updateStyles() {
+  private updateStyles() {
     const cellId = this.simpleCellAddress.toCellId()
     const cell = this.sheets.spreadsheet.data.spreadsheetData.cells?.[cellId]
 

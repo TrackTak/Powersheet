@@ -5,6 +5,9 @@ import Sheets from '../../Sheets'
 import Cell from './Cell'
 import SimpleCellAddress from './SimpleCellAddress'
 
+/**
+ * @internal
+ */
 class RangeSimpleCellAddress {
   constructor(
     public topLeftSimpleCellAddress: SimpleCellAddress,

@@ -4,27 +4,27 @@ import Spreadsheet from '../Spreadsheet'
 import Sheets from './Sheets'
 
 class Merger {
+  /**
+   * The cells that make up a merged cell.
+   */
   associatedMergedCellAddressMap: Record<CellId, CellId> = {}
-  spreadsheet: Spreadsheet
+  private spreadsheet: Spreadsheet
 
-  constructor(public sheets: Sheets) {
+  /**
+   * @internal
+   */
+  constructor(private sheets: Sheets) {
     this.spreadsheet = this.sheets.spreadsheet
   }
 
-  getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    return !!this.associatedMergedCellAddressMap[simpleCellAddress.toCellId()]
-  }
-
-  *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
+  private *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells?.[
-      cellId
-    ]
+    const mergedCell =
+      this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
 
     if (mergedCell) {
-      const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
-        mergedCell
-      )
+      const rangeSimpleCellAddress =
+        RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
 
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
         for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
@@ -40,6 +40,16 @@ class Merger {
     }
   }
 
+  /**
+   * @returns If the cell is part of the merged cell.
+   */
+  getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
+    return !!this.associatedMergedCellAddressMap[simpleCellAddress.toCellId()]
+  }
+
+  /**
+   * @internal
+   */
   setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     for (const {
       associatedSimpleCellAddress,
@@ -51,6 +61,9 @@ class Merger {
     }
   }
 
+  /**
+   * @internal
+   */
   deleteAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     for (const {
       associatedSimpleCellAddress
@@ -62,10 +75,10 @@ class Merger {
   }
 
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const mergedCellId = rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-    const existingTopLeftCell = this.spreadsheet.data.spreadsheetData.cells?.[
-      mergedCellId
-    ]
+    const mergedCellId =
+      rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+    const existingTopLeftCell =
+      this.spreadsheet.data.spreadsheetData.cells?.[mergedCellId]
 
     this.spreadsheet.data.setMergedCell(
       rangeSimpleCellAddress.topLeftSimpleCellAddress,
@@ -103,9 +116,10 @@ class Merger {
         rangeSimpleCellAddress.topLeftSimpleCellAddress
       )
     ) {
-      const cell = this.spreadsheet.data.spreadsheetData.cells?.[
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-      ]
+      const cell =
+        this.spreadsheet.data.spreadsheetData.cells?.[
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+        ]
 
       if (cell) {
         this.spreadsheet.hyperformula.batch(() => {
@@ -181,9 +195,8 @@ class Merger {
 
     if (!selectedCells.length) return
 
-    const rangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
-      selectedCells
-    )
+    const rangeSimpleCellAddress =
+      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
 
     this.spreadsheet.pushToHistory(() => {
       this.addMergedCells(rangeSimpleCellAddress)
@@ -195,9 +208,8 @@ class Merger {
 
     if (!selectedCells.length) return
 
-    const rangeSimpleCellAddress = this.sheets.getMinMaxRangeSimpleCellAddress(
-      selectedCells
-    )
+    const rangeSimpleCellAddress =
+      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
 
     this.spreadsheet.pushToHistory(() => {
       this.removeMergedCells(rangeSimpleCellAddress)

@@ -48,6 +48,9 @@ class FunctionHelper {
   textWrapper!: HTMLDivElement
   private spreadsheet!: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(public data: IFunctionHelperData) {}
 
   /**
@@ -176,9 +179,9 @@ class FunctionHelper {
   }
 
   /**
-   * Unregister's event listeners & removes all DOM elements.
+   * @internal
    */
-  destroy() {
+  _destroy() {
     this.drawer?.destroy()
   }
 }

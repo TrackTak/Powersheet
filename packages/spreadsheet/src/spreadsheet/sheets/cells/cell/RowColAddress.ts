@@ -3,6 +3,9 @@ import { SheetId } from '../../Sheets'
 
 export type SheetRowColId = `${SheetId}_${RowColId}`
 
+/**
+ * @internal
+ */
 class RowColAddress {
   constructor(public sheet: number, public rowCol: number) {}
 

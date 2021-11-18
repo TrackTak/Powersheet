@@ -9,17 +9,18 @@ import SheetRowColAddress from '../../cells/cell/RowColAddress'
 class Resizer {
   resizeMarker: Rect
   resizeGuideLine: Line
-  spreadsheet: Spreadsheet
-  sheets: Sheets
   currentIndex = 0
+  private spreadsheet: Spreadsheet
+  private sheets: Sheets
 
   constructor(public rowCols: RowCols) {
     this.sheets = this.rowCols.sheets
     this.spreadsheet = this.sheets.spreadsheet
 
-    const size = this.rowCols.sheets.getViewportVector()[
-      this.rowCols.oppositeFunctions.axis
-    ]
+    const size =
+      this.rowCols.sheets.getViewportVector()[
+        this.rowCols.oppositeFunctions.axis
+      ]
     this.resizeMarker = new Rect({
       ...this.spreadsheet.styles[this.rowCols.type].resizeMarker,
       name: 'resizeMarker',
@@ -40,16 +41,108 @@ class Resizer {
     this.sheets.layer.add(this.resizeMarker, this.resizeGuideLine)
   }
 
+  private getPosition() {
+    return (
+      this.rowCols.getAxis(this.currentIndex) + this.rowCols.scrollBar.scroll
+    )
+  }
+
+  private resizeMarkerOnMouseOver = () => {
+    this.setCursor()
+
+    this.showResizeMarker(this.currentIndex!)
+  }
+
+  private resizeMarkerOnMouseOut = () => {
+    this.resetCursor()
+
+    this.hideResizeMarker()
+  }
+
+  private resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
+    this.spreadsheet.pushToHistory()
+
+    this.spreadsheet.eventEmitter.emit(
+      this.rowCols.isCol ? 'resizeColStart' : 'resizeRowStart',
+      e
+    )
+  }
+
+  private resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
+    const target = e.target as Line
+    const position = target.getPosition()
+    const minAxis =
+      this.getPosition() + this.spreadsheet.options[this.rowCols.type].minSize
+    let newAxis = position[this.rowCols.functions.axis]
+
+    const getNewPosition = () => {
+      const newPosition = {
+        ...position,
+        [this.rowCols.functions.axis]: newAxis
+      }
+
+      return newPosition
+    }
+
+    if (newAxis <= minAxis) {
+      newAxis = minAxis
+
+      target.setPosition(getNewPosition())
+    }
+
+    this.showGuideLine()
+
+    this.spreadsheet.eventEmitter.emit(
+      this.rowCols.isCol ? 'resizeColMove' : 'resizeRowMove',
+      e,
+      newAxis
+    )
+  }
+
+  private resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    const newSize =
+      e.target.getPosition()[this.rowCols.functions.axis] - this.getPosition()
+
+    this.hideResizeMarker()
+    this.hideGuideLine()
+
+    this.spreadsheet.data.setRowCol(
+      this.rowCols.pluralType,
+      new SheetRowColAddress(this.sheets.activeSheetId, this.currentIndex),
+      {
+        size: newSize
+      }
+    )
+
+    this.spreadsheet.persistData()
+    this.spreadsheet.render()
+
+    this.spreadsheet.eventEmitter.emit(
+      this.rowCols.isCol ? 'resizeColEnd' : 'resizeRowEnd',
+      e,
+      newSize
+    )
+  }
+
+  /**
+   * @internal
+   */
   setCursor() {
     document.body.style.cursor = this.rowCols.isCol
       ? 'col-resize'
       : 'row-resize'
   }
 
+  /**
+   * @internal
+   */
   resetCursor() {
     document.body.style.cursor = 'default'
   }
 
+  /**
+   * @internal
+   */
   destroy() {
     this.resizeMarker.destroy()
     this.resizeGuideLine.destroy()
@@ -59,12 +152,6 @@ class Resizer {
     this.resizeMarker.off('dragstart', this.resizeLineDragStart)
     this.resizeMarker.off('dragmove', this.resizeLineDragMove)
     this.resizeMarker.off('dragend', this.resizeLineDragEnd)
-  }
-
-  private getPosition() {
-    return (
-      this.rowCols.getAxis(this.currentIndex) + this.rowCols.scrollBar.scroll
-    )
   }
 
   showResizeMarker(index: number) {
@@ -98,83 +185,6 @@ class Resizer {
 
   hideGuideLine() {
     this.resizeGuideLine.hide()
-  }
-
-  resizeMarkerOnMouseOver = () => {
-    this.setCursor()
-
-    this.showResizeMarker(this.currentIndex!)
-  }
-
-  resizeMarkerOnMouseOut = () => {
-    this.resetCursor()
-
-    this.hideResizeMarker()
-  }
-
-  resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
-    this.spreadsheet.pushToHistory()
-
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColStart' : 'resizeRowStart',
-      e
-    )
-  }
-
-  resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
-    const target = e.target as Line
-    const position = target.getPosition()
-    const minAxis =
-      this.getPosition() + this.spreadsheet.options[this.rowCols.type].minSize
-    let newAxis = position[this.rowCols.functions.axis]
-
-    const getNewPosition = () => {
-      const newPosition = {
-        ...position,
-        [this.rowCols.functions.axis]: newAxis
-      }
-
-      return newPosition
-    }
-
-    if (newAxis <= minAxis) {
-      newAxis = minAxis
-
-      target.setPosition(getNewPosition())
-    }
-
-    this.showGuideLine()
-
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColMove' : 'resizeRowMove',
-      e,
-      newAxis
-    )
-  }
-
-  resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
-    const newSize =
-      e.target.getPosition()[this.rowCols.functions.axis] - this.getPosition()
-
-    this.hideResizeMarker()
-    this.hideGuideLine()
-
-    this.spreadsheet.data.setRowCol(
-      this.rowCols.pluralType,
-      new SheetRowColAddress(this.sheets.activeSheetId, this.currentIndex),
-      {
-        size: newSize
-      }
-    )
-
-    this.spreadsheet.persistData()
-    this.spreadsheet.render()
-
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColEnd' : 'resizeRowEnd',
-      e,
-      newSize
-    )
   }
 }
 

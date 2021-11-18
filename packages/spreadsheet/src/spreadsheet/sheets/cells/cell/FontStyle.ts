@@ -1,5 +1,8 @@
 import { Text } from 'konva/lib/shapes/Text'
 
+/**
+ * @internal
+ */
 class FontStyle {
   constructor(
     public text: Text,

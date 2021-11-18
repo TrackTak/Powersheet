@@ -18,11 +18,14 @@ export interface IClipboardCachedCells {
 }
 
 class Clipboard {
+  /**
+   * The range of cells for the copy or the cut
+   */
   sourceRange: RangeSimpleCellAddress | null = null
   isCut = false
-  spreadsheet: Spreadsheet
+  private spreadsheet: Spreadsheet
 
-  constructor(public sheets: Sheets) {
+  constructor(private sheets: Sheets) {
     this.spreadsheet = this.sheets.spreadsheet
   }
 
@@ -99,10 +102,8 @@ class Clipboard {
       )
 
       if (this.isCut) {
-        const allCellDependents: (
-          | HFSimpleCellRange
-          | HFSimpleCellAddress
-        )[][] = []
+        const allCellDependents: (HFSimpleCellRange | HFSimpleCellAddress)[][] =
+          []
 
         // We must update spreadsheet data to keep in sync with hf values
         // TODO: Find a better way of keeping our data in sync with hyperformula values
@@ -112,13 +113,12 @@ class Clipboard {
           const rowDependents: (HFSimpleCellRange | HFSimpleCellAddress)[] = []
 
           for (const ci of sourceRange.iterateFromTopToBottom('col')) {
-            const cellDependents = this.spreadsheet.hyperformula.getCellDependents(
-              {
+            const cellDependents =
+              this.spreadsheet.hyperformula.getCellDependents({
                 sheet: sourceRange.topLeftSimpleCellAddress.sheet,
                 col: ci,
                 row: ri
-              }
-            )
+              })
 
             rowDependents.push(...cellDependents)
           }
@@ -144,9 +144,10 @@ class Clipboard {
                 hfSimpleCelladdress.col
               )
               const cellId = simpleCellAddress.toCellId()
-              const cellSerializedValue = this.spreadsheet.hyperformula.getCellSerialized(
-                hfSimpleCelladdress
-              )
+              const cellSerializedValue =
+                this.spreadsheet.hyperformula.getCellSerialized(
+                  hfSimpleCelladdress
+                )
               const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
 
               if (cell?.value !== cellSerializedValue) {
@@ -274,9 +275,8 @@ class Clipboard {
     const setCellRangeForMerges = () => {
       selectedCells.forEach(cell => {
         const cellId = cell.simpleCellAddress.toCellId()
-        const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells?.[
-          cellId
-        ]
+        const mergedCell =
+          this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
 
         if (mergedCell) {
           bottomRightSimpleCellAddress.col = Math.max(

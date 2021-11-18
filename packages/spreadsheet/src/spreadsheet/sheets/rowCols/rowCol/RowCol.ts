@@ -18,20 +18,20 @@ import { Util } from 'konva/lib/Util'
 import { CellType } from 'hyperformula'
 
 class RowCol {
-  spreadsheet: Spreadsheet
   headerRect: Rect
   headerText: Text
   resizeLine: Line
-  sheets: Sheets
-  type: RowColType
-  pluralType: RowColsType
-  isCol: boolean
-  oppositeType: RowColType
-  oppositePluralType: RowColsType
-  functions: IRowColFunctions
-  oppositeFunctions: IRowColFunctions
   rowColAddress: RowColAddress
+  private type: RowColType
+  private pluralType: RowColsType
+  private isCol: boolean
+  private functions: IRowColFunctions
+  private sheets: Sheets
+  private spreadsheet: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(
     public rowCols: RowCols,
     public index: number,
@@ -43,10 +43,7 @@ class RowCol {
     this.type = rowCols.type
     this.pluralType = rowCols.pluralType
     this.isCol = rowCols.isCol
-    this.oppositeType = rowCols.oppositeType
-    this.oppositePluralType = rowCols.oppositePluralType
     this.functions = rowCols.functions
-    this.oppositeFunctions = rowCols.oppositeFunctions
     this.headerRect = this.headerGroup.findOne('.headerRect')
     this.headerText = this.headerGroup.findOne('.headerText')
     this.resizeLine = this.headerGroup.findOne('.resizeLine')
@@ -62,26 +59,84 @@ class RowCol {
     this.update()
   }
 
-  resizeLineOnMouseOver = () => {
+  private resizeLineOnMouseOver = () => {
     this.rowCols.resizer.setCursor()
 
     this.rowCols.resizer.showResizeMarker(this.index)
   }
 
-  resizeLineOnMouseOut = () => {
+  private resizeLineOnMouseOut = () => {
     this.rowCols.resizer.resetCursor()
 
     this.rowCols.resizer.hideResizeMarker()
   }
 
-  destroy() {
-    this.resizeLine.off('mouseover', this.resizeLineOnMouseOver)
-    this.resizeLine.off('mouseup', this.resizeLineOnMouseOut)
+  private shiftFrozenCells(getValue: (frozenCell: number) => number) {
+    if (this.rowCols.getIsFrozen(this.index)) {
+      const existingFrozenCells =
+        this.spreadsheet.data.spreadsheetData.frozenCells![
+          this.sheets.activeSheetId
+        ]
 
-    this.headerGroup.destroy()
-    this.gridLine.destroy()
+      this.spreadsheet.data.setFrozenCell(this.sheets.activeSheetId, {
+        [this.type]: getValue(existingFrozenCells![this.type]!)
+      })
+    }
   }
 
+  private getHeaderTextContent() {
+    if (this.isCol) {
+      return getColumnHeader(this.index + 1)
+    } else {
+      return (this.index + 1).toString()
+    }
+  }
+
+  private update() {
+    const gridLineAxis =
+      this.rowCols.getAxis(this.index) +
+      this.rowCols.getSize(this.index) -
+      this.sheets.getViewportVector()[this.functions.axis]
+
+    this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index))
+    this.headerRect[this.functions.size](this.rowCols.getSize(this.index))
+    this.headerText.text(this.getHeaderTextContent())
+
+    const headerTextMidPoints = centerRectTwoInRectOne(
+      this.headerRect.getClientRect(),
+      this.headerText.getClientRect()
+    )
+
+    this.headerText.position(headerTextMidPoints)
+
+    this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index))
+
+    const frozenCells =
+      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+        this.sheets.activeSheetId
+      ]
+
+    const frozenCell = frozenCells?.[this.type]
+
+    this.gridLine[this.functions.axis](gridLineAxis)
+
+    this.sheets.scrollGroups.main.rowColGroup.add(this.gridLine)
+    if (this.isCol) {
+      this.sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup)
+    } else {
+      this.sheets.scrollGroups.xSticky.headerGroup.add(this.headerGroup)
+    }
+
+    if (!isNil(frozenCell)) {
+      if (this.index <= frozenCell) {
+        this.sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup)
+      }
+    }
+  }
+
+  /**
+   * @internal
+   */
   getIsOutsideSheet() {
     const clientRect = this.headerGroup.getClientRect({
       skipStroke: true
@@ -101,26 +156,21 @@ class RowCol {
     return isShapeOutsideSheet
   }
 
-  private shiftFrozenCells(getValue: (frozenCell: number) => number) {
-    if (this.rowCols.getIsFrozen(this.index)) {
-      const existingFrozenCells = this.spreadsheet.data.spreadsheetData
-        .frozenCells![this.sheets.activeSheetId]
+  /**
+   * @internal
+   */
+  destroy() {
+    this.resizeLine.off('mouseover', this.resizeLineOnMouseOver)
+    this.resizeLine.off('mouseup', this.resizeLineOnMouseOut)
 
-      this.spreadsheet.data.setFrozenCell(this.sheets.activeSheetId, {
-        [this.type]: getValue(existingFrozenCells![this.type]!)
-      })
-    }
+    this.headerGroup.destroy()
+    this.gridLine.destroy()
   }
 
   delete(amount: number) {
     this.spreadsheet.pushToHistory(() => {
-      const {
-        cells,
-        mergedCells,
-        ...rest
-      } = this.spreadsheet.data.spreadsheetData.sheets![
-        this.sheets.activeSheetId
-      ]
+      const { cells, mergedCells, ...rest } =
+        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -161,9 +211,8 @@ class RowCol {
               ...cell
             }
 
-            const cellType = this.spreadsheet.hyperformula.getCellType(
-              newSimpleCellAddress
-            )
+            const cellType =
+              this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
 
             // The precedent cell formula handles these ARRAY cell values
             if (cellType !== CellType.ARRAY) {
@@ -180,9 +229,8 @@ class RowCol {
         .sort(dataKeysComparer)
         .forEach(key => {
           const topLeftCellId = key as CellId
-          const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells![
-            topLeftCellId
-          ]
+          const mergedCell =
+            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -224,17 +272,17 @@ class RowCol {
         .sort(dataKeysComparer)
         .forEach(key => {
           const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
-            sheetRowColId
-          )
+          const sheetRowColAddress =
+            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
           const rowColIndex = sheetRowColAddress.rowCol
 
           if (rowColIndex < this.index) return
 
           if (rowColIndex > this.index) {
-            const rowCol = this.spreadsheet.data.spreadsheetData[
-              this.pluralType
-            ]![sheetRowColId]
+            const rowCol =
+              this.spreadsheet.data.spreadsheetData[this.pluralType]![
+                sheetRowColId
+              ]
             const newRowColIndex = rowColIndex - amount
 
             this.spreadsheet.data.setRowCol(
@@ -255,13 +303,8 @@ class RowCol {
 
   insert(amount: number) {
     this.spreadsheet.pushToHistory(() => {
-      const {
-        cells,
-        mergedCells,
-        ...rest
-      } = this.spreadsheet.data.spreadsheetData.sheets![
-        this.sheets.activeSheetId
-      ]
+      const { cells, mergedCells, ...rest } =
+        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -300,9 +343,8 @@ class RowCol {
             ...cell
           }
 
-          const cellType = this.spreadsheet.hyperformula.getCellType(
-            newSimpleCellAddress
-          )
+          const cellType =
+            this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
 
           // The precedent cell formula handles these ARRAY cell values
           if (cellType !== CellType.ARRAY) {
@@ -317,9 +359,8 @@ class RowCol {
         .sort((a, b) => dataKeysComparer(b, a))
         .forEach(key => {
           const topLeftCellId = key as CellId
-          const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells![
-            topLeftCellId
-          ]
+          const mergedCell =
+            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -351,16 +392,16 @@ class RowCol {
         .sort((a, b) => dataKeysComparer(b, a))
         .forEach(key => {
           const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
-            sheetRowColId
-          )
+          const sheetRowColAddress =
+            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
           const rowColIndex = sheetRowColAddress.rowCol
 
           if (rowColIndex < this.index) return
 
-          const rowCol = this.spreadsheet.data.spreadsheetData[
-            this.pluralType
-          ]![sheetRowColId]
+          const rowCol =
+            this.spreadsheet.data.spreadsheetData[this.pluralType]![
+              sheetRowColId
+            ]
           const newRowColIndex = rowColIndex + amount
 
           this.spreadsheet.data.setRowCol(
@@ -376,55 +417,6 @@ class RowCol {
     })
 
     this.spreadsheet.render()
-  }
-
-  getHeaderTextContent() {
-    if (this.isCol) {
-      return getColumnHeader(this.index + 1)
-    } else {
-      return (this.index + 1).toString()
-    }
-  }
-
-  update() {
-    const gridLineAxis =
-      this.rowCols.getAxis(this.index) +
-      this.rowCols.getSize(this.index) -
-      this.sheets.getViewportVector()[this.functions.axis]
-
-    this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index))
-    this.headerRect[this.functions.size](this.rowCols.getSize(this.index))
-    this.headerText.text(this.getHeaderTextContent())
-
-    const headerTextMidPoints = centerRectTwoInRectOne(
-      this.headerRect.getClientRect(),
-      this.headerText.getClientRect()
-    )
-
-    this.headerText.position(headerTextMidPoints)
-
-    this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index))
-
-    const frozenCells = this.spreadsheet.data.spreadsheetData.frozenCells?.[
-      this.sheets.activeSheetId
-    ]
-
-    const frozenCell = frozenCells?.[this.type]
-
-    this.gridLine[this.functions.axis](gridLineAxis)
-
-    this.sheets.scrollGroups.main.rowColGroup.add(this.gridLine)
-    if (this.isCol) {
-      this.sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup)
-    } else {
-      this.sheets.scrollGroups.xSticky.headerGroup.add(this.headerGroup)
-    }
-
-    if (!isNil(frozenCell)) {
-      if (this.index <= frozenCell) {
-        this.sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup)
-      }
-    }
   }
 }
 

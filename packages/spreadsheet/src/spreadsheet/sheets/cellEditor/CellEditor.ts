@@ -29,6 +29,9 @@ class CellEditor {
   currentCellText: string | null = null
   private spreadsheet: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(private sheet: Sheet) {
     this.spreadsheet = this.sheet.spreadsheet
 
@@ -115,9 +118,8 @@ class CellEditor {
   }
 
   private setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
-      simpleCellAddress
-    )
+    const serializedValue =
+      this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
     this.setContentEditable(serializedValue?.toString() ?? null)
 
@@ -130,9 +132,10 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]
+    const cell =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ]
     const cellValue =
       this.spreadsheet.hyperformula
         .getCellSerialized(simpleCellAddress)
@@ -160,7 +163,7 @@ class CellEditor {
   }
 
   /**
-   * Unregister's event listeners & removes all DOM elements.
+   * @internal
    */
   destroy() {
     this.cellTooltip.destroy()
@@ -168,7 +171,7 @@ class CellEditor {
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this.onInput)
     this.cellEditorEl.removeEventListener('keydown', this.onKeyDown)
-    this.formulaHelper?.destroy()
+    this.formulaHelper?._destroy()
   }
 
   /**
@@ -190,12 +193,10 @@ class CellEditor {
 
     this.currentCellText = text
 
-    const {
-      tokenParts,
-      cellReferenceParts
-    } = this.cellHighlighter.getHighlightedCellReferenceSections(
-      this.currentCellText ?? ''
-    )
+    const { tokenParts, cellReferenceParts } =
+      this.cellHighlighter.getHighlightedCellReferenceSections(
+        this.currentCellText ?? ''
+      )
 
     this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 

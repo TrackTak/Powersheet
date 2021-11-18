@@ -17,8 +17,11 @@ class Comment {
   successButton: HTMLButtonElement
   cancelButton: HTMLButtonElement
   container: Instance<Props>
-  spreadsheet: Spreadsheet
+  private spreadsheet: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(private sheets: Sheets) {
     this.spreadsheet = this.sheets.spreadsheet
     this.content = createContent()
@@ -55,14 +58,14 @@ class Comment {
     this.successButton.addEventListener('click', this.successButtonOnClick)
   }
 
-  cancelButtonOnClick = () => {
+  private cancelButtonOnClick = () => {
     this.hide()
   }
 
-  successButtonOnClick = () => {
+  private successButtonOnClick = () => {
     this.spreadsheet.pushToHistory(() => {
-      const simpleCellAddress = this.sheets.selector.selectedCell!
-        .simpleCellAddress
+      const simpleCellAddress =
+        this.sheets.selector.selectedCell!.simpleCellAddress
 
       this.spreadsheet.data.setCell(simpleCellAddress, {
         comment: this.textarea.value
@@ -73,7 +76,12 @@ class Comment {
     this.hide()
   }
 
+  /**
+   * @internal
+   */
   destroy() {
+    this.content.remove()
+    this.container.destroy()
     this.successButton.removeEventListener('click', this.successButtonOnClick)
     this.cancelButton.removeEventListener('click', this.cancelButtonOnClick)
   }
@@ -88,9 +96,10 @@ class Comment {
     this.container.unmount()
     this.container.show()
 
-    const comment = this.spreadsheet.data.spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]?.comment
+    const comment =
+      this.spreadsheet.data.spreadsheetData.cells?.[
+        simpleCellAddress.toCellId()
+      ]?.comment
 
     if (comment) {
       this.textarea.value = comment

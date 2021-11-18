@@ -15,7 +15,7 @@ Many alternative spreadsheet solution were tried, all of them have serious drawb
 - No full cell pattern formatting
 - Poor code quality
 
-etc etc
+etc
 
 ## All environments setup
 The below code is environment agnostic.

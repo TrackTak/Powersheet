@@ -22,9 +22,7 @@
     "sheets"
   ],
   "scripts": {
-    "build:tsc:": "run-p build:tsc:*",
-    "build:tsc:main": "tsc -p tsconfig.json",
-    "build:tsc:module": "tsc -p tsconfig.module.json",
+    "build:tsc": "tsc -p tsconfig.json",
     "build": "parcel build",
     "watch:build": "parcel watch",
     "fix": "run-s fix:*",
@@ -43,6 +41,7 @@
     "cov:lcov": "nyc report --reporter=lcov",
     "cov:send": "run-s cov:lcov && codecov",
     "cov:check": "nyc report && nyc check-coverage --lines 100 --functions 100 --branches 100",
+    "api-extractor:local": "run-s build:tsc && api-extractor run --local --verbose",
     "doc": "run-s doc:html && open-cli dist/docs/index.html",
     "doc:html": "typedoc",
     "doc:publish": "gh-pages -m \"[ci skip] Updates\" -d dist/docs",
@@ -72,6 +71,8 @@
     "@ava/typescript": "^1.1.1",
     "@babel/core": "^7.16.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@microsoft/api-documenter": "^7.13.68",
+    "@microsoft/api-extractor": "^7.18.19",
     "@parcel/core": "^2.0.1",
     "@parcel/packager-ts": "^2.0.1",
     "@parcel/transformer-sass": "^2.0.1",

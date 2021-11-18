@@ -251,7 +251,3 @@ https://nodejs.org/dist/v11.13.0/docs/api/events.html
 See the `CustomOptions` example in storybook for an example of the custom number patterns supplied.
 
 We use [numfmt](https://github.com/borgar/numfmt) internally to format cell values. This library is Full ECMA-376 compatible which means that any Google Sheets or Excel formatting will work with Powersheet.
-
-## API
-
-TODO: Add JsDoc https://github.com/jsdoc/jsdoc

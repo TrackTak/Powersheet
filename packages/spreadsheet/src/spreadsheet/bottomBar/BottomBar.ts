@@ -150,7 +150,7 @@ class BottomBar {
   }
 
   /**
-   * @param spreadsheet - The spreadsheet that this BottomBar is connected to
+   * @param spreadsheet - The spreadsheet that this BottomBar is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet
@@ -225,7 +225,7 @@ class BottomBar {
   }
 
   /**
-   * Unregister's event listeners & removes all DOM elements
+   * Unregister's event listeners & removes all DOM elements.
    */
   destroy() {
     this.bottomBarEl.remove()

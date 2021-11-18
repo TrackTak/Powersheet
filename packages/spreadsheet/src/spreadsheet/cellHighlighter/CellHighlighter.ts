@@ -24,14 +24,14 @@ class CellHighlighter {
   constructor(private spreadsheet: Spreadsheet) {}
 
   /**
-   * Alias for `destroyHighlightedCells()`
+   * Alias for `destroyHighlightedCells()`.
    */
   destroy() {
     this.destroyHighlightedCells()
   }
 
   /**
-   * Destroys all of the highlighted cells
+   * Destroys all of the highlighted cells.
    */
   destroyHighlightedCells() {
     this.highlightedCells.forEach(cell => cell.destroy())
@@ -40,7 +40,7 @@ class CellHighlighter {
   /**
    *
    * @param text - Any text to search for cell references to return.
-   * @returns Information needed to highlight the relevant cells
+   * @returns Information needed to highlight the relevant cells.
    */
   getHighlightedCellReferenceSections(text: string) {
     if (!text) {
@@ -172,7 +172,7 @@ class CellHighlighter {
 
   /**
    *
-   * @param cellReferenceParts - The parts returned from `getHighlightedCellReferenceSections()`
+   * @param cellReferenceParts - The parts returned from `getHighlightedCellReferenceSections()`.
    */
   setHighlightedCells(cellReferenceParts: ICellReferencePart[]) {
     const sheet = this.spreadsheet.sheets.cellEditor.currentCell!

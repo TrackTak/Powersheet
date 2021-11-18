@@ -14,12 +14,21 @@ class FormulaHelper {
   helper: DelegateInstance
   list?: HTMLUListElement
 
+  /**
+   *
+   * @param formulas - The formulas that you want to be shown
+   * under the cell.
+   * @param onItemClick - A callback for when the user clicks
+   * on a formula item.
+   */
   constructor(
     public formulas: string[],
     public onItemClick: FormulaHelperClickHandler
   ) {
-    const { formulaHelperListContainerEl, formulaHelperEl } =
-      createWrapperContent()
+    const {
+      formulaHelperListContainerEl,
+      formulaHelperEl
+    } = createWrapperContent()
     this.formulaHelperListContainerEl = formulaHelperListContainerEl
     this.formulaHelperEl = formulaHelperEl
     this.helper = delegate(formulaHelperEl, {
@@ -31,25 +40,11 @@ class FormulaHelper {
     })
   }
 
-  show(filterText?: string) {
-    const formulas = this.formulas.filter(
-      formula => !filterText || formula.startsWith(filterText)
-    )
-    if (isEmpty(formulas)) {
-      this.helper.hide()
-      return
+  private handleListItemClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (target?.matches('li')) {
+      this.onItemClick(target.textContent!)
     }
-    this.updateList(formulas)
-    this.helper.show()
-  }
-
-  hide() {
-    this.helper.hide()
-  }
-
-  destroy() {
-    this.helper.destroy()
-    this.formulaHelperEl.remove()
   }
 
   private updateList(formulas: string[]) {
@@ -65,11 +60,36 @@ class FormulaHelper {
     list.addEventListener('click', this.handleListItemClick)
   }
 
-  handleListItemClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target?.matches('li')) {
-      this.onItemClick(target.textContent!)
+  /**
+   * Shows the formula helper.
+   *
+   * @param text - Filters for formulas that start with this text string
+   */
+  show(text?: string) {
+    const formulas = this.formulas.filter(
+      formula => !text || formula.startsWith(text)
+    )
+    if (isEmpty(formulas)) {
+      this.helper.hide()
+      return
     }
+    this.updateList(formulas)
+    this.helper.show()
+  }
+
+  /**
+   * Hide the formula helper
+   */
+  hide() {
+    this.helper.hide()
+  }
+
+  /**
+   * Unregister's event listeners & removes all DOM elements.
+   */
+  destroy() {
+    this.helper.destroy()
+    this.formulaHelperEl.remove()
   }
 }
 

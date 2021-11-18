@@ -51,7 +51,7 @@ class FormulaBar {
   }
 
   /**
-   * @param spreadsheet - The spreadsheet that this FormulaBar is connected to
+   * @param spreadsheet - The spreadsheet that this FormulaBar is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
     this.spreadsheet = spreadsheet
@@ -78,7 +78,7 @@ class FormulaBar {
   }
 
   /**
-   * Clears the FormulaBar's editable content
+   * Clears the FormulaBar's editable content.
    */
   clear() {
     this.editableContent.textContent = null
@@ -137,7 +137,7 @@ class FormulaBar {
   }
 
   /**
-   * Unregister's event listeners & removes all DOM elements
+   * Unregister's event listeners & removes all DOM elements.
    */
   destroy() {
     this.formulaBarEl.remove()

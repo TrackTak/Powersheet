@@ -37,7 +37,12 @@ class CellEditor {
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
     this.cellEditorEl.spellcheck = false
-    this.cellEditorEl.classList.add(`${prefix}-cell-editor`, styles.cellEditor)
+
+    const cellEditorClassName = `${prefix}-cell-editor`
+
+    // Do not add local classes to this element. Tippy throws
+    // an error due to invalid selector
+    this.cellEditorEl.classList.add(cellEditorClassName)
 
     this.cellEditorContainerEl = document.createElement('div')
     this.cellEditorContainerEl.classList.add(
@@ -46,7 +51,7 @@ class CellEditor {
     )
     this.cellEditorContainerEl.appendChild(this.cellEditorEl)
     this.cellTooltip = delegate(this.cellEditorEl, {
-      target: styles.cellEditor,
+      target: cellEditorClassName,
       arrow: false,
       trigger: 'manual',
       hideOnClick: false,
@@ -71,10 +76,9 @@ class CellEditor {
 
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell =
-      this.spreadsheet.data.spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ]
+    const cell = this.spreadsheet.data.spreadsheetData.cells?.[
+      simpleCellAddress.toCellId()
+    ]
     const cellValue =
       this.spreadsheet.hyperformula
         .getCellSerialized(simpleCellAddress)
@@ -131,10 +135,12 @@ class CellEditor {
 
     this.currentCellText = value
 
-    const { tokenParts, cellReferenceParts } =
-      this.cellHighlighter.getHighlightedCellReferenceSections(
-        this.currentCellText ?? ''
-      )
+    const {
+      tokenParts,
+      cellReferenceParts
+    } = this.cellHighlighter.getHighlightedCellReferenceSections(
+      this.currentCellText ?? ''
+    )
 
     this.cellHighlighter.highlightCellReferences(
       this.currentCell!.simpleCellAddress,
@@ -206,8 +212,9 @@ class CellEditor {
   }
 
   setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue =
-      this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+    const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
+      simpleCellAddress
+    )
 
     this.setContentEditable(serializedValue?.toString() ?? null)
 

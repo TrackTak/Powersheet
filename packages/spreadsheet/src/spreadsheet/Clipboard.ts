@@ -148,7 +148,8 @@ class Clipboard {
                 this.spreadsheet.hyperformula.getCellSerialized(
                   hfSimpleCelladdress
                 )
-              const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
+              const cell =
+                this.spreadsheet.data._spreadsheetData.cells?.[cellId]
 
               if (cell?.value !== cellSerializedValue) {
                 this.spreadsheet.data.setCell(
@@ -188,7 +189,7 @@ class Clipboard {
           )
 
           const sourceCellId = soureSimpleCellAddress.toCellId()
-          const data = this.spreadsheet.data.spreadsheetData
+          const data = this.spreadsheet.data._spreadsheetData
           const cell = data.cells?.[sourceCellId]
           const mergedCell = data.mergedCells?.[sourceCellId]
 
@@ -276,7 +277,7 @@ class Clipboard {
       selectedCells.forEach(cell => {
         const cellId = cell.simpleCellAddress.toCellId()
         const mergedCell =
-          this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
+          this.spreadsheet.data._spreadsheetData.mergedCells?.[cellId]
 
         if (mergedCell) {
           bottomRightSimpleCellAddress.col = Math.max(

@@ -42,9 +42,8 @@ class BottomBar {
       sheetTab.classList.remove('active')
     }
 
-    sheetSelectionDropdownButton.textContent = this.spreadsheet.data.spreadsheetData.sheets![
-      sheetId
-    ].sheetName!
+    sheetSelectionDropdownButton.textContent =
+      this.spreadsheet.data._spreadsheetData.sheets![sheetId].sheetName!
 
     const switchSheet = () => {
       this.spreadsheet.sheets.switchSheet(sheetId)
@@ -55,11 +54,8 @@ class BottomBar {
       nameContainer.focus()
     }
 
-    const {
-      sheetTabDropdownContent,
-      deleteSheetButton,
-      renameSheetButton
-    } = createSheetTabDropdownContent()
+    const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
+      createSheetTabDropdownContent()
 
     deleteSheetButton.disabled = this.spreadsheet.sheets.sheetIds.length === 1
 
@@ -115,9 +111,8 @@ class BottomBar {
       this.spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
     })
 
-    nameContainer.textContent = this.spreadsheet.data.spreadsheetData.sheets![
-      sheetId
-    ].sheetName!
+    nameContainer.textContent =
+      this.spreadsheet.data._spreadsheetData.sheets![sheetId].sheetName!
 
     this.tabContainer.appendChild(sheetTabContainer)
     this.sheetSelectionDropdownContent.appendChild(sheetSelectionDropdownButton)
@@ -146,7 +141,7 @@ class BottomBar {
 
     this.spreadsheet.sheets.switchSheet(id)
 
-    this.spreadsheet.sheets.updateSize()
+    this.spreadsheet.sheets._updateSize()
   }
 
   /**

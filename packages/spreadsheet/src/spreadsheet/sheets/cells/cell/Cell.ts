@@ -38,7 +38,7 @@ class Cell {
     }
     this.rect.setAttrs(this.sheets.cells.getDefaultCellRectAttrs())
     this.updatePosition()
-    this.updateSize()
+    this._updateSize()
     this.setIsMergedCell()
   }
 
@@ -46,14 +46,14 @@ class Cell {
     const { row, col } = this.simpleCellAddress
 
     const position = {
-      x: this.sheets.cols.getAxis(col) - this.sheets.getViewportVector().x,
-      y: this.sheets.rows.getAxis(row) - this.sheets.getViewportVector().y
+      x: this.sheets.cols.getAxis(col) - this.sheets._getViewportVector().x,
+      y: this.sheets.rows.getAxis(row) - this.sheets._getViewportVector().y
     }
 
     this.group.position(position)
   }
 
-  private updateSize() {
+  private _updateSize() {
     const { row, col } = this.simpleCellAddress
 
     this.rect.size({
@@ -63,7 +63,7 @@ class Cell {
   }
 
   private setIsMergedCell() {
-    this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress)
+    this.sheets.merger._setAssociatedMergedCellIds(this.simpleCellAddress)
 
     const cellId = this.simpleCellAddress.toCellId()
     const mergedCellId =
@@ -74,7 +74,7 @@ class Cell {
     this.isMerged = true
 
     const mergedCell =
-      this.sheets.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId]
+      this.sheets.spreadsheet.data._spreadsheetData.mergedCells![mergedCellId]
 
     const rangeSimpleCellAddress =
       RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
@@ -118,7 +118,7 @@ class Cell {
    * @internal
    */
   getStickyGroupCellBelongsTo() {
-    return this.sheets.getStickyGroupType(
+    return this.sheets._getStickyGroupType(
       this.isCellOnFrozenRow(),
       this.isCellOnFrozenCol()
     )

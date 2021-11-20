@@ -38,17 +38,17 @@ class Selector {
   selectedSimpleCellAddress: SimpleCellAddress
   groupedCells?: IGroupedCells | null
   selectionArea?: ISelectionArea | null
-  private spreadsheet: Spreadsheet
-  private previousSelectedSimpleCellAddress?: SimpleCellAddress
+  private _spreadsheet: Spreadsheet
+  private _previousSelectedSimpleCellAddress?: SimpleCellAddress
 
   /**
    * @internal
    */
-  constructor(private sheets: Sheets) {
-    this.spreadsheet = this.sheets.spreadsheet
+  constructor(private _sheets: Sheets) {
+    this._spreadsheet = this._sheets.spreadsheet
 
     this.selectedSimpleCellAddress = new SimpleCellAddress(
-      this.sheets.activeSheetId,
+      this._sheets.activeSheetId,
       0,
       0
     )
@@ -59,12 +59,12 @@ class Selector {
       this.selectedCell?.destroy()
 
       this.selectedCell = new SelectedCell(
-        this.sheets,
+        this._sheets,
         this.selectedSimpleCellAddress
       )
 
       const stickyGroup = this.selectedCell.getStickyGroupCellBelongsTo()
-      const sheetGroup = this.sheets.scrollGroups[stickyGroup].sheetGroup
+      const sheetGroup = this._sheets.scrollGroups[stickyGroup].sheetGroup
 
       sheetGroup.add(this.selectedCell.group)
     }
@@ -79,15 +79,15 @@ class Selector {
       })
 
       const rangeSimpleCellAddress =
-        this.sheets.convertVectorsToRangeSimpleCellAddress(
+        this._sheets._convertVectorsToRangeSimpleCellAddress(
           this.selectionArea.start,
           this.selectionArea.end
         )
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
-        this.sheets,
+        this._sheets,
         simpleCellAddress => {
-          return new SelectedCell(this.sheets, simpleCellAddress)
+          return new SelectedCell(this._sheets, simpleCellAddress)
         }
       )
 
@@ -125,24 +125,24 @@ class Selector {
           let height = 0
 
           const minMaxRangeSimpleCellAddress =
-            this.sheets.getMinMaxRangeSimpleCellAddress(cells)
+            this._sheets._getMinMaxRangeSimpleCellAddress(cells)
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
           )) {
-            height += this.sheets.rows.getSize(index)
+            height += this._sheets.rows.getSize(index)
           }
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'col'
           )) {
-            width += this.sheets.cols.getSize(index)
+            width += this._sheets.cols.getSize(index)
           }
 
-          const sheetGroup = this.sheets.scrollGroups[type].sheetGroup
+          const sheetGroup = this._sheets.scrollGroups[type].sheetGroup
 
           this.groupedCells![type].rect = new Rect({
-            ...this.spreadsheet.styles.selection,
+            ...this._spreadsheet.styles.selection,
             ...topLeftCellClientRect,
             name: 'selectionRect',
             stroke: undefined,
@@ -159,7 +159,7 @@ class Selector {
   /**
    * @internal
    */
-  destroy() {
+  _destroy() {
     this.selectedCell?.destroy()
 
     Object.keys(this.groupedCells ?? {}).forEach(key => {
@@ -182,28 +182,28 @@ class Selector {
    * @param vector The X,Y co-ordinates to start the selection at
    */
   startSelection(vector: Vector2d) {
-    this.previousSelectedSimpleCellAddress =
+    this._previousSelectedSimpleCellAddress =
       this.selectedCell?.simpleCellAddress
     this.selectionArea = null
 
     const rangeSimpleCellAddress =
-      this.sheets.convertVectorsToRangeSimpleCellAddress(vector, vector)
+      this._sheets._convertVectorsToRangeSimpleCellAddress(vector, vector)
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
-      this.sheets,
+      this._sheets,
       simpleCellAddress => {
-        return new SelectedCell(this.sheets, simpleCellAddress)
+        return new SelectedCell(this._sheets, simpleCellAddress)
       }
     )[0]
 
     const rect = cell.getClientRectWithoutStroke()
 
     if (!cell.isCellOnFrozenCol()) {
-      rect.x -= Math.abs(this.sheets.cols.scrollBar.scroll)
+      rect.x -= Math.abs(this._sheets.cols.scrollBar.scroll)
     }
 
     if (!cell.isCellOnFrozenRow()) {
-      rect.y -= Math.abs(this.sheets.rows.scrollBar.scroll)
+      rect.y -= Math.abs(this._sheets.rows.scrollBar.scroll)
     }
 
     this.selectionArea = {
@@ -221,9 +221,9 @@ class Selector {
 
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
 
-    this.spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
+    this._spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
   }
 
   /**
@@ -231,7 +231,7 @@ class Selector {
    */
   moveSelection() {
     if (this.isInSelectionMode) {
-      const { x, y } = this.sheets.sheet.getRelativePointerPosition()
+      const { x, y } = this._sheets.sheet.getRelativePointerPosition()
       const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke()
 
       this.selectionArea = {
@@ -247,9 +247,9 @@ class Selector {
 
       // We don't update sheet viewport for performance reasons
       this._render()
-      this.spreadsheet.toolbar?._render()
+      this._spreadsheet.toolbar?._render()
 
-      this.spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea)
+      this._spreadsheet.eventEmitter.emit('moveSelection', this.selectionArea)
     }
   }
 
@@ -261,11 +261,11 @@ class Selector {
       const value = this.groupedCells![type]
 
       if (value.cells.length > 1) {
-        value.rect?.stroke(this.spreadsheet.styles.selection.stroke as string)
+        value.rect?.stroke(this._spreadsheet.styles.selection.stroke as string)
       }
     })
 
-    this.spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!)
+    this._spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!)
   }
 
   /**
@@ -275,7 +275,7 @@ class Selector {
   hasChangedCellSelection() {
     return (
       this.selectedCell?.simpleCellAddress.toCellId() !==
-      this.previousSelectedSimpleCellAddress?.toCellId()
+      this._previousSelectedSimpleCellAddress?.toCellId()
     )
   }
 }

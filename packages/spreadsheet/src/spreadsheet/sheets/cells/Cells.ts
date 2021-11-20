@@ -20,7 +20,7 @@ class Cells {
 
   private getHasCellData(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
+    const cell = this.spreadsheet.data._spreadsheetData.cells?.[cellId]
     // Need to check hyperformula value too because some
     // functions spill values into adjacent cells
     const cellSerializedValueExists = !isNil(
@@ -130,7 +130,7 @@ class Cells {
         cell.bordersGroup.remove()
 
         this.cellsMap.delete(cellId)
-        this.sheets.cachedGroups.cells.push({
+        this.sheets._cachedGroups.cells.push({
           group: cell.group,
           borderGroup: cell.bordersGroup
         })
@@ -147,7 +147,7 @@ class Cells {
 
       cell.destroy()
 
-      this.sheets.cachedGroups.cells.push({
+      this.sheets._cachedGroups.cells.push({
         group: cellGroup,
         borderGroup: cellBordersGroup
       })
@@ -161,24 +161,24 @@ class Cells {
     // TODO: Remove * 2 and measure the
     // outOfViewport for freeze correctly instead
     const currentNumberOfCachedCells =
-      this.sheets.cachedGroupsNumber.rows *
-      this.sheets.cachedGroupsNumber.cols *
+      this.sheets._cachedGroupsNumber.rows *
+      this.sheets._cachedGroupsNumber.cols *
       2
 
     for (
-      let index = this.sheets.cachedGroupsNumber.cells;
+      let index = this.sheets._cachedGroupsNumber.cells;
       index < currentNumberOfCachedCells;
       index++
     ) {
       const { cellGroup, cellBordersGroup } = this.getCellGroup()
 
-      this.sheets.cachedGroups.cells.push({
+      this.sheets._cachedGroups.cells.push({
         group: cellGroup,
         borderGroup: cellBordersGroup
       })
     }
 
-    this.sheets.cachedGroupsNumber.cells = currentNumberOfCachedCells
+    this.sheets._cachedGroupsNumber.cells = currentNumberOfCachedCells
   }
 
   /**
@@ -190,7 +190,7 @@ class Cells {
       cell.bordersGroup.remove()
 
       this.cellsMap.delete(cellId)
-      this.sheets.cachedGroups.cells.push({
+      this.sheets._cachedGroups.cells.push({
         group: cell.group,
         borderGroup: cell.bordersGroup
       })
@@ -202,7 +202,7 @@ class Cells {
    */
   render() {
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+      this.spreadsheet.data._spreadsheetData.frozenCells?.[
         this.sheets.activeSheetId
       ]
     const frozenRow = frozenCells?.row
@@ -227,7 +227,7 @@ class Cells {
    * @internal
    */
   setStyleableCell(simpleCellAddress: SimpleCellAddress) {
-    const { group, borderGroup } = this.sheets.cachedGroups.cells.pop() ?? {}
+    const { group, borderGroup } = this.sheets._cachedGroups.cells.pop() ?? {}
 
     if (!group || !borderGroup) return
 

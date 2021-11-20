@@ -2174,7 +2174,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@tracktak/powersheet!Spreadsheet#persistData:member(1)",
-              "docComment": "/**\n * Provides a way for developers to save the `spreadsheetData` to their database. This function should be called after an action by the user or a custom function.\n */\n",
+              "docComment": "/**\n * Provides a way for developers to save the `_spreadsheetData` to their database. This function should be called after an action by the user or a custom function.\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2248,7 +2248,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@tracktak/powersheet!Spreadsheet#redo:member(1)",
-              "docComment": "/**\n * Forwards the state of the spreadsheet to the previously undone `spreadsheetData` that was done in `undo()` if an redo exists in the stack.\n */\n",
+              "docComment": "/**\n * Forwards the state of the spreadsheet to the previously undone `_spreadsheetData` that was done in `undo()` if an redo exists in the stack.\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -2553,7 +2553,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@tracktak/powersheet!Spreadsheet#undo:member(1)",
-              "docComment": "/**\n * Reverts the state of the spreadsheet to the previously pushed `spreadsheetData` that was done in `pushToHistory()` if an undo exists in the stack.\n */\n",
+              "docComment": "/**\n * Reverts the state of the spreadsheet to the previously pushed `_spreadsheetData` that was done in `pushToHistory()` if an undo exists in the stack.\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",

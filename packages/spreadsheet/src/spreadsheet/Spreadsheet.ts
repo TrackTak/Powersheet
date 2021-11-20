@@ -88,7 +88,7 @@ class Spreadsheet {
     // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine
     this.history = new Manager((data: string) => {
       const currentData: IHistoryData = {
-        data: this.data.spreadsheetData,
+        data: this.data._spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
         associatedMergedCellAddressMap:
           this.sheets.merger.associatedMergedCellAddressMap
@@ -96,7 +96,7 @@ class Spreadsheet {
 
       const parsedData: IHistoryData = JSON.parse(data)
 
-      this.data.spreadsheetData = parsedData.data
+      this.data._spreadsheetData = parsedData.data
       this.sheets.activeSheetId = parsedData.activeSheetId
       this.sheets.merger.associatedMergedCellAddressMap =
         parsedData.associatedMergedCellAddressMap
@@ -125,9 +125,9 @@ class Spreadsheet {
   }
 
   private setCells() {
-    for (const key in this.data.spreadsheetData.cells) {
+    for (const key in this.data._spreadsheetData.cells) {
       const cellId = key as CellId
-      const cell = this.data.spreadsheetData.cells?.[cellId]
+      const cell = this.data._spreadsheetData.cells?.[cellId]
 
       this.hyperformula.setCellContents(
         SimpleCellAddress.cellIdToAddress(cellId),
@@ -137,7 +137,7 @@ class Spreadsheet {
   }
 
   private updateSheetSizes() {
-    this.sheets.updateSize()
+    this.sheets._updateSize()
   }
 
   private onDOMContentLoaded = () => {
@@ -153,14 +153,14 @@ class Spreadsheet {
     if (!this.isInitialized) {
       this.isInitialized = true
 
-      for (const key in this.data.spreadsheetData.sheets) {
+      for (const key in this.data._spreadsheetData.sheets) {
         const sheetId = parseInt(key, 10)
-        const sheet = this.data.spreadsheetData.sheets[sheetId]
+        const sheet = this.data._spreadsheetData.sheets[sheetId]
 
         this.sheets.createNewSheet(sheet)
       }
 
-      if (this.data.spreadsheetData.sheets) {
+      if (this.data._spreadsheetData.sheets) {
         this.hyperformula.batch(() => {
           this.setCells()
         })
@@ -192,7 +192,7 @@ class Spreadsheet {
     this.formulaBar?.destroy()
     this.bottomBar?.destroy()
     this.functionHelper?._destroy()
-    this.sheets.destroy()
+    this.sheets._destroy()
 
     if (destroyHyperformula) {
       this.hyperformula.destroy()
@@ -205,7 +205,7 @@ class Spreadsheet {
    * @param data - The persisted data that sets the spreadsheet.
    */
   setData(data: ISpreadsheetData) {
-    this.data.spreadsheetData = data
+    this.data._spreadsheetData = data
 
     this.render()
   }
@@ -240,7 +240,7 @@ class Spreadsheet {
   pushToHistory(callback?: () => void) {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
-      data: this.data.spreadsheetData,
+      data: this.data._spreadsheetData,
       associatedMergedCellAddressMap:
         this.sheets.merger.associatedMergedCellAddressMap
     }
@@ -258,7 +258,7 @@ class Spreadsheet {
   }
 
   /**
-   * Provides a way for developers to save the `spreadsheetData` to their database.
+   * Provides a way for developers to save the `_spreadsheetData` to their database.
    * This function should be called after an action by the user or a custom function.
    */
   persistData() {
@@ -271,11 +271,11 @@ class Spreadsheet {
 
     this.isSaving = true
 
-    this.eventEmitter.emit('persistData', this.data.spreadsheetData, done)
+    this.eventEmitter.emit('persistData', this.data._spreadsheetData, done)
   }
 
   /**
-   * Reverts the state of the spreadsheet to the previously pushed `spreadsheetData`
+   * Reverts the state of the spreadsheet to the previously pushed `_spreadsheetData`
    * that was done in `pushToHistory()` if an undo exists in the stack.
    */
   undo() {
@@ -288,7 +288,7 @@ class Spreadsheet {
   }
 
   /**
-   * Forwards the state of the spreadsheet to the previously undone `spreadsheetData`
+   * Forwards the state of the spreadsheet to the previously undone `_spreadsheetData`
    * that was done in `undo()` if an redo exists in the stack.
    */
   redo() {

@@ -133,7 +133,7 @@ class CellEditor {
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
     const cell =
-      this.spreadsheet.data.spreadsheetData.cells?.[
+      this.spreadsheet.data._spreadsheetData.cells?.[
         simpleCellAddress.toCellId()
       ]
     const cellValue =

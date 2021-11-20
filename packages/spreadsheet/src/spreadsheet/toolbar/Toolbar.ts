@@ -96,7 +96,7 @@ class Toolbar {
   private setFunction(functionName: string) {
     if (this.spreadsheet.sheets.selector.selectedCells.length > 1) {
       const rangeSimpleCellAddress =
-        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(
+        this.spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
           this.spreadsheet.sheets.selector.selectedCells
         )
 
@@ -114,7 +114,7 @@ class Toolbar {
       const bottomRightString =
         rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
 
-      const viewportVector = this.spreadsheet.sheets.getViewportVector()
+      const viewportVector = this.spreadsheet.sheets._getViewportVector()
 
       cell.group.x(cell.group.x() + viewportVector.x)
       cell.group.y(cell.group.y() + viewportVector.y)
@@ -144,14 +144,14 @@ class Toolbar {
     const borderCells = cells.filter(cell =>
       cellsFilter(
         cell,
-        this.spreadsheet.sheets.getMinMaxRangeSimpleCellAddress(cells)
+        this.spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(cells)
       )
     )
 
     borderCells.forEach(cell => {
       const cellId = cell.simpleCellAddress.toCellId()
       const borders =
-        this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.borders ?? []
+        this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.borders ?? []
 
       if (borders.indexOf(borderType) === -1) {
         this.spreadsheet.data.setCell(cell.simpleCellAddress, {
@@ -249,7 +249,7 @@ class Toolbar {
     simpleCellAddresses.forEach(simpleCellAddress => {
       const cellId = simpleCellAddress.toCellId()
 
-      delete this.spreadsheet.data.spreadsheetData.cells?.[cellId].borders
+      delete this.spreadsheet.data._spreadsheetData.cells?.[cellId].borders
     })
   }
 
@@ -344,7 +344,7 @@ class Toolbar {
     let fill
 
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[cellId]
+    const cell = this.spreadsheet.data._spreadsheetData.cells?.[cellId]
 
     if (colorPickerIconName === 'backgroundColor') {
       fill = cell?.backgroundColor ?? ''
@@ -386,7 +386,8 @@ class Toolbar {
   private setActiveHorizontalIcon(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
     const horizontalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.horizontalTextAlign
+      this.spreadsheet.data._spreadsheetData.cells?.[cellId]
+        ?.horizontalTextAlign
     const icon = this.iconElementsMap.horizontalTextAlign.icon
 
     switch (horizontalTextAlign) {
@@ -405,7 +406,7 @@ class Toolbar {
   private setActiveVerticalIcon(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
     const verticalTextAlign =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.verticalTextAlign
+      this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.verticalTextAlign
     const icon = this.iconElementsMap.verticalTextAlign.icon
 
     switch (verticalTextAlign) {
@@ -424,7 +425,7 @@ class Toolbar {
   private setActiveFontSize(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
     const fontSize =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.fontSize
+      this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.fontSize
 
     this.buttonElementsMap.fontSize.text.textContent = (
       fontSize ?? this.spreadsheet.styles.cell.text.fontSize!
@@ -434,7 +435,7 @@ class Toolbar {
   private setActiveTextFormat(selectedCell: SelectedCell) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
     const textFormatPattern =
-      this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.textFormatPattern
+      this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.textFormatPattern
 
     let textFormat = 'plainText'
 
@@ -717,7 +718,7 @@ class Toolbar {
         this.spreadsheet.sheets.selector.selectedCells.forEach(cell => {
           const cellId = cell.simpleCellAddress.toCellId()
 
-          delete this.spreadsheet.data.spreadsheetData.cells?.[cellId][key]
+          delete this.spreadsheet.data._spreadsheetData.cells?.[cellId][key]
         })
       })
     }
@@ -734,8 +735,8 @@ class Toolbar {
       }
       case 'formula': {
         this.spreadsheet.pushToHistory(() => {
-          this.spreadsheet.data.spreadsheetData.showFormulas =
-            !this.spreadsheet.data.spreadsheetData.showFormulas
+          this.spreadsheet.data._spreadsheetData.showFormulas =
+            !this.spreadsheet.data._spreadsheetData.showFormulas
         })
         break
       }
@@ -986,7 +987,7 @@ class Toolbar {
     )
     this.setActive(
       this.iconElementsMap.formula,
-      this.spreadsheet.data.spreadsheetData.showFormulas ?? false
+      this.spreadsheet.data._spreadsheetData.showFormulas ?? false
     )
     this.setActive(
       this.iconElementsMap.functionHelper,
@@ -1010,12 +1011,12 @@ class Toolbar {
   }
 
   isFreezeActive(sheetId: SheetId) {
-    return !!this.spreadsheet.data.spreadsheetData.frozenCells?.[sheetId]
+    return !!this.spreadsheet.data._spreadsheetData.frozenCells?.[sheetId]
   }
 
   isActive(selectedCell: SelectedCell, key: keyof ICellData) {
     const cellId = selectedCell.simpleCellAddress.toCellId()
-    const style = this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.[key]
+    const style = this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.[key]
 
     return !!style
   }

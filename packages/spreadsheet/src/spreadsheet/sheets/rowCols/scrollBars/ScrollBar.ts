@@ -86,7 +86,7 @@ class ScrollBar {
   }
 
   private getNewScrollAmount(start: number, end: number) {
-    const data = this.spreadsheet.data.spreadsheetData
+    const data = this.spreadsheet.data._spreadsheetData
     const defaultSize = this.spreadsheet.options[this.type].defaultSize
 
     let newScrollAmount = 0
@@ -182,7 +182,7 @@ class ScrollBar {
   setScrollSize() {
     const scrollSize =
       this.sheets.sheetDimensions[this.functions.size] +
-      this.sheets.getViewportVector()[this.functions.axis]
+      this.sheets._getViewportVector()[this.functions.axis]
 
     this.scrollEl.style[this.functions.size] = `${scrollSize}px`
   }
@@ -194,7 +194,7 @@ class ScrollBar {
     const xIndex = this.sheetViewportPosition.x
     const stageSize =
       this.sheets.stage[this.functions.size]() -
-      this.sheets.getViewportVector()[this.functions.axis]
+      this.sheets._getViewportVector()[this.functions.axis]
 
     const yIndex = this.rowCols.calculateSheetViewportEndPosition(
       stageSize,

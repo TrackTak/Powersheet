@@ -135,7 +135,7 @@ class StyleableCell extends Cell {
 
   private setBold(bold?: boolean) {
     const italic =
-      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.italic ?? false
     const fontStyle = new FontStyle(this.text, bold ?? false, italic)
@@ -145,7 +145,7 @@ class StyleableCell extends Cell {
 
   private setItalic(italic?: boolean) {
     const bold =
-      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.bold ?? false
     const fontStyle = new FontStyle(this.text, bold, italic ?? false)
@@ -155,7 +155,7 @@ class StyleableCell extends Cell {
 
   private setStrikeThrough(strikeThrough?: boolean) {
     const underline =
-      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.underline ?? false
     const textDecoration = new TextDecoration(
@@ -169,7 +169,7 @@ class StyleableCell extends Cell {
 
   private setUnderline(underline?: boolean) {
     const strikeThrough =
-      this.sheets.spreadsheet.data.spreadsheetData.cells?.[
+      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.strikeThrough ?? false
     const textDecoration = new TextDecoration(
@@ -211,7 +211,7 @@ class StyleableCell extends Cell {
     let value: CellValue | undefined =
       this.sheets.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress)
 
-    if (this.sheets.spreadsheet.data.spreadsheetData.showFormulas) {
+    if (this.sheets.spreadsheet.data._spreadsheetData.showFormulas) {
       value = cellValue
     }
 
@@ -228,7 +228,7 @@ class StyleableCell extends Cell {
         value = (value as DetailedCellError).value
       } else if (
         textFormatPattern &&
-        !this.sheets.spreadsheet.data.spreadsheetData.showFormulas
+        !this.sheets.spreadsheet.data._spreadsheetData.showFormulas
       ) {
         try {
           text = format(textFormatPattern, Number(text))
@@ -265,7 +265,7 @@ class StyleableCell extends Cell {
 
   private updateStyles() {
     const cellId = this.simpleCellAddress.toCellId()
-    const cell = this.sheets.spreadsheet.data.spreadsheetData.cells?.[cellId]
+    const cell = this.sheets.spreadsheet.data._spreadsheetData.cells?.[cellId]
 
     const {
       textWrap,

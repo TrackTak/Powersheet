@@ -18,7 +18,7 @@ class Resizer {
     this.spreadsheet = this.sheets.spreadsheet
 
     const size =
-      this.rowCols.sheets.getViewportVector()[
+      this.rowCols.sheets._getViewportVector()[
         this.rowCols.oppositeFunctions.axis
       ]
     this.resizeMarker = new Rect({
@@ -175,8 +175,8 @@ class Resizer {
     )
     this.resizeGuideLine.points(
       this.rowCols.isCol
-        ? [0, this.sheets.getViewportVector().y, 0, this.sheets.stage.height()]
-        : [this.sheets.getViewportVector().x, 0, this.sheets.stage.width(), 0]
+        ? [0, this.sheets._getViewportVector().y, 0, this.sheets.stage.height()]
+        : [this.sheets._getViewportVector().x, 0, this.sheets.stage.width(), 0]
     )
 
     this.resizeGuideLine.show()

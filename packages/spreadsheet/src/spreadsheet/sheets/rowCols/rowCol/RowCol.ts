@@ -74,7 +74,7 @@ class RowCol {
   private shiftFrozenCells(getValue: (frozenCell: number) => number) {
     if (this.rowCols.getIsFrozen(this.index)) {
       const existingFrozenCells =
-        this.spreadsheet.data.spreadsheetData.frozenCells![
+        this.spreadsheet.data._spreadsheetData.frozenCells![
           this.sheets.activeSheetId
         ]
 
@@ -96,7 +96,7 @@ class RowCol {
     const gridLineAxis =
       this.rowCols.getAxis(this.index) +
       this.rowCols.getSize(this.index) -
-      this.sheets.getViewportVector()[this.functions.axis]
+      this.sheets._getViewportVector()[this.functions.axis]
 
     this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index))
     this.headerRect[this.functions.size](this.rowCols.getSize(this.index))
@@ -112,7 +112,7 @@ class RowCol {
     this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index))
 
     const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
+      this.spreadsheet.data._spreadsheetData.frozenCells?.[
         this.sheets.activeSheetId
       ]
 
@@ -170,7 +170,9 @@ class RowCol {
   delete(amount: number) {
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
+        this.spreadsheet.data._spreadsheetData.sheets![
+          this.sheets.activeSheetId
+        ]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -202,7 +204,7 @@ class RowCol {
 
           if (simpleCellAddress[this.type] > this.index) {
             const cellId = simpleCellAddress.toCellId()
-            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId]
+            const cell = this.spreadsheet.data._spreadsheetData.cells![cellId]
             const newValue = this.spreadsheet.hyperformula
               .getCellSerialized(newSimpleCellAddress)
               ?.toString()
@@ -230,7 +232,7 @@ class RowCol {
         .forEach(key => {
           const topLeftCellId = key as CellId
           const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
+            this.spreadsheet.data._spreadsheetData.mergedCells![topLeftCellId]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -280,7 +282,7 @@ class RowCol {
 
           if (rowColIndex > this.index) {
             const rowCol =
-              this.spreadsheet.data.spreadsheetData[this.pluralType]![
+              this.spreadsheet.data._spreadsheetData[this.pluralType]![
                 sheetRowColId
               ]
             const newRowColIndex = rowColIndex - amount
@@ -304,7 +306,9 @@ class RowCol {
   insert(amount: number) {
     this.spreadsheet.pushToHistory(() => {
       const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
+        this.spreadsheet.data._spreadsheetData.sheets![
+          this.sheets.activeSheetId
+        ]
       const rowCols = rest[this.pluralType]
 
       if (this.isCol) {
@@ -334,7 +338,7 @@ class RowCol {
 
           if (simpleCellAddress[this.type] < this.index) return
 
-          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId]
+          const cell = this.spreadsheet.data._spreadsheetData.cells![cellId]
           const newValue = this.spreadsheet.hyperformula
             .getCellSerialized(newSimpleCellAddress)
             ?.toString()
@@ -360,7 +364,7 @@ class RowCol {
         .forEach(key => {
           const topLeftCellId = key as CellId
           const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
+            this.spreadsheet.data._spreadsheetData.mergedCells![topLeftCellId]
 
           const newMergedCell: IMergedCellData = {
             id: mergedCell.id,
@@ -399,7 +403,7 @@ class RowCol {
           if (rowColIndex < this.index) return
 
           const rowCol =
-            this.spreadsheet.data.spreadsheetData[this.pluralType]![
+            this.spreadsheet.data._spreadsheetData[this.pluralType]![
               sheetRowColId
             ]
           const newRowColIndex = rowColIndex + amount

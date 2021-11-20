@@ -107,7 +107,7 @@ class Sheets {
   /**
    * @internal
    */
-  cachedGroups: ICachedGroups = {
+  _cachedGroups: ICachedGroups = {
     cells: [],
     rows: {
       headerGroups: [],
@@ -121,15 +121,15 @@ class Sheets {
   /**
    * @internal
    */
-  cachedGroupsNumber: ICachedGroupsNumber = {
+  _cachedGroupsNumber: ICachedGroupsNumber = {
     cells: 0,
     rows: 0,
     cols: 0
   }
-  private previousSheetClickTime = 0
-  private sheetClickTime = 0
-  private debouncedResize: DebouncedFunc<(e: Event) => void>
-  private throttledSheetMove: DebouncedFunc<
+  private _previousSheetClickTime = 0
+  private _sheetClickTime = 0
+  private _debouncedResize: DebouncedFunc<(e: Event) => void>
+  private _throttledSheetMove: DebouncedFunc<
     (e: KonvaEventObject<MouseEvent>) => void
   >
 
@@ -149,8 +149,8 @@ class Sheets {
     this.sheetElContainer.appendChild(this.sheetEl)
     this.spreadsheet.spreadsheetEl.appendChild(this.sheetElContainer)
 
-    this.debouncedResize = debounce(this.onResize, 50)
-    this.throttledSheetMove = throttle(this.onSheetMouseMove, 35)
+    this._debouncedResize = debounce(this._onResize, 50)
+    this._throttledSheetMove = throttle(this._onSheetMouseMove, 35)
 
     this.sheet = new Rect({
       name: 'sheet',
@@ -231,52 +231,52 @@ class Sheets {
     this.rightClickMenu = new RightClickMenu(this)
     this.comment = new Comment(this)
 
-    this.stage.on('contextmenu', this.onContextMenu)
-    this.stage.on('mousedown', this.stageOnMousedown)
-    this.stage.on('click', this.stageOnClick)
-    this.stage.on('wheel', this.onWheel)
-    this.sheet.on('click', this.sheetOnClick)
-    this.sheet.on('mousedown', this.onSheetMouseDown)
-    this.sheet.on('mousemove', this.throttledSheetMove)
-    this.sheet.on('mouseup', this.onSheetMouseUp)
+    this.stage.on('contextmenu', this._onContextMenu)
+    this.stage.on('mousedown', this._stageOnMousedown)
+    this.stage.on('click', this._stageOnClick)
+    this.stage.on('wheel', this._onWheel)
+    this.sheet.on('click', this._sheetOnClick)
+    this.sheet.on('mousedown', this._onSheetMouseDown)
+    this.sheet.on('mousemove', this._throttledSheetMove)
+    this.sheet.on('mouseup', this._onSheetMouseUp)
 
-    this.sheet.on('touchstart', this.sheetOnTouchStart)
-    this.sheet.on('touchmove', this.sheetOnTouchMove)
-    this.sheet.on('tap', this.sheetOnTap)
+    this.sheet.on('touchstart', this._sheetOnTouchStart)
+    this.sheet.on('touchmove', this._sheetOnTouchMove)
+    this.sheet.on('tap', this._sheetOnTap)
 
     this.sheetEl.tabIndex = 1
-    this.sheetEl.addEventListener('keydown', this.keyHandler)
+    this.sheetEl.addEventListener('keydown', this._keyHandler)
 
-    window.addEventListener('resize', this.debouncedResize)
+    window.addEventListener('resize', this._debouncedResize)
 
-    this.updateSheetDimensions()
+    this._updateSheetDimensions()
 
-    this.sheet.setPosition(this.getViewportVector())
+    this.sheet.setPosition(this._getViewportVector())
 
     // TODO: use scrollBar size instead of hardcoded value
     this.rows.scrollBar.scrollBarEl.style.bottom = `${16}px`
 
     this.cellEditor = new CellEditor(this)
 
-    this.drawTopLeftOffsetRect()
+    this._drawTopLeftOffsetRect()
   }
 
-  private drawTopLeftOffsetRect() {
+  private _drawTopLeftOffsetRect() {
     this.topLeftRect = new Rect({
       ...this.spreadsheet.styles.topLeftRect,
-      width: this.getViewportVector().x,
-      height: this.getViewportVector().y
+      width: this._getViewportVector().x,
+      height: this._getViewportVector().y
     })
     this.scrollGroups.xySticky.group.add(this.topLeftRect)
 
     this.topLeftRect.moveToTop()
   }
 
-  private onResize = () => {
-    this.updateSize()
+  private _onResize = () => {
+    this._updateSize()
   }
 
-  private onWheel = (e: KonvaEventObject<WheelEvent>) => {
+  private _onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
 
     this.cols.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0)
@@ -285,7 +285,7 @@ class Sheets {
     this.spreadsheet.eventEmitter.emit('scrollVerticalWheel', e)
   }
 
-  private sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+  private _sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
     const touch1 = e.evt.touches[0]
     const touch2 = e.evt.touches[1]
 
@@ -299,7 +299,7 @@ class Sheets {
     this.rows.scrollBar.previousTouchMovePosition = clientY
   }
 
-  private sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+  private _sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
     const touch1 = e.evt.touches[0]
     const touch2 = e.evt.touches[1]
 
@@ -322,25 +322,25 @@ class Sheets {
     this.rows.scrollBar.previousTouchMovePosition = clientY
   }
 
-  private onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
+  private _onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
     e.evt.preventDefault()
   }
 
-  private onSheetMouseDown = () => {
+  private _onSheetMouseDown = () => {
     const vector = this.sheet.getRelativePointerPosition()
 
     this.selector.startSelection(vector)
   }
 
-  private onSheetMouseMove = () => {
+  private _onSheetMouseMove = () => {
     this.selector.moveSelection()
   }
 
-  private onSheetMouseUp = () => {
+  private _onSheetMouseUp = () => {
     this.selector.endSelection()
   }
 
-  private stageOnClick = (e: KonvaEventObject<MouseEvent>) => {
+  private _stageOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
       this.rightClickMenu.hide()
     }
@@ -354,52 +354,53 @@ class Sheets {
     }
   }
 
-  private stageOnMousedown = () => {
+  private _stageOnMousedown = () => {
     this.cellEditor.hideAndSave()
   }
 
-  private setCellOnAction() {
+  private _setCellOnAction() {
     const selectedFirstcell = this.selector.selectedCell!
     const simpleCellAddress = selectedFirstcell.simpleCellAddress
     const cellId = simpleCellAddress.toCellId()
 
-    if (this.hasDoubleClickedOnCell()) {
+    if (this._hasDoubleClickedOnCell()) {
       this.cellEditor.showAndSetValue(selectedFirstcell)
     }
 
-    if (this.spreadsheet.data.spreadsheetData.cells?.[cellId]?.comment) {
+    if (this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
       this.comment.show(simpleCellAddress)
     }
   }
 
-  private sheetOnTap = () => {
+  private _sheetOnTap = () => {
     const vector = this.sheet.getRelativePointerPosition()
 
     this.selector.startSelection(vector)
     this.selector.endSelection()
 
-    this.setCellOnAction()
+    this._setCellOnAction()
   }
 
-  private sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
+  private _sheetOnClick = (e: KonvaEventObject<MouseEvent>) => {
     if (e.evt.button === 0) {
-      this.setCellOnAction()
+      this._setCellOnAction()
     }
   }
 
-  private hasDoubleClickedOnCell() {
-    this.previousSheetClickTime = this.sheetClickTime
+  private _hasDoubleClickedOnCell() {
+    this._previousSheetClickTime = this._sheetClickTime
 
-    this.sheetClickTime = new Date().getTime()
+    this._sheetClickTime = new Date().getTime()
     const delayTimeMilliseconds = 300
 
     return (
       !this.selector.hasChangedCellSelection() &&
-      this.sheetClickTime <= this.previousSheetClickTime + delayTimeMilliseconds
+      this._sheetClickTime <=
+        this._previousSheetClickTime + delayTimeMilliseconds
     )
   }
 
-  private keyHandler = (e: KeyboardEvent) => {
+  private _keyHandler = (e: KeyboardEvent) => {
     e.stopPropagation()
 
     new Promise(resolve => {
@@ -468,7 +469,7 @@ class Sheets {
     })
   }
 
-  private updateSheetDimensions() {
+  private _updateSheetDimensions() {
     this.sheetDimensions.width = this.cols.getTotalSize()
     this.sheetDimensions.height = this.rows.getTotalSize()
   }
@@ -495,7 +496,7 @@ class Sheets {
     this.cells.destroy()
     this.rows.destroy()
     this.cols.destroy()
-    this.selector.destroy()
+    this.selector._destroy()
 
     this.activeSheetId = sheetId
 
@@ -535,13 +536,13 @@ class Sheets {
   /**
    * @internal
    */
-  updateSize() {
+  _updateSize() {
     // 16 is scrollbar
     this.stage.width(this.sheetEl.offsetWidth - 16)
     this.stage.height(this.sheetEl.offsetHeight - 16)
 
-    this.sheet.width(this.stage.width() - this.getViewportVector().x)
-    this.sheet.height(this.stage.height() - this.getViewportVector().y)
+    this.sheet.width(this.stage.width() - this._getViewportVector().x)
+    this.sheet.height(this.stage.height() - this._getViewportVector().y)
 
     this.rows.updateViewportSize()
     this.cols.updateViewportSize()
@@ -563,7 +564,7 @@ class Sheets {
   /**
    * @internal
    */
-  getMinMaxRangeSimpleCellAddress(cells: Cell[]) {
+  _getMinMaxRangeSimpleCellAddress(cells: Cell[]) {
     const getMin = (type: RowColType) =>
       Math.min(
         ...cells.map(
@@ -586,7 +587,7 @@ class Sheets {
   /**
    * @internal
    */
-  getViewportVector() {
+  _getViewportVector() {
     return {
       x: this.spreadsheet.styles.row.headerRect.width!,
       y: this.spreadsheet.styles.col.headerRect.height!
@@ -596,7 +597,7 @@ class Sheets {
   /**
    * @internal
    */
-  convertVectorsToRangeSimpleCellAddress(start: Vector2d, end: Vector2d) {
+  _convertVectorsToRangeSimpleCellAddress(start: Vector2d, end: Vector2d) {
     const { start: newStart, end: newEnd } = reverseVectorsIfStartBiggerThanEnd(
       start,
       end
@@ -637,7 +638,7 @@ class Sheets {
 
         if (mergedCellId) {
           const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId]
+            this.spreadsheet.data._spreadsheetData.mergedCells![mergedCellId]
           const existingRangeSimpleCellAddress =
             RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
 
@@ -667,23 +668,7 @@ class Sheets {
   /**
    * @internal
    */
-  hide() {
-    this.stage.hide()
-    this.sheetEl.style.display = 'none'
-  }
-
-  /**
-   * @internal
-   */
-  show() {
-    this.stage.show()
-    this.sheetEl.style.display = 'block'
-  }
-
-  /**
-   * @internal
-   */
-  getStickyGroupType(isOnFrozenRow: boolean, isOnFrozenCol: boolean) {
+  _getStickyGroupType(isOnFrozenRow: boolean, isOnFrozenCol: boolean) {
     if (isOnFrozenRow && isOnFrozenCol) {
       return 'xySticky'
     } else if (isOnFrozenRow) {
@@ -698,23 +683,23 @@ class Sheets {
   /**
    * @internal
    */
-  destroy() {
-    this.stage.off('contextmenu', this.onContextMenu)
-    this.stage.off('mousedown', this.stageOnMousedown)
-    this.stage.off('click', this.stageOnClick)
-    this.stage.off('wheel', this.onWheel)
-    this.sheet.off('click', this.sheetOnClick)
-    this.sheet.off('mousedown', this.onSheetMouseDown)
-    this.sheet.off('mousemove', this.throttledSheetMove)
-    this.sheet.off('mouseup', this.onSheetMouseUp)
+  _destroy() {
+    this.stage.off('contextmenu', this._onContextMenu)
+    this.stage.off('mousedown', this._stageOnMousedown)
+    this.stage.off('click', this._stageOnClick)
+    this.stage.off('wheel', this._onWheel)
+    this.sheet.off('click', this._sheetOnClick)
+    this.sheet.off('mousedown', this._onSheetMouseDown)
+    this.sheet.off('mousemove', this._throttledSheetMove)
+    this.sheet.off('mouseup', this._onSheetMouseUp)
 
-    this.sheet.off('touchstart', this.sheetOnTouchStart)
-    this.sheet.off('touchmove', this.sheetOnTouchMove)
-    this.sheet.off('tap', this.sheetOnTap)
+    this.sheet.off('touchstart', this._sheetOnTouchStart)
+    this.sheet.off('touchmove', this._sheetOnTouchMove)
+    this.sheet.off('tap', this._sheetOnTap)
 
-    this.sheetEl.removeEventListener('keydown', this.keyHandler)
+    this.sheetEl.removeEventListener('keydown', this._keyHandler)
 
-    window.removeEventListener('resize', this.debouncedResize)
+    window.removeEventListener('resize', this._debouncedResize)
 
     this.sheetEl.remove()
     this.stage.destroy()
@@ -734,10 +719,10 @@ class Sheets {
 
       const scrollGroup = this.scrollGroups[type]
 
-      scrollGroup.sheetGroup.setAttrs(this.getViewportVector())
+      scrollGroup.sheetGroup.setAttrs(this._getViewportVector())
     })
 
-    this.updateSheetDimensions()
+    this._updateSheetDimensions()
 
     this.cells.resetCachedCells()
     this.cells.render()

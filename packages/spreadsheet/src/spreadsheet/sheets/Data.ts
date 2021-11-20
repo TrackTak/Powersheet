@@ -108,39 +108,39 @@ class Data {
   /**
    * @internal
    */
-  spreadsheetData: ISpreadsheetData = {}
+  _spreadsheetData: ISpreadsheetData = {}
 
   /**
    * @internal
    */
-  constructor(private spreadsheet: Spreadsheet) {}
+  constructor(private _spreadsheet: Spreadsheet) {}
 
   /**
    * Checks to see if the cell is the top left merged cell
    */
   getIsCellAMergedCell(simpleCellAddress: SimpleCellAddress) {
-    const mergedCells = this.spreadsheetData.mergedCells
+    const mergedCells = this._spreadsheetData.mergedCells
 
     return !!mergedCells?.[simpleCellAddress.toCellId()]
   }
 
   setSheet(sheetId: SheetId, sheetData?: Partial<ISheetData>) {
-    if (!this.spreadsheetData.sheets) {
-      this.spreadsheetData.sheets = {}
+    if (!this._spreadsheetData.sheets) {
+      this._spreadsheetData.sheets = {}
     }
 
-    this.spreadsheetData.sheets[sheetId] = {
-      sheetName: this.spreadsheet.sheets.getSheetName(),
-      ...this.spreadsheetData.sheets?.[sheetId],
+    this._spreadsheetData.sheets[sheetId] = {
+      sheetName: this._spreadsheet.sheets.getSheetName(),
+      ...this._spreadsheetData.sheets?.[sheetId],
       ...sheetData,
       id: sheetId
     }
   }
 
   deleteSheet(sheetId: SheetId) {
-    const sheet = this.spreadsheetData.sheets?.[sheetId]
+    const sheet = this._spreadsheetData.sheets?.[sheetId]
 
-    this.spreadsheet.hyperformula.removeSheet(sheetId)
+    this._spreadsheet.hyperformula.removeSheet(sheetId)
 
     this.deleteFrozenCell(sheetId)
 
@@ -166,7 +166,7 @@ class Data {
       this.deleteRowCol('rows', sheetRowColAddress)
     }
 
-    delete this.spreadsheetData.sheets?.[sheetId]
+    delete this._spreadsheetData.sheets?.[sheetId]
   }
 
   setCell(
@@ -177,32 +177,32 @@ class Data {
     const sheetId = simpleCellAddress.sheet
     const cellId = simpleCellAddress.toCellId()
 
-    if (!this.spreadsheetData.cells) {
-      this.spreadsheetData.cells = {}
+    if (!this._spreadsheetData.cells) {
+      this._spreadsheetData.cells = {}
     }
 
-    if (!this.spreadsheetData.sheets![sheetId].cells) {
-      this.spreadsheetData.sheets![sheetId].cells = {}
+    if (!this._spreadsheetData.sheets![sheetId].cells) {
+      this._spreadsheetData.sheets![sheetId].cells = {}
     }
 
-    this.spreadsheetData.sheets![sheetId].cells![cellId] = cellId
+    this._spreadsheetData.sheets![sheetId].cells![cellId] = cellId
 
-    this.spreadsheetData.cells[cellId] = {
-      ...this.spreadsheetData.cells?.[cellId],
+    this._spreadsheetData.cells[cellId] = {
+      ...this._spreadsheetData.cells?.[cellId],
       ...cell,
       id: cellId
     }
 
     try {
       if (
-        this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
+        this._spreadsheet.hyperformula.isItPossibleToSetCellContents(
           simpleCellAddress
         ) &&
         setHyperformula
       ) {
-        this.spreadsheet.hyperformula.setCellContents(
+        this._spreadsheet.hyperformula.setCellContents(
           simpleCellAddress,
-          this.spreadsheetData.cells[cellId]?.value
+          this._spreadsheetData.cells[cellId]?.value
         )
       }
     } catch (e) {
@@ -223,18 +223,18 @@ class Data {
     }
 
     if (
-      this.spreadsheet.hyperformula.isItPossibleToSetCellContents(
+      this._spreadsheet.hyperformula.isItPossibleToSetCellContents(
         simpleCellAddress
       ) &&
       setHyperformula
     ) {
-      this.spreadsheet.hyperformula.setCellContents(
+      this._spreadsheet.hyperformula.setCellContents(
         simpleCellAddress,
         undefined
       )
     }
-    delete this.spreadsheetData.cells?.[cellId]
-    delete this.spreadsheetData.sheets?.[sheetId]?.cells?.[cellId]
+    delete this._spreadsheetData.cells?.[cellId]
+    delete this._spreadsheetData.sheets?.[sheetId]?.cells?.[cellId]
   }
 
   setMergedCell(
@@ -244,22 +244,22 @@ class Data {
     const sheetId = simpleCellAddress.sheet
     const mergedCellId = simpleCellAddress.toCellId()
 
-    if (!this.spreadsheetData.mergedCells) {
-      this.spreadsheetData.mergedCells = {}
+    if (!this._spreadsheetData.mergedCells) {
+      this._spreadsheetData.mergedCells = {}
     }
 
-    if (!this.spreadsheetData.sheets![sheetId].mergedCells) {
-      this.spreadsheetData.sheets![sheetId].mergedCells = {}
+    if (!this._spreadsheetData.sheets![sheetId].mergedCells) {
+      this._spreadsheetData.sheets![sheetId].mergedCells = {}
     }
 
     const newMergedCell = {
-      ...this.spreadsheetData.mergedCells[mergedCellId],
+      ...this._spreadsheetData.mergedCells[mergedCellId],
       row: {
-        ...this.spreadsheetData.mergedCells[mergedCellId]?.row,
+        ...this._spreadsheetData.mergedCells[mergedCellId]?.row,
         ...mergedCell.row
       },
       col: {
-        ...this.spreadsheetData.mergedCells[mergedCellId]?.col,
+        ...this._spreadsheetData.mergedCells[mergedCellId]?.col,
         ...mergedCell.col
       },
       id: mergedCellId
@@ -268,7 +268,7 @@ class Data {
     const rangeSimpleCellAddress =
       RangeSimpleCellAddress.mergedCellToAddress(newMergedCell)
 
-    this.spreadsheet.hyperformula.batch(() => {
+    this._spreadsheet.hyperformula.batch(() => {
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
         for (const ci of rangeSimpleCellAddress.iterateFromTopToBottom('col')) {
           const simpleCellAddress = new SimpleCellAddress(
@@ -278,7 +278,7 @@ class Data {
           )
 
           const associatedTopLeftMergedCellId =
-            this.spreadsheet.sheets.merger.associatedMergedCellAddressMap[
+            this._spreadsheet.sheets.merger.associatedMergedCellAddressMap[
               simpleCellAddress.toCellId()
             ]
 
@@ -286,24 +286,24 @@ class Data {
             simpleCellAddress.toCellId() !== mergedCellId &&
             associatedTopLeftMergedCellId
           ) {
-            this.spreadsheet.data.deleteCell(
+            this._spreadsheet.data.deleteCell(
               SimpleCellAddress.cellIdToAddress(associatedTopLeftMergedCellId)
             )
           }
 
           if (simpleCellAddress.toCellId() !== mergedCellId) {
-            this.spreadsheet.data.deleteCell(simpleCellAddress)
+            this._spreadsheet.data.deleteCell(simpleCellAddress)
           }
         }
       }
     })
 
-    this.spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
+    this._spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
       mergedCellId
 
-    this.spreadsheetData.mergedCells[mergedCellId] = newMergedCell
+    this._spreadsheetData.mergedCells[mergedCellId] = newMergedCell
 
-    const mergedCellResult = this.spreadsheetData.mergedCells[mergedCellId]
+    const mergedCellResult = this._spreadsheetData.mergedCells[mergedCellId]
 
     if (
       mergedCellResult.col.x === mergedCellResult.col.y &&
@@ -312,35 +312,37 @@ class Data {
       this.deleteMergedCell(simpleCellAddress)
     }
 
-    this.spreadsheet.sheets.merger.setAssociatedMergedCellIds(simpleCellAddress)
+    this._spreadsheet.sheets.merger._setAssociatedMergedCellIds(
+      simpleCellAddress
+    )
   }
 
   deleteMergedCell(simpleCellAddress: SimpleCellAddress) {
     const sheetId = simpleCellAddress.sheet
     const mergedCellId = simpleCellAddress.toCellId()
 
-    this.spreadsheet.sheets.merger.deleteAssociatedMergedCellIds(
+    this._spreadsheet.sheets.merger._deleteAssociatedMergedCellIds(
       simpleCellAddress
     )
 
-    delete this.spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId]
-    delete this.spreadsheetData.mergedCells?.[mergedCellId]
+    delete this._spreadsheetData.sheets?.[sheetId].mergedCells?.[mergedCellId]
+    delete this._spreadsheetData.mergedCells?.[mergedCellId]
   }
 
   setFrozenCell(sheetId: SheetId, frozenCell?: Omit<IFrozenCellData, 'id'>) {
-    if (!this.spreadsheetData.frozenCells) {
-      this.spreadsheetData.frozenCells = {}
+    if (!this._spreadsheetData.frozenCells) {
+      this._spreadsheetData.frozenCells = {}
     }
 
-    this.spreadsheetData.sheets![sheetId].frozenCell = sheetId
+    this._spreadsheetData.sheets![sheetId].frozenCell = sheetId
 
-    this.spreadsheetData.frozenCells[sheetId] = {
-      ...this.spreadsheetData.frozenCells?.[sheetId],
+    this._spreadsheetData.frozenCells[sheetId] = {
+      ...this._spreadsheetData.frozenCells?.[sheetId],
       ...frozenCell,
       id: sheetId
     }
 
-    const frozenCellResult = this.spreadsheetData.frozenCells?.[sheetId]
+    const frozenCellResult = this._spreadsheetData.frozenCells?.[sheetId]
 
     if (!isNil(frozenCellResult?.col) && frozenCellResult?.col < 0) {
       delete frozenCellResult?.col
@@ -356,8 +358,8 @@ class Data {
   }
 
   deleteFrozenCell(sheetId: SheetId) {
-    delete this.spreadsheetData.sheets?.[sheetId].frozenCell
-    delete this.spreadsheetData.frozenCells?.[sheetId]
+    delete this._spreadsheetData.sheets?.[sheetId].frozenCell
+    delete this._spreadsheetData.frozenCells?.[sheetId]
   }
 
   setRowCol(
@@ -368,19 +370,19 @@ class Data {
     const sheetId = rowColAddress.sheet
     const sheetRowColId = rowColAddress.toSheetRowColId()
 
-    if (!this.spreadsheetData[pluralType]) {
-      this.spreadsheetData[pluralType] = {}
+    if (!this._spreadsheetData[pluralType]) {
+      this._spreadsheetData[pluralType] = {}
     }
 
-    if (!this.spreadsheetData.sheets![sheetId][pluralType]) {
-      this.spreadsheetData.sheets![sheetId][pluralType] = {}
+    if (!this._spreadsheetData.sheets![sheetId][pluralType]) {
+      this._spreadsheetData.sheets![sheetId][pluralType] = {}
     }
 
-    this.spreadsheetData.sheets![sheetId][pluralType]![sheetRowColId] =
+    this._spreadsheetData.sheets![sheetId][pluralType]![sheetRowColId] =
       sheetRowColId
 
-    this.spreadsheetData[pluralType]![sheetRowColId] = {
-      ...this.spreadsheetData[pluralType]![sheetRowColId],
+    this._spreadsheetData[pluralType]![sheetRowColId] = {
+      ...this._spreadsheetData[pluralType]![sheetRowColId],
       ...rowColData,
       id: sheetRowColId
     }
@@ -390,8 +392,10 @@ class Data {
     const sheetId = rowColAddress.sheet
     const sheetRowColId = rowColAddress.toSheetRowColId()
 
-    delete this.spreadsheetData.sheets?.[sheetId]?.[pluralType]?.[sheetRowColId]
-    delete this.spreadsheetData?.[pluralType]?.[sheetRowColId]
+    delete this._spreadsheetData.sheets?.[sheetId]?.[pluralType]?.[
+      sheetRowColId
+    ]
+    delete this._spreadsheetData?.[pluralType]?.[sheetRowColId]
   }
 }
 

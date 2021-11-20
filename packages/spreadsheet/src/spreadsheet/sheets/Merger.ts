@@ -8,19 +8,19 @@ class Merger {
    * The cells that make up a merged cell.
    */
   associatedMergedCellAddressMap: Record<CellId, CellId> = {}
-  private spreadsheet: Spreadsheet
+  private _spreadsheet: Spreadsheet
 
   /**
    * @internal
    */
-  constructor(private sheets: Sheets) {
-    this.spreadsheet = this.sheets.spreadsheet
+  constructor(private _sheets: Sheets) {
+    this._spreadsheet = this._sheets.spreadsheet
   }
 
   private *iterateAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
     const mergedCell =
-      this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
+      this._spreadsheet.data._spreadsheetData.mergedCells?.[cellId]
 
     if (mergedCell) {
       const rangeSimpleCellAddress =
@@ -50,7 +50,7 @@ class Merger {
   /**
    * @internal
    */
-  setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
+  _setAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     for (const {
       associatedSimpleCellAddress,
       rangeSimpleCellAddress
@@ -64,7 +64,7 @@ class Merger {
   /**
    * @internal
    */
-  deleteAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
+  _deleteAssociatedMergedCellIds(simpleCellAddress: SimpleCellAddress) {
     for (const {
       associatedSimpleCellAddress
     } of this.iterateAssociatedMergedCells(simpleCellAddress)) {
@@ -78,9 +78,9 @@ class Merger {
     const mergedCellId =
       rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
     const existingTopLeftCell =
-      this.spreadsheet.data.spreadsheetData.cells?.[mergedCellId]
+      this._spreadsheet.data._spreadsheetData.cells?.[mergedCellId]
 
-    this.spreadsheet.data.setMergedCell(
+    this._spreadsheet.data.setMergedCell(
       rangeSimpleCellAddress.topLeftSimpleCellAddress,
       {
         row: {
@@ -95,34 +95,34 @@ class Merger {
     )
 
     if (existingTopLeftCell) {
-      this.spreadsheet.data.setCell(
+      this._spreadsheet.data.setCell(
         rangeSimpleCellAddress.topLeftSimpleCellAddress,
         existingTopLeftCell
       )
     }
 
-    this.sheets.selector.selectedSimpleCellAddress =
+    this._sheets.selector.selectedSimpleCellAddress =
       rangeSimpleCellAddress.topLeftSimpleCellAddress
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
     const sheet = rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet
-    const mergedCells = this.spreadsheet.data.spreadsheetData.mergedCells
+    const mergedCells = this._spreadsheet.data._spreadsheetData.mergedCells
 
     if (
-      this.spreadsheet.data.getIsCellAMergedCell(
+      this._spreadsheet.data.getIsCellAMergedCell(
         rangeSimpleCellAddress.topLeftSimpleCellAddress
       )
     ) {
       const cell =
-        this.spreadsheet.data.spreadsheetData.cells?.[
+        this._spreadsheet.data._spreadsheetData.cells?.[
           rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
         ]
 
       if (cell) {
-        this.spreadsheet.hyperformula.batch(() => {
+        this._spreadsheet.hyperformula.batch(() => {
           for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
           )) {
@@ -135,18 +135,18 @@ class Merger {
                 ci
               )
 
-              this.spreadsheet.data.setCell(associatedSimpleCellAddress, cell)
+              this._spreadsheet.data.setCell(associatedSimpleCellAddress, cell)
             }
           }
         })
       }
     }
 
-    this.sheets.cells.cellsMap.forEach((cell, cellId) => {
+    this._sheets.cells.cellsMap.forEach((cell, cellId) => {
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
 
       if (
-        this.spreadsheet.data.getIsCellAMergedCell(simpleCellAddress) &&
+        this._spreadsheet.data.getIsCellAMergedCell(simpleCellAddress) &&
         mergedCells
       ) {
         const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
@@ -155,12 +155,12 @@ class Merger {
         )
 
         if (areMergedCellsOverlapping) {
-          this.spreadsheet.data.deleteMergedCell(simpleCellAddress)
+          this._spreadsheet.data.deleteMergedCell(simpleCellAddress)
         }
       }
     })
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   getAreMergedCellsOverlapping(
@@ -191,27 +191,27 @@ class Merger {
   }
 
   mergeSelectedCells() {
-    const selectedCells = this.sheets.selector.selectedCells
+    const selectedCells = this._sheets.selector.selectedCells
 
     if (!selectedCells.length) return
 
     const rangeSimpleCellAddress =
-      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
+      this._sheets._getMinMaxRangeSimpleCellAddress(selectedCells)
 
-    this.spreadsheet.pushToHistory(() => {
+    this._spreadsheet.pushToHistory(() => {
       this.addMergedCells(rangeSimpleCellAddress)
     })
   }
 
   unMergeSelectedCells() {
-    const selectedCells = this.sheets.selector.selectedCells
+    const selectedCells = this._sheets.selector.selectedCells
 
     if (!selectedCells.length) return
 
     const rangeSimpleCellAddress =
-      this.sheets.getMinMaxRangeSimpleCellAddress(selectedCells)
+      this._sheets._getMinMaxRangeSimpleCellAddress(selectedCells)
 
-    this.spreadsheet.pushToHistory(() => {
+    this._spreadsheet.pushToHistory(() => {
       this.removeMergedCells(rangeSimpleCellAddress)
     })
   }

@@ -97,7 +97,7 @@ class Comment {
     this.container.show()
 
     const comment =
-      this.spreadsheet.data.spreadsheetData.cells?.[
+      this.spreadsheet.data._spreadsheetData.cells?.[
         simpleCellAddress.toCellId()
       ]?.comment
 

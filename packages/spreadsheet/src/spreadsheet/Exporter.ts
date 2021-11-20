@@ -48,16 +48,16 @@ class Exporter {
     )
 
     const cellIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].cells
+      this.spreadsheet.data._spreadsheetData.sheets?.[sheetId].cells
 
     for (const key in cellIds) {
       const cellId = key as CellId
-      const cells = this.spreadsheet.data.spreadsheetData.cells!
+      const cells = this.spreadsheet.data._spreadsheetData.cells!
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
       const cell = { ...cells[cellId] }
       const cellString = simpleCellAddress.addressToString()
       const mergedCell =
-        this.spreadsheet.data.spreadsheetData.mergedCells?.[cellId]
+        this.spreadsheet.data._spreadsheetData.mergedCells?.[cellId]
 
       rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
         simpleCellAddress.row,
@@ -218,14 +218,14 @@ class Exporter {
     const colInfos: ColInfo[] = []
     const rowInfos: RowInfo[] = []
     const colIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].cols ?? {}
+      this.spreadsheet.data._spreadsheetData.sheets?.[sheetId].cols ?? {}
     const rowIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].rows ?? {}
+      this.spreadsheet.data._spreadsheetData.sheets?.[sheetId].rows ?? {}
 
     Object.keys(colIds).forEach(key => {
       const sheetColId = key as SheetRowColId
       const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
-      const col = this.spreadsheet.data.spreadsheetData.cols![sheetColId]
+      const col = this.spreadsheet.data._spreadsheetData.cols![sheetColId]
 
       colInfos[address.rowCol] = {
         wpx: col.size
@@ -235,7 +235,7 @@ class Exporter {
     Object.keys(rowIds).forEach(key => {
       const sheetRowId = key as SheetRowColId
       const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
-      const row = this.spreadsheet.data.spreadsheetData.rows![sheetRowId]
+      const row = this.spreadsheet.data._spreadsheetData.rows![sheetRowId]
 
       rowInfos[address.rowCol] = {
         hpx: row.size
@@ -251,11 +251,11 @@ class Exporter {
   private getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new()
 
-    Object.keys(this.spreadsheet.data.spreadsheetData.sheets ?? {}).forEach(
+    Object.keys(this.spreadsheet.data._spreadsheetData.sheets ?? {}).forEach(
       key => {
         const sheetIndex = parseInt(key, 10)
         const sheetData =
-          this.spreadsheet.data.spreadsheetData.sheets![sheetIndex]
+          this.spreadsheet.data._spreadsheetData.sheets![sheetIndex]
         const worksheet = this.getWorksheet(sheetData.id)
 
         utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
@@ -270,7 +270,7 @@ class Exporter {
 
     writeFile(
       workbook,
-      this.spreadsheet.data.spreadsheetData.exportSpreadsheetName ??
+      this.spreadsheet.data._spreadsheetData.exportSpreadsheetName ??
         this.spreadsheet.options.exportSpreadsheetName
     )
   }

@@ -12,7 +12,7 @@ import {
   TextWrap,
   VerticalTextAlign
 } from '../../Data'
-import { CellValue, DetailedCellError } from '@tracktak/hyperformula'
+import { CellValue, CellValueType, DetailedCellError } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
 
@@ -224,11 +224,13 @@ class StyleableCell extends Cell {
         this.simpleCellAddress
       )
 
-      if (cellType === 'ERROR') {
+      if (cellType === CellValueType.ERROR) {
         value = (value as DetailedCellError).value
-      } else if (
+      }  else if (
         textFormatPattern &&
-        !this.sheets.spreadsheet.data._spreadsheetData.showFormulas
+        cellType !== CellValueType.STRING &&
+        cellType !== CellValueType.BOOLEAN &&
+        !this.sheets.spreadsheet.data.spreadsheetData.showFormulas
       ) {
         try {
           text = format(textFormatPattern, Number(text))

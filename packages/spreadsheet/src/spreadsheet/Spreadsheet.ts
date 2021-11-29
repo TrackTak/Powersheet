@@ -170,7 +170,7 @@ class Spreadsheet {
 
       this.render()
 
-      if (document.readyState === 'complete') {
+      if (document.readyState !== 'loading') {
         this.updateSheetSizes()
       }
     }

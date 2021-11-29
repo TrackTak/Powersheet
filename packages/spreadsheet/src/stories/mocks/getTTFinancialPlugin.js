@@ -2,7 +2,7 @@ import {
   FunctionPlugin,
   InvalidArgumentsError,
   SimpleRangeValue
-} from 'hyperformula'
+} from '@tracktak/hyperformula'
 // @ts-ignore
 import { ArraySize } from 'hyperformula/es/ArraySize'
 import dayjs from 'dayjs'

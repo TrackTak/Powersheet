@@ -6,7 +6,7 @@ import TouchEmulator from 'hammer-touchemulator'
 import { merge } from 'lodash'
 import { ISpreadsheetData, ICellData } from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
-import { HyperFormula } from 'hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 // @ts-ignore
 import { getTTFinancialPlugin, finTranslations } from './mocks/getTTFinancialPlugin'
 import realExampleDataJSON from './mocks/realExampleData.json'

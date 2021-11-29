@@ -45,7 +45,7 @@ import {
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 import SelectedCell from '../sheets/cells/cell/SelectedCell'
 import { SheetId } from '../sheets/Sheets'
-import { HyperFormula } from 'hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]

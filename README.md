@@ -48,7 +48,7 @@ import {
   Exporter,
   BottomBar
 } from '@tracktak/powersheet'
-import { AlwaysSparse, HyperFormula } from 'hyperformula'
+import { AlwaysSparse, HyperFormula } from '@tracktak/hyperformula'
 
 const buildPowersheet = () => {
   const hyperformula = HyperFormula.buildEmpty({

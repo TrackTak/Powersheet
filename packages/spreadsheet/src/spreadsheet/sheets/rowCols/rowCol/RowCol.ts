@@ -15,7 +15,7 @@ import {
   getColumnHeader
 } from '../../../utils'
 import { Util } from 'konva/lib/Util'
-import { CellType } from 'hyperformula'
+import { CellType } from '@tracktak/hyperformula'
 
 class RowCol {
   headerRect: Rect

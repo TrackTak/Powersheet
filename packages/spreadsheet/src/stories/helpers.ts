@@ -9,7 +9,7 @@ import { NestedPartial } from '../spreadsheet/types'
 import { ISpreadsheetConstructor } from '../spreadsheet/Spreadsheet'
 import { Spreadsheet, Toolbar, FormulaBar, Exporter, BottomBar } from '..'
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
-import { AlwaysSparse, ConfigParams, HyperFormula } from 'hyperformula'
+import { AlwaysSparse, ConfigParams, HyperFormula, SerializedNamedExpression } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 
 export interface IArgs {
@@ -24,13 +24,23 @@ const eventLog = (event: string, ...args: any[]) => {
 }
 
 export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
+  const trueNamedExpression: SerializedNamedExpression = {
+    name: 'TRUE',
+    expression: '=TRUE()'
+  }
+
+  const falseNamedExpression: SerializedNamedExpression = {
+    name: 'FALSE',
+    expression: '=FALSE()'
+  }
+
   return HyperFormula.buildEmpty({
     ...config,
     chooseAddressMappingPolicy: new AlwaysSparse(),
     // We use our own undo/redo instead
     undoLimit: 0,
     licenseKey: 'gpl-v3'
-  })
+  }, [trueNamedExpression, falseNamedExpression])[0]
 }
 
 const getSpreadsheet = (
@@ -106,17 +116,6 @@ export const buildSpreadsheetWithEverything = (
   const formulaBar = new FormulaBar()
   const exporter = new Exporter(customRegisteredPluginDefinitions)
   const bottomBar = new BottomBar()
-
-  const trueArgs: [string, string] = ['TRUE', '=TRUE()']
-  const falseArgs: [string, string] = ['FALSE', '=FALSE()']
-
-  if (hyperformula.isItPossibleToAddNamedExpression(...trueArgs)) {
-    hyperformula.addNamedExpression(...trueArgs)
-  }
-
-  if (hyperformula.isItPossibleToAddNamedExpression(...falseArgs)) {
-    hyperformula.addNamedExpression(...falseArgs)
-  }
 
   const spreadsheet = getSpreadsheet(args, {
     hyperformula,

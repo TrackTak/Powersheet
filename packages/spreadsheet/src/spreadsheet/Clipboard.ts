@@ -1,7 +1,7 @@
 import {
   SimpleCellAddress as HFSimpleCellAddress,
   SimpleCellRange as HFSimpleCellRange
-} from 'hyperformula'
+} from '@tracktak/hyperformula'
 // @ts-ignore
 import { isSimpleCellAddress } from 'hyperformula/es/Cell'
 import { isEmpty } from 'lodash'

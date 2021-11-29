@@ -8,7 +8,7 @@ import SimpleCellAddress, {
   CellId
 } from './sheets/cells/cell/SimpleCellAddress'
 import RowColAddress, { SheetRowColId } from './sheets/cells/cell/RowColAddress'
-import { CellType, CellValue, FunctionPluginDefinition } from 'hyperformula'
+import { CellType, CellValue, FunctionPluginDefinition } from '@tracktak/hyperformula'
 // TODO: Make dynamic async import when https://github.com/parcel-bundler/parcel/issues/7268 is fixed
 // @ts-ignore
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'

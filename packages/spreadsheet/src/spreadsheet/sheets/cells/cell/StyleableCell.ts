@@ -12,7 +12,7 @@ import {
   TextWrap,
   VerticalTextAlign
 } from '../../Data'
-import { CellValue, DetailedCellError } from 'hyperformula'
+import { CellValue, DetailedCellError } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
 

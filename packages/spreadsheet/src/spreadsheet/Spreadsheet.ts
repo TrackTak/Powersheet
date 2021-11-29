@@ -11,7 +11,7 @@ import styles from './Spreadsheet.module.scss'
 import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { HyperFormula } from 'hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import SimpleCellAddress, {
   CellId

@@ -152,7 +152,7 @@ class RangeSimpleCellAddress {
 
       if (
         !mergedCellId ||
-        sheets.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
+        sheets._spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
       ) {
         return true
       }

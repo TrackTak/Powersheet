@@ -31,13 +31,13 @@ class HighlightedCell extends Cell {
     const stroke = this.color
 
     const rectConfig: RectConfig = {
-      ...this._sheets.spreadsheet.styles.highlightedCell.rect,
+      ...this._sheets._spreadsheet.styles.highlightedCell.rect,
       fill: this.color
     }
 
     const innerRectConfig = getInnerRectConfig(
       {
-        ...this._sheets.spreadsheet.styles.highlightedCell.innerRect,
+        ...this._sheets._spreadsheet.styles.highlightedCell.innerRect,
         stroke
       },
       size

@@ -29,12 +29,12 @@ class BottomBar {
   createNewSheetButtonElements!: IIconElements
   tabContainer!: HTMLDivElement
   sheetTabElementsMap!: Map<SheetId, ISheetTabElements>
-  private spreadsheet!: Spreadsheet
+  private _spreadsheet!: Spreadsheet
 
-  private setSheetTabElements(sheetId: SheetId) {
+  private _setSheetTabElements(sheetId: SheetId) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab()
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton()
-    const isActive = sheetId === this.spreadsheet.sheets.activeSheetId
+    const isActive = sheetId === this._spreadsheet.sheets.activeSheetId
 
     if (isActive) {
       sheetTab.classList.add('active')
@@ -42,11 +42,12 @@ class BottomBar {
       sheetTab.classList.remove('active')
     }
 
-    sheetSelectionDropdownButton.textContent =
-      this.spreadsheet.data._spreadsheetData.sheets![sheetId].sheetName!
+    sheetSelectionDropdownButton.textContent = this._spreadsheet.data._spreadsheetData.sheets![
+      sheetId
+    ].sheetName!
 
     const switchSheet = () => {
-      this.spreadsheet.sheets.switchSheet(sheetId)
+      this._spreadsheet.sheets.switchSheet(sheetId)
     }
 
     const setTabToContentEditable = () => {
@@ -54,10 +55,13 @@ class BottomBar {
       nameContainer.focus()
     }
 
-    const { sheetTabDropdownContent, deleteSheetButton, renameSheetButton } =
-      createSheetTabDropdownContent()
+    const {
+      sheetTabDropdownContent,
+      deleteSheetButton,
+      renameSheetButton
+    } = createSheetTabDropdownContent()
 
-    deleteSheetButton.disabled = this.spreadsheet.sheets.sheetIds.length === 1
+    deleteSheetButton.disabled = this._spreadsheet.sheets.sheetIds.length === 1
 
     const sheetTabDropdown = tippy(sheetTab, {
       placement: 'top',
@@ -95,7 +99,7 @@ class BottomBar {
     deleteSheetButton.addEventListener('click', () => {
       sheetTabDropdown.hide()
 
-      this.spreadsheet.sheets.deleteSheet(sheetId)
+      this._spreadsheet.sheets.deleteSheet(sheetId)
     })
 
     renameSheetButton.addEventListener('click', () => {
@@ -108,11 +112,12 @@ class BottomBar {
       nameContainer.contentEditable = 'false'
       nameContainer.blur()
 
-      this.spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
+      this._spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
     })
 
-    nameContainer.textContent =
-      this.spreadsheet.data._spreadsheetData.sheets![sheetId].sheetName!
+    nameContainer.textContent = this._spreadsheet.data._spreadsheetData.sheets![
+      sheetId
+    ].sheetName!
 
     this.tabContainer.appendChild(sheetTabContainer)
     this.sheetSelectionDropdownContent.appendChild(sheetSelectionDropdownButton)
@@ -126,29 +131,29 @@ class BottomBar {
     })
   }
 
-  private sheetSelectionOnClick = () => {
+  private _sheetSelectionOnClick = () => {
     this.sheetSelectionDropdown.show()
   }
 
-  private createNewSheetButtonOnClick = () => {
-    const sheetName = this.spreadsheet.sheets.getSheetName()
-    const id = this.spreadsheet.sheets.sheetIds.length
+  private _createNewSheetButtonOnClick = () => {
+    const sheetName = this._spreadsheet.sheets.getSheetName()
+    const id = this._spreadsheet.sheets.sheetIds.length
 
-    this.spreadsheet.sheets.createNewSheet({
+    this._spreadsheet.sheets.createNewSheet({
       id,
       sheetName
     })
 
-    this.spreadsheet.sheets.switchSheet(id)
+    this._spreadsheet.sheets.switchSheet(id)
 
-    this.spreadsheet.sheets._updateSize()
+    this._spreadsheet.sheets._updateSize()
   }
 
   /**
    * @param spreadsheet - The spreadsheet that this BottomBar is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet
+    this._spreadsheet = spreadsheet
 
     this.sheetTabElementsMap = new Map()
 
@@ -158,13 +163,13 @@ class BottomBar {
     )
     this.createNewSheetButtonElements.button.addEventListener(
       'click',
-      this.createNewSheetButtonOnClick
+      this._createNewSheetButtonOnClick
     )
 
     this.sheetSelectionButton = createIconButton('hamburger', bottomBarPrefix)
     this.sheetSelectionButton.button.addEventListener(
       'click',
-      this.sheetSelectionOnClick
+      this._sheetSelectionOnClick
     )
 
     this.bottomBarEl = document.createElement('div')
@@ -214,8 +219,8 @@ class BottomBar {
     this.tabContainer.innerHTML = ''
     this.sheetSelectionDropdownContent.innerHTML = ''
 
-    this.spreadsheet.sheets.sheetIds.forEach(sheetId => {
-      this.setSheetTabElements(sheetId)
+    this._spreadsheet.sheets.sheetIds.forEach(sheetId => {
+      this._setSheetTabElements(sheetId)
     })
   }
 
@@ -226,11 +231,11 @@ class BottomBar {
     this.bottomBarEl.remove()
     this.createNewSheetButtonElements.button.removeEventListener(
       'click',
-      this.createNewSheetButtonOnClick
+      this._createNewSheetButtonOnClick
     )
     this.sheetSelectionButton.button.removeEventListener(
       'click',
-      this.sheetSelectionOnClick
+      this._sheetSelectionOnClick
     )
   }
 }

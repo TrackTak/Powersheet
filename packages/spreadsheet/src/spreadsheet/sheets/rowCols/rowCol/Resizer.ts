@@ -10,75 +10,83 @@ class Resizer {
   resizeMarker: Rect
   resizeGuideLine: Line
   currentIndex = 0
-  private spreadsheet: Spreadsheet
-  private sheets: Sheets
+  private _spreadsheet: Spreadsheet
+  private _sheets: Sheets
 
-  constructor(public rowCols: RowCols) {
-    this.sheets = this.rowCols.sheets
-    this.spreadsheet = this.sheets.spreadsheet
+  /**
+   * @internal
+   */
+  constructor(
+    /**
+     * @internal
+     */
+    public _rowCols: RowCols
+  ) {
+    this._sheets = this._rowCols._sheets
+    this._spreadsheet = this._sheets._spreadsheet
 
-    const size =
-      this.rowCols.sheets._getViewportVector()[
-        this.rowCols.oppositeFunctions.axis
-      ]
+    const size = this._rowCols._sheets._getViewportVector()[
+      this._rowCols._oppositeFunctions.axis
+    ]
     this.resizeMarker = new Rect({
-      ...this.spreadsheet.styles[this.rowCols.type].resizeMarker,
+      ...this._spreadsheet.styles[this._rowCols._type].resizeMarker,
       name: 'resizeMarker',
-      [this.rowCols.oppositeFunctions.size]: size
+      [this._rowCols._oppositeFunctions.size]: size
     })
     this.resizeGuideLine = new Line({
-      ...this.spreadsheet.styles[this.rowCols.type].resizeGuideLine,
+      ...this._spreadsheet.styles[this._rowCols._type].resizeGuideLine,
       name: 'resizeGuideLine',
-      [this.rowCols.oppositeFunctions.size]: size
+      [this._rowCols._oppositeFunctions.size]: size
     })
 
-    this.resizeMarker.on('mouseover', this.resizeMarkerOnMouseOver)
-    this.resizeMarker.on('mouseout', this.resizeMarkerOnMouseOut)
-    this.resizeMarker.on('dragstart', this.resizeLineDragStart)
-    this.resizeMarker.on('dragmove', this.resizeLineDragMove)
-    this.resizeMarker.on('dragend', this.resizeLineDragEnd)
+    this.resizeMarker.on('mouseover', this._resizeMarkerOnMouseOver)
+    this.resizeMarker.on('mouseout', this._resizeMarkerOnMouseOut)
+    this.resizeMarker.on('dragstart', this._resizeLineDragStart)
+    this.resizeMarker.on('dragmove', this._resizeLineDragMove)
+    this.resizeMarker.on('dragend', this._resizeLineDragEnd)
 
-    this.sheets.layer.add(this.resizeMarker, this.resizeGuideLine)
+    this._sheets.layer.add(this.resizeMarker, this.resizeGuideLine)
   }
 
-  private getPosition() {
+  private _getPosition() {
     return (
-      this.rowCols.getAxis(this.currentIndex) + this.rowCols.scrollBar.scroll
+      this._rowCols.getAxis(this.currentIndex) + this._rowCols.scrollBar._scroll
     )
   }
 
-  private resizeMarkerOnMouseOver = () => {
-    this.setCursor()
+  private _resizeMarkerOnMouseOver = () => {
+    this._setCursor()
 
     this.showResizeMarker(this.currentIndex!)
   }
 
-  private resizeMarkerOnMouseOut = () => {
-    this.resetCursor()
+  private _resizeMarkerOnMouseOut = () => {
+    this._resetCursor()
 
     this.hideResizeMarker()
   }
 
-  private resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
-    this.spreadsheet.pushToHistory()
+  private _resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
+    this._spreadsheet.pushToHistory()
 
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColStart' : 'resizeRowStart',
+    this._spreadsheet.eventEmitter.emit(
+      this._rowCols._isCol ? 'resizeColStart' : 'resizeRowStart',
       e
     )
   }
 
-  private resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
+  private _resizeLineDragMove = (e: KonvaEventObject<DragEvent>) => {
     const target = e.target as Line
     const position = target.getPosition()
     const minAxis =
-      this.getPosition() + this.spreadsheet.options[this.rowCols.type].minSize
-    let newAxis = position[this.rowCols.functions.axis]
+      this._getPosition() +
+      this._spreadsheet.options[this._rowCols._type].minSize
+    let newAxis = position[this._rowCols._functions.axis]
 
     const getNewPosition = () => {
       const newPosition = {
         ...position,
-        [this.rowCols.functions.axis]: newAxis
+        [this._rowCols._functions.axis]: newAxis
       }
 
       return newPosition
@@ -92,33 +100,34 @@ class Resizer {
 
     this.showGuideLine()
 
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColMove' : 'resizeRowMove',
+    this._spreadsheet.eventEmitter.emit(
+      this._rowCols._isCol ? 'resizeColMove' : 'resizeRowMove',
       e,
       newAxis
     )
   }
 
-  private resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
+  private _resizeLineDragEnd = (e: KonvaEventObject<DragEvent>) => {
     const newSize =
-      e.target.getPosition()[this.rowCols.functions.axis] - this.getPosition()
+      e.target.getPosition()[this._rowCols._functions.axis] -
+      this._getPosition()
 
     this.hideResizeMarker()
     this.hideGuideLine()
 
-    this.spreadsheet.data.setRowCol(
-      this.rowCols.pluralType,
-      new SheetRowColAddress(this.sheets.activeSheetId, this.currentIndex),
+    this._spreadsheet.data.setRowCol(
+      this._rowCols._pluralType,
+      new SheetRowColAddress(this._sheets.activeSheetId, this.currentIndex),
       {
         size: newSize
       }
     )
 
-    this.spreadsheet.persistData()
-    this.spreadsheet.render()
+    this._spreadsheet.persistData()
+    this._spreadsheet.render()
 
-    this.spreadsheet.eventEmitter.emit(
-      this.rowCols.isCol ? 'resizeColEnd' : 'resizeRowEnd',
+    this._spreadsheet.eventEmitter.emit(
+      this._rowCols._isCol ? 'resizeColEnd' : 'resizeRowEnd',
       e,
       newSize
     )
@@ -127,8 +136,8 @@ class Resizer {
   /**
    * @internal
    */
-  setCursor() {
-    document.body.style.cursor = this.rowCols.isCol
+  _setCursor() {
+    document.body.style.cursor = this._rowCols._isCol
       ? 'col-resize'
       : 'row-resize'
   }
@@ -136,29 +145,29 @@ class Resizer {
   /**
    * @internal
    */
-  resetCursor() {
+  _resetCursor() {
     document.body.style.cursor = 'default'
   }
 
   /**
    * @internal
    */
-  destroy() {
+  _destroy() {
     this.resizeMarker.destroy()
     this.resizeGuideLine.destroy()
 
-    this.resizeMarker.off('mouseover', this.resizeMarkerOnMouseOver)
-    this.resizeMarker.off('mouseout', this.resizeMarkerOnMouseOut)
-    this.resizeMarker.off('dragstart', this.resizeLineDragStart)
-    this.resizeMarker.off('dragmove', this.resizeLineDragMove)
-    this.resizeMarker.off('dragend', this.resizeLineDragEnd)
+    this.resizeMarker.off('mouseover', this._resizeMarkerOnMouseOver)
+    this.resizeMarker.off('mouseout', this._resizeMarkerOnMouseOut)
+    this.resizeMarker.off('dragstart', this._resizeLineDragStart)
+    this.resizeMarker.off('dragmove', this._resizeLineDragMove)
+    this.resizeMarker.off('dragend', this._resizeLineDragEnd)
   }
 
   showResizeMarker(index: number) {
     this.currentIndex = index
 
-    this.resizeMarker[this.rowCols.functions.axis](
-      this.getPosition() + this.rowCols.getSize(this.currentIndex)
+    this.resizeMarker[this._rowCols._functions.axis](
+      this._getPosition() + this._rowCols.getSize(this.currentIndex)
     )
 
     this.resizeMarker.show()
@@ -170,13 +179,23 @@ class Resizer {
   }
 
   showGuideLine() {
-    this.resizeGuideLine[this.rowCols.functions.axis](
-      this.resizeMarker[this.rowCols.functions.axis]()
+    this.resizeGuideLine[this._rowCols._functions.axis](
+      this.resizeMarker[this._rowCols._functions.axis]()
     )
     this.resizeGuideLine.points(
-      this.rowCols.isCol
-        ? [0, this.sheets._getViewportVector().y, 0, this.sheets.stage.height()]
-        : [this.sheets._getViewportVector().x, 0, this.sheets.stage.width(), 0]
+      this._rowCols._isCol
+        ? [
+            0,
+            this._sheets._getViewportVector().y,
+            0,
+            this._sheets.stage.height()
+          ]
+        : [
+            this._sheets._getViewportVector().x,
+            0,
+            this._sheets.stage.width(),
+            0
+          ]
     )
 
     this.resizeGuideLine.show()

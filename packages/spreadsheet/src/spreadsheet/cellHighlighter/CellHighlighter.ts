@@ -24,7 +24,7 @@ class CellHighlighter {
   /**
    * @internal
    */
-  constructor(private spreadsheet: Spreadsheet) {}
+  constructor(private _spreadsheet: Spreadsheet) {}
 
   /**
    * Alias for `destroyHighlightedCells()`.
@@ -37,7 +37,7 @@ class CellHighlighter {
    * Destroys all of the highlighted cells.
    */
   destroyHighlightedCells() {
-    this.highlightedCells.forEach(cell => cell.destroy())
+    this.highlightedCells.forEach(cell => cell._destroy())
   }
 
   /**
@@ -59,7 +59,7 @@ class CellHighlighter {
       lightness,
       alpha,
       goldenRatio
-    } = this.spreadsheet.options.cellHighlight
+    } = this._spreadsheet.options.cellHighlight
 
     let hue = defaultHue
 
@@ -76,7 +76,7 @@ class CellHighlighter {
 
     // TODO: Remove all this when https://github.com/handsontable/hyperformula/issues/854 is done
     // @ts-ignore
-    const lexer = this.spreadsheet.hyperformula._parser.lexer
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
 
     const { tokens } = lexer.tokenizeFormula(text)
 
@@ -178,7 +178,7 @@ class CellHighlighter {
    * @param cellReferenceParts - The parts returned from `getHighlightedCellReferenceSections()`.
    */
   setHighlightedCells(cellReferenceParts: ICellReferencePart[]) {
-    const sheet = this.spreadsheet.sheets.cellEditor.currentCell!
+    const sheet = this._spreadsheet.sheets.cellEditor.currentCell!
       .simpleCellAddress.sheet
 
     this.destroyHighlightedCells()
@@ -187,7 +187,7 @@ class CellHighlighter {
       let highlightedCell
 
       if (type === 'simpleCellString') {
-        const precedentSimpleCellAddress = this.spreadsheet.hyperformula.simpleCellAddressFromString(
+        const precedentSimpleCellAddress = this._spreadsheet.hyperformula.simpleCellAddressFromString(
           referenceText,
           sheet
         )!
@@ -195,7 +195,7 @@ class CellHighlighter {
         // Don't highlight cells if cell reference is another sheet
         if (sheet === precedentSimpleCellAddress.sheet) {
           highlightedCell = new HighlightedCell(
-            this.spreadsheet.sheets,
+            this._spreadsheet.sheets,
             new SimpleCellAddress(
               precedentSimpleCellAddress.sheet,
               precedentSimpleCellAddress.row,
@@ -205,7 +205,7 @@ class CellHighlighter {
           )
         }
       } else {
-        const precedentSimpleCellRange = this.spreadsheet.hyperformula.simpleCellRangeFromString(
+        const precedentSimpleCellRange = this._spreadsheet.hyperformula.simpleCellRangeFromString(
           referenceText,
           sheet
         )!
@@ -229,17 +229,17 @@ class CellHighlighter {
           )
 
           highlightedCell = new HighlightedCell(
-            this.spreadsheet.sheets,
+            this._spreadsheet.sheets,
             startSimpleCellAddress,
             color
           )
 
-          highlightedCell.setRangeCellAddress(rangeSimpleCellAddress)
+          highlightedCell._setRangeCellAddress(rangeSimpleCellAddress)
         }
       }
       if (highlightedCell) {
         const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
-        const sheetGroup = this.spreadsheet.sheets.scrollGroups[stickyGroup]
+        const sheetGroup = this._spreadsheet.sheets.scrollGroups[stickyGroup]
           .sheetGroup
 
         sheetGroup.add(highlightedCell.group)

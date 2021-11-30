@@ -90,8 +90,8 @@ class Spreadsheet {
       const currentData: IHistoryData = {
         data: this.data._spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap:
-          this.sheets.merger.associatedMergedCellAddressMap
+        associatedMergedCellAddressMap: this.sheets.merger
+          .associatedMergedCellAddressMap
       }
 
       const parsedData: IHistoryData = JSON.parse(data)
@@ -109,7 +109,7 @@ class Spreadsheet {
         const sheetId = this.hyperformula.getSheetId(sheetName)!
 
         this.hyperformula.clearSheet(sheetId)
-        this.setCells()
+        this._setCells()
       })
 
       return JSON.stringify(currentData)
@@ -119,12 +119,12 @@ class Spreadsheet {
     this.data.setSheet(0)
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
+    window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
       once: true
     })
   }
 
-  private setCells() {
+  private _setCells() {
     for (const key in this.data._spreadsheetData.cells) {
       const cellId = key as CellId
       const cell = this.data._spreadsheetData.cells?.[cellId]
@@ -136,12 +136,12 @@ class Spreadsheet {
     }
   }
 
-  private updateSheetSizes() {
+  private _updateSheetSizes() {
     this.sheets._updateSize()
   }
 
-  private onDOMContentLoaded = () => {
-    this.updateSheetSizes()
+  private _onDOMContentLoaded = () => {
+    this._updateSheetSizes()
   }
 
   /**
@@ -162,7 +162,7 @@ class Spreadsheet {
 
       if (this.data._spreadsheetData.sheets) {
         this.hyperformula.batch(() => {
-          this.setCells()
+          this._setCells()
         })
       }
 
@@ -171,7 +171,7 @@ class Spreadsheet {
       this.render()
 
       if (document.readyState !== 'loading') {
-        this.updateSheetSizes()
+        this._updateSheetSizes()
       }
     }
   }
@@ -184,7 +184,7 @@ class Spreadsheet {
    * when you are using multiple spreadsheets with a shared hyperformula instance.
    */
   destroy(destroyHyperformula = true) {
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded)
+    window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
 
     this.spreadsheetEl.remove()
 
@@ -241,8 +241,8 @@ class Spreadsheet {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
       data: this.data._spreadsheetData,
-      associatedMergedCellAddressMap:
-        this.sheets.merger.associatedMergedCellAddressMap
+      associatedMergedCellAddressMap: this.sheets.merger
+        .associatedMergedCellAddressMap
     }
     const data = JSON.stringify(historyData)
 

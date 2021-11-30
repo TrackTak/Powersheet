@@ -12,32 +12,32 @@ class HighlightedCell extends Cell {
   innerRect: Rect
 
   constructor(
-    protected sheets: Sheets,
+    protected _sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     public color: string
   ) {
-    super(sheets, simpleCellAddress)
+    super(_sheets, simpleCellAddress)
 
     this.innerRect = new Rect({
       name: 'innerRect'
     })
     this.group.add(this.innerRect)
 
-    this.setInnerRectProperties()
+    this._setInnerRectProperties()
   }
 
-  private setInnerRectProperties() {
+  private _setInnerRectProperties() {
     const size = this.rect.size()
     const stroke = this.color
 
     const rectConfig: RectConfig = {
-      ...this.sheets.spreadsheet.styles.highlightedCell.rect,
+      ...this._sheets.spreadsheet.styles.highlightedCell.rect,
       fill: this.color
     }
 
     const innerRectConfig = getInnerRectConfig(
       {
-        ...this.sheets.spreadsheet.styles.highlightedCell.innerRect,
+        ...this._sheets.spreadsheet.styles.highlightedCell.innerRect,
         stroke
       },
       size
@@ -47,12 +47,12 @@ class HighlightedCell extends Cell {
     this.innerRect.setAttrs(innerRectConfig)
   }
 
-  override setRangeCellAddress = (
+  override _setRangeCellAddress = (
     rangeSimpleCellAddress: RangeSimpleCellAddress
   ) => {
-    super.setRangeCellAddress(rangeSimpleCellAddress)
+    super._setRangeCellAddress(rangeSimpleCellAddress)
 
-    this.setInnerRectProperties()
+    this._setInnerRectProperties()
   }
 }
 

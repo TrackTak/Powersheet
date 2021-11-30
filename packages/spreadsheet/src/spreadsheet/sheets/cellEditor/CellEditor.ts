@@ -27,15 +27,15 @@ class CellEditor {
   currentScroll: ICurrentScroll | null = null
   currentCaretPosition: number | null = null
   currentCellText: string | null = null
-  private spreadsheet: Spreadsheet
+  private _spreadsheet: Spreadsheet
 
   /**
    * @internal
    */
-  constructor(private sheet: Sheet) {
-    this.spreadsheet = this.sheet.spreadsheet
+  constructor(private _sheet: Sheet) {
+    this._spreadsheet = this._sheet._spreadsheet
 
-    this.cellHighlighter = new CellHighlighter(this.spreadsheet)
+    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
@@ -62,22 +62,22 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5]
     })
-    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl)
+    this._sheet.sheetEl.appendChild(this.cellEditorContainerEl)
 
-    this.cellEditorEl.addEventListener('input', this.onInput)
-    this.cellEditorEl.addEventListener('keydown', this.onKeyDown)
+    this.cellEditorEl.addEventListener('input', this._onInput)
+    this.cellEditorEl.addEventListener('keydown', this._onKeyDown)
 
     this.cellEditorContainerEl.style.display = 'none'
 
     this.formulaHelper = new FormulaHelper(
       HyperFormula.getRegisteredFunctionNames('enGB'),
-      this.onItemClick
+      this._onItemClick
     )
 
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
   }
 
-  private onItemClick = (suggestion: string) => {
+  private _onItemClick = (suggestion: string) => {
     const value = `=${suggestion}()`
 
     this.setContentEditable(value)
@@ -88,7 +88,7 @@ class CellEditor {
     setCaretToEndOfElement(this.cellEditorEl)
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
+  private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
 
     switch (e.key) {
@@ -103,7 +103,7 @@ class CellEditor {
     }
   }
 
-  private onInput = (e: Event) => {
+  private _onInput = (e: Event) => {
     const target = e.target as HTMLDivElement
     const textContent = target.textContent
 
@@ -122,8 +122,8 @@ class CellEditor {
     }
   }
 
-  private setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
+  private _setCellValue(simpleCellAddress: SimpleCellAddress) {
+    const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
       simpleCellAddress
     )
 
@@ -138,15 +138,15 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[
+    const cell = this._spreadsheet.data._spreadsheetData.cells?.[
       simpleCellAddress.toCellId()
     ]
     const cellValue =
-      this.spreadsheet.hyperformula
+      this._spreadsheet.hyperformula
         .getCellSerialized(simpleCellAddress)
         ?.toString() ?? undefined
 
-    this.spreadsheet.pushToHistory(() => {
+    this._spreadsheet.pushToHistory(() => {
       const value = this.currentCellText ? this.currentCellText : undefined
 
       if (cellValue !== value) {
@@ -162,7 +162,7 @@ class CellEditor {
           newCell.value += '%'
         }
 
-        this.spreadsheet.data.setCell(simpleCellAddress, newCell)
+        this._spreadsheet.data.setCell(simpleCellAddress, newCell)
       }
     })
   }
@@ -170,12 +170,12 @@ class CellEditor {
   /**
    * @internal
    */
-  destroy() {
+  _destroy() {
     this.cellTooltip.destroy()
     this.cellHighlighter.destroy()
     this.cellEditorContainerEl.remove()
-    this.cellEditorEl.removeEventListener('input', this.onInput)
-    this.cellEditorEl.removeEventListener('keydown', this.onKeyDown)
+    this.cellEditorEl.removeEventListener('input', this._onInput)
+    this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
     this.formulaHelper?._destroy()
   }
 
@@ -194,7 +194,7 @@ class CellEditor {
    */
   setContentEditable(text: string | null) {
     this.clear()
-    this.spreadsheet.formulaBar?.clear()
+    this._spreadsheet.formulaBar?.clear()
 
     this.currentCellText = text
 
@@ -209,12 +209,12 @@ class CellEditor {
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
-      this.spreadsheet.formulaBar?.editableContent.appendChild(
+      this._spreadsheet.formulaBar?.editableContent.appendChild(
         part.cloneNode(true)
       )
     })
 
-    this.spreadsheet.eventEmitter.emit('cellEditorChange', text)
+    this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
   }
 
   /**
@@ -225,7 +225,7 @@ class CellEditor {
    */
   showAndSetValue(cell: Cell) {
     this.show(cell)
-    this.setCellValue(cell.simpleCellAddress)
+    this._setCellValue(cell.simpleCellAddress)
 
     setCaretToEndOfElement(this.cellEditorEl)
   }
@@ -238,14 +238,14 @@ class CellEditor {
   show(cell: Cell) {
     this.currentCell = cell
     this.currentScroll = {
-      row: this.sheet.rows.scrollBar.scroll,
-      col: this.sheet.cols.scrollBar.scroll
+      row: this._sheet.rows.scrollBar._scroll,
+      col: this._sheet.cols.scrollBar._scroll
     }
 
     this.clear()
     this.cellEditorContainerEl.style.display = 'block'
 
-    this.setCellEditorElPosition(cell.getClientRectWithoutStroke())
+    this.setCellEditorElPosition(cell._getClientRectWithoutStroke())
   }
 
   /**
@@ -280,9 +280,9 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none'
 
     this.cellEditorEl.blur()
-    this.sheet.sheetEl.focus()
+    this._sheet.sheetEl.focus()
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   /**

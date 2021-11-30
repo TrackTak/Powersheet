@@ -13,36 +13,36 @@ class FormulaBar {
   editableContentContainer!: HTMLDivElement
   editableContent!: HTMLDivElement
   cellHighlighter!: CellHighlighter
-  private spreadsheet!: Spreadsheet
+  private _spreadsheet!: Spreadsheet
 
-  private onInput = (e: Event) => {
+  private _onInput = (e: Event) => {
     const target = e.target as HTMLDivElement
     const textContent = target.textContent
 
     const restoreCaretPosition = saveCaretPosition(this.editableContent)
 
-    if (this.spreadsheet.sheets.cellEditor.getIsHidden()) {
-      this.spreadsheet.sheets.cellEditor.show(
-        this.spreadsheet.sheets.selector.selectedCell!
+    if (this._spreadsheet.sheets.cellEditor.getIsHidden()) {
+      this._spreadsheet.sheets.cellEditor.show(
+        this._spreadsheet.sheets.selector.selectedCell!
       )
     }
-    this.spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
+    this._spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
 
     restoreCaretPosition()
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
+  private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
 
     switch (e.key) {
       case 'Escape': {
-        this.spreadsheet.sheets.cellEditor.hide()
+        this._spreadsheet.sheets.cellEditor.hide()
         this.editableContent.blur()
 
         break
       }
       case 'Enter': {
-        this.spreadsheet.sheets.cellEditor.hideAndSave()
+        this._spreadsheet.sheets.cellEditor.hideAndSave()
         this.editableContent.blur()
 
         break
@@ -54,8 +54,8 @@ class FormulaBar {
    * @param spreadsheet - The spreadsheet that this FormulaBar is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet
-    this.cellHighlighter = new CellHighlighter(this.spreadsheet)
+    this._spreadsheet = spreadsheet
+    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
 
     this.formulaBarEl = document.createElement('div')
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix)
@@ -73,8 +73,8 @@ class FormulaBar {
     this.editableContentContainer = editableContentContainer
     this.editableContent = editableContent
 
-    this.editableContent.addEventListener('input', this.onInput)
-    this.editableContent.addEventListener('keydown', this.onKeyDown)
+    this.editableContent.addEventListener('input', this._onInput)
+    this.editableContent.addEventListener('keydown', this._onKeyDown)
   }
 
   /**
@@ -89,7 +89,7 @@ class FormulaBar {
    */
   _render() {
     this.updateValue(
-      this.spreadsheet.sheets.selector.selectedCell?.simpleCellAddress
+      this._spreadsheet.sheets.selector.selectedCell?.simpleCellAddress
     )
   }
 
@@ -103,7 +103,7 @@ class FormulaBar {
     this.clear()
 
     const cellEditorContentEditableChildren =
-      this.spreadsheet.sheets?.cellEditor?.cellEditorEl.children
+      this._spreadsheet.sheets?.cellEditor?.cellEditorEl.children
 
     let spanElements = cellEditorContentEditableChildren
       ? Array.from(cellEditorContentEditableChildren).map(node =>
@@ -113,12 +113,12 @@ class FormulaBar {
 
     if (simpleCellAddress) {
       const sheetName =
-        this.spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ??
+        this._spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ??
         ''
 
-      if (this.spreadsheet.hyperformula.doesSheetExist(sheetName)) {
+      if (this._spreadsheet.hyperformula.doesSheetExist(sheetName)) {
         const serializedValue =
-          this.spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+          this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
         const { tokenParts } =
           this.cellHighlighter.getHighlightedCellReferenceSections(
@@ -142,8 +142,8 @@ class FormulaBar {
   destroy() {
     this.formulaBarEl.remove()
     this.cellHighlighter.destroy()
-    this.editableContent.removeEventListener('input', this.onInput)
-    this.editableContent.removeEventListener('keydown', this.onKeyDown)
+    this.editableContent.removeEventListener('input', this._onInput)
+    this.editableContent.removeEventListener('keydown', this._onKeyDown)
   }
 }
 

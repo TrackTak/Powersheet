@@ -18,8 +18,8 @@ class FormulaHelper {
    * @internal
    */
   constructor(
-    public formulas: string[],
-    public onItemClick: FormulaHelperClickHandler
+    private _formulas: string[],
+    private _onItemClick: FormulaHelperClickHandler
   ) {
     const { formulaHelperListContainerEl, formulaHelperEl } =
       createWrapperContent()
@@ -34,14 +34,14 @@ class FormulaHelper {
     })
   }
 
-  private handleListItemClick = (e: MouseEvent) => {
+  private _handleListItemClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement
     if (target?.matches('li')) {
-      this.onItemClick(target.textContent!)
+      this._onItemClick(target.textContent!)
     }
   }
 
-  private updateList(formulas: string[]) {
+  private _updateList(formulas: string[]) {
     const list = createFormulaList(formulas)
     if (this.list) {
       this.formulaHelperListContainerEl?.replaceChild(list, this.list)
@@ -51,7 +51,7 @@ class FormulaHelper {
     this.list = list
     this.helper.setContent(this.formulaHelperListContainerEl)
 
-    list.addEventListener('click', this.handleListItemClick)
+    list.addEventListener('click', this._handleListItemClick)
   }
 
   /**
@@ -60,14 +60,14 @@ class FormulaHelper {
    * @param text - Filters for formulas that start with this text string
    */
   show(text?: string) {
-    const formulas = this.formulas.filter(
+    const formulas = this._formulas.filter(
       formula => !text || formula.startsWith(text)
     )
     if (isEmpty(formulas)) {
       this.helper.hide()
       return
     }
-    this.updateList(formulas)
+    this._updateList(formulas)
     this.helper.show()
   }
 

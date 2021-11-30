@@ -15,87 +15,92 @@ class ScrollBar {
   /**
    * @internal
    */
-  scroll = 0
+  _scroll = 0
   /**
    * @internal
    */
-  previousTouchMovePosition = 0
+  _previousTouchMovePosition = 0
   /**
    * @internal
    */
-  sheetViewportPosition = new ViewportPosition()
-  private totalPreviousCustomSizeDifferences = 0
-  private previousSheetViewportPosition = new ViewportPosition()
-  private scrollType: ScrollBarType
-  private throttledScroll: DebouncedFunc<(e: Event) => void>
-  private type: RowColType
-  private isCol: boolean
-  private functions: IRowColFunctions
-  private pluralType: RowColsType
-  private spreadsheet: Spreadsheet
-  private sheets: Sheets
+  _sheetViewportPosition = new ViewportPosition()
+  private _totalPreviousCustomSizeDifferences = 0
+  private _previousSheetViewportPosition = new ViewportPosition()
+  private _scrollType: ScrollBarType
+  private _throttledScroll: DebouncedFunc<(e: Event) => void>
+  private _type: RowColType
+  private _isCol: boolean
+  private _functions: IRowColFunctions
+  private _pluralType: RowColsType
+  private _spreadsheet: Spreadsheet
+  private _sheets: Sheets
 
   /**
    * @internal
    */
-  constructor(public rowCols: RowCols) {
-    this.sheets = this.rowCols.sheets
-    this.type = this.rowCols.type
-    this.pluralType = this.rowCols.pluralType
-    this.spreadsheet = this.sheets.spreadsheet
-    this.isCol = this.rowCols.isCol
-    this.scrollType = this.isCol ? 'horizontal' : 'vertical'
-    this.functions = this.rowCols.functions
+  constructor(
+    /**
+     * @internal
+     */
+    public _rowCols: RowCols
+  ) {
+    this._sheets = this._rowCols._sheets
+    this._type = this._rowCols._type
+    this._pluralType = this._rowCols._pluralType
+    this._spreadsheet = this._sheets._spreadsheet
+    this._isCol = this._rowCols._isCol
+    this._scrollType = this._isCol ? 'horizontal' : 'vertical'
+    this._functions = this._rowCols._functions
 
     this.scrollBarEl = document.createElement('div')
     this.scrollEl = document.createElement('div')
 
     this.scrollBarEl.classList.add(
       `${prefix}-scroll-bar`,
-      this.scrollType,
-      styles[`${this.scrollType}ScrollBar`]
+      this._scrollType,
+      styles[`${this._scrollType}ScrollBar`]
     )
 
     this.scrollEl.classList.add(
       `${prefix}-scroll`,
-      styles[`${this.scrollType}Scroll`]
+      styles[`${this._scrollType}Scroll`]
     )
 
     this.scrollBarEl.appendChild(this.scrollEl)
 
     // FPS chrome reports incorrect values for setTimeout with scroll
     // 60 fps: (1000ms / 60fps = 16ms);
-    this.throttledScroll = throttle(this.onScroll, 16)
+    this._throttledScroll = throttle(this._onScroll, 16)
 
-    this.scrollBarEl.addEventListener('scroll', this.throttledScroll)
+    this.scrollBarEl.addEventListener('scroll', this._throttledScroll)
 
-    this.sheets.sheetEl.appendChild(this.scrollBarEl)
+    this._sheets.sheetEl.appendChild(this.scrollBarEl)
 
-    this.setScrollSize()
-    this.moveScrollGroups(0)
+    this._setScrollSize()
+    this._moveScrollGroups(0)
   }
 
-  private moveScrollGroups(scroll: number) {
-    if (this.isCol) {
-      this.sheets.scrollGroups.ySticky.group.x(scroll)
+  private _moveScrollGroups(scroll: number) {
+    if (this._isCol) {
+      this._sheets.scrollGroups.ySticky.group.x(scroll)
     } else {
-      this.sheets.scrollGroups.xSticky.group.y(scroll)
+      this._sheets.scrollGroups.xSticky.group.y(scroll)
     }
 
-    this.sheets.scrollGroups.main.group[this.functions.axis](scroll)
+    this._sheets.scrollGroups.main.group[this._functions.axis](scroll)
   }
 
-  private getNewScrollAmount(start: number, end: number) {
-    const data = this.spreadsheet.data._spreadsheetData
-    const defaultSize = this.spreadsheet.options[this.type].defaultSize
+  private _getNewScrollAmount(start: number, end: number) {
+    const data = this._spreadsheet.data._spreadsheetData
+    const defaultSize = this._spreadsheet.options[this._type].defaultSize
 
     let newScrollAmount = 0
     let totalCustomSizeDifferencs = 0
 
     for (let i = start; i < end; i++) {
-      const rowCollAddress = new RowColAddress(this.sheets.activeSheetId, i)
+      const rowCollAddress = new RowColAddress(this._sheets.activeSheetId, i)
       const size =
-        data[this.pluralType]?.[rowCollAddress.toSheetRowColId()]?.size
+        data[this._pluralType]?.[rowCollAddress.toSheetRowColId()]?.size
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize
@@ -111,36 +116,36 @@ class ScrollBar {
     }
   }
 
-  private onScroll = (e: Event) => {
+  private _onScroll = (e: Event) => {
     e.preventDefault()
 
     const event = e.target! as any
-    const scroll = this.isCol ? event.scrollLeft : event.scrollTop
-    const scrollSize = this.isCol ? event.scrollWidth : event.scrollHeight
+    const scroll = this._isCol ? event.scrollLeft : event.scrollTop
+    const scrollSize = this._isCol ? event.scrollWidth : event.scrollHeight
 
     const scrollPercent = scroll / scrollSize
 
-    this.sheetViewportPosition.x = Math.trunc(
-      (this.spreadsheet.options[this.type].amount + 1) * scrollPercent
+    this._sheetViewportPosition.x = Math.trunc(
+      (this._spreadsheet.options[this._type].amount + 1) * scrollPercent
     )
 
-    let newScroll = Math.abs(this.scroll)
+    let newScroll = Math.abs(this._scroll)
 
-    const scrollAmount = this.getNewScrollAmount(
-      this.previousSheetViewportPosition.x,
-      this.sheetViewportPosition.x
+    const scrollAmount = this._getNewScrollAmount(
+      this._previousSheetViewportPosition.x,
+      this._sheetViewportPosition.x
     )
 
-    const scrollReverseAmount = this.getNewScrollAmount(
-      this.sheetViewportPosition.x,
-      this.previousSheetViewportPosition.x
+    const scrollReverseAmount = this._getNewScrollAmount(
+      this._sheetViewportPosition.x,
+      this._previousSheetViewportPosition.x
     )
 
     scrollReverseAmount.newScrollAmount *= -1
     scrollReverseAmount.totalCustomSizeDifferencs *= -1
 
     const totalPreviousCustomSizeDifferences =
-      this.totalPreviousCustomSizeDifferences +
+      this._totalPreviousCustomSizeDifferences +
       scrollAmount.totalCustomSizeDifferencs +
       scrollReverseAmount.totalCustomSizeDifferencs
 
@@ -149,28 +154,28 @@ class ScrollBar {
 
     newScroll *= -1
 
-    this.moveScrollGroups(newScroll)
+    this._moveScrollGroups(newScroll)
 
-    this.previousSheetViewportPosition.x = this.sheetViewportPosition.x
-    this.previousSheetViewportPosition.y = this.sheetViewportPosition.y
-    this.scroll = newScroll
-    this.totalPreviousCustomSizeDifferences = totalPreviousCustomSizeDifferences
+    this._previousSheetViewportPosition.x = this._sheetViewportPosition.x
+    this._previousSheetViewportPosition.y = this._sheetViewportPosition.y
+    this._scroll = newScroll
+    this._totalPreviousCustomSizeDifferences = totalPreviousCustomSizeDifferences
 
-    this.setYIndex()
+    this._setYIndex()
 
-    this.rowCols.cacheOutOfViewportRowCols()
-    this.rowCols.render()
-    this.sheets.cells.cacheOutOfViewportCells()
-    this.sheets.cells.render()
+    this._rowCols._cacheOutOfViewportRowCols()
+    this._rowCols._render()
+    this._sheets.cells._cacheOutOfViewportCells()
+    this._sheets.cells._render()
 
-    if (this.sheets.cellEditor.currentScroll?.[this.type] !== this.scroll) {
-      this.sheets.cellEditor.showCellTooltip()
+    if (this._sheets.cellEditor.currentScroll?.[this._type] !== this._scroll) {
+      this._sheets.cellEditor.showCellTooltip()
     } else {
-      this.sheets.cellEditor.hideCellTooltip()
+      this._sheets.cellEditor.hideCellTooltip()
     }
 
-    this.spreadsheet.eventEmitter.emit(
-      this.isCol ? 'scrollHorizontal' : 'scrollVertical',
+    this._spreadsheet.eventEmitter.emit(
+      this._isCol ? 'scrollHorizontal' : 'scrollVertical',
       e,
       newScroll
     )
@@ -179,36 +184,36 @@ class ScrollBar {
   /**
    * @internal
    */
-  setScrollSize() {
+  _setScrollSize() {
     const scrollSize =
-      this.sheets.sheetDimensions[this.functions.size] +
-      this.sheets._getViewportVector()[this.functions.axis]
+      this._sheets.sheetDimensions[this._functions.size] +
+      this._sheets._getViewportVector()[this._functions.axis]
 
-    this.scrollEl.style[this.functions.size] = `${scrollSize}px`
+    this.scrollEl.style[this._functions.size] = `${scrollSize}px`
   }
 
   /**
    * @internal
    */
-  setYIndex() {
-    const xIndex = this.sheetViewportPosition.x
+  _setYIndex() {
+    const xIndex = this._sheetViewportPosition.x
     const stageSize =
-      this.sheets.stage[this.functions.size]() -
-      this.sheets._getViewportVector()[this.functions.axis]
+      this._sheets.stage[this._functions.size]() -
+      this._sheets._getViewportVector()[this._functions.axis]
 
-    const yIndex = this.rowCols.calculateSheetViewportEndPosition(
+    const yIndex = this._rowCols._calculateSheetViewportEndPosition(
       stageSize,
       xIndex
     )
 
-    this.sheetViewportPosition.y = yIndex
+    this._sheetViewportPosition.y = yIndex
   }
 
   /**
    * @internal
    */
-  destroy() {
-    this.scrollBarEl.removeEventListener('scroll', this.throttledScroll)
+  _destroy() {
+    this.scrollBarEl.removeEventListener('scroll', this._throttledScroll)
   }
 }
 

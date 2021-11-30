@@ -136,7 +136,12 @@ class Sheets {
   /**
    * @internal
    */
-  constructor(public spreadsheet: Spreadsheet) {
+  constructor(
+    /**
+     * @internal
+     */
+    public _spreadsheet: Spreadsheet
+  ) {
     this.sheetElContainer = document.createElement('div')
     this.sheetElContainer.classList.add(
       `${prefix}-sheet-container`,
@@ -147,7 +152,7 @@ class Sheets {
     this.sheetEl.classList.add(`${prefix}-sheet`, styles.sheet)
 
     this.sheetElContainer.appendChild(this.sheetEl)
-    this.spreadsheet.spreadsheetEl.appendChild(this.sheetElContainer)
+    this._spreadsheet.spreadsheetEl.appendChild(this.sheetElContainer)
 
     this._debouncedResize = debounce(this._onResize, 50)
     this._throttledSheetMove = throttle(this._onSheetMouseMove, 35)
@@ -263,7 +268,7 @@ class Sheets {
 
   private _drawTopLeftOffsetRect() {
     this.topLeftRect = new Rect({
-      ...this.spreadsheet.styles.topLeftRect,
+      ...this._spreadsheet.styles.topLeftRect,
       width: this._getViewportVector().x,
       height: this._getViewportVector().y
     })
@@ -282,7 +287,7 @@ class Sheets {
     this.cols.scrollBar.scrollBarEl.scrollBy(e.evt.deltaX, 0)
     this.rows.scrollBar.scrollBarEl.scrollBy(0, e.evt.deltaY)
 
-    this.spreadsheet.eventEmitter.emit('scrollVerticalWheel', e)
+    this._spreadsheet.eventEmitter.emit('scrollVerticalWheel', e)
   }
 
   private _sheetOnTouchStart = (e: KonvaEventObject<TouchEvent>) => {
@@ -295,8 +300,8 @@ class Sheets {
 
     this.cellEditor.hideAndSave()
 
-    this.cols.scrollBar.previousTouchMovePosition = clientX
-    this.rows.scrollBar.previousTouchMovePosition = clientY
+    this.cols.scrollBar._previousTouchMovePosition = clientX
+    this.rows.scrollBar._previousTouchMovePosition = clientY
   }
 
   private _sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
@@ -308,18 +313,18 @@ class Sheets {
     const { clientX, clientY } = touch1
 
     const deltaX =
-      (this.cols.scrollBar.previousTouchMovePosition - clientX) *
-      this.spreadsheet.options.touchScrollSpeed
+      (this.cols.scrollBar._previousTouchMovePosition - clientX) *
+      this._spreadsheet.options.touchScrollSpeed
 
     const deltaY =
-      (this.rows.scrollBar.previousTouchMovePosition - clientY) *
-      this.spreadsheet.options.touchScrollSpeed
+      (this.rows.scrollBar._previousTouchMovePosition - clientY) *
+      this._spreadsheet.options.touchScrollSpeed
 
     this.cols.scrollBar.scrollBarEl.scrollBy(deltaX, 0)
     this.rows.scrollBar.scrollBarEl.scrollBy(0, deltaY)
 
-    this.cols.scrollBar.previousTouchMovePosition = clientX
-    this.rows.scrollBar.previousTouchMovePosition = clientY
+    this.cols.scrollBar._previousTouchMovePosition = clientX
+    this.rows.scrollBar._previousTouchMovePosition = clientY
   }
 
   private _onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
@@ -367,7 +372,7 @@ class Sheets {
       this.cellEditor.showAndSetValue(selectedFirstcell)
     }
 
-    if (this.spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
+    if (this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
       this.comment.show(simpleCellAddress)
     }
   }
@@ -409,12 +414,12 @@ class Sheets {
           break
         }
         case 'Delete': {
-          this.spreadsheet.hyperformula.batch(() => {
-            this.spreadsheet.pushToHistory(() => {
+          this._spreadsheet.hyperformula.batch(() => {
+            this._spreadsheet.pushToHistory(() => {
               this.selector.selectedCells.forEach(cell => {
                 const simpleCellAddress = cell.simpleCellAddress
 
-                this.spreadsheet.data.setCell(simpleCellAddress, {
+                this._spreadsheet.data.setCell(simpleCellAddress, {
                   value: undefined
                 })
               })
@@ -425,11 +430,11 @@ class Sheets {
         case e.ctrlKey && 'z': {
           e.preventDefault()
 
-          this.spreadsheet.undo()
+          this._spreadsheet.undo()
           break
         }
         case e.ctrlKey && 'y': {
-          this.spreadsheet.redo()
+          this._spreadsheet.redo()
           break
         }
         case e.ctrlKey && 'x': {
@@ -447,10 +452,9 @@ class Sheets {
         default:
           if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
             const selectedCell = this.selector.selectedCell!
-            const serializedValue =
-              this.spreadsheet.hyperformula.getCellSerialized(
-                selectedCell.simpleCellAddress
-              )
+            const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
             if (serializedValue) {
               this.cellEditor.clear()
@@ -465,13 +469,13 @@ class Sheets {
 
       resolve(undefined)
     }).then(() => {
-      this.spreadsheet.render()
+      this._spreadsheet.render()
     })
   }
 
   private _updateSheetDimensions() {
-    this.sheetDimensions.width = this.cols.getTotalSize()
-    this.sheetDimensions.height = this.rows.getTotalSize()
+    this.sheetDimensions.width = this.cols._getTotalSize()
+    this.sheetDimensions.height = this.rows._getTotalSize()
   }
 
   deleteSheet(sheetId: SheetId) {
@@ -485,17 +489,17 @@ class Sheets {
       }
     }
 
-    this.spreadsheet.data.deleteSheet(sheetId)
+    this._spreadsheet.data.deleteSheet(sheetId)
 
     delete this.sheetIds[sheetId]
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   switchSheet(sheetId: SheetId) {
-    this.cells.destroy()
-    this.rows.destroy()
-    this.cols.destroy()
+    this.cells._destroy()
+    this.rows._destroy()
+    this.cols._destroy()
     this.selector._destroy()
 
     this.activeSheetId = sheetId
@@ -506,27 +510,27 @@ class Sheets {
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   renameSheet(sheetId: SheetId, sheetName: string) {
-    this.spreadsheet.data.setSheet(sheetId, {
+    this._spreadsheet.data.setSheet(sheetId, {
       sheetName
     })
-    this.spreadsheet.hyperformula.renameSheet(sheetId, sheetName)
+    this._spreadsheet.hyperformula.renameSheet(sheetId, sheetName)
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   createNewSheet(data: ISheetData) {
-    this.spreadsheet.data.setSheet(data.id, data)
-    this.spreadsheet.hyperformula.addSheet(data.sheetName)
+    this._spreadsheet.data.setSheet(data.id, data)
+    this._spreadsheet.hyperformula.addSheet(data.sheetName)
 
     this.totalSheetCount++
 
     this.sheetIds[data.id] = data.id
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   getSheetName() {
@@ -544,8 +548,8 @@ class Sheets {
     this.sheet.width(this.stage.width() - this._getViewportVector().x)
     this.sheet.height(this.stage.height() - this._getViewportVector().y)
 
-    this.rows.updateViewportSize()
-    this.cols.updateViewportSize()
+    this.rows._updateViewportSize()
+    this.cols._updateViewportSize()
 
     const context = this.layer.canvas.getContext()
 
@@ -554,11 +558,11 @@ class Sheets {
     context.reset()
     context.translate(0.5, 0.5)
 
-    this.rows.setCachedRowCols()
-    this.cols.setCachedRowCols()
-    this.cells.setCachedCells()
+    this.rows._setCachedRowCols()
+    this.cols._setCachedRowCols()
+    this.cells._setCachedCells()
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   /**
@@ -589,8 +593,8 @@ class Sheets {
    */
   _getViewportVector() {
     return {
-      x: this.spreadsheet.styles.row.headerRect.width!,
-      y: this.spreadsheet.styles.col.headerRect.height!
+      x: this._spreadsheet.styles.row.headerRect.width!,
+      y: this._spreadsheet.styles.col.headerRect.height!
     }
   }
 
@@ -603,12 +607,12 @@ class Sheets {
       end
     )
 
-    const rowIndexes = this.rows.getTopBottomIndexFromPosition({
+    const rowIndexes = this.rows._getTopBottomIndexFromPosition({
       x: newStart.y,
       y: newEnd.y
     })
 
-    const colIndexes = this.cols.getTopBottomIndexFromPosition({
+    const colIndexes = this.cols._getTopBottomIndexFromPosition({
       x: newStart.x,
       y: newEnd.x
     })
@@ -637,10 +641,11 @@ class Sheets {
         const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId]
 
         if (mergedCellId) {
-          const mergedCell =
-            this.spreadsheet.data._spreadsheetData.mergedCells![mergedCellId]
-          const existingRangeSimpleCellAddress =
-            RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
+          const mergedCell = this._spreadsheet.data._spreadsheetData
+            .mergedCells![mergedCellId]
+          const existingRangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+            mergedCell
+          )
 
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
             'col',
@@ -703,11 +708,11 @@ class Sheets {
 
     this.sheetEl.remove()
     this.stage.destroy()
-    this.cols.destroy()
-    this.rows.destroy()
-    this.cellEditor?.destroy()
-    this.comment.destroy()
-    this.rightClickMenu.destroy()
+    this.cols._destroy()
+    this.rows._destroy()
+    this.cellEditor?._destroy()
+    this.comment._destroy()
+    this.rightClickMenu._destroy()
   }
 
   /**
@@ -724,14 +729,14 @@ class Sheets {
 
     this._updateSheetDimensions()
 
-    this.cells.resetCachedCells()
-    this.cells.render()
+    this.cells._resetCachedCells()
+    this.cells._render()
 
-    this.rows.clearAll()
-    this.rows.render()
+    this.rows._clearAll()
+    this.rows._render()
 
-    this.cols.clearAll()
-    this.cols.render()
+    this.cols._clearAll()
+    this.cols._render()
 
     this.selector._render()
   }

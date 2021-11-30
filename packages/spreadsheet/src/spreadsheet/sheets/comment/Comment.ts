@@ -17,13 +17,13 @@ class Comment {
   successButton: HTMLButtonElement
   cancelButton: HTMLButtonElement
   container: Instance<Props>
-  private spreadsheet: Spreadsheet
+  private _spreadsheet: Spreadsheet
 
   /**
    * @internal
    */
-  constructor(private sheets: Sheets) {
-    this.spreadsheet = this.sheets.spreadsheet
+  constructor(private _sheets: Sheets) {
+    this._spreadsheet = this._sheets._spreadsheet
     this.content = createContent()
     this.textarea = createTextarea()
     this.buttonContainer = createButtonContainer()
@@ -35,7 +35,7 @@ class Comment {
     this.buttonContainer.appendChild(this.successButton)
     this.buttonContainer.appendChild(this.cancelButton)
 
-    this.container = tippy(this.sheets.sheetEl, {
+    this.container = tippy(this._sheets.sheetEl, {
       placement: 'auto',
       interactive: true,
       arrow: false,
@@ -54,36 +54,36 @@ class Comment {
 
     this.hide()
 
-    this.cancelButton.addEventListener('click', this.cancelButtonOnClick)
-    this.successButton.addEventListener('click', this.successButtonOnClick)
+    this.cancelButton.addEventListener('click', this._cancelButtonOnClick)
+    this.successButton.addEventListener('click', this._successButtonOnClick)
   }
 
-  private cancelButtonOnClick = () => {
+  private _cancelButtonOnClick = () => {
     this.hide()
   }
 
-  private successButtonOnClick = () => {
-    this.spreadsheet.pushToHistory(() => {
-      const simpleCellAddress =
-        this.sheets.selector.selectedCell!.simpleCellAddress
+  private _successButtonOnClick = () => {
+    this._spreadsheet.pushToHistory(() => {
+      const simpleCellAddress = this._sheets.selector.selectedCell!
+        .simpleCellAddress
 
-      this.spreadsheet.data.setCell(simpleCellAddress, {
+      this._spreadsheet.data.setCell(simpleCellAddress, {
         comment: this.textarea.value
       })
     })
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
     this.hide()
   }
 
   /**
    * @internal
    */
-  destroy() {
+  _destroy() {
     this.content.remove()
     this.container.destroy()
-    this.successButton.removeEventListener('click', this.successButtonOnClick)
-    this.cancelButton.removeEventListener('click', this.cancelButtonOnClick)
+    this.successButton.removeEventListener('click', this._successButtonOnClick)
+    this.cancelButton.removeEventListener('click', this._cancelButtonOnClick)
   }
 
   hide() {
@@ -96,10 +96,9 @@ class Comment {
     this.container.unmount()
     this.container.show()
 
-    const comment =
-      this.spreadsheet.data._spreadsheetData.cells?.[
-        simpleCellAddress.toCellId()
-      ]?.comment
+    const comment = this._spreadsheet.data._spreadsheetData.cells?.[
+      simpleCellAddress.toCellId()
+    ]?.comment
 
     if (comment) {
       this.textarea.value = comment

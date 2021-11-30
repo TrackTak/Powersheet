@@ -33,55 +33,64 @@ class RowCols {
   /**
    * @internal
    */
-  totalSize: number
+  _totalSize: number
   /**
    * @internal
    */
-  functions: IRowColFunctions
+  _functions: IRowColFunctions
   /**
    * @internal
    */
-  oppositeFunctions: IRowColFunctions
+  _oppositeFunctions: IRowColFunctions
   /**
    * @internal
    */
-  isCol: boolean
+  _isCol: boolean
   /**
    * @internal
    */
-  pluralType: RowColsType
-  private spreadsheet: Spreadsheet
+  _pluralType: RowColsType
+  private _spreadsheet: Spreadsheet
 
   /**
    * @internal
    */
-  constructor(public type: RowColType, public sheets: Sheets) {
-    this.isCol = this.type === 'col'
-    this.spreadsheet = this.sheets.spreadsheet
+  constructor(
+    /**
+     * @internal
+     */
+    public _type: RowColType,
+    /**
+     * @internal
+     */
+    public _sheets: Sheets
+  ) {
+    this._isCol = this._type === 'col'
+    this._spreadsheet = this._sheets._spreadsheet
     this.rowColMap = new Map()
 
-    this.totalSize = 0
+    this._totalSize = 0
 
-    if (this.isCol) {
-      this.functions = {
+    if (this._isCol) {
+      this._functions = {
         axis: 'x',
         size: 'width'
       }
-      this.oppositeFunctions = {
+      this._oppositeFunctions = {
         axis: 'y',
         size: 'height'
       }
     } else {
-      this.functions = {
+      this._functions = {
         axis: 'y',
         size: 'height'
       }
-      this.oppositeFunctions = {
+      this._oppositeFunctions = {
         axis: 'x',
         size: 'width'
       }
     }
-    this.pluralType = `${this.type}s`
+    this._pluralType = `${this._type}s`
 
     this.resizer = new Resizer(this)
     this.scrollBar = new ScrollBar(this)
@@ -90,29 +99,29 @@ class RowCols {
       name: 'frozenLine'
     })
 
-    this.sheets.scrollGroups.xySticky.sheetGroup.add(this.frozenLine)
+    this._sheets.scrollGroups.xySticky.sheetGroup.add(this.frozenLine)
 
-    this.updateViewportSize()
+    this._updateViewportSize()
   }
 
-  private cloneGroupsAndPush() {
+  private _cloneGroupsAndPush() {
     const headerRect = new Rect({
-      ...this.spreadsheet.styles[this.type].headerRect,
+      ...this._spreadsheet.styles[this._type].headerRect,
       name: 'headerRect',
-      [this.functions.size]: this.spreadsheet.options[this.type].defaultSize
+      [this._functions.size]: this._spreadsheet.options[this._type].defaultSize
     })
 
     const headerText = new Text({
-      ...this.spreadsheet.styles[this.type].headerText,
+      ...this._spreadsheet.styles[this._type].headerText,
       name: 'headerText'
     })
 
     const resizeLine = new Line({
-      ...this.spreadsheet.styles[this.type].resizeLine,
+      ...this._spreadsheet.styles[this._type].resizeLine,
       name: 'resizeLine',
-      points: this.isCol
-        ? [0, 0, 0, this.sheets._getViewportVector().y]
-        : [0, 0, this.sheets._getViewportVector().x, 0]
+      points: this._isCol
+        ? [0, 0, 0, this._sheets._getViewportVector().y]
+        : [0, 0, this._sheets._getViewportVector().x, 0]
     })
 
     const headerGroup = new Group({
@@ -122,47 +131,47 @@ class RowCols {
     headerGroup.add(headerRect, headerText, resizeLine)
 
     const gridLine = new Line({
-      ...this.spreadsheet.styles[this.type].gridLine,
-      points: this.getLinePoints(this.getSheetSize()),
+      ...this._spreadsheet.styles[this._type].gridLine,
+      points: this._getLinePoints(this._getSheetSize()),
       name: 'gridLine'
     })
 
-    this.sheets._cachedGroups[this.pluralType].headerGroups.push(headerGroup)
-    this.sheets._cachedGroups[this.pluralType].gridLines.push(gridLine)
+    this._sheets._cachedGroups[this._pluralType].headerGroups.push(headerGroup)
+    this._sheets._cachedGroups[this._pluralType].gridLines.push(gridLine)
   }
 
-  private updateFrozenRowCols(frozenRowCol?: number) {
+  private _updateFrozenRowCols(frozenRowCol?: number) {
     if (!isNil(frozenRowCol)) {
       for (let index = 0; index <= frozenRowCol; index++) {
         const rowColAddress = new RowColAddress(
-          this.sheets.activeSheetId,
+          this._sheets.activeSheetId,
           index
         )
 
-        this.updateRowCol(rowColAddress)
+        this._updateRowCol(rowColAddress)
       }
     }
   }
 
-  private updateRowCol(rowColAddress: RowColAddress) {
+  private _updateRowCol(rowColAddress: RowColAddress) {
     const rowCol = this.rowColMap.get(rowColAddress.rowCol)
 
     if (!rowCol) {
-      this.setRowCol(rowColAddress)
+      this._setRowCol(rowColAddress)
     }
   }
 
-  private getSheetSize() {
-    return this.sheets.sheetDimensions[this.oppositeFunctions.size]
+  private _getSheetSize() {
+    return this._sheets.sheetDimensions[this._oppositeFunctions.size]
   }
 
-  private getLinePoints = (size: number) => {
-    return this.isCol ? [0, 0, 0, size] : [0, 0, size, 0]
+  private _getLinePoints = (size: number) => {
+    return this._isCol ? [0, 0, 0, size] : [0, 0, size, 0]
   }
 
-  private *getSizeForFrozenCell() {
-    const { frozenCells } = this.spreadsheet.data._spreadsheetData
-    const frozenCell = frozenCells?.[this.sheets.activeSheetId]?.[this.type]
+  private *_getSizeForFrozenCell() {
+    const { frozenCells } = this._spreadsheet.data._spreadsheetData
+    const frozenCell = frozenCells?.[this._sheets.activeSheetId]?.[this._type]
 
     if (isNil(frozenCell)) return null
 
@@ -180,14 +189,14 @@ class RowCols {
   /**
    * @internal
    */
-  cacheOutOfViewportRowCols() {
+  _cacheOutOfViewportRowCols() {
     this.rowColMap.forEach((rowCol, index) => {
-      if (rowCol.getIsOutsideSheet()) {
+      if (rowCol._getIsOutsideSheet()) {
         this.rowColMap.delete(index)
-        this.sheets._cachedGroups[this.pluralType].headerGroups.push(
+        this._sheets._cachedGroups[this._pluralType].headerGroups.push(
           rowCol.headerGroup
         )
-        this.sheets._cachedGroups[this.pluralType].gridLines.push(
+        this._sheets._cachedGroups[this._pluralType].gridLines.push(
           rowCol.gridLine
         )
       }
@@ -197,35 +206,36 @@ class RowCols {
   /**
    * @internal
    */
-  setCachedRowCols() {
-    const numberOfCachedRowCols =
-      this.sheets._cachedGroupsNumber[this.pluralType]
+  _setCachedRowCols() {
+    const numberOfCachedRowCols = this._sheets._cachedGroupsNumber[
+      this._pluralType
+    ]
 
     const maxNumberOfCachedRoCols = Math.max(
-      this.sheets.stage[this.functions.size]() /
-        this.spreadsheet.options[this.type].minSize,
-      this.sheets._cachedGroupsNumber[this.pluralType]
+      this._sheets.stage[this._functions.size]() /
+        this._spreadsheet.options[this._type].minSize,
+      this._sheets._cachedGroupsNumber[this._pluralType]
     )
 
-    this.sheets._cachedGroupsNumber[this.pluralType] = maxNumberOfCachedRoCols
+    this._sheets._cachedGroupsNumber[this._pluralType] = maxNumberOfCachedRoCols
 
     for (
       let index = numberOfCachedRowCols;
       index < maxNumberOfCachedRoCols;
       index++
     ) {
-      this.cloneGroupsAndPush()
+      this._cloneGroupsAndPush()
     }
   }
 
   /**
    * @internal
    */
-  clearAll() {
+  _clearAll() {
     this.rowColMap.forEach((rowCol, rowColId) => {
-      this.cloneGroupsAndPush()
+      this._cloneGroupsAndPush()
 
-      rowCol.destroy()
+      rowCol._destroy()
 
       this.rowColMap.delete(rowColId)
     })
@@ -234,39 +244,38 @@ class RowCols {
   /**
    * @internal
    */
-  render() {
+  _render() {
     this.frozenLine.setAttrs({
-      ...this.spreadsheet.styles[this.type].frozenLine,
+      ...this._spreadsheet.styles[this._type].frozenLine,
       visible: false
     })
 
-    const frozenCells =
-      this.spreadsheet.data._spreadsheetData.frozenCells?.[
-        this.sheets.activeSheetId
-      ]
-    const frozenRowCol = frozenCells?.[this.type]
+    const frozenCells = this._spreadsheet.data._spreadsheetData.frozenCells?.[
+      this._sheets.activeSheetId
+    ]
+    const frozenRowCol = frozenCells?.[this._type]
 
-    this.updateFrozenRowCols(frozenRowCol)
+    this._updateFrozenRowCols(frozenRowCol)
 
     // Backwards so we ignore frozen row/cols
     // when they don't exist in the cache
-    for (const index of this.scrollBar.sheetViewportPosition.iterateFromYToX()) {
-      const rowColAddress = new RowColAddress(this.sheets.activeSheetId, index)
+    for (const index of this.scrollBar._sheetViewportPosition.iterateFromYToX()) {
+      const rowColAddress = new RowColAddress(this._sheets.activeSheetId, index)
 
-      this.updateRowCol(rowColAddress)
+      this._updateRowCol(rowColAddress)
     }
 
     if (!isNil(frozenRowCol)) {
-      this.frozenLine[this.functions.axis](
+      this.frozenLine[this._functions.axis](
         this.getAxis(frozenRowCol) +
           this.getSize(frozenRowCol) -
-          this.sheets._getViewportVector()[this.functions.axis]
+          this._sheets._getViewportVector()[this._functions.axis]
       )
       this.frozenLine.points(
-        this.getLinePoints(
-          this.isCol
-            ? this.sheets.sheetDimensions.height
-            : this.sheets.sheetDimensions.width
+        this._getLinePoints(
+          this._isCol
+            ? this._sheets.sheetDimensions.height
+            : this._sheets.sheetDimensions.width
         )
       )
       this.frozenLine.show()
@@ -276,11 +285,13 @@ class RowCols {
   /**
    * @internal
    */
-  setRowCol(rowColAddress: RowColAddress) {
-    const cachedHeaderGroup =
-      this.sheets._cachedGroups[this.pluralType].headerGroups.pop()!
-    const cachedGridLine =
-      this.sheets._cachedGroups[this.pluralType].gridLines.pop()!
+  _setRowCol(rowColAddress: RowColAddress) {
+    const cachedHeaderGroup = this._sheets._cachedGroups[
+      this._pluralType
+    ].headerGroups.pop()!
+    const cachedGridLine = this._sheets._cachedGroups[
+      this._pluralType
+    ].gridLines.pop()!
 
     if (!cachedHeaderGroup) return
 
@@ -297,26 +308,27 @@ class RowCols {
   /**
    * @internal
    */
-  destroy() {
-    this.clearAll()
-    this.scrollBar.destroy()
+  _destroy() {
+    this._clearAll()
+    this.scrollBar._destroy()
     this.frozenLine.destroy()
-    this.resizer.destroy()
+    this.resizer._destroy()
   }
 
   getAxis(index: number) {
-    const data = this.spreadsheet.data._spreadsheetData
-    const defaultSize = this.spreadsheet.options[this.type].defaultSize
+    const data = this._spreadsheet.data._spreadsheetData
+    const defaultSize = this._spreadsheet.options[this._type].defaultSize
     const rowCols =
-      data.sheets?.[this.sheets.activeSheetId][this.pluralType] ?? {}
+      data.sheets?.[this._sheets.activeSheetId][this._pluralType] ?? {}
 
     let totalPreviousCustomSizeDifferences = 0
 
     Object.keys(rowCols).forEach(key => {
       const sheetRowColId = key as SheetRowColId
-      const sheetRowColAddress =
-        RowColAddress.sheetRowColIdToAddress(sheetRowColId)
-      const rowCol = data[this.pluralType]![sheetRowColId]
+      const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+        sheetRowColId
+      )
+      const rowCol = data[this._pluralType]![sheetRowColId]
 
       if (sheetRowColAddress.rowCol >= index) return
 
@@ -326,26 +338,26 @@ class RowCols {
     const axis =
       defaultSize * index +
       totalPreviousCustomSizeDifferences +
-      this.sheets._getViewportVector()[this.functions.axis]
+      this._sheets._getViewportVector()[this._functions.axis]
 
     return axis
   }
 
   getSize(index: number) {
     const sheetRowColId = new RowColAddress(
-      this.sheets.activeSheetId,
+      this._sheets.activeSheetId,
       index
     ).toSheetRowColId()
-    const data = this.spreadsheet.data._spreadsheetData
-    const size = data[this.pluralType]?.[sheetRowColId]?.size
+    const data = this._spreadsheet.data._spreadsheetData
+    const size = data[this._pluralType]?.[sheetRowColId]?.size
 
-    return size ?? this.spreadsheet.options[this.type].defaultSize
+    return size ?? this._spreadsheet.options[this._type].defaultSize
   }
 
   getIsFrozen(index: number) {
-    const data = this.spreadsheet.data._spreadsheetData
+    const data = this._spreadsheet.data._spreadsheetData
     const frozenCell =
-      data.frozenCells?.[this.sheets.activeSheetId]?.[this.type]
+      data.frozenCells?.[this._sheets.activeSheetId]?.[this._type]
 
     return isNil(frozenCell) ? false : index <= frozenCell
   }
@@ -353,23 +365,23 @@ class RowCols {
   /**
    * @internal
    */
-  updateViewportSize() {
-    this.scrollBar.setYIndex()
+  _updateViewportSize() {
+    this.scrollBar._setYIndex()
 
     let sumOfSizes = 0
 
-    for (const index of this.scrollBar.sheetViewportPosition.iterateFromXToY()) {
+    for (const index of this.scrollBar._sheetViewportPosition.iterateFromXToY()) {
       sumOfSizes += this.getSize(index)
     }
 
-    this.totalSize = sumOfSizes
-    this.scrollBar.setScrollSize()
+    this._totalSize = sumOfSizes
+    this.scrollBar._setScrollSize()
   }
 
   /**
    * @internal
    */
-  calculateSheetViewportEndPosition = (
+  _calculateSheetViewportEndPosition = (
     sheetViewportDimensionSize: number,
     sheetViewportStartYIndex: number
   ) => {
@@ -391,9 +403,9 @@ class RowCols {
   /**
    * @internal
    */
-  getTotalSize() {
+  _getTotalSize() {
     const rowCols = Object.keys(
-      this.spreadsheet.data._spreadsheetData[this.pluralType] ?? {}
+      this._spreadsheet.data._spreadsheetData[this._pluralType] ?? {}
     )
 
     const totalSizeDifference = rowCols.reduce((currentSize, key) => {
@@ -402,13 +414,13 @@ class RowCols {
       const size = this.getSize(rowColAddress.rowCol)
 
       return (
-        size - this.spreadsheet.options[this.type].defaultSize + currentSize
+        size - this._spreadsheet.options[this._type].defaultSize + currentSize
       )
     }, 0)
 
     const totalSize =
-      (this.spreadsheet.options[this.type].amount + 1) *
-        this.spreadsheet.options[this.type].defaultSize +
+      (this._spreadsheet.options[this._type].amount + 1) *
+        this._spreadsheet.options[this._type].defaultSize +
       totalSizeDifference
 
     return totalSize
@@ -417,10 +429,10 @@ class RowCols {
   /**
    * @internal
    */
-  getSizeUpToFrozenRowCol() {
+  _getSizeUpToFrozenRowCol() {
     let size = 0
 
-    for (const value of this.getSizeForFrozenCell()) {
+    for (const value of this._getSizeForFrozenCell()) {
       size = value.size
     }
     return size
@@ -429,13 +441,13 @@ class RowCols {
   /**
    * @internal
    */
-  getTopBottomIndexFromPosition(position: Vector2d) {
-    const sheetViewportStartYIndex = this.scrollBar.sheetViewportPosition.x
+  _getTopBottomIndexFromPosition(position: Vector2d) {
+    const sheetViewportStartYIndex = this.scrollBar._sheetViewportPosition.x
 
     let topIndex = null
     let bottomIndex = null
 
-    for (const { size, index } of this.getSizeForFrozenCell()) {
+    for (const { size, index } of this._getSizeForFrozenCell()) {
       if (topIndex === null && position.x <= size) {
         topIndex = index
       }
@@ -446,14 +458,14 @@ class RowCols {
     }
 
     if (topIndex === null) {
-      topIndex = this.calculateSheetViewportEndPosition(
+      topIndex = this._calculateSheetViewportEndPosition(
         position.x,
         sheetViewportStartYIndex
       )
     }
 
     if (bottomIndex === null) {
-      bottomIndex = this.calculateSheetViewportEndPosition(
+      bottomIndex = this._calculateSheetViewportEndPosition(
         position.y,
         sheetViewportStartYIndex
       )

@@ -25,12 +25,12 @@ class StyleableCell extends Cell {
   borders: Record<BorderStyle, Line>
 
   constructor(
-    protected sheets: Sheets,
+    protected _sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     public group: Group,
     public bordersGroup: Group
   ) {
-    super(sheets, simpleCellAddress, group)
+    super(_sheets, simpleCellAddress, group)
 
     bordersGroup.position(group.position())
 
@@ -50,10 +50,10 @@ class StyleableCell extends Cell {
       borderTop: borders[3]
     }
 
-    this.updateStyles()
+    this._updateStyles()
   }
 
-  private setBottomBorder(borders?: BorderStyle[]) {
+  private _setBottomBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderBottom
 
     if (borders?.includes('borderBottom')) {
@@ -69,7 +69,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setRightBorder(borders?: BorderStyle[]) {
+  private _setRightBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderRight
 
     if (borders?.includes('borderRight')) {
@@ -85,7 +85,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setTopBorder(borders?: BorderStyle[]) {
+  private _setTopBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderTop
 
     if (borders?.includes('borderTop')) {
@@ -99,7 +99,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setLeftBorder(borders?: BorderStyle[]) {
+  private _setLeftBorder(borders?: BorderStyle[]) {
     const border = this.borders.borderLeft
 
     if (borders?.includes('borderLeft')) {
@@ -113,29 +113,29 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setTextWrap(textWrap?: TextWrap) {
-    this.text.wrap(textWrap ?? this.sheets.spreadsheet.styles.cell.text.wrap!)
+  private _setTextWrap(textWrap?: TextWrap) {
+    this.text.wrap(textWrap ?? this._sheets._spreadsheet.styles.cell.text.wrap!)
   }
 
-  private setBackgroundColor(backgroundColor?: string) {
+  private _setBackgroundColor(backgroundColor?: string) {
     this.rect.fill(
-      backgroundColor ?? this.sheets.spreadsheet.styles.cell.rect.fill!
+      backgroundColor ?? this._sheets._spreadsheet.styles.cell.rect.fill!
     )
   }
 
-  private setFontColor(fontColor?: string) {
-    this.text.fill(fontColor ?? this.sheets.spreadsheet.styles.cell.text.fill!)
+  private _setFontColor(fontColor?: string) {
+    this.text.fill(fontColor ?? this._sheets._spreadsheet.styles.cell.text.fill!)
   }
 
-  private setFontSize(fontSize?: number) {
+  private _setFontSize(fontSize?: number) {
     this.text.fontSize(
-      fontSize ?? this.sheets.spreadsheet.styles.cell.text.fontSize!
+      fontSize ?? this._sheets._spreadsheet.styles.cell.text.fontSize!
     )
   }
 
-  private setBold(bold?: boolean) {
+  private _setBold(bold?: boolean) {
     const italic =
-      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
+      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.italic ?? false
     const fontStyle = new FontStyle(this.text, bold ?? false, italic)
@@ -143,9 +143,9 @@ class StyleableCell extends Cell {
     fontStyle.setStyle()
   }
 
-  private setItalic(italic?: boolean) {
+  private _setItalic(italic?: boolean) {
     const bold =
-      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
+      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.bold ?? false
     const fontStyle = new FontStyle(this.text, bold, italic ?? false)
@@ -153,9 +153,9 @@ class StyleableCell extends Cell {
     fontStyle.setStyle()
   }
 
-  private setStrikeThrough(strikeThrough?: boolean) {
+  private _setStrikeThrough(strikeThrough?: boolean) {
     const underline =
-      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
+      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.underline ?? false
     const textDecoration = new TextDecoration(
@@ -167,9 +167,9 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private setUnderline(underline?: boolean) {
+  private _setUnderline(underline?: boolean) {
     const strikeThrough =
-      this.sheets.spreadsheet.data._spreadsheetData.cells?.[
+      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
         this.simpleCellAddress.toCellId()
       ]?.strikeThrough ?? false
     const textDecoration = new TextDecoration(
@@ -181,20 +181,20 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
+  private _setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
     this.text.align(
-      horizontalTextAlign ?? this.sheets.spreadsheet.styles.cell.text.align!
+      horizontalTextAlign ?? this._sheets._spreadsheet.styles.cell.text.align!
     )
   }
 
-  private setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
+  private _setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
     this.text.verticalAlign(
       verticalTextAlign ??
-        this.sheets.spreadsheet.styles.cell.text.verticalAlign!
+        this._sheets._spreadsheet.styles.cell.text.verticalAlign!
     )
   }
 
-  private setCellCommentMarker(comment?: string) {
+  private _setCellCommentMarker(comment?: string) {
     if (comment) {
       const width = this.rect.width()
 
@@ -207,11 +207,11 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setCellTextValue(cellValue?: string, textFormatPattern?: string) {
+  private _setCellTextValue(cellValue?: string, textFormatPattern?: string) {
     let value: CellValue | undefined =
-      this.sheets.spreadsheet.hyperformula.getCellValue(this.simpleCellAddress)
+      this._sheets._spreadsheet.hyperformula.getCellValue(this.simpleCellAddress)
 
-    if (this.sheets.spreadsheet.data._spreadsheetData.showFormulas) {
+    if (this._sheets._spreadsheet.data._spreadsheetData.showFormulas) {
       value = cellValue
     }
 
@@ -220,7 +220,7 @@ class StyleableCell extends Cell {
 
       let text = value
 
-      const cellType = this.sheets.spreadsheet.hyperformula.getCellValueType(
+      const cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
         this.simpleCellAddress
       )
 
@@ -230,7 +230,7 @@ class StyleableCell extends Cell {
         textFormatPattern &&
         cellType !== CellValueType.STRING &&
         cellType !== CellValueType.BOOLEAN &&
-        !this.sheets.spreadsheet.data.spreadsheetData.showFormulas
+        !this._sheets._spreadsheet.data._spreadsheetData.showFormulas
       ) {
         try {
           text = format(textFormatPattern, Number(text))
@@ -254,8 +254,8 @@ class StyleableCell extends Cell {
     }
   }
 
-  private setCellTextHeight() {
-    const height = this.sheets.rows.getSize(this.simpleCellAddress.row)
+  private _setCellTextHeight() {
+    const height = this._sheets.rows.getSize(this.simpleCellAddress.row)
 
     if (this.text.wrap() === 'none') {
       this.text.height(height)
@@ -265,9 +265,9 @@ class StyleableCell extends Cell {
     }
   }
 
-  private updateStyles() {
+  private _updateStyles() {
     const cellId = this.simpleCellAddress.toCellId()
-    const cell = this.sheets.spreadsheet.data._spreadsheetData.cells?.[cellId]
+    const cell = this._sheets._spreadsheet.data._spreadsheetData.cells?.[cellId]
 
     const {
       textWrap,
@@ -286,37 +286,37 @@ class StyleableCell extends Cell {
       value
     } = cell ?? {}
 
-    this.setCellTextValue(value, textFormatPattern)
-    this.setCellCommentMarker(comment)
-    this.setBackgroundColor(backgroundColor)
-    this.setTextWrap(textWrap)
-    this.setFontSize(fontSize)
-    this.setFontColor(fontColor)
-    this.setBold(bold)
-    this.setItalic(italic)
-    this.setStrikeThrough(strikeThrough)
-    this.setUnderline(underline)
-    this.setHorizontalTextAlign(horizontalTextAlign)
-    this.setVerticalTextAlign(verticalTextAlign)
-    this.setCellTextHeight()
-    this.setLeftBorder(borders)
-    this.setTopBorder(borders)
-    this.setRightBorder(borders)
-    this.setBottomBorder(borders)
+    this._setCellTextValue(value, textFormatPattern)
+    this._setCellCommentMarker(comment)
+    this._setBackgroundColor(backgroundColor)
+    this._setTextWrap(textWrap)
+    this._setFontSize(fontSize)
+    this._setFontColor(fontColor)
+    this._setBold(bold)
+    this._setItalic(italic)
+    this._setStrikeThrough(strikeThrough)
+    this._setUnderline(underline)
+    this._setHorizontalTextAlign(horizontalTextAlign)
+    this._setVerticalTextAlign(verticalTextAlign)
+    this._setCellTextHeight()
+    this._setLeftBorder(borders)
+    this._setTopBorder(borders)
+    this._setRightBorder(borders)
+    this._setBottomBorder(borders)
 
     const stickyGroup = this.getStickyGroupCellBelongsTo()
 
     if (!this.group.parent) {
-      this.sheets.scrollGroups[stickyGroup].cellGroup.add(this.group)
+      this._sheets.scrollGroups[stickyGroup].cellGroup.add(this.group)
     }
 
     if (!this.bordersGroup.parent) {
-      this.sheets.scrollGroups[stickyGroup].cellBorders.add(this.bordersGroup)
+      this._sheets.scrollGroups[stickyGroup].cellBorders.add(this.bordersGroup)
     }
   }
 
-  override destroy() {
-    super.destroy()
+  override _destroy() {
+    super._destroy()
 
     this.bordersGroup.destroy()
   }

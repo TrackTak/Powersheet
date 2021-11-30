@@ -46,7 +46,7 @@ class FunctionHelper {
   closeButton!: HTMLButtonElement
   headerEl!: HTMLHeadElement
   textWrapper!: HTMLDivElement
-  private spreadsheet!: Spreadsheet
+  private _spreadsheet!: Spreadsheet
 
   /**
    * @internal
@@ -57,7 +57,7 @@ class FunctionHelper {
    * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet
+    this._spreadsheet = spreadsheet
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
@@ -93,9 +93,9 @@ class FunctionHelper {
     )
 
     this.closeButton.addEventListener('click', () => {
-      this.spreadsheet.options.showFunctionHelper = false
+      this._spreadsheet.options.showFunctionHelper = false
 
-      this.spreadsheet.render()
+      this._spreadsheet.render()
     })
 
     this.drawerContentEl.appendChild(this.closeButton)
@@ -166,7 +166,7 @@ class FunctionHelper {
   setDrawer() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
 
-    this.spreadsheet.render()
+    this._spreadsheet.render()
   }
 
   /**
@@ -174,7 +174,7 @@ class FunctionHelper {
    */
   _render() {
     if (this.drawer) {
-      this.drawer.open = this.spreadsheet.options.showFunctionHelper
+      this.drawer.open = this._spreadsheet.options.showFunctionHelper
     }
   }
 

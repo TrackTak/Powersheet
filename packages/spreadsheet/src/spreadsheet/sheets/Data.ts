@@ -152,16 +152,18 @@ class Data {
 
     for (const key in sheet?.cols) {
       const sheetRowColId = key as SheetRowColId
-      const sheetRowColAddress =
-        RowColAddress.sheetRowColIdToAddress(sheetRowColId)
+      const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+        sheetRowColId
+      )
 
       this.deleteRowCol('cols', sheetRowColAddress)
     }
 
     for (const key in sheet?.rows) {
       const sheetRowColId = key as SheetRowColId
-      const sheetRowColAddress =
-        RowColAddress.sheetRowColIdToAddress(sheetRowColId)
+      const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+        sheetRowColId
+      )
 
       this.deleteRowCol('rows', sheetRowColAddress)
     }
@@ -265,8 +267,9 @@ class Data {
       id: mergedCellId
     }
 
-    const rangeSimpleCellAddress =
-      RangeSimpleCellAddress.mergedCellToAddress(newMergedCell)
+    const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+      newMergedCell
+    )
 
     this._spreadsheet.hyperformula.batch(() => {
       for (const ri of rangeSimpleCellAddress.iterateFromTopToBottom('row')) {
@@ -277,10 +280,8 @@ class Data {
             ci
           )
 
-          const associatedTopLeftMergedCellId =
-            this._spreadsheet.sheets.merger.associatedMergedCellAddressMap[
-              simpleCellAddress.toCellId()
-            ]
+          const associatedTopLeftMergedCellId = this._spreadsheet.sheets.merger
+            .associatedMergedCellAddressMap[simpleCellAddress.toCellId()]
 
           if (
             simpleCellAddress.toCellId() !== mergedCellId &&
@@ -298,8 +299,9 @@ class Data {
       }
     })
 
-    this._spreadsheetData.sheets![sheetId].mergedCells![mergedCellId] =
+    this._spreadsheetData.sheets![sheetId].mergedCells![
       mergedCellId
+    ] = mergedCellId
 
     this._spreadsheetData.mergedCells[mergedCellId] = newMergedCell
 
@@ -378,8 +380,9 @@ class Data {
       this._spreadsheetData.sheets![sheetId][pluralType] = {}
     }
 
-    this._spreadsheetData.sheets![sheetId][pluralType]![sheetRowColId] =
+    this._spreadsheetData.sheets![sheetId][pluralType]![
       sheetRowColId
+    ] = sheetRowColId
 
     this._spreadsheetData[pluralType]![sheetRowColId] = {
       ...this._spreadsheetData[pluralType]![sheetRowColId],

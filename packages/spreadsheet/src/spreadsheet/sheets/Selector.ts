@@ -45,7 +45,7 @@ class Selector {
    * @internal
    */
   constructor(private _sheets: Sheets) {
-    this._spreadsheet = this._sheets.spreadsheet
+    this._spreadsheet = this._sheets._spreadsheet
 
     this.selectedSimpleCellAddress = new SimpleCellAddress(
       this._sheets.activeSheetId,
@@ -54,9 +54,9 @@ class Selector {
     )
   }
 
-  private renderSelectedCell() {
+  private _renderSelectedCell() {
     if (this.selectedSimpleCellAddress) {
-      this.selectedCell?.destroy()
+      this.selectedCell?._destroy()
 
       this.selectedCell = new SelectedCell(
         this._sheets,
@@ -70,7 +70,7 @@ class Selector {
     }
   }
 
-  private renderSelectionArea() {
+  private _renderSelectionArea() {
     if (this.selectionArea) {
       Object.keys(this.groupedCells ?? {}).forEach(key => {
         const type = key as keyof IGroupedCells
@@ -78,11 +78,10 @@ class Selector {
         this.groupedCells?.[type].rect?.destroy()
       })
 
-      const rangeSimpleCellAddress =
-        this._sheets._convertVectorsToRangeSimpleCellAddress(
-          this.selectionArea.start,
-          this.selectionArea.end
-        )
+      const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
+        this.selectionArea.start,
+        this.selectionArea.end
+      )
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this._sheets,
@@ -119,13 +118,14 @@ class Selector {
         this.groupedCells?.[type].rect?.destroy()
 
         if (cells.length) {
-          const topLeftCellClientRect = cells[0].getClientRectWithoutStroke()
+          const topLeftCellClientRect = cells[0]._getClientRectWithoutStroke()
 
           let width = 0
           let height = 0
 
-          const minMaxRangeSimpleCellAddress =
-            this._sheets._getMinMaxRangeSimpleCellAddress(cells)
+          const minMaxRangeSimpleCellAddress = this._sheets._getMinMaxRangeSimpleCellAddress(
+            cells
+          )
 
           for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
             'row'
@@ -160,7 +160,7 @@ class Selector {
    * @internal
    */
   _destroy() {
-    this.selectedCell?.destroy()
+    this.selectedCell?._destroy()
 
     Object.keys(this.groupedCells ?? {}).forEach(key => {
       const type = key as keyof IGroupedCells
@@ -173,8 +173,8 @@ class Selector {
    * @internal
    */
   _render() {
-    this.renderSelectionArea()
-    this.renderSelectedCell()
+    this._renderSelectionArea()
+    this._renderSelectedCell()
   }
 
   /**
@@ -182,12 +182,13 @@ class Selector {
    * @param vector The X,Y co-ordinates to start the selection at
    */
   startSelection(vector: Vector2d) {
-    this._previousSelectedSimpleCellAddress =
-      this.selectedCell?.simpleCellAddress
+    this._previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
     this.selectionArea = null
 
-    const rangeSimpleCellAddress =
-      this._sheets._convertVectorsToRangeSimpleCellAddress(vector, vector)
+    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
+      vector,
+      vector
+    )
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,
@@ -196,14 +197,14 @@ class Selector {
       }
     )[0]
 
-    const rect = cell.getClientRectWithoutStroke()
+    const rect = cell._getClientRectWithoutStroke()
 
     if (!cell.isCellOnFrozenCol()) {
-      rect.x -= Math.abs(this._sheets.cols.scrollBar.scroll)
+      rect.x -= Math.abs(this._sheets.cols.scrollBar._scroll)
     }
 
     if (!cell.isCellOnFrozenRow()) {
-      rect.y -= Math.abs(this._sheets.rows.scrollBar.scroll)
+      rect.y -= Math.abs(this._sheets.rows.scrollBar._scroll)
     }
 
     this.selectionArea = {
@@ -232,7 +233,7 @@ class Selector {
   moveSelection() {
     if (this.isInSelectionMode) {
       const { x, y } = this._sheets.sheet.getRelativePointerPosition()
-      const selectedCellRect = this.selectedCell!.getClientRectWithoutStroke()
+      const selectedCellRect = this.selectedCell!._getClientRectWithoutStroke()
 
       this.selectionArea = {
         start: {

@@ -1,15 +1,7 @@
 import { Spreadsheet } from '../..'
 import styles from './FunctionHelper.module.scss'
 import { MDCDrawer } from '@material/drawer'
-import {
-  createCodeText,
-  createHeader,
-  createMainHeader,
-  createParagraph,
-  createSubHeader,
-  createSyntaxListItem,
-  functionHelperPrefix
-} from './functionHelperHtmlElementHelpers'
+import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -51,7 +43,7 @@ class FunctionHelper {
   /**
    * @internal
    */
-  constructor(public data: IFunctionHelperData) {}
+  constructor() {}
 
   /**
    * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
@@ -106,56 +98,6 @@ class FunctionHelper {
       styles.textWrapper,
       `${functionHelperPrefix}-text-wrapper`
     )
-
-    const { mainHeaderEl } = createMainHeader(this.data.header)
-
-    const { paragraphEl: description } = createParagraph(
-      this.data.headerDescription
-    )
-
-    const { header: headerUsage } = createHeader('Sample Usage')
-    const { header: headerSyntax } = createHeader('Syntax')
-    const { header: headerAttributes } = createHeader('Attributes')
-
-    this.drawerContentEl.appendChild(this.textWrapper)
-    this.textWrapper.appendChild(mainHeaderEl)
-    this.textWrapper.appendChild(description)
-    this.textWrapper.appendChild(headerUsage)
-
-    this.data.codeSyntaxUsage.forEach(usageName => {
-      const { codeEl } = createCodeText(usageName)
-      this.textWrapper.appendChild(codeEl)
-    })
-
-    this.textWrapper.appendChild(headerSyntax)
-
-    this.data.codeSyntaxElements.forEach(({ codeSyntax, values }) => {
-      const codeSyntaxList = document.createElement('ul')
-      const { codeEl } = createCodeText(codeSyntax)
-
-      this.textWrapper.appendChild(codeEl)
-      this.textWrapper.appendChild(codeSyntaxList)
-
-      values.forEach(({ syntaxName, description }) => {
-        const { listItem } = createSyntaxListItem(syntaxName, description)
-        codeSyntaxList.appendChild(listItem)
-      })
-    })
-
-    this.textWrapper.appendChild(headerAttributes)
-
-    this.data.attributes.forEach(({ attributeNames, header }) => {
-      const attributeList = document.createElement('ul')
-
-      this.textWrapper.appendChild(createSubHeader(header).subHeader)
-      this.textWrapper.appendChild(attributeList)
-
-      attributeNames.forEach(attributeName => {
-        const { listItem } = createSyntaxListItem(attributeName)
-
-        attributeList.appendChild(listItem)
-      })
-    })
   }
 
   /**
@@ -163,7 +105,9 @@ class FunctionHelper {
    * after the spreadsheet has been attached to the DOM
    * or material-components will throw errors.
    */
-  setDrawer() {
+  setDrawerContent(contentEl: HTMLElement) {
+    this.drawerContentEl.appendChild(contentEl)
+
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
 
     this._spreadsheet.render()

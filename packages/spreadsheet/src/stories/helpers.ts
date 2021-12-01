@@ -7,7 +7,14 @@ import { IOptions } from '../spreadsheet/options'
 import { IStyles } from '../spreadsheet/styles'
 import { NestedPartial } from '../spreadsheet/types'
 import { ISpreadsheetConstructor } from '../spreadsheet/Spreadsheet'
-import { Spreadsheet, Toolbar, FormulaBar, Exporter, BottomBar } from '..'
+import {
+  Spreadsheet,
+  Toolbar,
+  FormulaBar,
+  Exporter,
+  BottomBar,
+  FunctionHelper
+} from '..'
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
 import {
   AlwaysSparse,
@@ -16,6 +23,8 @@ import {
   SerializedNamedExpression
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
+import getToolbarElementIcons from './getToolbarActionGroups'
+import getFunctionHelperContent from './getFunctionHelperContent'
 
 export interface IArgs {
   data?: ISpreadsheetData
@@ -124,69 +133,26 @@ export const buildSpreadsheetWithEverything = (
   const formulaBar = new FormulaBar()
   const exporter = new Exporter(customRegisteredPluginDefinitions)
   const bottomBar = new BottomBar()
+  const functionHelper = new FunctionHelper()
 
   const spreadsheet = getSpreadsheet(args, {
     hyperformula,
     toolbar,
     formulaBar,
     exporter,
-    bottomBar
+    bottomBar,
+    functionHelper
   })
-
-  toolbar.setToolbarIcons([
-    {
-      elements: [
-        toolbar.iconElementsMap.undo.buttonContainer,
-        toolbar.iconElementsMap.redo.buttonContainer
-      ]
-    },
-    {
-      elements: [toolbar.buttonElementsMap.textFormatPattern.buttonContainer]
-    },
-    {
-      elements: [toolbar.buttonElementsMap.fontSize.buttonContainer]
-    },
-    {
-      elements: [
-        toolbar.iconElementsMap.bold.buttonContainer,
-        toolbar.iconElementsMap.italic.buttonContainer,
-        toolbar.iconElementsMap.underline.buttonContainer,
-        toolbar.iconElementsMap.strikeThrough.buttonContainer,
-        toolbar.iconElementsMap.fontColor.buttonContainer
-      ]
-    },
-    {
-      elements: [
-        toolbar.iconElementsMap.backgroundColor.buttonContainer,
-        toolbar.iconElementsMap.borders.buttonContainer,
-        toolbar.iconElementsMap.merge.buttonContainer
-      ]
-    },
-    {
-      elements: [
-        toolbar.iconElementsMap.horizontalTextAlign.buttonContainer,
-        toolbar.iconElementsMap.verticalTextAlign.buttonContainer,
-        toolbar.iconElementsMap.textWrap.buttonContainer
-      ]
-    },
-    {
-      elements: [
-        toolbar.iconElementsMap.freeze.buttonContainer,
-        toolbar.iconElementsMap.functions.buttonContainer,
-        toolbar.iconElementsMap.formula.buttonContainer
-      ]
-    },
-    {
-      elements: [toolbar.iconElementsMap.export.buttonContainer]
-    },
-    {
-      elements: [toolbar.iconElementsMap.autosave.buttonContainer]
-    }
-  ])
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl)
   spreadsheet.spreadsheetEl.prepend(toolbar.toolbarEl)
   spreadsheet.spreadsheetEl.appendChild(bottomBar.bottomBarEl)
+  spreadsheet.sheets.sheetElContainer.appendChild(
+    functionHelper.functionHelperEl
+  )
+
+  functionHelper.setDrawerContent(getFunctionHelperContent())
+  toolbar.setToolbarIcons(getToolbarElementIcons(toolbar))
 
   return spreadsheet
 }

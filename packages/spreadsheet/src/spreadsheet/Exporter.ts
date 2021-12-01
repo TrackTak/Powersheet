@@ -36,25 +36,24 @@ class Exporter {
     public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
   ) {}
 
-  private _getWorkbook(utils: XLSX$Utils) {
+  private async _getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new()
+    const sheets = this._spreadsheet.data._spreadsheetData.sheets ?? {}
 
-    Object.keys(this._spreadsheet.data._spreadsheetData.sheets ?? {}).forEach(
-      key => {
-        const sheetIndex = parseInt(key, 10)
-        const sheetData = this._spreadsheet.data._spreadsheetData.sheets![
-          sheetIndex
-        ]
-        const worksheet = this.getWorksheet(sheetData.id)
+    for (const key in sheets) {
+      const sheetIndex = parseInt(key, 10)
+      const sheetData = this._spreadsheet.data._spreadsheetData.sheets![
+        sheetIndex
+      ]
+      const worksheet = await this._getWorksheet(sheetData.id)
 
-        utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
-      }
-    )
+      utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
+    }
 
     return workbook
   }
 
-  private getWorksheet(sheetId: SheetId) {
+  private async _getWorksheet(sheetId: SheetId) {
     const worksheet: WorkSheet = {}
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
@@ -102,15 +101,16 @@ class Exporter {
       ) {
         worksheet[cellString].f = cell.value?.toString()?.slice(1)
 
-        const setFormula = (functionName: string) => {
+        const setFormula = async (functionName: string) => {
           // TODO: Not perfect regex, doesn't handle nested custom functions
           const regex = new RegExp(`${functionName}\\(.*?\\)`, 'g')
           const matches = worksheet[cellString].f?.match(regex) ?? []
 
-          // Replace any custom functon calls with
+          // Replace any custom function calls with
           // the actual value because excel won't support
           // custom functions natively
-          matches.forEach((match: string) => {
+          for (const match of matches) {
+            // TODO: await promise when we fix HF
             let [
               formulaResult
             ] = this._spreadsheet.hyperformula.calculateFormula(
@@ -169,20 +169,19 @@ class Exporter {
 
               worksheet[cellString].t = 's'
             }
-          })
+          }
         }
 
-        this.customRegisteredPluginDefinitions.forEach(
-          ({ aliases, implementedFunctions }) => {
-            Object.keys(aliases ?? {}).forEach(key => {
-              setFormula(key)
-            })
-
-            Object.keys(implementedFunctions).forEach(key => {
-              setFormula(key)
-            })
+        for (const { aliases, implementedFunctions } of this
+          .customRegisteredPluginDefinitions) {
+          for (const key in aliases ?? {}) {
+            await setFormula(key)
           }
-        )
+
+          for (const key in implementedFunctions ?? {}) {
+            await setFormula(key)
+          }
+        }
       }
 
       const value = worksheet[cellString].v ?? cell?.value
@@ -274,8 +273,8 @@ class Exporter {
     this._spreadsheet = spreadsheet
   }
 
-  exportWorkbook() {
-    const workbook = this._getWorkbook(utils)
+  async exportWorkbook() {
+    const workbook = await this._getWorkbook(utils)
 
     writeFile(
       workbook,

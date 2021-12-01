@@ -1,6 +1,6 @@
 {
   "name": "@tracktak/powersheet",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Lightning Fast Spreadsheet for Businesses",
   "author": "TRACKTAK LTD",
   "source": "src/index.ts",

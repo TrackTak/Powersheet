@@ -5,6 +5,9 @@ import Sheets from '../../Sheets'
 import Cell from './Cell'
 import SimpleCellAddress from './SimpleCellAddress'
 
+/**
+ * @internal
+ */
 class RangeSimpleCellAddress {
   constructor(
     public topLeftSimpleCellAddress: SimpleCellAddress,
@@ -149,7 +152,7 @@ class RangeSimpleCellAddress {
 
       if (
         !mergedCellId ||
-        sheets.spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
+        sheets._spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
       ) {
         return true
       }

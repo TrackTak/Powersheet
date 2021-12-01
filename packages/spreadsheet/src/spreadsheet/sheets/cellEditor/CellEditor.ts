@@ -6,7 +6,7 @@ import FormulaHelper from '../../formulaHelper/FormulaHelper'
 import Spreadsheet from '../../Spreadsheet'
 import Cell from '../cells/cell/Cell'
 import { prefix, saveCaretPosition, setCaretToEndOfElement } from '../../utils'
-import { HyperFormula } from 'hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
@@ -22,17 +22,20 @@ class CellEditor {
   cellEditorEl: HTMLDivElement
   cellTooltip: DelegateInstance
   formulaHelper?: FormulaHelper
-  spreadsheet: Spreadsheet
   cellHighlighter: CellHighlighter
   currentCell: Cell | null = null
   currentScroll: ICurrentScroll | null = null
   currentCaretPosition: number | null = null
   currentCellText: string | null = null
+  private _spreadsheet: Spreadsheet
 
-  constructor(private sheet: Sheet) {
-    this.spreadsheet = this.sheet.spreadsheet
+  /**
+   * @internal
+   */
+  constructor(private _sheet: Sheet) {
+    this._spreadsheet = this._sheet._spreadsheet
 
-    this.cellHighlighter = new CellHighlighter(this.spreadsheet)
+    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
@@ -59,66 +62,22 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5]
     })
-    this.sheet.sheetEl.appendChild(this.cellEditorContainerEl)
+    this._sheet.sheetEl.appendChild(this.cellEditorContainerEl)
 
-    this.cellEditorEl.addEventListener('input', this.onInput)
-    this.cellEditorEl.addEventListener('keydown', this.onKeyDown)
+    this.cellEditorEl.addEventListener('input', this._onInput)
+    this.cellEditorEl.addEventListener('keydown', this._onKeyDown)
 
     this.cellEditorContainerEl.style.display = 'none'
 
     this.formulaHelper = new FormulaHelper(
       HyperFormula.getRegisteredFunctionNames('enGB'),
-      this.onItemClick
+      this._onItemClick
     )
 
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
   }
 
-  saveContentToCell() {
-    const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell = this.spreadsheet.data.spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]
-    const cellValue =
-      this.spreadsheet.hyperformula
-        .getCellSerialized(simpleCellAddress)
-        ?.toString() ?? undefined
-
-    this.spreadsheet.pushToHistory(() => {
-      const value = this.currentCellText ? this.currentCellText : undefined
-
-      if (cellValue !== value) {
-        const newCell: Omit<ICellData, 'id'> = {
-          value
-        }
-
-        if (isPercent(value)) {
-          if (!isPercent(cell?.textFormatPattern)) {
-            newCell.textFormatPattern = '0.00%'
-          }
-        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
-          newCell.value += '%'
-        }
-
-        this.spreadsheet.data.setCell(simpleCellAddress, newCell)
-      }
-    })
-  }
-
-  destroy() {
-    this.cellTooltip.destroy()
-    this.cellHighlighter.destroy()
-    this.cellEditorContainerEl.remove()
-    this.cellEditorEl.removeEventListener('input', this.onInput)
-    this.cellEditorEl.removeEventListener('keydown', this.onKeyDown)
-    this.formulaHelper?.destroy()
-  }
-
-  getIsHidden() {
-    return this.cellEditorContainerEl.style.display === 'none'
-  }
-
-  onItemClick = (suggestion: string) => {
+  private _onItemClick = (suggestion: string) => {
     const value = `=${suggestion}()`
 
     this.setContentEditable(value)
@@ -129,35 +88,7 @@ class CellEditor {
     setCaretToEndOfElement(this.cellEditorEl)
   }
 
-  setContentEditable(value: string | null) {
-    this.clear()
-    this.spreadsheet.formulaBar?.clear()
-
-    this.currentCellText = value
-
-    const {
-      tokenParts,
-      cellReferenceParts
-    } = this.cellHighlighter.getHighlightedCellReferenceSections(
-      this.currentCellText ?? ''
-    )
-
-    this.cellHighlighter.highlightCellReferences(
-      this.currentCell!.simpleCellAddress,
-      cellReferenceParts
-    )
-
-    tokenParts.forEach(part => {
-      this.cellEditorEl.appendChild(part)
-      this.spreadsheet.formulaBar?.editableContent.appendChild(
-        part.cloneNode(true)
-      )
-    })
-
-    this.spreadsheet.eventEmitter.emit('cellEditorChange', value)
-  }
-
-  onKeyDown = (e: KeyboardEvent) => {
+  private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
 
     switch (e.key) {
@@ -172,7 +103,7 @@ class CellEditor {
     }
   }
 
-  onInput = (e: Event) => {
+  private _onInput = (e: Event) => {
     const target = e.target as HTMLDivElement
     const textContent = target.textContent
 
@@ -191,28 +122,8 @@ class CellEditor {
     }
   }
 
-  showAndSetValue(cell: Cell) {
-    this.show(cell)
-    this.setCellValue(cell.simpleCellAddress)
-
-    setCaretToEndOfElement(this.cellEditorEl)
-  }
-
-  show(cell: Cell) {
-    this.currentCell = cell
-    this.currentScroll = {
-      row: this.sheet.rows.scrollBar.scroll,
-      col: this.sheet.cols.scrollBar.scroll
-    }
-
-    this.clear()
-    this.cellEditorContainerEl.style.display = 'block'
-
-    this.setCellEditorElPosition(cell.getClientRectWithoutStroke())
-  }
-
-  setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = this.spreadsheet.hyperformula.getCellSerialized(
+  private _setCellValue(simpleCellAddress: SimpleCellAddress) {
+    const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
       simpleCellAddress
     )
 
@@ -221,12 +132,134 @@ class CellEditor {
     this.cellEditorEl.focus()
   }
 
+  /**
+   * Should be called when the `currentCellText` is ready to be
+   * persisted.
+   */
+  saveContentToCell() {
+    const simpleCellAddress = this.currentCell!.simpleCellAddress
+    const cell = this._spreadsheet.data._spreadsheetData.cells?.[
+      simpleCellAddress.toCellId()
+    ]
+    const cellValue =
+      this._spreadsheet.hyperformula
+        .getCellSerialized(simpleCellAddress)
+        ?.toString() ?? undefined
+
+    this._spreadsheet.pushToHistory(() => {
+      const value = this.currentCellText ? this.currentCellText : undefined
+
+      if (cellValue !== value) {
+        const newCell: Omit<ICellData, 'id'> = {
+          value
+        }
+
+        if (isPercent(value)) {
+          if (!isPercent(cell?.textFormatPattern)) {
+            newCell.textFormatPattern = '0.00%'
+          }
+        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
+          newCell.value += '%'
+        }
+
+        this._spreadsheet.data.setCell(simpleCellAddress, newCell)
+      }
+    })
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
+    this.cellTooltip.destroy()
+    this.cellHighlighter.destroy()
+    this.cellEditorContainerEl.remove()
+    this.cellEditorEl.removeEventListener('input', this._onInput)
+    this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
+    this.formulaHelper?._destroy()
+  }
+
+  /**
+   * @returns If the CellEditor is showing or not
+   */
+  getIsHidden() {
+    return this.cellEditorContainerEl.style.display === 'none'
+  }
+
+  /**
+   * Parses the string to find any cell references
+   * and highlights them.
+   *
+   * @param text The text to set in the CellEditor
+   */
+  setContentEditable(text: string | null) {
+    this.clear()
+    this._spreadsheet.formulaBar?.clear()
+
+    this.currentCellText = text
+
+    const {
+      tokenParts,
+      cellReferenceParts
+    } = this.cellHighlighter.getHighlightedCellReferenceSections(
+      this.currentCellText ?? ''
+    )
+
+    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
+
+    tokenParts.forEach(part => {
+      this.cellEditorEl.appendChild(part)
+      this._spreadsheet.formulaBar?.editableContent.appendChild(
+        part.cloneNode(true)
+      )
+    })
+
+    this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
+  }
+
+  /**
+   * Shows the CellEditor and sets the value of it to the passed
+   * in cell.
+   *
+   * @param cell - The cell which the CellEditor should be shown on.
+   */
+  showAndSetValue(cell: Cell) {
+    this.show(cell)
+    this._setCellValue(cell.simpleCellAddress)
+
+    setCaretToEndOfElement(this.cellEditorEl)
+  }
+
+  /**
+   * Shows the CellEditor and clears the text.
+   *
+   * @param cell - The cell which the CellEditor should be shown on.
+   */
+  show(cell: Cell) {
+    this.currentCell = cell
+    this.currentScroll = {
+      row: this._sheet.rows.scrollBar._scroll,
+      col: this._sheet.cols.scrollBar._scroll
+    }
+
+    this.clear()
+    this.cellEditorContainerEl.style.display = 'block'
+
+    this.setCellEditorElPosition(cell._getClientRectWithoutStroke())
+  }
+
+  /**
+   * Clears the CellEditor text and highlighted cells.
+   */
   clear() {
     this.currentCellText = null
     this.cellEditorEl.textContent = null
     this.cellHighlighter.destroyHighlightedCells()
   }
 
+  /**
+   * Hides the CellEditor and saves the text to the cell.
+   */
   hideAndSave() {
     if (!this.getIsHidden()) {
       this.saveContentToCell()
@@ -234,6 +267,9 @@ class CellEditor {
     }
   }
 
+  /**
+   * Hides the CellEditor and clears the value.
+   */
   hide() {
     this.clear()
 
@@ -244,11 +280,16 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none'
 
     this.cellEditorEl.blur()
-    this.sheet.sheetEl.focus()
+    this._sheet.sheetEl.focus()
 
-    this.spreadsheet.updateViewport()
+    this._spreadsheet.render()
   }
 
+  /**
+   * Sets the CellEditor position to the passed in rect's dimensions.
+   *
+   * @param rect - The dimensions to set the CellEditor to.
+   */
   setCellEditorElPosition = (rect: IRect) => {
     this.cellEditorContainerEl.style.top = `${rect.y}px`
     this.cellEditorContainerEl.style.left = `${rect.x}px`
@@ -256,10 +297,17 @@ class CellEditor {
     this.cellEditorContainerEl.style.height = `${rect.height + 1}px`
   }
 
+  /**
+   * Hides the cell tooltip.
+   */
   hideCellTooltip = () => {
     this.cellTooltip.hide()
   }
 
+  /**
+   * Shows the cell tooltip and sets the text of it to be
+   * the current cells value.
+   */
   showCellTooltip = () => {
     if (this.currentCell) {
       const simpleCellAddress = this.currentCell.simpleCellAddress

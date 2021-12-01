@@ -15,7 +15,7 @@ export interface PowersheetEvents {
   resizeColMove: (e: KonvaEventObject<DragEvent>, axis: number) => void
   resizeColEnd: (e: KonvaEventObject<DragEvent>, size: number) => void
   historyPush: (stringifiedSpreadsheetData: string) => void
-  persistData: (spreadsheetData: ISpreadsheetData, done: () => void) => void
+  persistData: (_spreadsheetData: ISpreadsheetData, done: () => void) => void
   startSelection: (selectionArea: ISelectionArea) => void
   moveSelection: (selectionArea: ISelectionArea) => void
   endSelection: (selectionArea: ISelectionArea) => void

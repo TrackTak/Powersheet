@@ -33,6 +33,11 @@ export interface IFunctionHelperData {
   attributes: IAttribute[]
 }
 
+/**
+ * Internal for now until we fully complete all
+ * functions
+ * @internal
+ */
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement
   drawerContentEl!: HTMLDivElement
@@ -41,12 +46,18 @@ class FunctionHelper {
   closeButton!: HTMLButtonElement
   headerEl!: HTMLHeadElement
   textWrapper!: HTMLDivElement
-  spreadsheet!: Spreadsheet
+  private _spreadsheet!: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(public data: IFunctionHelperData) {}
 
+  /**
+   * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
+   */
   initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet
+    this._spreadsheet = spreadsheet
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
@@ -82,9 +93,9 @@ class FunctionHelper {
     )
 
     this.closeButton.addEventListener('click', () => {
-      this.spreadsheet.options.showFunctionHelper = false
+      this._spreadsheet.options.showFunctionHelper = false
 
-      this.spreadsheet.updateViewport()
+      this._spreadsheet.render()
     })
 
     this.drawerContentEl.appendChild(this.closeButton)
@@ -147,19 +158,30 @@ class FunctionHelper {
     })
   }
 
+  /**
+   * Attaches the drawer to the DOM. This must be called
+   * after the spreadsheet has been attached to the DOM
+   * or material-components will throw errors.
+   */
   setDrawer() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
 
-    this.spreadsheet.updateViewport()
+    this._spreadsheet.render()
   }
 
-  updateOpenState() {
+  /**
+   * @internal
+   */
+  _render() {
     if (this.drawer) {
-      this.drawer.open = this.spreadsheet.options.showFunctionHelper
+      this.drawer.open = this._spreadsheet.options.showFunctionHelper
     }
   }
 
-  destroy() {
+  /**
+   * @internal
+   */
+  _destroy() {
     this.drawer?.destroy()
   }
 }

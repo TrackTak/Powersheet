@@ -15,374 +15,93 @@ import {
   getColumnHeader
 } from '../../../utils'
 import { Util } from 'konva/lib/Util'
-import { CellType } from 'hyperformula'
+import { CellType } from '@tracktak/hyperformula'
 
 class RowCol {
-  spreadsheet: Spreadsheet
   headerRect: Rect
   headerText: Text
   resizeLine: Line
-  sheets: Sheets
-  type: RowColType
-  pluralType: RowColsType
-  isCol: boolean
-  oppositeType: RowColType
-  oppositePluralType: RowColsType
-  functions: IRowColFunctions
-  oppositeFunctions: IRowColFunctions
   rowColAddress: RowColAddress
+  private _type: RowColType
+  private _pluralType: RowColsType
+  private _isCol: boolean
+  private _functions: IRowColFunctions
+  private _sheets: Sheets
+  private _spreadsheet: Spreadsheet
 
+  /**
+   * @internal
+   */
   constructor(
-    public rowCols: RowCols,
+    /**
+     * @internal
+     */
+    public _rowCols: RowCols,
     public index: number,
     public headerGroup: Group,
     public gridLine: Line
   ) {
-    this.sheets = rowCols.sheets
-    this.spreadsheet = this.sheets.spreadsheet
-    this.type = rowCols.type
-    this.pluralType = rowCols.pluralType
-    this.isCol = rowCols.isCol
-    this.oppositeType = rowCols.oppositeType
-    this.oppositePluralType = rowCols.oppositePluralType
-    this.functions = rowCols.functions
-    this.oppositeFunctions = rowCols.oppositeFunctions
+    this._sheets = _rowCols._sheets
+    this._spreadsheet = this._sheets._spreadsheet
+    this._type = _rowCols._type
+    this._pluralType = _rowCols._pluralType
+    this._isCol = _rowCols._isCol
+    this._functions = _rowCols._functions
     this.headerRect = this.headerGroup.findOne('.headerRect')
     this.headerText = this.headerGroup.findOne('.headerText')
     this.resizeLine = this.headerGroup.findOne('.resizeLine')
 
     this.rowColAddress = new RowColAddress(
-      this.sheets.activeSheetId,
+      this._sheets.activeSheetId,
       this.index
     )
 
-    this.resizeLine.on('mouseover', this.resizeLineOnMouseOver)
-    this.resizeLine.on('mouseout', this.resizeLineOnMouseOut)
+    this.resizeLine.on('mouseover', this._resizeLineOnMouseOver)
+    this.resizeLine.on('mouseout', this._resizeLineOnMouseOut)
 
-    this.update()
+    this._update()
   }
 
-  resizeLineOnMouseOver = () => {
-    this.rowCols.resizer.setCursor()
+  private _resizeLineOnMouseOver = () => {
+    this._rowCols.resizer._setCursor()
 
-    this.rowCols.resizer.showResizeMarker(this.index)
+    this._rowCols.resizer.showResizeMarker(this.index)
   }
 
-  resizeLineOnMouseOut = () => {
-    this.rowCols.resizer.resetCursor()
+  private _resizeLineOnMouseOut = () => {
+    this._rowCols.resizer._resetCursor()
 
-    this.rowCols.resizer.hideResizeMarker()
+    this._rowCols.resizer.hideResizeMarker()
   }
 
-  destroy() {
-    this.resizeLine.off('mouseover', this.resizeLineOnMouseOver)
-    this.resizeLine.off('mouseup', this.resizeLineOnMouseOut)
+  private _shiftFrozenCells(getValue: (frozenCell: number) => number) {
+    if (this._rowCols.getIsFrozen(this.index)) {
+      const existingFrozenCells = this._spreadsheet.data._spreadsheetData
+        .frozenCells![this._sheets.activeSheetId]
 
-    this.headerGroup.destroy()
-    this.gridLine.destroy()
-  }
-
-  getIsOutsideSheet() {
-    const clientRect = this.headerGroup.getClientRect({
-      skipStroke: true
-    })
-    const sheetRect = this.sheets.sheet.getClientRect()
-    const sizeUpToFrozenRowCol = this.rowCols.getSizeUpToFrozenRowCol()
-
-    sheetRect[this.functions.size] -= sizeUpToFrozenRowCol
-    sheetRect[this.functions.axis] += sizeUpToFrozenRowCol
-
-    const isShapeOutsideSheet =
-      !Util.haveIntersection(sheetRect, {
-        ...clientRect,
-        [this.functions.axis]: clientRect[this.functions.axis] - 0.001
-      }) && !this.rowCols.getIsFrozen(this.index)
-
-    return isShapeOutsideSheet
-  }
-
-  private shiftFrozenCells(getValue: (frozenCell: number) => number) {
-    if (this.rowCols.getIsFrozen(this.index)) {
-      const existingFrozenCells =
-        this.spreadsheet.data.spreadsheetData.frozenCells![
-          this.sheets.activeSheetId
-        ]
-
-      this.spreadsheet.data.setFrozenCell(this.sheets.activeSheetId, {
-        [this.type]: getValue(existingFrozenCells![this.type]!)
+      this._spreadsheet.data.setFrozenCell(this._sheets.activeSheetId, {
+        [this._type]: getValue(existingFrozenCells![this._type]!)
       })
     }
   }
 
-  delete(amount: number) {
-    this.spreadsheet.pushToHistory(() => {
-      const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
-      const rowCols = rest[this.pluralType]
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.removeColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount
-        ])
-      } else {
-        this.spreadsheet.hyperformula.removeRows(this.sheets.activeSheetId, [
-          this.index,
-          amount
-        ])
-      }
-
-      this.shiftFrozenCells(frozenCell => frozenCell - amount)
-
-      Object.keys(cells ?? {})
-        .sort(dataKeysComparer)
-        .forEach(key => {
-          const cellId = key as CellId
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row - amount,
-            this.isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
-          )
-
-          if (simpleCellAddress[this.type] < this.index) return
-
-          if (simpleCellAddress[this.type] > this.index) {
-            const cellId = simpleCellAddress.toCellId()
-            const cell = this.spreadsheet.data.spreadsheetData.cells![cellId]
-            const newValue = this.spreadsheet.hyperformula
-              .getCellSerialized(newSimpleCellAddress)
-              ?.toString()
-
-            const newCell = {
-              ...cell
-            }
-
-            const cellType =
-              this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
-
-            // The precedent cell formula handles these ARRAY cell values
-            if (cellType !== CellType.ARRAY) {
-              newCell.value = newValue
-            }
-
-            this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false)
-          }
-
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false)
-        })
-
-      Object.keys(mergedCells ?? {})
-        .sort(dataKeysComparer)
-        .forEach(key => {
-          const topLeftCellId = key as CellId
-          const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
-
-          const newMergedCell: IMergedCellData = {
-            id: mergedCell.id,
-            row: { ...mergedCell.row },
-            col: { ...mergedCell.col }
-          }
-
-          if (
-            mergedCell[this.type].x === this.index &&
-            mergedCell[this.type].x === mergedCell[this.type].y
-          ) {
-            this.spreadsheet.data.deleteMergedCell(
-              SimpleCellAddress.cellIdToAddress(topLeftCellId)
-            )
-            return
-          }
-
-          if (mergedCell[this.type].x > this.index) {
-            newMergedCell[this.type].x = mergedCell[this.type].x - amount
-          }
-
-          if (mergedCell[this.type].y >= this.index) {
-            newMergedCell[this.type].y = mergedCell[this.type].y - amount
-          }
-
-          const simpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            newMergedCell.row.x,
-            newMergedCell.col.x
-          )
-
-          this.spreadsheet.data.deleteMergedCell(
-            SimpleCellAddress.cellIdToAddress(topLeftCellId)
-          )
-          this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell)
-        })
-
-      Object.keys(rowCols ?? {})
-        .sort(dataKeysComparer)
-        .forEach(key => {
-          const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress =
-            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
-          const rowColIndex = sheetRowColAddress.rowCol
-
-          if (rowColIndex < this.index) return
-
-          if (rowColIndex > this.index) {
-            const rowCol =
-              this.spreadsheet.data.spreadsheetData[this.pluralType]![
-                sheetRowColId
-              ]
-            const newRowColIndex = rowColIndex - amount
-
-            this.spreadsheet.data.setRowCol(
-              this.pluralType,
-              new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
-              rowCol
-            )
-          }
-          this.spreadsheet.data.deleteRowCol(
-            this.pluralType,
-            sheetRowColAddress
-          )
-        })
-    })
-
-    this.spreadsheet.updateViewport()
-  }
-
-  insert(amount: number) {
-    this.spreadsheet.pushToHistory(() => {
-      const { cells, mergedCells, ...rest } =
-        this.spreadsheet.data.spreadsheetData.sheets![this.sheets.activeSheetId]
-      const rowCols = rest[this.pluralType]
-
-      if (this.isCol) {
-        this.spreadsheet.hyperformula.addColumns(this.sheets.activeSheetId, [
-          this.index,
-          amount
-        ])
-      } else {
-        this.spreadsheet.hyperformula.addRows(this.sheets.activeSheetId, [
-          this.index,
-          amount
-        ])
-      }
-
-      this.shiftFrozenCells(frozenCell => frozenCell + amount)
-
-      Object.keys(cells ?? {})
-        .sort((a, b) => dataKeysComparer(b, a))
-        .forEach(key => {
-          const cellId = key as CellId
-          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-          const newSimpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            this.isCol ? simpleCellAddress.row : simpleCellAddress.row + amount,
-            this.isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
-          )
-
-          if (simpleCellAddress[this.type] < this.index) return
-
-          const cell = this.spreadsheet.data.spreadsheetData.cells![cellId]
-          const newValue = this.spreadsheet.hyperformula
-            .getCellSerialized(newSimpleCellAddress)
-            ?.toString()
-
-          const newCell = {
-            ...cell
-          }
-
-          const cellType =
-            this.spreadsheet.hyperformula.getCellType(newSimpleCellAddress)
-
-          // The precedent cell formula handles these ARRAY cell values
-          if (cellType !== CellType.ARRAY) {
-            newCell.value = newValue
-          }
-
-          this.spreadsheet.data.setCell(newSimpleCellAddress, newCell, false)
-          this.spreadsheet.data.deleteCell(simpleCellAddress, false, false)
-        })
-
-      Object.keys(mergedCells ?? {})
-        .sort((a, b) => dataKeysComparer(b, a))
-        .forEach(key => {
-          const topLeftCellId = key as CellId
-          const mergedCell =
-            this.spreadsheet.data.spreadsheetData.mergedCells![topLeftCellId]
-
-          const newMergedCell: IMergedCellData = {
-            id: mergedCell.id,
-            row: { ...mergedCell.row },
-            col: { ...mergedCell.col }
-          }
-
-          if (mergedCell[this.type].x >= this.index) {
-            newMergedCell[this.type].x = mergedCell[this.type].x + amount
-          }
-
-          if (mergedCell[this.type].y >= this.index) {
-            newMergedCell[this.type].y = mergedCell[this.type].y + amount
-          }
-
-          const simpleCellAddress = new SimpleCellAddress(
-            this.sheets.activeSheetId,
-            newMergedCell.row.x,
-            newMergedCell.col.x
-          )
-
-          this.spreadsheet.data.deleteMergedCell(
-            SimpleCellAddress.cellIdToAddress(topLeftCellId)
-          )
-          this.spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell)
-        })
-
-      Object.keys(rowCols ?? {})
-        .sort((a, b) => dataKeysComparer(b, a))
-        .forEach(key => {
-          const sheetRowColId = key as SheetRowColId
-          const sheetRowColAddress =
-            RowColAddress.sheetRowColIdToAddress(sheetRowColId)
-          const rowColIndex = sheetRowColAddress.rowCol
-
-          if (rowColIndex < this.index) return
-
-          const rowCol =
-            this.spreadsheet.data.spreadsheetData[this.pluralType]![
-              sheetRowColId
-            ]
-          const newRowColIndex = rowColIndex + amount
-
-          this.spreadsheet.data.setRowCol(
-            this.pluralType,
-            new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
-            rowCol
-          )
-          this.spreadsheet.data.deleteRowCol(
-            this.pluralType,
-            sheetRowColAddress
-          )
-        })
-    })
-
-    this.spreadsheet.updateViewport()
-  }
-
-  getHeaderTextContent() {
-    if (this.isCol) {
+  private _getHeaderTextContent() {
+    if (this._isCol) {
       return getColumnHeader(this.index + 1)
     } else {
       return (this.index + 1).toString()
     }
   }
 
-  update() {
+  private _update() {
     const gridLineAxis =
-      this.rowCols.getAxis(this.index) +
-      this.rowCols.getSize(this.index) -
-      this.sheets.getViewportVector()[this.functions.axis]
+      this._rowCols.getAxis(this.index) +
+      this._rowCols.getSize(this.index) -
+      this._sheets._getViewportVector()[this._functions.axis]
 
-    this.headerGroup[this.functions.axis](this.rowCols.getAxis(this.index))
-    this.headerRect[this.functions.size](this.rowCols.getSize(this.index))
-    this.headerText.text(this.getHeaderTextContent())
+    this.headerGroup[this._functions.axis](this._rowCols.getAxis(this.index))
+    this.headerRect[this._functions.size](this._rowCols.getSize(this.index))
+    this.headerText.text(this._getHeaderTextContent())
 
     const headerTextMidPoints = centerRectTwoInRectOne(
       this.headerRect.getClientRect(),
@@ -391,29 +110,329 @@ class RowCol {
 
     this.headerText.position(headerTextMidPoints)
 
-    this.resizeLine[this.functions.axis](this.rowCols.getSize(this.index))
+    this.resizeLine[this._functions.axis](this._rowCols.getSize(this.index))
 
-    const frozenCells =
-      this.spreadsheet.data.spreadsheetData.frozenCells?.[
-        this.sheets.activeSheetId
-      ]
+    const frozenCells = this._spreadsheet.data._spreadsheetData.frozenCells?.[
+      this._sheets.activeSheetId
+    ]
 
-    const frozenCell = frozenCells?.[this.type]
+    const frozenCell = frozenCells?.[this._type]
 
-    this.gridLine[this.functions.axis](gridLineAxis)
+    this.gridLine[this._functions.axis](gridLineAxis)
 
-    this.sheets.scrollGroups.main.rowColGroup.add(this.gridLine)
-    if (this.isCol) {
-      this.sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup)
+    this._sheets.scrollGroups.main.rowColGroup.add(this.gridLine)
+    if (this._isCol) {
+      this._sheets.scrollGroups.ySticky.headerGroup.add(this.headerGroup)
     } else {
-      this.sheets.scrollGroups.xSticky.headerGroup.add(this.headerGroup)
+      this._sheets.scrollGroups.xSticky.headerGroup.add(this.headerGroup)
     }
 
     if (!isNil(frozenCell)) {
       if (this.index <= frozenCell) {
-        this.sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup)
+        this._sheets.scrollGroups.xySticky.headerGroup.add(this.headerGroup)
       }
     }
+  }
+
+  /**
+   * @internal
+   */
+  _getIsOutsideSheet() {
+    const clientRect = this.headerGroup.getClientRect({
+      skipStroke: true
+    })
+    const sheetRect = this._sheets.sheet.getClientRect()
+    const sizeUpToFrozenRowCol = this._rowCols._getSizeUpToFrozenRowCol()
+
+    sheetRect[this._functions.size] -= sizeUpToFrozenRowCol
+    sheetRect[this._functions.axis] += sizeUpToFrozenRowCol
+
+    const isShapeOutsideSheet =
+      !Util.haveIntersection(sheetRect, {
+        ...clientRect,
+        [this._functions.axis]: clientRect[this._functions.axis] - 0.001
+      }) && !this._rowCols.getIsFrozen(this.index)
+
+    return isShapeOutsideSheet
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
+    this.resizeLine.off('mouseover', this._resizeLineOnMouseOver)
+    this.resizeLine.off('mouseup', this._resizeLineOnMouseOut)
+
+    this.headerGroup.destroy()
+    this.gridLine.destroy()
+  }
+
+  delete(amount: number) {
+    this._spreadsheet.pushToHistory(() => {
+      const {
+        cells,
+        mergedCells,
+        ...rest
+      } = this._spreadsheet.data._spreadsheetData.sheets![
+        this._sheets.activeSheetId
+      ]
+      const rowCols = rest[this._pluralType]
+
+      if (this._isCol) {
+        this._spreadsheet.hyperformula.removeColumns(
+          this._sheets.activeSheetId,
+          [this.index, amount]
+        )
+      } else {
+        this._spreadsheet.hyperformula.removeRows(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      }
+
+      this._shiftFrozenCells(frozenCell => frozenCell - amount)
+
+      Object.keys(cells ?? {})
+        .sort(dataKeysComparer)
+        .forEach(key => {
+          const cellId = key as CellId
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            this._isCol
+              ? simpleCellAddress.row
+              : simpleCellAddress.row - amount,
+            this._isCol ? simpleCellAddress.col - amount : simpleCellAddress.col
+          )
+
+          if (simpleCellAddress[this._type] < this.index) return
+
+          if (simpleCellAddress[this._type] > this.index) {
+            const cellId = simpleCellAddress.toCellId()
+            const cell = this._spreadsheet.data._spreadsheetData.cells![cellId]
+            const newValue = this._spreadsheet.hyperformula
+              .getCellSerialized(newSimpleCellAddress)
+              ?.toString()
+
+            const newCell = {
+              ...cell
+            }
+
+            const cellType = this._spreadsheet.hyperformula.getCellType(
+              newSimpleCellAddress
+            )
+
+            // The precedent cell formula handles these ARRAY cell values
+            if (cellType !== CellType.ARRAY) {
+              newCell.value = newValue
+            }
+
+            this._spreadsheet.data.setCell(newSimpleCellAddress, newCell, false)
+          }
+
+          this._spreadsheet.data.deleteCell(simpleCellAddress, false, false)
+        })
+
+      Object.keys(mergedCells ?? {})
+        .sort(dataKeysComparer)
+        .forEach(key => {
+          const topLeftCellId = key as CellId
+          const mergedCell = this._spreadsheet.data._spreadsheetData
+            .mergedCells![topLeftCellId]
+
+          const newMergedCell: IMergedCellData = {
+            id: mergedCell.id,
+            row: { ...mergedCell.row },
+            col: { ...mergedCell.col }
+          }
+
+          if (
+            mergedCell[this._type].x === this.index &&
+            mergedCell[this._type].x === mergedCell[this._type].y
+          ) {
+            this._spreadsheet.data.deleteMergedCell(
+              SimpleCellAddress.cellIdToAddress(topLeftCellId)
+            )
+            return
+          }
+
+          if (mergedCell[this._type].x > this.index) {
+            newMergedCell[this._type].x = mergedCell[this._type].x - amount
+          }
+
+          if (mergedCell[this._type].y >= this.index) {
+            newMergedCell[this._type].y = mergedCell[this._type].y - amount
+          }
+
+          const simpleCellAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            newMergedCell.row.x,
+            newMergedCell.col.x
+          )
+
+          this._spreadsheet.data.deleteMergedCell(
+            SimpleCellAddress.cellIdToAddress(topLeftCellId)
+          )
+          this._spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell)
+        })
+
+      Object.keys(rowCols ?? {})
+        .sort(dataKeysComparer)
+        .forEach(key => {
+          const sheetRowColId = key as SheetRowColId
+          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+            sheetRowColId
+          )
+          const rowColIndex = sheetRowColAddress.rowCol
+
+          if (rowColIndex < this.index) return
+
+          if (rowColIndex > this.index) {
+            const rowCol = this._spreadsheet.data._spreadsheetData[
+              this._pluralType
+            ]![sheetRowColId]
+            const newRowColIndex = rowColIndex - amount
+
+            this._spreadsheet.data.setRowCol(
+              this._pluralType,
+              new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
+              rowCol
+            )
+          }
+          this._spreadsheet.data.deleteRowCol(
+            this._pluralType,
+            sheetRowColAddress
+          )
+        })
+    })
+
+    this._spreadsheet.render()
+  }
+
+  insert(amount: number) {
+    this._spreadsheet.pushToHistory(() => {
+      const {
+        cells,
+        mergedCells,
+        ...rest
+      } = this._spreadsheet.data._spreadsheetData.sheets![
+        this._sheets.activeSheetId
+      ]
+      const rowCols = rest[this._pluralType]
+
+      if (this._isCol) {
+        this._spreadsheet.hyperformula.addColumns(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      } else {
+        this._spreadsheet.hyperformula.addRows(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      }
+
+      this._shiftFrozenCells(frozenCell => frozenCell + amount)
+
+      Object.keys(cells ?? {})
+        .sort((a, b) => dataKeysComparer(b, a))
+        .forEach(key => {
+          const cellId = key as CellId
+          const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+          const newSimpleCellAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            this._isCol
+              ? simpleCellAddress.row
+              : simpleCellAddress.row + amount,
+            this._isCol ? simpleCellAddress.col + amount : simpleCellAddress.col
+          )
+
+          if (simpleCellAddress[this._type] < this.index) return
+
+          const cell = this._spreadsheet.data._spreadsheetData.cells![cellId]
+          const newValue = this._spreadsheet.hyperformula
+            .getCellSerialized(newSimpleCellAddress)
+            ?.toString()
+
+          const newCell = {
+            ...cell
+          }
+
+          const cellType = this._spreadsheet.hyperformula.getCellType(
+            newSimpleCellAddress
+          )
+
+          // The precedent cell formula handles these ARRAY cell values
+          if (cellType !== CellType.ARRAY) {
+            newCell.value = newValue
+          }
+
+          this._spreadsheet.data.setCell(newSimpleCellAddress, newCell, false)
+          this._spreadsheet.data.deleteCell(simpleCellAddress, false, false)
+        })
+
+      Object.keys(mergedCells ?? {})
+        .sort((a, b) => dataKeysComparer(b, a))
+        .forEach(key => {
+          const topLeftCellId = key as CellId
+          const mergedCell = this._spreadsheet.data._spreadsheetData
+            .mergedCells![topLeftCellId]
+
+          const newMergedCell: IMergedCellData = {
+            id: mergedCell.id,
+            row: { ...mergedCell.row },
+            col: { ...mergedCell.col }
+          }
+
+          if (mergedCell[this._type].x >= this.index) {
+            newMergedCell[this._type].x = mergedCell[this._type].x + amount
+          }
+
+          if (mergedCell[this._type].y >= this.index) {
+            newMergedCell[this._type].y = mergedCell[this._type].y + amount
+          }
+
+          const simpleCellAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            newMergedCell.row.x,
+            newMergedCell.col.x
+          )
+
+          this._spreadsheet.data.deleteMergedCell(
+            SimpleCellAddress.cellIdToAddress(topLeftCellId)
+          )
+          this._spreadsheet.data.setMergedCell(simpleCellAddress, newMergedCell)
+        })
+
+      Object.keys(rowCols ?? {})
+        .sort((a, b) => dataKeysComparer(b, a))
+        .forEach(key => {
+          const sheetRowColId = key as SheetRowColId
+          const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+            sheetRowColId
+          )
+          const rowColIndex = sheetRowColAddress.rowCol
+
+          if (rowColIndex < this.index) return
+
+          const rowCol = this._spreadsheet.data._spreadsheetData[
+            this._pluralType
+          ]![sheetRowColId]
+          const newRowColIndex = rowColIndex + amount
+
+          this._spreadsheet.data.setRowCol(
+            this._pluralType,
+            new RowColAddress(sheetRowColAddress.sheet, newRowColIndex),
+            rowCol
+          )
+          this._spreadsheet.data.deleteRowCol(
+            this._pluralType,
+            sheetRowColAddress
+          )
+        })
+    })
+
+    this._spreadsheet.render()
   }
 }
 

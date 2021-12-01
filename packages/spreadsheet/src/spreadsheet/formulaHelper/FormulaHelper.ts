@@ -14,9 +14,12 @@ class FormulaHelper {
   helper: DelegateInstance
   list?: HTMLUListElement
 
+  /**
+   * @internal
+   */
   constructor(
-    public formulas: string[],
-    public onItemClick: FormulaHelperClickHandler
+    private _formulas: string[],
+    private _onItemClick: FormulaHelperClickHandler
   ) {
     const { formulaHelperListContainerEl, formulaHelperEl } =
       createWrapperContent()
@@ -31,28 +34,14 @@ class FormulaHelper {
     })
   }
 
-  show(filterText?: string) {
-    const formulas = this.formulas.filter(
-      formula => !filterText || formula.startsWith(filterText)
-    )
-    if (isEmpty(formulas)) {
-      this.helper.hide()
-      return
+  private _handleListItemClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (target?.matches('li')) {
+      this._onItemClick(target.textContent!)
     }
-    this.updateList(formulas)
-    this.helper.show()
   }
 
-  hide() {
-    this.helper.hide()
-  }
-
-  destroy() {
-    this.helper.destroy()
-    this.formulaHelperEl.remove()
-  }
-
-  private updateList(formulas: string[]) {
+  private _updateList(formulas: string[]) {
     const list = createFormulaList(formulas)
     if (this.list) {
       this.formulaHelperListContainerEl?.replaceChild(list, this.list)
@@ -62,14 +51,39 @@ class FormulaHelper {
     this.list = list
     this.helper.setContent(this.formulaHelperListContainerEl)
 
-    list.addEventListener('click', this.handleListItemClick)
+    list.addEventListener('click', this._handleListItemClick)
   }
 
-  handleListItemClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target?.matches('li')) {
-      this.onItemClick(target.textContent!)
+  /**
+   * Shows the formula helper.
+   *
+   * @param text - Filters for formulas that start with this text string
+   */
+  show(text?: string) {
+    const formulas = this._formulas.filter(
+      formula => !text || formula.startsWith(text)
+    )
+    if (isEmpty(formulas)) {
+      this.helper.hide()
+      return
     }
+    this._updateList(formulas)
+    this.helper.show()
+  }
+
+  /**
+   * Hide the formula helper
+   */
+  hide() {
+    this.helper.hide()
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
+    this.helper.destroy()
+    this.formulaHelperEl.remove()
   }
 }
 

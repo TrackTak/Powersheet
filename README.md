@@ -15,7 +15,7 @@ Many alternative spreadsheet solution were tried, all of them have serious drawb
 - No full cell pattern formatting
 - Poor code quality
 
-etc etc
+etc
 
 ## All environments setup
 The below code is environment agnostic.
@@ -48,7 +48,7 @@ import {
   Exporter,
   BottomBar
 } from '@tracktak/powersheet'
-import { AlwaysSparse, HyperFormula } from 'hyperformula'
+import { AlwaysSparse, HyperFormula } from '@tracktak/hyperformula'
 
 const buildPowersheet = () => {
   const hyperformula = HyperFormula.buildEmpty({
@@ -172,7 +172,6 @@ const Index = () => {
 
     return () => {
       spreadsheet?.destroy()
-      spreadsheet?.hyperformula.destroy()
     }
   }, [])
 
@@ -252,7 +251,3 @@ https://nodejs.org/dist/v11.13.0/docs/api/events.html
 See the `CustomOptions` example in storybook for an example of the custom number patterns supplied.
 
 We use [numfmt](https://github.com/borgar/numfmt) internally to format cell values. This library is Full ECMA-376 compatible which means that any Google Sheets or Excel formatting will work with Powersheet.
-
-## API
-
-TODO: Add JsDoc https://github.com/jsdoc/jsdoc

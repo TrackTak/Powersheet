@@ -4,32 +4,35 @@ import Cell from './Cell'
 import { getInnerRectConfig } from './getInnerRectConfig'
 import SimpleCellAddress from './SimpleCellAddress'
 
+/**
+ * @internal
+ */
 class SelectedCell extends Cell {
   innerRect: Rect
 
   constructor(
-    public sheets: Sheets,
+    protected _sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress
   ) {
-    super(sheets, simpleCellAddress)
+    super(_sheets, simpleCellAddress)
 
     this.innerRect = new Rect({
       name: 'innerRect'
     })
     this.group.add(this.innerRect)
 
-    this.setInnerRectProperties()
+    this._setInnerRectProperties()
   }
 
-  private setInnerRectProperties() {
+  private _setInnerRectProperties() {
     const size = this.rect.size()
 
     const rectConfig: RectConfig = {
-      ...this.sheets.spreadsheet.styles.selectionFirstCell.rect
+      ...this._sheets._spreadsheet.styles.selectionFirstCell.rect
     }
 
     const innerRectConfig = getInnerRectConfig(
-      this.sheets.spreadsheet.styles.selectionFirstCell.innerRect,
+      this._sheets._spreadsheet.styles.selectionFirstCell.innerRect,
       size
     )
 

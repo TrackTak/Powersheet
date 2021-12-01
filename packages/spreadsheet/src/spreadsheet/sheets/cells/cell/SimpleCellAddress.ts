@@ -2,6 +2,9 @@ import { getColumnHeader } from '../../../utils'
 
 export type CellId = `${number}_${number}_${number}`
 
+/**
+ * @internal
+ */
 class SimpleCellAddress {
   constructor(public sheet: number, public row: number, public col: number) {}
 

@@ -1,5 +1,8 @@
 import { Text } from 'konva/lib/shapes/Text'
 
+/**
+ * @internal
+ */
 class TextDecoration {
   constructor(
     public text: Text,

@@ -10,8 +10,11 @@ class Cell {
   rect: Rect
   isMerged = false
 
+  /**
+   * @internal
+   */
   constructor(
-    public sheets: Sheets,
+    protected _sheets: Sheets,
     public simpleCellAddress: SimpleCellAddress,
     group?: Group
   ) {
@@ -28,73 +31,60 @@ class Cell {
         name: 'cellGroup'
       })
       this.rect = new Rect({
-        ...this.sheets.spreadsheet.styles.cell.rect,
+        ...this._sheets._spreadsheet.styles.cell.rect,
         name: 'rect'
       })
       this.group.add(this.rect)
     }
-    this.rect.setAttrs(this.sheets.cells.getDefaultCellRectAttrs())
-    this.updatePosition()
-    this.updateSize()
-    this.setIsMergedCell()
+    this.rect.setAttrs(this._sheets.cells._getDefaultCellRectAttrs())
+    this._updatePosition()
+    this._updateSize()
+    this._setIsMergedCell()
   }
 
-  private updatePosition() {
+  private _updatePosition() {
     const { row, col } = this.simpleCellAddress
 
     const position = {
-      x: this.sheets.cols.getAxis(col) - this.sheets.getViewportVector().x,
-      y: this.sheets.rows.getAxis(row) - this.sheets.getViewportVector().y
+      x: this._sheets.cols.getAxis(col) - this._sheets._getViewportVector().x,
+      y: this._sheets.rows.getAxis(row) - this._sheets._getViewportVector().y
     }
 
     this.group.position(position)
   }
 
-  private updateSize() {
+  private _updateSize() {
     const { row, col } = this.simpleCellAddress
 
     this.rect.size({
-      width: this.sheets.cols.getSize(col),
-      height: this.sheets.rows.getSize(row)
+      width: this._sheets.cols.getSize(col),
+      height: this._sheets.rows.getSize(row)
     })
   }
 
-  isCellOnFrozenRow() {
-    return this.sheets.rows.getIsFrozen(this.simpleCellAddress.row)
-  }
-
-  isCellOnFrozenCol() {
-    return this.sheets.cols.getIsFrozen(this.simpleCellAddress.col)
-  }
-
-  getStickyGroupCellBelongsTo() {
-    return this.sheets.getStickyGroupType(
-      this.isCellOnFrozenRow(),
-      this.isCellOnFrozenCol()
-    )
-  }
-
-  private setIsMergedCell() {
-    this.sheets.merger.setAssociatedMergedCellIds(this.simpleCellAddress)
+  private _setIsMergedCell() {
+    this._sheets.merger._setAssociatedMergedCellIds(this.simpleCellAddress)
 
     const cellId = this.simpleCellAddress.toCellId()
-    const mergedCellId =
-      this.sheets.merger.associatedMergedCellAddressMap[cellId]
+    const mergedCellId = this._sheets.merger.associatedMergedCellAddressMap[
+      cellId
+    ]
 
     if (!mergedCellId) return
 
     this.isMerged = true
 
-    const mergedCell =
-      this.sheets.spreadsheet.data.spreadsheetData.mergedCells![mergedCellId]
+    const mergedCell = this._sheets._spreadsheet.data._spreadsheetData
+      .mergedCells![mergedCellId]
 
-    const rangeSimpleCellAddress =
-      RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
+    const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+      mergedCell
+    )
 
-    this.setRangeCellAddress(rangeSimpleCellAddress)
+    this._setRangeCellAddress(rangeSimpleCellAddress)
   }
 
-  protected setRangeCellAddress(
+  protected _setRangeCellAddress(
     rangeSimpleCellAddress: RangeSimpleCellAddress
   ) {
     this.rangeSimpleCellAddress = rangeSimpleCellAddress
@@ -105,24 +95,48 @@ class Cell {
     for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
       'col'
     )) {
-      width += this.sheets.cols.getSize(index)
+      width += this._sheets.cols.getSize(index)
     }
 
     for (const index of this.rangeSimpleCellAddress.iterateFromTopToBottom(
       'row'
     )) {
-      height += this.sheets.rows.getSize(index)
+      height += this._sheets.rows.getSize(index)
     }
 
     this.rect.width(width)
     this.rect.height(height)
   }
 
-  destroy() {
+  isCellOnFrozenRow() {
+    return this._sheets.rows.getIsFrozen(this.simpleCellAddress.row)
+  }
+
+  isCellOnFrozenCol() {
+    return this._sheets.cols.getIsFrozen(this.simpleCellAddress.col)
+  }
+
+  /**
+   * @internal
+   */
+  getStickyGroupCellBelongsTo() {
+    return this._sheets._getStickyGroupType(
+      this.isCellOnFrozenRow(),
+      this.isCellOnFrozenCol()
+    )
+  }
+
+  /**
+   * @internal
+   */
+  _destroy() {
     this.group.destroy()
   }
 
-  getClientRectWithoutStroke() {
+  /**
+   * @internal
+   */
+  _getClientRectWithoutStroke() {
     return this.group.getClientRect({
       skipStroke: true
     })

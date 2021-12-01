@@ -11,7 +11,7 @@ import styles from './Spreadsheet.module.scss'
 import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { HyperFormula } from 'hyperformula'
+import { ExportedChange, HyperFormula } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import SimpleCellAddress, {
   CellId
@@ -88,7 +88,7 @@ class Spreadsheet {
     // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine
     this.history = new Manager((data: string) => {
       const currentData: IHistoryData = {
-        data: this.data.spreadsheetData,
+        data: this.data._spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
         associatedMergedCellAddressMap: this.sheets.merger
           .associatedMergedCellAddressMap
@@ -96,7 +96,7 @@ class Spreadsheet {
 
       const parsedData: IHistoryData = JSON.parse(data)
 
-      this.data.spreadsheetData = parsedData.data
+      this.data._spreadsheetData = parsedData.data
       this.sheets.activeSheetId = parsedData.activeSheetId
       this.sheets.merger.associatedMergedCellAddressMap =
         parsedData.associatedMergedCellAddressMap
@@ -109,7 +109,7 @@ class Spreadsheet {
         const sheetId = this.hyperformula.getSheetId(sheetName)!
 
         this.hyperformula.clearSheet(sheetId)
-        this.setCells()
+        this._setCells()
       })
 
       return JSON.stringify(currentData)
@@ -119,62 +119,23 @@ class Spreadsheet {
     this.data.setSheet(0)
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
-    window.addEventListener('DOMContentLoaded', this.onDOMContentLoaded, {
+    window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
       once: true
     })
+
+    this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
   }
 
-  initialize() {
-    if (!this.isInitialized) {
-      this.isInitialized = true
+  private onAsyncValuesUpdated = (asyncChanges: ExportedChange[]) => {
+    console.log(asyncChanges)
 
-      for (const key in this.data.spreadsheetData.sheets) {
-        const sheetId = parseInt(key, 10)
-        const sheet = this.data.spreadsheetData.sheets[sheetId]
-
-        this.sheets.createNewSheet(sheet)
-      }
-
-      if (this.data.spreadsheetData.sheets) {
-        this.hyperformula.batch(() => {
-          this.setCells()
-        })
-      }
-
-      this.isSaving = false
-
-      this.updateViewport()
-
-      if (document.readyState === 'complete') {
-        this.updateSheetSizes()
-      }
-    }
+    this.render()
   }
 
-  private updateSheetSizes() {
-    this.sheets.updateSize()
-  }
-
-  private onDOMContentLoaded = () => {
-    this.updateSheetSizes()
-  }
-
-  destroy() {
-    window.removeEventListener('DOMContentLoaded', this.onDOMContentLoaded)
-
-    this.spreadsheetEl.remove()
-
-    this.toolbar?.destroy()
-    this.formulaBar?.destroy()
-    this.bottomBar?.destroy()
-    this.functionHelper?.destroy()
-    this.sheets.destroy()
-  }
-
-  private setCells() {
-    for (const key in this.data.spreadsheetData.cells) {
+  private _setCells() {
+    for (const key in this.data._spreadsheetData.cells) {
       const cellId = key as CellId
-      const cell = this.data.spreadsheetData.cells?.[cellId]
+      const cell = this.data._spreadsheetData.cells?.[cellId]
 
       this.hyperformula.setCellContents(
         SimpleCellAddress.cellIdToAddress(cellId),
@@ -183,28 +144,112 @@ class Spreadsheet {
     }
   }
 
-  setData(data: ISpreadsheetData) {
-    this.data.spreadsheetData = data
-
-    this.updateViewport()
+  private _updateSheetSizes() {
+    this.sheets._updateSize()
   }
 
+  private _onDOMContentLoaded = () => {
+    this._updateSheetSizes()
+  }
+
+  /**
+   * Creates the spreadsheets sheets from the data and sets
+   * hyperformula cells if powersheet has not been initialized yet.
+   * This must be called after `setData()`
+   */
+  initialize() {
+    if (!this.isInitialized) {
+      this.isInitialized = true
+
+      for (const key in this.data._spreadsheetData.sheets) {
+        const sheetId = parseInt(key, 10)
+        const sheet = this.data._spreadsheetData.sheets[sheetId]
+
+        this.sheets.createNewSheet(sheet)
+      }
+
+      if (this.data._spreadsheetData.sheets) {
+        this.hyperformula.batch(() => {
+          this._setCells()
+        })
+      }
+
+      this.isSaving = false
+
+      this.render()
+
+      if (document.readyState !== 'loading') {
+        this._updateSheetSizes()
+      }
+    }
+  }
+
+  /**
+   * Unregister's event listeners and removes all DOM elements for
+   * the Spreadsheet and all it's children
+   *
+   * @param destroyHyperformula - This should only be set to false
+   * when you are using multiple spreadsheets with a shared hyperformula instance.
+   */
+  destroy(destroyHyperformula = true) {
+    window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
+    this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
+
+    this.spreadsheetEl.remove()
+
+    this.toolbar?.destroy()
+    this.formulaBar?.destroy()
+    this.bottomBar?.destroy()
+    this.functionHelper?._destroy()
+    this.sheets._destroy()
+
+    if (destroyHyperformula) {
+      this.hyperformula.destroy()
+    }
+  }
+
+  /**
+   * Must be called before `initialize()`.
+   *
+   * @param data - The persisted data that sets the spreadsheet.
+   */
+  setData(data: ISpreadsheetData) {
+    this.data._spreadsheetData = data
+
+    this.render()
+  }
+
+  /**
+   *
+   * @param options - Custom options that you want for the spreadsheet.
+   */
   setOptions(options: NestedPartial<IOptions>) {
     this.options = merge({}, this.options, options)
 
-    this.updateViewport()
+    this.render()
   }
 
+  /**
+   *
+   * @param styles - Customs styling specifically for the canvas elements.
+   */
   setStyles(styles: NestedPartial<IStyles>) {
     this.styles = merge({}, this.styles, styles)
 
-    this.updateViewport()
+    this.render()
   }
 
+  /**
+   * This adds to the stack for the undo/redo functionality.
+   * `persistData()` is automatically called at the end of this method.
+   *
+   * @param callback - A function that you want to be called after the history is pushed
+   * onto the stack.
+   */
   pushToHistory(callback?: () => void) {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
-      data: this.data.spreadsheetData,
+      data: this.data._spreadsheetData,
       associatedMergedCellAddressMap: this.sheets.merger
         .associatedMergedCellAddressMap
     }
@@ -221,43 +266,69 @@ class Spreadsheet {
     this.persistData()
   }
 
+  /**
+   * Provides a way for developers to save the `_spreadsheetData` to their database.
+   * This function should be called after an action by the user or a custom function.
+   */
   persistData() {
     const done = () => {
       this.isSaving = false
-      this.toolbar?.updateActiveStates()
+
+      // We don't update sheet viewport for performance reasons
+      this.toolbar?._render()
     }
 
     this.isSaving = true
 
-    this.eventEmitter.emit('persistData', this.data.spreadsheetData, done)
+    this.eventEmitter.emit('persistData', this.data._spreadsheetData, done)
   }
 
+  /**
+   * Reverts the state of the spreadsheet to the previously pushed `_spreadsheetData`
+   * that was done in `pushToHistory()` if an undo exists in the stack.
+   */
   undo() {
     if (!this.history.canUndo) return
 
     this.history.undo()
 
-    this.updateViewport()
+    this.render()
     this.persistData()
   }
 
+  /**
+   * Forwards the state of the spreadsheet to the previously undone `_spreadsheetData`
+   * that was done in `undo()` if an redo exists in the stack.
+   */
   redo() {
     if (!this.history.canRedo) return
 
     this.history.redo()
 
-    this.updateViewport()
+    this.render()
     this.persistData()
   }
 
-  updateViewport() {
-    this.bottomBar?.updateSheetTabs()
-    this.sheets.updateViewport()
-    this.toolbar?.updateActiveStates()
-    this.functionHelper?.updateOpenState()
-    this.formulaBar?.updateValue(
-      this.sheets.selector.selectedCell?.simpleCellAddress
-    )
+  /**
+   * This updates the viewport visible on the user's screen and all
+   * sub-components. This function should be called after you need to refresh
+   * the spreadsheet. This is basically equivalent to React's `render()` method.
+   *
+   * @param recalculateHyperformula - If true then it will call hyperformula's
+   * `rebuildAndRecalculate()` method which updates all the formulas again.
+   */
+  render(recalculateHyperformula = false) {
+    this.sheets._render()
+    this.bottomBar?._render()
+    this.toolbar?._render()
+    this.functionHelper?._render()
+    this.formulaBar?._render()
+
+    if (recalculateHyperformula) {
+      this.hyperformula.rebuildAndRecalculate().then(() => {
+        this.render()
+      })
+    }
   }
 }
 

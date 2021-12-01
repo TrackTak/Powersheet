@@ -8,7 +8,11 @@ import SimpleCellAddress, {
   CellId
 } from './sheets/cells/cell/SimpleCellAddress'
 import RowColAddress, { SheetRowColId } from './sheets/cells/cell/RowColAddress'
-import { CellType, CellValue, FunctionPluginDefinition } from 'hyperformula'
+import {
+  CellType,
+  CellValue,
+  FunctionPluginDefinition
+} from '@tracktak/hyperformula'
 // TODO: Make dynamic async import when https://github.com/parcel-bundler/parcel/issues/7268 is fixed
 // @ts-ignore
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
@@ -19,17 +23,37 @@ export interface ICustomRegisteredPluginDefinition {
 }
 
 class Exporter {
-  spreadsheet!: Spreadsheet
+  private _spreadsheet!: Spreadsheet
 
+  /**
+   *
+   * @param customRegisteredPluginDefinitions Any custom functions that
+   * you have defined in hyperformula won't be available in Excel
+   * when you export them unless you have a plugin for them in Excel.
+   * So you can pass in them here and we convert it to formulas instead.
+   */
   constructor(
     public customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
   ) {}
 
-  initialize(spreadsheet: Spreadsheet) {
-    this.spreadsheet = spreadsheet
+  private async _getWorkbook(utils: XLSX$Utils) {
+    const workbook = utils.book_new()
+    const sheets = this._spreadsheet.data._spreadsheetData.sheets ?? {}
+
+    for (const key in sheets) {
+      const sheetIndex = parseInt(key, 10)
+      const sheetData = this._spreadsheet.data._spreadsheetData.sheets![
+        sheetIndex
+      ]
+      const worksheet = await this._getWorksheet(sheetData.id)
+
+      utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
+    }
+
+    return workbook
   }
 
-  private getWorksheet(sheetId: SheetId) {
+  private async _getWorksheet(sheetId: SheetId) {
     const worksheet: WorkSheet = {}
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
@@ -37,16 +61,16 @@ class Exporter {
       new SimpleCellAddress(sheetId, 0, 0)
     )
 
-    const cellIds = this.spreadsheet.data.spreadsheetData.sheets?.[sheetId]
+    const cellIds = this._spreadsheet.data._spreadsheetData.sheets?.[sheetId]
       .cells
 
     for (const key in cellIds) {
       const cellId = key as CellId
-      const cells = this.spreadsheet.data.spreadsheetData.cells!
+      const cells = this._spreadsheet.data._spreadsheetData.cells!
       const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
       const cell = { ...cells[cellId] }
       const cellString = simpleCellAddress.addressToString()
-      const mergedCell = this.spreadsheet.data.spreadsheetData.mergedCells?.[
+      const mergedCell = this._spreadsheet.data._spreadsheetData.mergedCells?.[
         cellId
       ]
 
@@ -73,25 +97,28 @@ class Exporter {
       }
 
       if (
-        this.spreadsheet.hyperformula.doesCellHaveFormula(simpleCellAddress)
+        this._spreadsheet.hyperformula.doesCellHaveFormula(simpleCellAddress)
       ) {
         worksheet[cellString].f = cell.value?.toString()?.slice(1)
 
-        const setFormula = (functionName: string) => {
+        const setFormula = async (functionName: string) => {
           // TODO: Not perfect regex, doesn't handle nested custom functions
           const regex = new RegExp(`${functionName}\\(.*?\\)`, 'g')
           const matches = worksheet[cellString].f?.match(regex) ?? []
 
-          // Replace any custom functon calls with
+          // Replace any custom function calls with
           // the actual value because excel won't support
           // custom functions natively
-          matches.forEach((match: string) => {
-            let formulaResult = this.spreadsheet.hyperformula.calculateFormula(
+          for (const match of matches) {
+            // TODO: await promise when we fix HF
+            let [
+              formulaResult
+            ] = this._spreadsheet.hyperformula.calculateFormula(
               `=${match}`,
               simpleCellAddress.sheet
             )
 
-            const cellType = this.spreadsheet.hyperformula.getCellType(
+            const cellType = this._spreadsheet.hyperformula.getCellType(
               simpleCellAddress
             )
 
@@ -142,20 +169,19 @@ class Exporter {
 
               worksheet[cellString].t = 's'
             }
-          })
+          }
         }
 
-        this.customRegisteredPluginDefinitions.forEach(
-          ({ aliases, implementedFunctions }) => {
-            Object.keys(aliases ?? {}).forEach(key => {
-              setFormula(key)
-            })
-
-            Object.keys(implementedFunctions).forEach(key => {
-              setFormula(key)
-            })
+        for (const { aliases, implementedFunctions } of this
+          .customRegisteredPluginDefinitions) {
+          for (const key in aliases ?? {}) {
+            await setFormula(key)
           }
-        )
+
+          for (const key in implementedFunctions ?? {}) {
+            await setFormula(key)
+          }
+        }
       }
 
       const value = worksheet[cellString].v ?? cell?.value
@@ -210,14 +236,14 @@ class Exporter {
     const colInfos: ColInfo[] = []
     const rowInfos: RowInfo[] = []
     const colIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].cols ?? {}
+      this._spreadsheet.data._spreadsheetData.sheets?.[sheetId].cols ?? {}
     const rowIds =
-      this.spreadsheet.data.spreadsheetData.sheets?.[sheetId].rows ?? {}
+      this._spreadsheet.data._spreadsheetData.sheets?.[sheetId].rows ?? {}
 
     Object.keys(colIds).forEach(key => {
       const sheetColId = key as SheetRowColId
       const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
-      const col = this.spreadsheet.data.spreadsheetData.cols![sheetColId]
+      const col = this._spreadsheet.data._spreadsheetData.cols![sheetColId]
 
       colInfos[address.rowCol] = {
         wpx: col.size
@@ -227,7 +253,7 @@ class Exporter {
     Object.keys(rowIds).forEach(key => {
       const sheetRowId = key as SheetRowColId
       const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
-      const row = this.spreadsheet.data.spreadsheetData.rows![sheetRowId]
+      const row = this._spreadsheet.data._spreadsheetData.rows![sheetRowId]
 
       rowInfos[address.rowCol] = {
         hpx: row.size
@@ -240,31 +266,20 @@ class Exporter {
     return worksheet
   }
 
-  private getWorkbook(utils: XLSX$Utils) {
-    const workbook = utils.book_new()
-
-    Object.keys(this.spreadsheet.data.spreadsheetData.sheets ?? {}).forEach(
-      key => {
-        const sheetIndex = parseInt(key, 10)
-        const sheetData = this.spreadsheet.data.spreadsheetData.sheets![
-          sheetIndex
-        ]
-        const worksheet = this.getWorksheet(sheetData.id)
-
-        utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
-      }
-    )
-
-    return workbook
+  /**
+   * @param spreadsheet - The spreadsheet that this Exporter is connected to.
+   */
+  initialize(spreadsheet: Spreadsheet) {
+    this._spreadsheet = spreadsheet
   }
 
-  exportWorkbook() {
-    const workbook = this.getWorkbook(utils)
+  async exportWorkbook() {
+    const workbook = await this._getWorkbook(utils)
 
     writeFile(
       workbook,
-      this.spreadsheet.data.spreadsheetData.exportSpreadsheetName ??
-        this.spreadsheet.options.exportSpreadsheetName
+      this._spreadsheet.data._spreadsheetData.exportSpreadsheetName ??
+        this._spreadsheet.options.exportSpreadsheetName
     )
   }
 }

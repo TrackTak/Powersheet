@@ -11,7 +11,7 @@ import styles from './Spreadsheet.module.scss'
 import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { HyperFormula } from '@tracktak/hyperformula'
+import { ExportedChange, HyperFormula } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import SimpleCellAddress, {
   CellId
@@ -122,6 +122,14 @@ class Spreadsheet {
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
       once: true
     })
+
+    this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
+  }
+
+  private onAsyncValuesUpdated = (asyncChanges: ExportedChange[]) => {
+    console.log(asyncChanges)
+
+    this.render()
   }
 
   private _setCells() {
@@ -185,6 +193,7 @@ class Spreadsheet {
    */
   destroy(destroyHyperformula = true) {
     window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
+    this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
 
     this.spreadsheetEl.remove()
 
@@ -304,13 +313,22 @@ class Spreadsheet {
    * This updates the viewport visible on the user's screen and all
    * sub-components. This function should be called after you need to refresh
    * the spreadsheet. This is basically equivalent to React's `render()` method.
+   *
+   * @param recalculateHyperformula - If true then it will call hyperformula's
+   * `rebuildAndRecalculate()` method which updates all the formulas again.
    */
-  render() {
+  render(recalculateHyperformula = false) {
     this.sheets._render()
     this.bottomBar?._render()
     this.toolbar?._render()
     this.functionHelper?._render()
     this.formulaBar?._render()
+
+    if (recalculateHyperformula) {
+      this.hyperformula.rebuildAndRecalculate().then(() => {
+        this.render()
+      })
+    }
   }
 }
 

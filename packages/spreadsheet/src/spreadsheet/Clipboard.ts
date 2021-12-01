@@ -3,7 +3,7 @@ import {
   SimpleCellRange as HFSimpleCellRange
 } from '@tracktak/hyperformula'
 // @ts-ignore
-import { isSimpleCellAddress } from 'hyperformula/es/Cell'
+import { isSimpleCellAddress } from '@tracktak/hyperformula/es/Cell'
 import { isEmpty } from 'lodash'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'

@@ -1,10 +1,13 @@
 import {
+  CellError,
+  ErrorType,
   FunctionPlugin,
   InvalidArgumentsError,
-  SimpleRangeValue
+  SimpleRangeValue,
 } from '@tracktak/hyperformula'
 // @ts-ignore
-import { ArraySize } from 'hyperformula/es/ArraySize'
+import { ArraySize } from '@tracktak/hyperformula/es/ArraySize'
+import { ErrorMessage } from '@tracktak/hyperformula/es/error-message'
 import dayjs from 'dayjs'
 import { isNil } from 'lodash'
 import {
@@ -115,7 +118,7 @@ export const getTTFinancialPlugin = financialData => {
         return new InvalidArgumentsError(1)
       }
       if (!hasFinancialsLoaded) {
-        return 'Loading...'
+        return new CellError(ErrorType.LOADING, ErrorMessage.FunctionLoading)
       }
       const attribute = args[0].value
       // TODO: Add proper error checking here later

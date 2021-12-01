@@ -3,7 +3,7 @@ import {
   EqualsOp,
   RangeSeparator
   // @ts-ignore
-} from 'hyperformula/es/parser/LexerConfig'
+} from '@tracktak/hyperformula/es/parser/LexerConfig'
 import { prefix } from '../utils'
 import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'

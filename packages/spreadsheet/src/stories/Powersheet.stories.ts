@@ -7,8 +7,11 @@ import { merge } from 'lodash'
 import { ISpreadsheetData, ICellData } from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
 import { HyperFormula } from '@tracktak/hyperformula'
-// @ts-ignore
-import { getTTFinancialPlugin, finTranslations } from './mocks/getTTFinancialPlugin'
+import {
+  getTTFinancialPlugin,
+  finTranslations
+  // @ts-ignore
+} from './mocks/getTTFinancialPlugin'
 import realExampleDataJSON from './mocks/realExampleData.json'
 import mockFinancialDataJSON from './mocks/mockFinancialData.json'
 import {
@@ -511,8 +514,7 @@ const RealExampleTemplate: Story<IArgs> = args => {
     HyperFormula.unregisterFunctionPlugin(FinancialPlugin)
     HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations)
 
-    spreadsheet?.hyperformula.rebuildAndRecalculate()
-    spreadsheet?.render()
+    spreadsheet?.render(true)
   }, 2000)
 
   return spreadsheet.spreadsheetEl

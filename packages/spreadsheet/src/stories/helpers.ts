@@ -9,7 +9,12 @@ import { NestedPartial } from '../spreadsheet/types'
 import { ISpreadsheetConstructor } from '../spreadsheet/Spreadsheet'
 import { Spreadsheet, Toolbar, FormulaBar, Exporter, BottomBar } from '..'
 import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
-import { AlwaysSparse, ConfigParams, HyperFormula, SerializedNamedExpression } from '@tracktak/hyperformula'
+import {
+  AlwaysSparse,
+  ConfigParams,
+  HyperFormula,
+  SerializedNamedExpression
+} from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 
 export interface IArgs {
@@ -34,13 +39,16 @@ export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
     expression: '=FALSE()'
   }
 
-  return HyperFormula.buildEmpty({
-    ...config,
-    chooseAddressMappingPolicy: new AlwaysSparse(),
-    // We use our own undo/redo instead
-    undoLimit: 0,
-    licenseKey: 'gpl-v3'
-  }, [trueNamedExpression, falseNamedExpression])[0]
+  return HyperFormula.buildEmpty(
+    {
+      ...config,
+      chooseAddressMappingPolicy: new AlwaysSparse(),
+      // We use our own undo/redo instead
+      undoLimit: 0,
+      licenseKey: 'gpl-v3'
+    },
+    [trueNamedExpression, falseNamedExpression]
+  )[0]
 }
 
 const getSpreadsheet = (

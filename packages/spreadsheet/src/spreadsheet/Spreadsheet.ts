@@ -11,7 +11,7 @@ import styles from './Spreadsheet.module.scss'
 import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { ExportedChange, HyperFormula } from '@tracktak/hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import SimpleCellAddress, {
   CellId
@@ -126,9 +126,7 @@ class Spreadsheet {
     this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
   }
 
-  private onAsyncValuesUpdated = (asyncChanges: ExportedChange[]) => {
-    console.log(asyncChanges)
-
+  private onAsyncValuesUpdated = () => {
     this.render()
   }
 
@@ -176,11 +174,11 @@ class Spreadsheet {
 
       this.isSaving = false
 
-      this.render()
-
       if (document.readyState !== 'loading') {
         this._updateSheetSizes()
       }
+
+      this.render()
     }
   }
 

@@ -1,5 +1,5 @@
 import { Spreadsheet } from '../..'
-import styles from './FunctionHelper.module.scss'
+import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
 import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 
@@ -41,11 +41,6 @@ class FunctionHelper {
   private _spreadsheet!: Spreadsheet
 
   /**
-   * @internal
-   */
-  constructor() {}
-
-  /**
    * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
@@ -53,7 +48,6 @@ class FunctionHelper {
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
-      styles.functionHelper,
       `${functionHelperPrefix}`,
       'mdc-drawer',
       'mdc-drawer--dismissible'
@@ -61,7 +55,6 @@ class FunctionHelper {
 
     this.drawerContentEl = document.createElement('div')
     this.drawerContentEl.classList.add(
-      styles.drawerContent,
       `${functionHelperPrefix}-drawer-content`,
       'mdc-drawer__content'
     )
@@ -73,16 +66,10 @@ class FunctionHelper {
     this.functionHelperEl.dir = 'rtl'
 
     this.closeIcon = document.createElement('span')
-    this.closeIcon.classList.add(
-      styles.closeIcon,
-      `${functionHelperPrefix}-close-icon`
-    )
+    this.closeIcon.classList.add(`${functionHelperPrefix}-close-icon`)
 
     this.closeButton = document.createElement('button')
-    this.closeButton.classList.add(
-      styles.closeButton,
-      `${functionHelperPrefix}`
-    )
+    this.closeButton.classList.add(`${functionHelperPrefix}-close-button`)
 
     this.closeButton.addEventListener('click', () => {
       this._spreadsheet.options.showFunctionHelper = false
@@ -94,10 +81,7 @@ class FunctionHelper {
     this.closeButton.append(this.closeIcon)
 
     this.textWrapper = document.createElement('div')
-    this.textWrapper.classList.add(
-      styles.textWrapper,
-      `${functionHelperPrefix}-text-wrapper`
-    )
+    this.textWrapper.classList.add(`${functionHelperPrefix}-text-wrapper`)
   }
 
   /**

@@ -1,0 +1,70 @@
+@use '@material/drawer';
+@use '../variables';
+@use '../styles.scss';
+
+@include drawer.core-styles;
+@include drawer.dismissible-core-styles;
+
+.powersheet-function-helper {
+  @include drawer.width(400px);
+  overflow: auto;
+  z-index: variables.$functionHelperZIndex;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+
+  @media only screen and (max-width: 600px) {
+    & {
+      width: 100%;
+    }
+
+    &-drawer-content {
+      padding: 0;
+      padding-left: 15px;
+    }
+  }
+
+  &-drawer-content {
+    padding: 0 30px 30px;
+  }
+
+  &-close-icon {
+    height: 23px;
+    width: 23px;
+    display: block;
+    background-image: url(close-icon.svg);
+  }
+
+  &-close-button {
+    @include styles.button;
+    margin-left: auto;
+    display: block;
+  }
+
+  &-main-header {
+    @include styles.headerColor;
+    font-size: 1.4rem;
+    line-height: 1.15;
+    font-weight: bold;
+  }
+
+  &-paragraph {
+    @include styles.textDescription;
+  }
+
+  &-list {
+    @include styles.textDescription;
+  }
+
+  &-header {
+    @include styles.subHeader;
+  }
+
+  &-code,
+  &-code-style {
+    color: #6240c8;
+    font-weight: bold;
+    font-size: 13px;
+  }
+}

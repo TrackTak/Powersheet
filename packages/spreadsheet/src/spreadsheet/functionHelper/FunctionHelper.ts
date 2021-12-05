@@ -1,15 +1,7 @@
 import { Spreadsheet } from '../..'
-import styles from './FunctionHelper.module.scss'
+import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
-import {
-  createCodeText,
-  createHeader,
-  createMainHeader,
-  createParagraph,
-  createSubHeader,
-  createSyntaxListItem,
-  functionHelperPrefix
-} from './functionHelperHtmlElementHelpers'
+import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -49,11 +41,6 @@ class FunctionHelper {
   private _spreadsheet!: Spreadsheet
 
   /**
-   * @internal
-   */
-  constructor(public data: IFunctionHelperData) {}
-
-  /**
    * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
@@ -61,7 +48,6 @@ class FunctionHelper {
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
-      styles.functionHelper,
       `${functionHelperPrefix}`,
       'mdc-drawer',
       'mdc-drawer--dismissible'
@@ -69,7 +55,6 @@ class FunctionHelper {
 
     this.drawerContentEl = document.createElement('div')
     this.drawerContentEl.classList.add(
-      styles.drawerContent,
       `${functionHelperPrefix}-drawer-content`,
       'mdc-drawer__content'
     )
@@ -81,16 +66,10 @@ class FunctionHelper {
     this.functionHelperEl.dir = 'rtl'
 
     this.closeIcon = document.createElement('span')
-    this.closeIcon.classList.add(
-      styles.closeIcon,
-      `${functionHelperPrefix}-close-icon`
-    )
+    this.closeIcon.classList.add(`${functionHelperPrefix}-close-icon`)
 
     this.closeButton = document.createElement('button')
-    this.closeButton.classList.add(
-      styles.closeButton,
-      `${functionHelperPrefix}`
-    )
+    this.closeButton.classList.add(`${functionHelperPrefix}-close-button`)
 
     this.closeButton.addEventListener('click', () => {
       this._spreadsheet.options.showFunctionHelper = false
@@ -102,60 +81,7 @@ class FunctionHelper {
     this.closeButton.append(this.closeIcon)
 
     this.textWrapper = document.createElement('div')
-    this.textWrapper.classList.add(
-      styles.textWrapper,
-      `${functionHelperPrefix}-text-wrapper`
-    )
-
-    const { mainHeaderEl } = createMainHeader(this.data.header)
-
-    const { paragraphEl: description } = createParagraph(
-      this.data.headerDescription
-    )
-
-    const { header: headerUsage } = createHeader('Sample Usage')
-    const { header: headerSyntax } = createHeader('Syntax')
-    const { header: headerAttributes } = createHeader('Attributes')
-
-    this.drawerContentEl.appendChild(this.textWrapper)
-    this.textWrapper.appendChild(mainHeaderEl)
-    this.textWrapper.appendChild(description)
-    this.textWrapper.appendChild(headerUsage)
-
-    this.data.codeSyntaxUsage.forEach(usageName => {
-      const { codeEl } = createCodeText(usageName)
-      this.textWrapper.appendChild(codeEl)
-    })
-
-    this.textWrapper.appendChild(headerSyntax)
-
-    this.data.codeSyntaxElements.forEach(({ codeSyntax, values }) => {
-      const codeSyntaxList = document.createElement('ul')
-      const { codeEl } = createCodeText(codeSyntax)
-
-      this.textWrapper.appendChild(codeEl)
-      this.textWrapper.appendChild(codeSyntaxList)
-
-      values.forEach(({ syntaxName, description }) => {
-        const { listItem } = createSyntaxListItem(syntaxName, description)
-        codeSyntaxList.appendChild(listItem)
-      })
-    })
-
-    this.textWrapper.appendChild(headerAttributes)
-
-    this.data.attributes.forEach(({ attributeNames, header }) => {
-      const attributeList = document.createElement('ul')
-
-      this.textWrapper.appendChild(createSubHeader(header).subHeader)
-      this.textWrapper.appendChild(attributeList)
-
-      attributeNames.forEach(attributeName => {
-        const { listItem } = createSyntaxListItem(attributeName)
-
-        attributeList.appendChild(listItem)
-      })
-    })
+    this.textWrapper.classList.add(`${functionHelperPrefix}-text-wrapper`)
   }
 
   /**
@@ -163,7 +89,9 @@ class FunctionHelper {
    * after the spreadsheet has been attached to the DOM
    * or material-components will throw errors.
    */
-  setDrawer() {
+  setDrawerContent(contentEl: HTMLElement) {
+    this.drawerContentEl.appendChild(contentEl)
+
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
 
     this._spreadsheet.render()

@@ -1,11 +1,10 @@
 import { prefix } from '../utils'
-import styles from './FunctionHelper.module.scss'
 
 export const functionHelperPrefix = `${prefix}-function-helper`
 
 export const createMainHeader = (headerText: string) => {
   const mainHeaderEl = document.createElement('h1')
-  mainHeaderEl.classList.add(styles.headerEl, `${functionHelperPrefix}`)
+  mainHeaderEl.classList.add(`${functionHelperPrefix}-main-header`)
   mainHeaderEl.textContent = headerText
 
   return { mainHeaderEl }
@@ -13,7 +12,7 @@ export const createMainHeader = (headerText: string) => {
 
 export const createHeader = (headerText: string) => {
   const header = document.createElement('h3')
-  header.classList.add(styles.header, `${functionHelperPrefix}`)
+  header.classList.add(`${functionHelperPrefix}-header`)
   header.textContent = headerText
 
   return { header }
@@ -21,7 +20,7 @@ export const createHeader = (headerText: string) => {
 
 export const createSubHeader = (headerText: string) => {
   const subHeader = document.createElement('h5')
-  subHeader.classList.add(styles.subHeader, `${functionHelperPrefix}`)
+  subHeader.classList.add(`${functionHelperPrefix}-sub-header`)
   subHeader.textContent = headerText
 
   return { subHeader }
@@ -30,7 +29,7 @@ export const createSubHeader = (headerText: string) => {
 export const createCodeText = (codeText: string) => {
   const codeEl = document.createElement('p')
   const code = document.createElement('code')
-  code.classList.add(styles.code, `${functionHelperPrefix}`)
+  code.classList.add(`${functionHelperPrefix}-code`)
   code.textContent = codeText
 
   codeEl.appendChild(code)
@@ -40,7 +39,7 @@ export const createCodeText = (codeText: string) => {
 
 export const createParagraph = (paragraph: string) => {
   const paragraphEl = document.createElement('p')
-  paragraphEl.classList.add(styles.paragraphEl, `${functionHelperPrefix}`)
+  paragraphEl.classList.add(`${functionHelperPrefix}-paragraph`)
   paragraphEl.textContent = `${paragraph}`
 
   return { paragraphEl }
@@ -51,7 +50,7 @@ export const createSyntaxListItem = (
   description?: string
 ) => {
   const listItem = document.createElement('li')
-  listItem.classList.add(styles.list, `${functionHelperPrefix}`)
+  listItem.classList.add(`${functionHelperPrefix}-list-item`)
 
   const codeDescriptionEl = document.createElement('p')
   const codeStyle = document.createElement('code')
@@ -62,7 +61,7 @@ export const createSyntaxListItem = (
     codeDescriptionEl.textContent = ` - ${description}`
   }
 
-  codeStyle.classList.add(styles.code, `${functionHelperPrefix}`)
+  codeStyle.classList.add(`${functionHelperPrefix}-code-style`)
 
   listItem.appendChild(codeDescriptionEl)
   codeDescriptionEl.prepend(codeStyle)

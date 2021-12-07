@@ -11,6 +11,7 @@ import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import CellHighlighter from '../../cellHighlighter/CellHighlighter'
+import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 
 export interface ICurrentScroll {
   row: number
@@ -22,6 +23,7 @@ class CellEditor {
   cellEditorEl: HTMLDivElement
   cellTooltip: DelegateInstance
   formulaHelper?: FormulaHelper
+  functionSummaryHelper: FunctionSummaryHelper
   cellHighlighter: CellHighlighter
   currentCell: Cell | null = null
   currentScroll: ICurrentScroll | null = null
@@ -73,8 +75,11 @@ class CellEditor {
       HyperFormula.getRegisteredFunctionNames('enGB'),
       this._onItemClick
     )
-
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
+    this.functionSummaryHelper = new FunctionSummaryHelper(this._spreadsheet)
+    this.cellEditorContainerEl.appendChild(
+      this.functionSummaryHelper.functionSummaryHelperEl
+    )
   }
 
   private _onItemClick = (suggestion: string) => {
@@ -116,9 +121,22 @@ class CellEditor {
     const isFormulaInput = textContent?.startsWith('=')
 
     if (isFormulaInput) {
-      this.formulaHelper?.show(textContent?.slice(1))
+      let functionName = textContent?.slice(1) ?? ''
+      const hasOpenBracket = functionName.includes('(')
+      const input = functionName.split('(')
+      functionName = hasOpenBracket ? input[0] : functionName
+      const parameters = input[1]
+
+      if (hasOpenBracket) {
+        this.formulaHelper?.hide()
+        this.functionSummaryHelper.show(functionName, parameters)
+      } else {
+        this.formulaHelper?.show(functionName)
+        this.functionSummaryHelper.hide()
+      }
     } else {
       this.formulaHelper?.hide()
+      this.functionSummaryHelper.hide()
     }
   }
 
@@ -177,6 +195,7 @@ class CellEditor {
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
     this.formulaHelper?._destroy()
+    this.functionSummaryHelper._destroy()
   }
 
   /**

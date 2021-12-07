@@ -1,0 +1,60 @@
+@use '../../variables';
+@use '../../styles.scss';
+
+.powersheet-function-summary-helper {
+  position: relative;
+  width: 300px;
+  padding: 10px;
+  max-height: 25px;
+  overflow-y: hidden;
+  transition: max-height 0.3s ease-out;
+  line-height: 25px;
+
+  &-parameters,
+  &-main-header {
+    @include styles.headerColor;
+    font-size: 1rem;
+    line-height: 1.15;
+    font-weight: bold;
+    margin-top: 0px;
+    display: inline;
+  }
+
+  &-parameters {
+    padding-left: 2px;
+    font-weight: normal;
+  }
+
+  &-highlight {
+    background-color: rgba(98, 64, 200, 0.8);
+    color: white;
+    padding: 2px;
+    border-radius: 2px;
+  }
+
+  &-expanded {
+    max-height: 400px;
+  }
+
+  &-collapse-icon,
+  &-expand-icon {
+    height: 15px;
+    width: 15px;
+    display: block;
+    background-image: url(chevron-down.svg);
+  }
+  &-collapse-icon {
+    transform: rotate(180deg);
+  }
+
+  &-accordion-button {
+    @include styles.button;
+    float: right;
+    padding: 5px;
+  }
+
+  &-button {
+    color: #6240c8;
+    @include styles.button;
+  }
+}

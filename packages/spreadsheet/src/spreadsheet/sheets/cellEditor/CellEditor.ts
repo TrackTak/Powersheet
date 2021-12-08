@@ -110,7 +110,8 @@ class CellEditor {
 
   private _onInput = (e: Event) => {
     const target = e.target as HTMLDivElement
-    const textContent = target.textContent
+    const token = target.getElementsByClassName('powersheet-token')?.[0]
+    const textContent = token ? token.textContent : target.textContent
 
     const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
 
@@ -121,6 +122,10 @@ class CellEditor {
     const isFormulaInput = textContent?.startsWith('=')
 
     if (isFormulaInput) {
+      this.cellEditorEl.classList.add(styles.formulaInput)
+      this._spreadsheet.formulaBar?.editableContent.classList.add(
+        styles.formulaInput
+      )
       let functionName = textContent?.slice(1) ?? ''
       const hasOpenBracket = functionName.includes('(')
       const input = functionName.split('(')
@@ -135,6 +140,8 @@ class CellEditor {
         this.functionSummaryHelper.hide()
       }
     } else {
+      this.cellEditorEl.classList.remove(styles.formulaInput)
+      this.formulaHelper?.formulaHelperEl.classList.remove(styles.formulaInput)
       this.formulaHelper?.hide()
       this.functionSummaryHelper.hide()
     }
@@ -225,6 +232,18 @@ class CellEditor {
     )
 
     this.cellHighlighter.setHighlightedCells(cellReferenceParts)
+
+    const isOpenFunction =
+      text?.startsWith('=') && text?.includes('(') && !text?.includes(')')
+    const shouldAddPlaceholder = [',', '('].includes(
+      text?.charAt(text?.length - 1) ?? ''
+    )
+
+    if (isOpenFunction && shouldAddPlaceholder) {
+      const placeholderEl = document.createElement('span')
+      placeholderEl.classList.add(styles.placeholder)
+      tokenParts.push(placeholderEl)
+    }
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)

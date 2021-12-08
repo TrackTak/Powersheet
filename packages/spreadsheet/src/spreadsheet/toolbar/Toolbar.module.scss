@@ -22,6 +22,7 @@ button.fontSizeButton {
 .functionNameButton {
   @include button();
   @include buttonAction;
+  font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
 }
 
 .functions {

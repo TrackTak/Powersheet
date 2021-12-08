@@ -155,7 +155,7 @@ class Spreadsheet {
    * hyperformula cells if powersheet has not been initialized yet.
    * This must be called after `setData()`
    */
-  initialize() {
+   private initialize() {
     if (!this.isInitialized) {
       this.isInitialized = true
 
@@ -176,9 +176,9 @@ class Spreadsheet {
 
       if (document.readyState !== 'loading') {
         this._updateSheetSizes()
+      } else {
+        this.render()
       }
-
-      this.render()
     }
   }
 
@@ -214,6 +214,7 @@ class Spreadsheet {
   setData(data: ISpreadsheetData) {
     this.data._spreadsheetData = data
 
+    this.initialize()
     this.render()
   }
 

@@ -30,6 +30,17 @@ export default {
 
 export const Default = Template.bind({})
 
+Default.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'Default',
+      }
+    },
+  }
+}
+
 export const FrozenCells = Template.bind({})
 
 FrozenCells.args = {
@@ -148,6 +159,17 @@ const MobileTemplate: Story<IArgs> = args => {
 
 export const Mobile = MobileTemplate.bind({})
 
+Mobile.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'Mobile',
+      }
+    },
+  }
+}
+
 const MillionRowsTemplate: Story<IArgs> = args => {
   const newArgs = merge({}, args, {
     options: {
@@ -188,6 +210,14 @@ MillionRows.args = {
 export const CustomStyles = Template.bind({})
 
 CustomStyles.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'CustomStyles',
+      }
+    },
+  },
   styles: {
     row: {
       gridLine: {
@@ -251,9 +281,28 @@ const OnlySpreadsheet: Story<IArgs> = args => {
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({})
 
+BareMinimumSpreadsheet.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'BareMinimumSpreadsheet',
+      }
+    },
+  }
+}
+
 export const CustomSizeSpreadsheet = Template.bind({})
 
 CustomSizeSpreadsheet.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'CustomSizeSpreadsheet',
+      }
+    },
+  },
   options: {
     ...defaultOptions,
     width: 500,
@@ -306,6 +355,17 @@ const MultipleSpreadsheetsTemplate: Story = () => {
 }
 
 export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({})
+
+MultipleSpreadsheets.args = {
+  data: {
+    sheets: {
+      0: {
+        id: 0,
+        sheetName: 'MultipleSpreadsheets',
+      }
+    },
+  }
+}
 
 const AllCurrencySymbolsTemplate: Story<IArgs> = args => {
   return buildSpreadsheetWithEverything(

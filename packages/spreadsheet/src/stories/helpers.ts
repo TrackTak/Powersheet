@@ -27,7 +27,7 @@ import getToolbarElementIcons from './getToolbarActionGroups'
 import getFunctionHelperContent from './getFunctionHelperContent'
 
 export interface IArgs {
-  data?: ISpreadsheetData
+  data: ISpreadsheetData
   options?: NestedPartial<IOptions>
   styles?: NestedPartial<IStyles>
 }
@@ -70,9 +70,7 @@ const getSpreadsheet = (
     ...params
   })
 
-  if (data) {
-    spreadsheet.setData(data)
-  }
+  spreadsheet.setData(data)
 
   if (options) {
     spreadsheet.setOptions(options)
@@ -81,8 +79,6 @@ const getSpreadsheet = (
   if (styles) {
     spreadsheet.setStyles(styles)
   }
-
-  spreadsheet.initialize()
 
   const oldEmit = spreadsheet.eventEmitter.emit
 

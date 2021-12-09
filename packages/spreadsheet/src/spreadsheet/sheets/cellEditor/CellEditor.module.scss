@@ -23,6 +23,15 @@
   font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
 }
 
+.StringLiteral {
+  color: green;
+}
+
+.NumberLiteral,
+.BooleanOp {
+  color: blue;
+}
+
 .placeholder::after {
   content: ']';
   display: inline-block;

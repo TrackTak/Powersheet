@@ -12,11 +12,38 @@ import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import CellHighlighter from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
+import { TokenType, IToken } from 'chevrotain'
 
 export interface ICurrentScroll {
   row: number
   col: number
 }
+
+const PLACEHOLDER_WHITELIST = [
+  'WhiteSpace',
+  'PlusOp',
+  'MinusOp',
+  'TimesOp',
+  'DivOp',
+  'PowerOp',
+  'EqualsOp',
+  'NotEqualOp',
+  'PercentOp',
+  'GreaterThanOrEqualOp',
+  'LessThanOrEqualOp',
+  'GreaterThanOp',
+  'LessThanOp',
+  'LParen',
+  'ArrayLParen',
+  'ArrayRParen',
+  'OffsetProcedureName',
+  'ProcedureName',
+  'ConcatenateOp',
+  'AdditionOp',
+  'MultiplicationOp',
+  'ArrayRowSep',
+  'ArrayColSep'
+]
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
@@ -29,6 +56,7 @@ class CellEditor {
   currentScroll: ICurrentScroll | null = null
   currentCaretPosition: number | null = null
   currentCellText: string | null = null
+  private placeholderTokens: TokenType[]
   private _spreadsheet: Spreadsheet
 
   /**
@@ -80,6 +108,11 @@ class CellEditor {
     this.cellEditorContainerEl.appendChild(
       this.functionSummaryHelper.functionSummaryHelperEl
     )
+
+    // @ts-ignore
+    this.placeholderTokens = this._spreadsheet.hyperformula._parser.lexerConfig.allTokens
+      .filter((token: TokenType) => PLACEHOLDER_WHITELIST.includes(token.name))
+      .map((token: TokenType) => token.name)
   }
 
   private _onItemClick = (suggestion: string) => {
@@ -108,10 +141,17 @@ class CellEditor {
     }
   }
 
+  private _nodesToText = (nodes: HTMLCollectionOf<Element>): string =>
+    Array.from(nodes).reduce((acc, node) => {
+      return acc + node.textContent
+    }, '')
+
   private _onInput = (e: Event) => {
     const target = e.target as HTMLDivElement
-    const token = target.getElementsByClassName('powersheet-token')?.[0]
-    const textContent = token ? token.textContent : target.textContent
+    const tokens = target.getElementsByClassName('powersheet-token')
+    const textContent = tokens.length
+      ? this._nodesToText(tokens)
+      : target.textContent
 
     const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
 
@@ -225,7 +265,6 @@ class CellEditor {
     this.currentCellText = text
 
     const {
-      tokenParts,
       cellReferenceParts
     } = this.cellHighlighter.getHighlightedCellReferenceSections(
       this.currentCellText ?? ''
@@ -233,26 +272,58 @@ class CellEditor {
 
     this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
-    const isOpenFunction =
-      text?.startsWith('=') && text?.includes('(') && !text?.includes(')')
-    const shouldAddPlaceholder = [',', '('].includes(
-      text?.charAt(text?.length - 1) ?? ''
-    )
-
-    if (isOpenFunction && shouldAddPlaceholder) {
-      const placeholderEl = document.createElement('span')
-      placeholderEl.classList.add(styles.placeholder)
-      tokenParts.push(placeholderEl)
-    }
-
+    const tokenParts = this._getStyledFormula(text ?? '')
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
+
       this._spreadsheet.formulaBar?.editableContent.appendChild(
         part.cloneNode(true)
       )
     })
 
     this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
+  }
+
+  private _getStyledFormula(formula: string) {
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const { tokens } = lexer.tokenizeFormula(formula)
+    const tokenParts = []
+    const tokenIndexes = tokens.reduce(
+      (acc: Record<number, IToken>, token: IToken) => ({
+        ...acc,
+        [token.startOffset]: token
+      }),
+      {}
+    )
+
+    for (let i = 0; i < formula.length; i++) {
+      let subString = ''
+      const token = tokenIndexes[i]
+      const span = document.createElement('span')
+      span.classList.add(`${prefix}-token`)
+      tokenParts.push(span)
+      if (token) {
+        subString = formula.slice(i, token.endOffset + 1)
+        i = token.endOffset
+        if (token.image === 'TRUE' || token.image === 'FALSE') {
+          span.classList.add(styles.BooleanOp)
+        }
+        span.classList.add(styles[token.tokenType.name])
+        if (
+          i === formula.length - 1 &&
+          this.placeholderTokens.includes(token.tokenType.name)
+        ) {
+          const placeholderEl = document.createElement('span')
+          placeholderEl.classList.add(styles.placeholder)
+          tokenParts.push(placeholderEl)
+        }
+      } else {
+        subString = formula[i]
+      }
+      span.textContent = subString
+    }
+    return tokenParts
   }
 
   /**

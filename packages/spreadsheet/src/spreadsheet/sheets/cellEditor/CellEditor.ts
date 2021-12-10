@@ -10,9 +10,11 @@ import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
-import CellHighlighter from '../../cellHighlighter/CellHighlighter'
+import CellHighlighter, {
+  ICellReferencePart
+} from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
-import { TokenType, IToken } from 'chevrotain'
+import { IToken } from 'chevrotain'
 
 export interface ICurrentScroll {
   row: number
@@ -263,10 +265,10 @@ class CellEditor {
     } = this.cellHighlighter.getHighlightedCellReferenceSections(
       this.currentCellText ?? ''
     )
-
-    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
-
-    const tokenParts = this._getStyledFormula(text ?? '')
+    const isFormula = text?.startsWith('=')
+    const tokenParts = isFormula
+      ? this._getStyledFormula(text ?? '', cellReferenceParts)
+      : [this._getSpanFromText(text ?? '')]
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
 
@@ -274,11 +276,15 @@ class CellEditor {
         part.cloneNode(true)
       )
     })
+    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
     this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
   }
 
-  private _getStyledFormula(formula: string) {
+  private _getStyledFormula(
+    formula: string,
+    cellReferenceParts: ICellReferencePart[]
+  ) {
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
     const { tokens } = lexer.tokenizeFormula(formula)
@@ -287,6 +293,17 @@ class CellEditor {
       (acc: Record<number, IToken>, token: IToken) => ({
         ...acc,
         [token.startOffset]: token
+      }),
+      {}
+    )
+
+    const cellReferenceIndexes = cellReferenceParts.reduce(
+      (
+        acc: Record<number, ICellReferencePart>,
+        cellReference: ICellReferencePart
+      ) => ({
+        ...acc,
+        [cellReference.startOffset]: cellReference
       }),
       {}
     )
@@ -303,7 +320,12 @@ class CellEditor {
         if (token.image === 'TRUE' || token.image === 'FALSE') {
           span.classList.add(styles.BooleanOp)
         }
-        span.classList.add(styles[token.tokenType.name])
+        const cellReference = cellReferenceIndexes[token.startOffset]
+        if (cellReference) {
+          span.style.color = cellReference.color
+        } else {
+          span.classList.add(styles[token.tokenType.name])
+        }
         if (
           i === formula.length - 1 &&
           PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
@@ -318,6 +340,12 @@ class CellEditor {
       span.textContent = subString
     }
     return tokenParts
+  }
+
+  private _getSpanFromText = (text: string) => {
+    const span = document.createElement('span')
+    span.textContent = text
+    return span
   }
 
   /**

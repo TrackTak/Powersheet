@@ -56,7 +56,6 @@ class CellEditor {
   currentScroll: ICurrentScroll | null = null
   currentCaretPosition: number | null = null
   currentCellText: string | null = null
-  private placeholderTokens: TokenType[]
   private _spreadsheet: Spreadsheet
 
   /**
@@ -108,11 +107,6 @@ class CellEditor {
     this.cellEditorContainerEl.appendChild(
       this.functionSummaryHelper.functionSummaryHelperEl
     )
-
-    // @ts-ignore
-    this.placeholderTokens = this._spreadsheet.hyperformula._parser.lexerConfig.allTokens
-      .filter((token: TokenType) => PLACEHOLDER_WHITELIST.includes(token.name))
-      .map((token: TokenType) => token.name)
   }
 
   private _onItemClick = (suggestion: string) => {
@@ -312,7 +306,7 @@ class CellEditor {
         span.classList.add(styles[token.tokenType.name])
         if (
           i === formula.length - 1 &&
-          this.placeholderTokens.includes(token.tokenType.name)
+          PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
         ) {
           const placeholderEl = document.createElement('span')
           placeholderEl.classList.add(styles.placeholder)

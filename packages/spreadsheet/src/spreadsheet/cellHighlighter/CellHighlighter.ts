@@ -81,8 +81,6 @@ class CellHighlighter {
     const { tokens } = lexer.tokenizeFormula(text)
 
     const cellReferenceParts: ICellReferencePart[] = []
-    const tokenParts = []
-
     for (const [index, token] of tokens.entries()) {
       if (index === 0 && token.tokenType.name !== EqualsOp.name) {
         break
@@ -122,53 +120,7 @@ class CellHighlighter {
       }
     }
 
-    const setNonReferenceSlicedSpan = (start: number, end?: number) => {
-      const slicedString = text.slice(start, end)
-      const span = document.createElement('span')
-
-      if (!slicedString.length) return
-
-      span.classList.add(`${prefix}-token`)
-
-      span.textContent = slicedString
-
-      tokenParts.push(span)
-    }
-
-    if (cellReferenceParts.length && text.length) {
-      let prevIndex = 0
-
-      cellReferenceParts.forEach(
-        ({ startOffset, endOffset, referenceText, color }) => {
-          setNonReferenceSlicedSpan(prevIndex, startOffset)
-
-          const formulaTokenSpan = document.createElement('span')
-
-          formulaTokenSpan.textContent = referenceText
-          formulaTokenSpan.classList.add(`${prefix}-formula-token`)
-          formulaTokenSpan.style.color = color
-
-          tokenParts.push(formulaTokenSpan)
-
-          prevIndex = endOffset + 1
-        }
-      )
-
-      setNonReferenceSlicedSpan(
-        cellReferenceParts[cellReferenceParts.length - 1].endOffset + 1
-      )
-    } else {
-      const span = document.createElement('span')
-
-      span.classList.add(`${prefix}-token`)
-
-      span.textContent = text
-
-      tokenParts.push(span)
-    }
-
     return {
-      tokenParts,
       cellReferenceParts
     }
   }

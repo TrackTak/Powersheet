@@ -195,7 +195,6 @@ class CellHighlighter {
         if (token.image === 'TRUE' || token.image === 'FALSE') {
           span.classList.add(styles.BooleanOp)
         }
-        console.log(token.startOffset, cellReferenceIndexes)
         const cellReference = cellReferenceIndexes[token.startOffset]
         if (cellReference) {
           span.style.color = cellReference.color

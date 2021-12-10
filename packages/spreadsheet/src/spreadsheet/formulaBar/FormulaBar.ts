@@ -120,10 +120,9 @@ class FormulaBar {
         const serializedValue =
           this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
-        const { tokenParts } =
-          this.cellHighlighter.getHighlightedCellReferenceSections(
-            serializedValue?.toString() ?? ''
-          )
+        const tokenParts = this.cellHighlighter.getStyledTokens(
+          serializedValue?.toString() ?? ''
+        )
 
         if (tokenParts.length) {
           spanElements = tokenParts

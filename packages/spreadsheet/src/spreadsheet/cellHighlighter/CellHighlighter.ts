@@ -9,6 +9,8 @@ import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
+import { IToken } from 'chevrotain'
+import styles from './CellHighlighter.module.scss'
 
 export interface ICellReferencePart {
   startOffset: number
@@ -17,6 +19,32 @@ export interface ICellReferencePart {
   color: string
   type: 'simpleCellString' | 'rangeCellString'
 }
+
+const PLACEHOLDER_WHITELIST = [
+  'WhiteSpace',
+  'PlusOp',
+  'MinusOp',
+  'TimesOp',
+  'DivOp',
+  'PowerOp',
+  'EqualsOp',
+  'NotEqualOp',
+  'PercentOp',
+  'GreaterThanOrEqualOp',
+  'LessThanOrEqualOp',
+  'GreaterThanOp',
+  'LessThanOp',
+  'LParen',
+  'ArrayLParen',
+  'ArrayRParen',
+  'OffsetProcedureName',
+  'ProcedureName',
+  'ConcatenateOp',
+  'AdditionOp',
+  'MultiplicationOp',
+  'ArrayRowSep',
+  'ArrayColSep'
+]
 
 class CellHighlighter {
   highlightedCells: HighlightedCell[] = []
@@ -46,13 +74,6 @@ class CellHighlighter {
    * @returns Information needed to highlight the relevant cells.
    */
   getHighlightedCellReferenceSections(text: string) {
-    if (!text) {
-      return {
-        tokenParts: [],
-        cellReferenceParts: []
-      }
-    }
-
     const {
       hue: defaultHue,
       saturation,
@@ -123,6 +144,78 @@ class CellHighlighter {
     return {
       cellReferenceParts
     }
+  }
+
+  getStyledTokens(text: string) {
+    const { cellReferenceParts } =
+      this.getHighlightedCellReferenceSections(text)
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const { tokens } = lexer.tokenizeFormula(text)
+    const tokenParts = []
+    const tokenIndexes = tokens.reduce(
+      (acc: Record<number, IToken>, token: IToken) => ({
+        ...acc,
+        [token.startOffset]: token
+      }),
+      {}
+    )
+
+    const cellReferenceIndexes = cellReferenceParts.reduce(
+      (
+        acc: Record<number, ICellReferencePart>,
+        cellReference: ICellReferencePart
+      ) => {
+        if (cellReference.type === 'rangeCellString') {
+          const cell = cellReference.referenceText.split(':')
+          return {
+            ...acc,
+            [cellReference.startOffset]: cellReference,
+            [cellReference.endOffset - cell[1].length + 1]: cellReference
+          }
+        }
+
+        return {
+          ...acc,
+          [cellReference.startOffset]: cellReference
+        }
+      },
+      {}
+    )
+
+    for (let i = 0; i < text.length; i++) {
+      let subString = ''
+      const token = tokenIndexes[i]
+      const span = document.createElement('span')
+      span.classList.add(`${prefix}-token`)
+      tokenParts.push(span)
+      if (token) {
+        subString = text.slice(i, token.endOffset + 1)
+        i = token.endOffset
+        if (token.image === 'TRUE' || token.image === 'FALSE') {
+          span.classList.add(styles.BooleanOp)
+        }
+        console.log(token.startOffset, cellReferenceIndexes)
+        const cellReference = cellReferenceIndexes[token.startOffset]
+        if (cellReference) {
+          span.style.color = cellReference.color
+        } else {
+          span.classList.add(styles[token.tokenType.name])
+        }
+        if (
+          i === text.length - 1 &&
+          PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
+        ) {
+          const placeholderEl = document.createElement('span')
+          placeholderEl.classList.add(styles.placeholder)
+          tokenParts.push(placeholderEl)
+        }
+      } else {
+        subString = text[i]
+      }
+      span.textContent = subString
+    }
+    return tokenParts
   }
 
   /**

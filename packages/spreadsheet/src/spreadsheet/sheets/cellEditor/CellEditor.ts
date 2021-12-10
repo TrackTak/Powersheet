@@ -10,42 +10,13 @@ import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
-import CellHighlighter, {
-  ICellReferencePart
-} from '../../cellHighlighter/CellHighlighter'
+import CellHighlighter from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
-import { IToken } from 'chevrotain'
 
 export interface ICurrentScroll {
   row: number
   col: number
 }
-
-const PLACEHOLDER_WHITELIST = [
-  'WhiteSpace',
-  'PlusOp',
-  'MinusOp',
-  'TimesOp',
-  'DivOp',
-  'PowerOp',
-  'EqualsOp',
-  'NotEqualOp',
-  'PercentOp',
-  'GreaterThanOrEqualOp',
-  'LessThanOrEqualOp',
-  'GreaterThanOp',
-  'LessThanOp',
-  'LParen',
-  'ArrayLParen',
-  'ArrayRParen',
-  'OffsetProcedureName',
-  'ProcedureName',
-  'ConcatenateOp',
-  'AdditionOp',
-  'MultiplicationOp',
-  'ArrayRowSep',
-  'ArrayColSep'
-]
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
@@ -267,7 +238,7 @@ class CellEditor {
     )
     const isFormula = text?.startsWith('=')
     const tokenParts = isFormula
-      ? this._getStyledFormula(text ?? '', cellReferenceParts)
+      ? this.cellHighlighter.getStyledTokens(text ?? '')
       : [this._getSpanFromText(text ?? '')]
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
@@ -279,67 +250,6 @@ class CellEditor {
     this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
     this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
-  }
-
-  private _getStyledFormula(
-    formula: string,
-    cellReferenceParts: ICellReferencePart[]
-  ) {
-    // @ts-ignore
-    const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const { tokens } = lexer.tokenizeFormula(formula)
-    const tokenParts = []
-    const tokenIndexes = tokens.reduce(
-      (acc: Record<number, IToken>, token: IToken) => ({
-        ...acc,
-        [token.startOffset]: token
-      }),
-      {}
-    )
-
-    const cellReferenceIndexes = cellReferenceParts.reduce(
-      (
-        acc: Record<number, ICellReferencePart>,
-        cellReference: ICellReferencePart
-      ) => ({
-        ...acc,
-        [cellReference.startOffset]: cellReference
-      }),
-      {}
-    )
-
-    for (let i = 0; i < formula.length; i++) {
-      let subString = ''
-      const token = tokenIndexes[i]
-      const span = document.createElement('span')
-      span.classList.add(`${prefix}-token`)
-      tokenParts.push(span)
-      if (token) {
-        subString = formula.slice(i, token.endOffset + 1)
-        i = token.endOffset
-        if (token.image === 'TRUE' || token.image === 'FALSE') {
-          span.classList.add(styles.BooleanOp)
-        }
-        const cellReference = cellReferenceIndexes[token.startOffset]
-        if (cellReference) {
-          span.style.color = cellReference.color
-        } else {
-          span.classList.add(styles[token.tokenType.name])
-        }
-        if (
-          i === formula.length - 1 &&
-          PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
-        ) {
-          const placeholderEl = document.createElement('span')
-          placeholderEl.classList.add(styles.placeholder)
-          tokenParts.push(placeholderEl)
-        }
-      } else {
-        subString = formula[i]
-      }
-      span.textContent = subString
-    }
-    return tokenParts
   }
 
   private _getSpanFromText = (text: string) => {

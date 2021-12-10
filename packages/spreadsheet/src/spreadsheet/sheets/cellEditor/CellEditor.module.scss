@@ -22,22 +22,3 @@
 .formulaInput {
   font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
 }
-
-.StringLiteral {
-  color: green;
-}
-
-.NumberLiteral,
-.BooleanOp {
-  color: #15c;
-}
-
-.placeholder::after {
-  content: ']';
-  display: inline-block;
-  transform: rotate(90deg);
-  font-size: 12px;
-  color: #bbb;
-  vertical-align: sub;
-  padding-left: 5px;
-}

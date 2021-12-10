@@ -5,18 +5,50 @@ import { DelegateInstance, delegate } from 'tippy.js'
 import FormulaHelper from '../../formulaHelper/FormulaHelper'
 import Spreadsheet from '../../Spreadsheet'
 import Cell from '../cells/cell/Cell'
-import { prefix, saveCaretPosition, setCaretToEndOfElement } from '../../utils'
+import {
+  getCaretPosition,
+  prefix,
+  saveCaretPosition,
+  setCaretToEndOfElement
+} from '../../utils'
 import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import CellHighlighter from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
+import { IToken } from 'chevrotain'
 
 export interface ICurrentScroll {
   row: number
   col: number
 }
+
+const PLACEHOLDER_WHITELIST = [
+  'WhiteSpace',
+  'PlusOp',
+  'MinusOp',
+  'TimesOp',
+  'DivOp',
+  'PowerOp',
+  'EqualsOp',
+  'NotEqualOp',
+  'PercentOp',
+  'GreaterThanOrEqualOp',
+  'LessThanOrEqualOp',
+  'GreaterThanOp',
+  'LessThanOp',
+  'LParen',
+  'ArrayLParen',
+  'ArrayRParen',
+  'OffsetProcedureName',
+  'ProcedureName',
+  'ConcatenateOp',
+  'AdditionOp',
+  'MultiplicationOp',
+  'ArrayRowSep',
+  'ArrayColSep'
+]
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
@@ -80,6 +112,82 @@ class CellEditor {
     this.cellEditorContainerEl.appendChild(
       this.functionSummaryHelper.functionSummaryHelperEl
     )
+
+    const onSelectionChange = () => {
+      const caretPosition = getCaretPosition(this.cellEditorEl)
+      const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
+      if (!nodes.length) {
+        return
+      }
+
+      const clearExistingPlaceholders = () => {
+        for (let i = 0; i < this.cellEditorEl.children.length; i++) {
+          const element = this.cellEditorEl.children[i]
+          const formulaBarElement = this._spreadsheet.formulaBar
+            ?.editableContent.children[i]
+          if (element.classList.contains(styles.placeholder)) {
+            if (i === this.cellEditorEl.children.length - 1) {
+              element.remove()
+              formulaBarElement?.remove()
+            } else {
+              element.classList.remove(styles.placeholder)
+              element.textContent = ' '
+              if (formulaBarElement) {
+                formulaBarElement.classList.remove(styles.placeholder)
+                formulaBarElement.textContent = ' '
+              }
+            }
+          }
+        }
+      }
+
+      clearExistingPlaceholders()
+      const textContent = this._nodesToText(nodes)
+      const lexer = this._spreadsheet.hyperformula._parser.lexer
+      const { tokens } = lexer.tokenizeFormula(textContent)
+      const validPlaceholderTokens = tokens.filter((token: IToken) =>
+        PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
+      )
+      const tokenIndexBeforeCaret = validPlaceholderTokens.findIndex(
+        (token: IToken) => token.endOffset === caretPosition - 1
+      )
+
+      const isWhitespaceAfterCaret =
+        caretPosition === textContent.length ||
+        textContent[caretPosition].trim() === ''
+
+      if (tokenIndexBeforeCaret !== -1 && isWhitespaceAfterCaret) {
+        if (caretPosition === textContent.length) {
+          const placeholderEl = document.createElement('span')
+          placeholderEl.classList.add(styles.placeholder)
+          this.cellEditorEl.appendChild(placeholderEl)
+          this._spreadsheet.formulaBar?.editableContent.appendChild(
+            placeholderEl.cloneNode(true)
+          )
+          return
+        }
+        const token = validPlaceholderTokens[tokenIndexBeforeCaret]
+        this.cellEditorEl.children[token.endOffset + 1].textContent = ''
+        this.cellEditorEl.children?.[token.endOffset + 1].classList.add(
+          styles.placeholder
+        )
+        if (this._spreadsheet.formulaBar) {
+          this._spreadsheet.formulaBar.editableContent.children[
+            token.endOffset + 1
+          ].textContent = ''
+          this._spreadsheet.formulaBar.editableContent.children[
+            token.endOffset + 1
+          ].classList.add(styles.placeholder)
+        }
+      }
+    }
+
+    this.cellEditorEl.addEventListener('focus', function () {
+      document.addEventListener('selectionchange', onSelectionChange)
+    })
+    this.cellEditorEl.addEventListener('focusout', function () {
+      document.removeEventListener('selectionchange', onSelectionChange)
+    })
   }
 
   private _onItemClick = (suggestion: string) => {

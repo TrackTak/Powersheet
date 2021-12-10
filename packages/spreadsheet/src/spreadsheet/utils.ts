@@ -110,6 +110,46 @@ export const saveCaretPosition = (node: Node) => {
     selection?.addRange(range)
   }
 }
+export function getCaretPosition(node: Node): number {
+  const selection = window.getSelection()
+  const range = selection?.getRangeAt(0)!
+  const treeWalker = document.createTreeWalker(
+    node,
+    undefined,
+    function (node) {
+      var nodeRange = document.createRange()
+      nodeRange.selectNodeContents(node)
+      return nodeRange.compareBoundaryPoints(Range.END_TO_END, range) < 1
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT
+    }
+  )
+
+  let charCount = 0,
+    lastNodeLength = 0
+
+  if (range.startContainer.nodeType == 3) {
+    charCount += range.startOffset
+  }
+
+  while (treeWalker.nextNode()) {
+    charCount += lastNodeLength
+    lastNodeLength = 0
+
+    if (range.startContainer != treeWalker.currentNode) {
+      if (treeWalker.currentNode instanceof Text) {
+        lastNodeLength += treeWalker.currentNode.length
+      } else if (
+        treeWalker.currentNode instanceof HTMLBRElement ||
+        treeWalker.currentNode instanceof HTMLImageElement
+      ) {
+        lastNodeLength++
+      }
+    }
+  }
+
+  return charCount + lastNodeLength
+}
 
 const getTextNodeAtPosition = (node: Node, index: number) => {
   const NODE_TYPE = NodeFilter.SHOW_TEXT

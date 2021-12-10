@@ -20,32 +20,6 @@ export interface ICellReferencePart {
   type: 'simpleCellString' | 'rangeCellString'
 }
 
-const PLACEHOLDER_WHITELIST = [
-  'WhiteSpace',
-  'PlusOp',
-  'MinusOp',
-  'TimesOp',
-  'DivOp',
-  'PowerOp',
-  'EqualsOp',
-  'NotEqualOp',
-  'PercentOp',
-  'GreaterThanOrEqualOp',
-  'LessThanOrEqualOp',
-  'GreaterThanOp',
-  'LessThanOp',
-  'LParen',
-  'ArrayLParen',
-  'ArrayRParen',
-  'OffsetProcedureName',
-  'ProcedureName',
-  'ConcatenateOp',
-  'AdditionOp',
-  'MultiplicationOp',
-  'ArrayRowSep',
-  'ArrayColSep'
-]
-
 class CellHighlighter {
   highlightedCells: HighlightedCell[] = []
 
@@ -200,14 +174,6 @@ class CellHighlighter {
           span.style.color = cellReference.color
         } else {
           span.classList.add(styles[token.tokenType.name])
-        }
-        if (
-          i === text.length - 1 &&
-          PLACEHOLDER_WHITELIST.includes(token.tokenType.name)
-        ) {
-          const placeholderEl = document.createElement('span')
-          placeholderEl.classList.add(styles.placeholder)
-          tokenParts.push(placeholderEl)
         }
       } else {
         subString = text[i]

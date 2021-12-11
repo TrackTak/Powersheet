@@ -238,6 +238,9 @@ class CellEditor {
         'afterend',
         this.currentPlaceholderEl
       )
+      this._spreadsheet.formulaBar?.editableContent.children[
+        childIndex
+      ].insertAdjacentElement('afterend', this.currentPlaceholderEl)
     }
   }
 

@@ -146,10 +146,6 @@ class CellEditor {
     const isFormulaInput = textContent?.startsWith('=')
 
     if (isFormulaInput) {
-      this.cellEditorEl.classList.add(styles.formulaInput)
-      this._spreadsheet.formulaBar?.editableContent.classList.add(
-        styles.formulaInput
-      )
       let functionName = textContent?.slice(1) ?? ''
       const hasOpenBracket = functionName.includes('(')
       const input = functionName.split('(')
@@ -333,6 +329,12 @@ class CellEditor {
       this.currentCellText ?? ''
     )
     const isFormula = text?.startsWith('=')
+    if (isFormula) {
+      this.cellEditorEl.classList.add(styles.formulaInput)
+      this._spreadsheet.formulaBar?.editableContent.classList.add(
+        styles.formulaInput
+      )
+    }
     const tokenParts = isFormula
       ? this.cellHighlighter.getStyledTokens(text ?? '')
       : [this._getSpanFromText(text ?? '')]

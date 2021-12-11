@@ -204,7 +204,7 @@ class CellEditor {
     }
   }
 
-  _createPlaceholderIfNeeded = (
+  private _createPlaceholderIfNeeded = (
     currentEditor: HTMLDivElement,
     secondaryEditor?: HTMLDivElement
   ) => {

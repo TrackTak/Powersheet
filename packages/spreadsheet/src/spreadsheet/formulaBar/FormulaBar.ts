@@ -29,6 +29,11 @@ class FormulaBar {
     this._spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
 
     restoreCaretPosition()
+
+    this._spreadsheet.sheets.cellEditor._createPlaceholderIfNeeded(
+      this.editableContent,
+      this._spreadsheet.sheets.cellEditor.cellEditorEl
+    )
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {

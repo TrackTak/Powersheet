@@ -159,7 +159,10 @@ class CellEditor {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
       }
-      this._createPlaceholderIfNeeded()
+      this._createPlaceholderIfNeeded(
+        this.cellEditorEl,
+        this._spreadsheet.formulaBar?.editableContent
+      )
     } else {
       this.cellEditorEl.classList.remove(styles.formulaInput)
       this.formulaHelper?.formulaHelperEl.classList.remove(styles.formulaInput)
@@ -201,8 +204,11 @@ class CellEditor {
     }
   }
 
-  private _createPlaceholderIfNeeded = () => {
-    const currentCaretPosition = getCaretPosition(this.cellEditorEl)
+  _createPlaceholderIfNeeded = (
+    currentEditor: HTMLDivElement,
+    secondaryEditor?: HTMLDivElement
+  ) => {
+    const currentCaretPosition = getCaretPosition(currentEditor)
 
     const precedingTokenPosition = currentCaretPosition - 1
 
@@ -230,13 +236,14 @@ class CellEditor {
 
       const childIndex = tokens.indexOf(precedingToken)
 
-      this.cellEditorEl.children[childIndex].insertAdjacentElement(
+      currentEditor.children[childIndex].insertAdjacentElement(
         'afterend',
         this.currentPlaceholderEl
       )
-      this._spreadsheet.formulaBar?.editableContent.children[
-        childIndex
-      ].insertAdjacentElement('afterend', this.currentPlaceholderEl)
+      secondaryEditor?.children[childIndex].insertAdjacentElement(
+        'afterend',
+        this.currentPlaceholderEl.cloneNode(true) as HTMLSpanElement
+      )
     }
   }
 

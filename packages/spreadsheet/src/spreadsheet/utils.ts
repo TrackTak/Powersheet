@@ -100,13 +100,13 @@ export const saveCaretPosition = (node: Node) => {
   return () => {
     if (!length) return
 
-    const pos = getTextNodeAtPosition(node, length)
+    const { position, node: newNode } = getTextNodeAtPosition(node, length)
 
     selection?.removeAllRanges()
 
     const range = new Range()
 
-    range.setStart(pos.node, pos.position)
+    range.setStart(newNode, position)
     selection?.addRange(range)
   }
 }

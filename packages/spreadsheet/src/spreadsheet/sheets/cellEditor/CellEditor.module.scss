@@ -9,7 +9,25 @@
   height: 100%;
 }
 
+@font-face {
+  font-family: Inconsolata;
+  src: url('../../../fonts/Inconsolata.otf');
+}
+
 .cellEditorContainer {
   position: absolute;
   box-sizing: border-box;
+}
+
+.formulaInput {
+  font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
+}
+.placeholder::after {
+  content: ']';
+  display: inline-block;
+  transform: rotate(90deg);
+  font-size: 12px;
+  color: #bbb;
+  vertical-align: sub;
+  padding-left: 5px;
 }

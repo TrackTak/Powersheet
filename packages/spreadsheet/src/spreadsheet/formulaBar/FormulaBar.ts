@@ -29,6 +29,11 @@ class FormulaBar {
     this._spreadsheet.sheets.cellEditor.setContentEditable(textContent ?? null)
 
     restoreCaretPosition()
+
+    this._spreadsheet.sheets.cellEditor._createPlaceholderIfNeeded(
+      this.editableContent,
+      this._spreadsheet.sheets.cellEditor.cellEditorEl
+    )
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
@@ -120,10 +125,9 @@ class FormulaBar {
         const serializedValue =
           this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
-        const { tokenParts } =
-          this.cellHighlighter.getHighlightedCellReferenceSections(
-            serializedValue?.toString() ?? ''
-          )
+        const tokenParts = this.cellHighlighter.getStyledTokens(
+          serializedValue?.toString() ?? ''
+        )
 
         if (tokenParts.length) {
           spanElements = tokenParts

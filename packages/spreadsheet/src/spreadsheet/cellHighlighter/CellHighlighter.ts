@@ -9,6 +9,8 @@ import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
+import { IToken } from 'chevrotain'
+import styles from './CellHighlighter.module.scss'
 
 export interface ICellReferencePart {
   startOffset: number
@@ -46,13 +48,6 @@ class CellHighlighter {
    * @returns Information needed to highlight the relevant cells.
    */
   getHighlightedCellReferenceSections(text: string) {
-    if (!text) {
-      return {
-        tokenParts: [],
-        cellReferenceParts: []
-      }
-    }
-
     const {
       hue: defaultHue,
       saturation,
@@ -81,8 +76,6 @@ class CellHighlighter {
     const { tokens } = lexer.tokenizeFormula(text)
 
     const cellReferenceParts: ICellReferencePart[] = []
-    const tokenParts = []
-
     for (const [index, token] of tokens.entries()) {
       if (index === 0 && token.tokenType.name !== EqualsOp.name) {
         break
@@ -122,55 +115,72 @@ class CellHighlighter {
       }
     }
 
-    const setNonReferenceSlicedSpan = (start: number, end?: number) => {
-      const slicedString = text.slice(start, end)
-      const span = document.createElement('span')
-
-      if (!slicedString.length) return
-
-      span.classList.add(`${prefix}-token`)
-
-      span.textContent = slicedString
-
-      tokenParts.push(span)
-    }
-
-    if (cellReferenceParts.length && text.length) {
-      let prevIndex = 0
-
-      cellReferenceParts.forEach(
-        ({ startOffset, endOffset, referenceText, color }) => {
-          setNonReferenceSlicedSpan(prevIndex, startOffset)
-
-          const formulaTokenSpan = document.createElement('span')
-
-          formulaTokenSpan.textContent = referenceText
-          formulaTokenSpan.classList.add(`${prefix}-formula-token`)
-          formulaTokenSpan.style.color = color
-
-          tokenParts.push(formulaTokenSpan)
-
-          prevIndex = endOffset + 1
-        }
-      )
-
-      setNonReferenceSlicedSpan(
-        cellReferenceParts[cellReferenceParts.length - 1].endOffset + 1
-      )
-    } else {
-      const span = document.createElement('span')
-
-      span.classList.add(`${prefix}-token`)
-
-      span.textContent = text
-
-      tokenParts.push(span)
-    }
-
     return {
-      tokenParts,
       cellReferenceParts
     }
+  }
+
+  getStyledTokens(text: string) {
+    const { cellReferenceParts } =
+      this.getHighlightedCellReferenceSections(text)
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const { tokens } = lexer.tokenizeFormula(text)
+    const tokenParts = []
+    const tokenIndexes = tokens.reduce(
+      (acc: Record<number, IToken>, token: IToken) => ({
+        ...acc,
+        [token.startOffset]: token
+      }),
+      {}
+    )
+
+    const cellReferenceIndexes = cellReferenceParts.reduce(
+      (
+        acc: Record<number, ICellReferencePart>,
+        cellReference: ICellReferencePart
+      ) => {
+        if (cellReference.type === 'rangeCellString') {
+          const cell = cellReference.referenceText.split(':')
+          return {
+            ...acc,
+            [cellReference.startOffset]: cellReference,
+            [cellReference.endOffset - cell[1].length + 1]: cellReference
+          }
+        }
+
+        return {
+          ...acc,
+          [cellReference.startOffset]: cellReference
+        }
+      },
+      {}
+    )
+
+    for (let i = 0; i < text.length; i++) {
+      let subString = ''
+      const token = tokenIndexes[i]
+      const span = document.createElement('span')
+      span.classList.add(`${prefix}-token`)
+      tokenParts.push(span)
+      if (token) {
+        subString = text.slice(i, token.endOffset + 1)
+        i = token.endOffset
+        if (token.image === 'TRUE' || token.image === 'FALSE') {
+          span.classList.add(styles.BooleanOp)
+        }
+        const cellReference = cellReferenceIndexes[token.startOffset]
+        if (cellReference) {
+          span.style.color = cellReference.color
+        } else {
+          span.classList.add(styles[token.tokenType.name])
+        }
+      } else {
+        subString = text[i]
+      }
+      span.textContent = subString
+    }
+    return tokenParts
   }
 
   /**
@@ -178,8 +188,8 @@ class CellHighlighter {
    * @param cellReferenceParts - The parts returned from `getHighlightedCellReferenceSections()`.
    */
   setHighlightedCells(cellReferenceParts: ICellReferencePart[]) {
-    const sheet = this._spreadsheet.sheets.cellEditor.currentCell!
-      .simpleCellAddress.sheet
+    const sheet =
+      this._spreadsheet.sheets.cellEditor.currentCell!.simpleCellAddress.sheet
 
     this.destroyHighlightedCells()
 
@@ -187,10 +197,11 @@ class CellHighlighter {
       let highlightedCell
 
       if (type === 'simpleCellString') {
-        const precedentSimpleCellAddress = this._spreadsheet.hyperformula.simpleCellAddressFromString(
-          referenceText,
-          sheet
-        )!
+        const precedentSimpleCellAddress =
+          this._spreadsheet.hyperformula.simpleCellAddressFromString(
+            referenceText,
+            sheet
+          )!
 
         // Don't highlight cells if cell reference is another sheet
         if (sheet === precedentSimpleCellAddress.sheet) {
@@ -205,10 +216,11 @@ class CellHighlighter {
           )
         }
       } else {
-        const precedentSimpleCellRange = this._spreadsheet.hyperformula.simpleCellRangeFromString(
-          referenceText,
-          sheet
-        )!
+        const precedentSimpleCellRange =
+          this._spreadsheet.hyperformula.simpleCellRangeFromString(
+            referenceText,
+            sheet
+          )!
 
         // Don't highlight cells if cell reference is another sheet
         if (sheet === precedentSimpleCellRange.start.sheet) {
@@ -239,8 +251,8 @@ class CellHighlighter {
       }
       if (highlightedCell) {
         const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
-        const sheetGroup = this._spreadsheet.sheets.scrollGroups[stickyGroup]
-          .sheetGroup
+        const sheetGroup =
+          this._spreadsheet.sheets.scrollGroups[stickyGroup].sheetGroup
 
         sheetGroup.add(highlightedCell.group)
 

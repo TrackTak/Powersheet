@@ -1,6 +1,8 @@
 import { IFunctionHelperData } from './FunctionHelper'
+import formulaMetadataJSON from './formulaMetadata.json'
 
 export const functionMetadata: Record<string, IFunctionHelperData> = {
+  ...formulaMetadataJSON,
   FIN: {
     header: 'FIN',
     headerDescription:

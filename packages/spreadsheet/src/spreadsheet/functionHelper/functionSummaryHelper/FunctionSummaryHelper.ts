@@ -106,7 +106,10 @@ class FunctionSummaryHelper {
     this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)
     this.textWrapper.appendChild(mainHeaderEl)
     this.textWrapper.appendChild(description)
-    this.textWrapper.appendChild(headerUsage)
+
+    if (formulaMetadata.codeSyntaxUsage.length) {
+      this.textWrapper.appendChild(headerUsage)
+    }
 
     formulaMetadata.codeSyntaxUsage.forEach(usageName => {
       const { codeEl } = createCodeText(usageName)

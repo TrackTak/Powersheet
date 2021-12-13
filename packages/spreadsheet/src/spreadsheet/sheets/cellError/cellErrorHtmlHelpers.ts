@@ -4,7 +4,7 @@ import { prefix } from '../../utils'
 export const cellErrorPrefix = `${prefix}-cell-error`
 
 export const createHeader = (text: string) => {
-  const header = document.createElement('h3')
+  const header = document.createElement('h4')
   header.textContent = text
   header.classList.add(styles.header, `${cellErrorPrefix}-header`)
 

@@ -193,8 +193,8 @@ export const defaultStyles: IStyles = {
       visible: false
     },
     errorMarker: {
-      stroke: 'red',
-      fill: 'red',
+      stroke: '#ff0000',
+      fill: '#ff0000',
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,

@@ -23,7 +23,9 @@
 }
 
 .tippy-box[data-theme~='cellError'] {
-  border-left: 5px solid red;
+  border-left: 5px solid #ff0000;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .tippy-box[data-theme~='formula-helper'] {

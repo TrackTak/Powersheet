@@ -21,6 +21,8 @@ import { ISheetData } from './Data'
 import Merger from './Merger'
 import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
+import CellError from './cellError/CellError'
+import { DetailedCellError } from '@tracktak/hyperformula'
 
 export interface IDimensions {
   width: number
@@ -102,6 +104,7 @@ class Sheets {
   cellEditor: CellEditor
   rightClickMenu: RightClickMenu
   comment: Comment
+  cellError: CellError
   activeSheetId = 0
   totalSheetCount = 0
   /**
@@ -235,6 +238,7 @@ class Sheets {
     this.selector = new Selector(this)
     this.rightClickMenu = new RightClickMenu(this)
     this.comment = new Comment(this)
+    this.cellError = new CellError(this)
 
     this.stage.on('contextmenu', this._onContextMenu)
     this.stage.on('mousedown', this._stageOnMousedown)
@@ -375,6 +379,12 @@ class Sheets {
     if (this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
       this.comment.show(simpleCellAddress)
     }
+
+    const cellValue =
+      this._spreadsheet.hyperformula.getCellValue(simpleCellAddress)
+    if (cellValue instanceof DetailedCellError) {
+      this.cellError.show(cellValue.message || cellValue.type)
+    }
   }
 
   private _sheetOnTap = () => {
@@ -452,9 +462,10 @@ class Sheets {
         default:
           if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
             const selectedCell = this.selector.selectedCell!
-            const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
-              selectedCell.simpleCellAddress
-            )
+            const serializedValue =
+              this._spreadsheet.hyperformula.getCellSerialized(
+                selectedCell.simpleCellAddress
+              )
 
             if (serializedValue) {
               this.cellEditor.clear()
@@ -641,11 +652,10 @@ class Sheets {
         const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId]
 
         if (mergedCellId) {
-          const mergedCell = this._spreadsheet.data._spreadsheetData
-            .mergedCells![mergedCellId]
-          const existingRangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
-            mergedCell
-          )
+          const mergedCell =
+            this._spreadsheet.data._spreadsheetData.mergedCells![mergedCellId]
+          const existingRangeSimpleCellAddress =
+            RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
 
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
             'col',
@@ -712,6 +722,7 @@ class Sheets {
     this.rows._destroy()
     this.cellEditor?._destroy()
     this.comment._destroy()
+    this.cellError._destroy()
     this.rightClickMenu._destroy()
   }
 

@@ -24,6 +24,7 @@ export interface ICellConfig {
   rect: RectConfig
   text: TextConfig
   commentMarker: LineConfig
+  errorMarker: LineConfig
   borderLine: LineConfig
 }
 
@@ -186,6 +187,14 @@ export const defaultStyles: IStyles = {
     commentMarker: {
       stroke: 'orange',
       fill: 'orange',
+      rotation: 180,
+      points: [0, 5, 5, 5, 0, 0],
+      closed: true,
+      visible: false
+    },
+    errorMarker: {
+      stroke: 'red',
+      fill: 'red',
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,

@@ -70,8 +70,8 @@ const { JSDOM } = jsdom
         const codeSyntaxUsage = []
         const codeSyntaxElements = []
         for (let i = 0; i < functionData.children.length; i++) {
-          // Sample usage (codeSyntaxUsage)
-          if (functionData.children[i].textContent === 'Sample usage') {
+          // Sample usage Format 1 (codeSyntaxUsage)
+          if (functionData.children[i].textContent.startsWith('Sample usage')) {
             i += 1
             while (!functionData.children[i].textContent.startsWith('Syntax')) {
               if (i === functionData.children.length) {
@@ -82,7 +82,33 @@ const { JSDOM } = jsdom
             }
           }
 
-          // Syntax (codeSyntaxElements)
+          // Syntax Format 1 (codeSyntaxElements)
+          if (functionData.children[i].textContent.startsWith('Parts of ')) {
+            i += 1
+            const codeSyntax = functionData.children[i]?.textContent
+            i++
+            const rows = Array.from(
+              functionData.children[i].querySelectorAll('tr')
+            ) // Remove the first row
+            rows.shift()
+            const values = rows.map(row => {
+              const td = Array.from(row.querySelectorAll('td'))
+              return {
+                syntaxName: td[0].textContent,
+                description: td
+                  .slice(1)
+                  .map(x => x.textContent)
+                  .join(' ')
+              }
+            })
+
+            codeSyntaxElements.push({
+              codeSyntax,
+              values
+            })
+          }
+
+          // Syntax Format 2 (codeSyntaxElements)
           if (functionData.children[i].textContent === 'Syntax') {
             i++
             const codeSyntax = functionData.children[i]?.textContent
@@ -102,6 +128,20 @@ const { JSDOM } = jsdom
               codeSyntax,
               values
             })
+          }
+
+          // Sample usage Format 2 (codeSyntaxUsage)
+          if (functionData.children[i].textContent.includes('Sample formula')) {
+            i += 1
+            while (!functionData.children[i].nodeName.startsWith('H')) {
+              if (i === functionData.children.length) {
+                break
+              }
+              console.log(functionData.children[i].textContent)
+              const example = functionData.children[i].textContent?.split(':')
+              codeSyntaxUsage.push(example[1]?.trim() ?? example[0])
+              i++
+            }
           }
         }
 

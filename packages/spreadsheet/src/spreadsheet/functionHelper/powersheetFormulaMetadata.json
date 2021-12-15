@@ -218,8 +218,24 @@
     "headerDescription": "Calculates the difference between two date values.",
     "type": "Date",
     "parameters": "end_date, start_date",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "DAYS(\"\"7/24/1969\"\", \"\"7/16/1969\"\")  DAYS(“2/28/2016”, “2/28/2017”)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "DAYS(end_date,start_date)",
+        "values": [
+          {
+            "syntaxName": "end_date",
+            "description": "The end of the date range.  "
+          },
+          {
+            "syntaxName": "start_date",
+            "description": "The start of the date range.  "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "DAYS360": {
@@ -411,7 +427,12 @@
     "headerDescription": "Returns the number of working days between two given dates.",
     "type": "Date",
     "parameters": "start_date, end_date, [holidays]",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": [
+      "NETWORKDAYS(DATE(1969,7,16),DATE(1969,7,24))",
+      "NETWORKDAYS(A2,B2)",
+      "NETWORKDAYS(40909,40924)",
+      "NETWORKDAYS(40900,40950,{40909,40924})"
+    ],
     "codeSyntaxElements": [
       {
         "codeSyntax": "NETWORKDAYS(start_date, end_date, [holidays])",
@@ -889,7 +910,21 @@
     "type": "Engineering",
     "parameters": "value1, value2",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BITAND(value1,value2)",
+        "values": [
+          {
+            "syntaxName": "value1",
+            "description": "The first number. Must be the decimal representation of the number."
+          },
+          {
+            "syntaxName": "value2",
+            "description": "The second number. Must be the decimal representation of the number."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BITLSHIFT": {
@@ -897,8 +932,22 @@
     "headerDescription": "Shifts a number left by n bits.",
     "type": "Engineering",
     "parameters": "value, shift_amount",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["BITLSHIFT(9, 2)  BITLSHIFT(A2, 4)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BITLSHIFT(value,shift_amount)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The number to be shifted. Must be a non-negative number."
+          },
+          {
+            "syntaxName": "shift_amount",
+            "description": "The number of places to shift by. Must be a value between -53 and 53, inclusive. Supplying a negative value will effectively be a BITRSHIFT."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BITOR": {
@@ -906,8 +955,22 @@
     "headerDescription": "Returns a bitwise logical \"or\" of the parameters.",
     "type": "Engineering",
     "parameters": "value1, value2",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["BITOR(9, 5)", "BITOR(A1, 10)", "BITOR(A1, B1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BITOR(value1, value2)",
+        "values": [
+          {
+            "syntaxName": "value1",
+            "description": "The first number.               The given value must be a decimal representation of the number.            "
+          },
+          {
+            "syntaxName": "value2",
+            "description": "The second number.               The given value must be a decimal representation of the number.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BITRSHIFT": {
@@ -915,8 +978,22 @@
     "headerDescription": "Shifts a number right by n bits.",
     "type": "Engineering",
     "parameters": "value, shift_amount",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["BITRSHIFT(18, 2)", "BITRSHIFT(A2, 4)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BITRSHIFT(value, shift_amount)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The number to be shifted.               The given value must be a non-negative number.            "
+          },
+          {
+            "syntaxName": "shift_amount",
+            "description": "The number of places to shift the given value.               The given number must be a number from -52 to 53.        Entering a negative value is effectively a BITLSHIFT function.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BITXOR": {
@@ -924,8 +1001,22 @@
     "headerDescription": "Returns a bitwise logical \"exclusive or\" of the parameters.",
     "type": "Engineering",
     "parameters": "value1, value2",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["BITXOR(9, 5)", "BITXOR(A1, A2)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BITXOR(value1, value2)",
+        "values": [
+          {
+            "syntaxName": "value1",
+            "description": "The first numerical value.  "
+          },
+          {
+            "syntaxName": "value2",
+            "description": "The second numerical value.  "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "COMPLEX": {
@@ -1098,8 +1189,22 @@
     "headerDescription": "Returns values of the Gaussian error integral.",
     "type": "Engineering",
     "parameters": "lower_bound, [upper_bound]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["ERF(-2.3, -0.7)", "ERF(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "ERF(lower_bound, [upper_bound])",
+        "values": [
+          {
+            "syntaxName": "lower_bound",
+            "description": "If this is the only parameter, the integral is taken between 0 and this value. If z2 is provided, it refers to the lower boundary for the integral.  "
+          },
+          {
+            "syntaxName": "upper_bound",
+            "description": "The upper boundary of the integral. Upper boundaries are optional."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "ERFC": {
@@ -1281,8 +1386,22 @@
     "headerDescription": "Returns argument of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMARGUMENT(COMPLEX(4, 6)",
+      "IMARGUMENT(4)",
+      "IMARGUMENT(\"\"2+3I\"\")"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "=IMARGUMENT(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number the argument of which will be calculated.       This can be either the result of the COMPLEX function, a real number (which is interpreted as a complex number with imaginary part equal to 0)  or a string in the format “x + yi” where x and y are numeric.      "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMCONJUGATE": {
@@ -1312,8 +1431,22 @@
     "headerDescription": "Returns cosine of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMCOS(COMPLEX(4, 6))",
+      "IMCOS(4)",
+      "IMCOS(\"\"2+3i\"\")"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMCOS(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the cosine. This can be either the result of the COMPLEX function, a real number (which will be interpreted as a complex number with imaginary part equal to 0) or a string in the format “x+yi” where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMCOSH": {
@@ -1321,8 +1454,18 @@
     "headerDescription": "Returns hyperbolic cosine of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMCOSH(COMPLEX(4, 6))", "IMCOSH(4)", "IMCOSH('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMCOSH(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the hyperbolic cosine. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMCOT": {
@@ -1330,8 +1473,18 @@
     "headerDescription": "Returns cotangens of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMCOT(COMPLEX(4,6))", "IMCOT(4)", "IMCOT('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMCOT(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the cotangent. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMCSC": {
@@ -1339,8 +1492,22 @@
     "headerDescription": "Returns cosecans of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMCSC(COMPLEX(4, 6))",
+      "IMCSC(4)",
+      "IMCSC(\"\"2+3i\"\")"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMCSC(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the cosecant. This can be either the result of the COMPLEX function, a real number (which will be interpreted as a complex number with imaginary part equal to 0), or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMCSCH": {
@@ -1348,8 +1515,18 @@
     "headerDescription": "Returns hyperbolic cosecans of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMCSCH(COMPLEX(4,6))", "IMCSCH(4)", "IMCSCH('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMCSCH(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the hyperbolic cosecant. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMDIV": {
@@ -1383,8 +1560,22 @@
     "headerDescription": "Returns exponent of a complex number.",
     "type": "Engineering",
     "parameters": "exponent",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMEXP(\"\"2+3i\"\")",
+      "IMEXP(\"\"2-4j\"\")",
+      "IMEXP(COMPLEX(2, 3))"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMEXP(exponent)",
+        "values": [
+          {
+            "syntaxName": "exponent",
+            "description": "The exponent to raise e to."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMLN": {
@@ -1392,8 +1583,18 @@
     "headerDescription": "Returns natural logarithm of a complex number.",
     "type": "Math",
     "parameters": "complex_value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMLN(\"\"3+4i\"\")", "IMLN(A2)", "IMLN(\"\"4+2j\"\")"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "The IMLN formula is formatted as =IIMLN(number).",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The input value of the logarithm function.               The number can be written as plain numbers, e.g. 1, to be interpreted as a real number.        The number can be written as quoted text in order to specify both the real and complex coefficients.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMLOG2": {
@@ -1401,8 +1602,22 @@
     "headerDescription": "Returns binary logarithm of a complex number.",
     "type": "Engineering",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMLOG2('1+i', 3.5)",
+      "IMLOG2(COMPLEX(25, 34), 2.3)",
+      "IMLOG2(100, 10)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMLOG2(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The input value of the logarithm function.               The number can be written as plain numbers, for example 1, to be interpreted as a real number.        The number can be written as quoted text in order to specify both the real and complex coefficients.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMLOG10": {
@@ -1410,8 +1625,22 @@
     "headerDescription": "Returns base-10 logarithm of a complex number.",
     "type": "Engineering",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMLOG10('1+i', 3.5)",
+      "IMLOG10(COMPLEX(25, 34), 2.3)",
+      "IMLOG10(100, 10)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMLOG10(value)",
+        "values": [
+          {
+            "syntaxName": "Value",
+            "description": "The input value of the logarithm function.               The number can be written as plain numbers, for example 1, to be interpreted as a real number.        The number can be written as quoted text in order to specify both the real and complex coefficients.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMPOWER": {
@@ -1419,8 +1648,27 @@
     "headerDescription": "Returns a complex number raised to a given power.",
     "type": "Math",
     "parameters": "complex_base, exponent",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMPOWER(\"\"4-3i\"\",0.5)",
+      "IMPOWER(A2,B2)",
+      "IMPOWER(\"\"2j\"\",-7)",
+      ""
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "The IMPOWER formula is formatted as =IMPOWER(complex_base, exponent).",
+        "values": [
+          {
+            "syntaxName": "complex_base",
+            "description": "The complex number to be raised to the exponent power.               May be written as a ∓ bi or a ∓ bj.            "
+          },
+          {
+            "syntaxName": "exponent",
+            "description": "The exponent to raise complex_base to.               Must be a number.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMPRODUCT": {
@@ -1474,8 +1722,18 @@
     "headerDescription": "Returns secans of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMSEC(COMPLEX(4,6))", "IMSEC(4)", "IMSEC('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMSEC(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the secant. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMSECH": {
@@ -1483,8 +1741,18 @@
     "headerDescription": "Returns hyperbolic secans of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMSECH(COMPLEX(4,6))", "IMSECH(4)", "IMSECH('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMSECH(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the hyperbolic secant. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMSIN": {
@@ -1492,8 +1760,22 @@
     "headerDescription": "Returns sine of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMSIN(COMPLEX(4,6))",
+      "IMSIN(4)",
+      "IMSIN(\"\"2+3i\"\")"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMSIN (number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the sine.       This can be either the result of the COMPLEX function, a real number (which will be interpreted as a complex number with imaginary part equal to 0) or a string in the format \"\"x+ yi\"\" where x and y are numeric.       "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMSINH": {
@@ -1501,8 +1783,18 @@
     "headerDescription": "Returns hyperbolic sine of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMSINH(COMPLEX(4,6))", "IMSINH(4)", "IMSINH('2+3i')"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMSINH(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the hyperbolic sine. This can be either the result of the COMPLEX function, a real number interpreted as a complex number with imaginary parts equal to 0 or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMSQRT": {
@@ -1510,8 +1802,18 @@
     "headerDescription": "Returns a square root of a complex number.",
     "type": "Math",
     "parameters": "complex_number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IMSQRT(2)", "IMSQRT(\"\"3+2i\"\")"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "The IMSQRT formula is formatted as =IMSQRT(complex_number).",
+        "values": [
+          {
+            "syntaxName": "complex_number",
+            "description": "The complex number to take the square root of.  "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IMSUB": {
@@ -1569,8 +1871,22 @@
     "headerDescription": "Returns tangens of a complex number.",
     "type": "Engineering",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "IMTAN(COMPLEX(4, 6))",
+      "IMTAN(4)",
+      "IMTAN(\"\"2+3i\"\")"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IMTAN(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The complex number for which you want the tangent. This can be either the result of the COMPLEX function, a real number (which will be interpreted as a complex number with an imaginary part equal to 0), or a string in the format 'x+yi' where x and y are numeric."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "OCT2BIN": {
@@ -2299,8 +2615,27 @@
     "headerDescription": "Returns the interest paid for a given period of an investment with equal principal payments.",
     "type": "Financial",
     "parameters": "rate, period, number_of_periods, present_value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["ISMPT(15%, 2, 5, 1000)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "ISPMT(rate, period, number_of_periods, present_value)",
+        "values": [
+          { "syntaxName": "rate", "description": "The interest rate.  " },
+          {
+            "syntaxName": "period",
+            "description": "The time frame for which you want to view the interest payment. Should be a number between 1 and number_of_periods."
+          },
+          {
+            "syntaxName": "number_of_periods",
+            "description": "The number of payments to be made.  "
+          },
+          {
+            "syntaxName": "present_value",
+            "description": "The current value of the annuity.  "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "MIRR": {
@@ -2416,7 +2751,25 @@
     "type": "Financial",
     "parameters": "rate, present_value, future_value",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "PDURATION(rate, present_value, future_value)",
+        "values": [
+          {
+            "syntaxName": "Rate",
+            "description": "Required The rate at which the investment grows each period."
+          },
+          {
+            "syntaxName": "present_valuepresent_value",
+            "description": "Required The investment's current value."
+          },
+          {
+            "syntaxName": "future_valuefuture_value",
+            "description": "Required The investment's desired future value."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "PMT": {
@@ -2558,7 +2911,25 @@
     "type": "Financial",
     "parameters": "number_of_periods, present_value, future_value",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "RRI(number_of_periods, present_value, future_value)",
+        "values": [
+          {
+            "syntaxName": "number_of_periods",
+            "description": "Required. The number of periods."
+          },
+          {
+            "syntaxName": "present_value",
+            "description": "Required. The present value of the investment"
+          },
+          {
+            "syntaxName": "future_value",
+            "description": "Required. The future value of the investment."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "SLN": {
@@ -2809,8 +3180,22 @@
     "headerDescription": "Returns the value if the cell does not contains the ",
     "type": "Logical",
     "parameters": "value, value_if_na",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["IFNA(205, 'Na error') ", "IFNA(#N/A, 'Na error') "],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "IFNA(value, value_if_na) ",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "Required. The value to check if it is an #N/A error."
+          },
+          {
+            "syntaxName": "value_if_na",
+            "description": "Required. The value to return if the first argument is an #N/A error."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "IFERROR": {
@@ -2943,8 +3328,27 @@
     "headerDescription": "Returns true if an odd number of arguments evaluates to TRUE.",
     "type": "Logical",
     "parameters": "logical_expression1, [logical_expression2, ..]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "XOR(TRUE, FALSE, TRUE)",
+      "XOR(A2=TRUE, A3=FALSE)",
+      "A10, B1",
+      "XOR(0, 1, 2, 3)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "XOR(logical_expression1, [logical_expression2, …])",
+        "values": [
+          {
+            "syntaxName": "logical_expression1",
+            "description": "An expression or reference to a cell containing an expression that represents some logical value; e.g. 'TRUE' or 'FALSE,' or an expression that can be coerced to a logical value.  "
+          },
+          {
+            "syntaxName": "logical_expression2",
+            "description": "More expressions or cell references that represent logical values. A second logical expression, and any additional expressions are optional."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CHOOSE": {
@@ -3023,7 +3427,17 @@
     "type": "Lookup",
     "parameters": "cell",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "FORMULATEXT(cell) ",
+        "values": [
+          {
+            "syntaxName": "mobile",
+            "description": "The cell to be verified as containing a formula. "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "HLOOKUP": {
@@ -3318,8 +3732,18 @@
     "headerDescription": "Returns the inverse trigonometric cotangent of a number.",
     "type": "Math",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["ACOT(0)", "ACOT(-1)", "ACOT(A1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "ACOT(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The value for which the inverse cotangent is calculated.               Values must be a number.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "ACOTH": {
@@ -3327,8 +3751,18 @@
     "headerDescription": "Returns the inverse hyperbolic cotangent of a number.",
     "type": "Math",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["ACOTH(2)", "ACOTH(10)", "ACOTH(A1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "ACOTH(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The value for which the inverse hyperbolic cotangent is calculated.               Values must not be a number between -1 and 1.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "ARABIC": {
@@ -3454,8 +3888,26 @@
     "headerDescription": "Converts a positive integer to a specified base into a text from the numbering system.",
     "type": "Math",
     "parameters": "value, base, [min_length]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["BASE(255, 16)", "BASE(A2, 2)", "BASE(4095, 16, 6)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BASE(value, base, [min_length])",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The number to convert into base.               The value should be an integer greater than or equal to zero.            "
+          },
+          {
+            "syntaxName": "base",
+            "description": "The base (or radix) to convert the value number into.               The base should be an integer from 2 to 36.            "
+          },
+          {
+            "syntaxName": "min_length",
+            "description": "(Optional) The minimum length of the text returned.                         If the minimum length value is greater than the number of significant digits in the result, the result is left-padded with zeros until the total number of digits reaches significant_digits.                    "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CEILING": {
@@ -3484,8 +3936,28 @@
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
     "parameters": "number, [significance], [mode]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "CEILING.MATH(5.4)  CEILING.MATH(32, 5)  CEILING.MATH(-26.2, 10, 1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "CEILING.MATH(number, [significance], [mode])",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The value to be rounded up to the nearest integer or, if specified, the nearest multiple of significance.  "
+          },
+          {
+            "syntaxName": "significance",
+            "description": "The value to whose multiple number will be rounded. [OPTIONAL: 1 by default]"
+          },
+          {
+            "syntaxName": "mode",
+            "description": "If number is negative, specifies the rounding direction. If 0 or blank, it's rounded up towards zero. Otherwise, it's rounded down away from zero. [OPTIONAL]"
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CEILING.PRECISE": {
@@ -3493,8 +3965,24 @@
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
     "parameters": "number, [significance]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "CEILING.PRECISE(-10.5, 1)  CEILING.PRECISE(96, 10)  CEILING.PRECISE(-23.25, 0.1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "CEILING.PRECISE(number, [significance])",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The value to be rounded up to the nearest integer or multiple of significance.  "
+          },
+          {
+            "syntaxName": "significance",
+            "description": "The number to whose multiples number will be rounded. The sign of significance will be ignored.  [OPTIONAL: 1 by default]"
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "COMBIN": {
@@ -3525,8 +4013,22 @@
     "headerDescription": "Returns number of combinations (with repetitions).",
     "type": "Math",
     "parameters": "n, k",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["COMBINA(5, 3)", "COMBINA(A1, B1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "COMBINA(n, k)",
+        "values": [
+          {
+            "syntaxName": "n",
+            "description": "The size pool of objects to choose from.               Given n values should be greater than or equal to 0.            "
+          },
+          {
+            "syntaxName": "k",
+            "description": "The number of objects to choose.               Given k values should be greater than or equal to 0.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "COS": {
@@ -3572,8 +4074,18 @@
     "headerDescription": "Returns the cotangent of the given angle (in radians).",
     "type": "Math",
     "parameters": "angle",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["COT(3.14)", "COT(A1)", "COT(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "COT(angle)",
+        "values": [
+          {
+            "syntaxName": "angle",
+            "description": "The angle for which the cotangent is to be found, in radians.  "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "COTH": {
@@ -3581,8 +4093,18 @@
     "headerDescription": "Returns the hyperbolic cotangent of the given value.",
     "type": "Math",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["COTH(A1)", "COTH(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "COTH(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "Any real value for which to calculate the hyperbolic cotangent."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "COUNTUNIQUE": {
@@ -3613,8 +4135,18 @@
     "headerDescription": "Returns the cosecans of the given angle (in radians).",
     "type": "Math",
     "parameters": "angle",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["CSC(PI())", "CSC(A1)", "CSC(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "CSC(angle)",
+        "values": [
+          {
+            "syntaxName": "angle",
+            "description": "Any real value for which the hyperbolic cosecant is calculated."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CSCH": {
@@ -3622,8 +4154,18 @@
     "headerDescription": "Returns the hyperbolic cosecans of the given value.",
     "type": "Math",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["CSCH(A1)", "CSCH(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "CSCH(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "Any real value for which the hyperbolic cosecant is calculated."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "DECIMAL": {
@@ -3631,8 +4173,22 @@
     "headerDescription": "Converts text with characters from a number system to a positive integer in the base radix given.",
     "type": "Math",
     "parameters": "value, base",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["DECIMAL(101,2)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "DECIMAL(value, base)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The unsigned value to be converted to decimal, provided as a string.  "
+          },
+          {
+            "syntaxName": "base",
+            "description": "The base (or radix) to convert the number into. The base is an integer from 2 to 36."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "DEGREES": {
@@ -3760,8 +4316,28 @@
     "headerDescription": "Rounds a number down to the nearest multiple of Significance.",
     "type": "Math",
     "parameters": "number, [significance], [mode]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "FLOOR.MATH(5.4)  FLOOR.MATH(A2)  FLOOR.MATH(32, 5)  FLOOR.MATH(-26.2, 10, 1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "FLOOR.MATH(number, [significance], [mode])",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The value to round down to the nearest integer or, if specified, the nearest multiple of significance.  "
+          },
+          {
+            "syntaxName": "significance",
+            "description": "The number to which multiples number will be rounded. The sign of significance will be ignored. It's 1 by default. [OPTIONAL]"
+          },
+          {
+            "syntaxName": "mode",
+            "description": "If number is negative, specifies the rounding direction. If 0 or blank, it's rounded away from zero. Otherwise, it's rounded towards zero. [OPTIONAL]"
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "FLOOR.PRECISE": {
@@ -3769,8 +4345,26 @@
     "headerDescription": "Rounds a number down to the nearest multiple of Significance.",
     "type": "Math",
     "parameters": "number, [significance]",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "FLOOR.PRECISE(-10.5, 1)",
+      "FLOOR.PRECISE(96, 10)",
+      "FLOOR.PRECISE(-23.25,0.1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "FLOOR.PRECISE(number, [significance])",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The value to round down to the nearest integer or multiple of significance.  "
+          },
+          {
+            "syntaxName": "significance",
+            "description": "The number to which the multiple's number will be rounded.               Optional (defaults to 1).        The sign of this value is ignored.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "GCD": {
@@ -3818,9 +4412,7 @@
     "type": "Math",
     "parameters": "number, [significance]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=ISO.CEILING(number, [significance])", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "LCM": {
@@ -4246,8 +4838,18 @@
     "headerDescription": "Returns the secans of the given angle (in radians).",
     "type": "Math",
     "parameters": "angle",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["SEC(3.14)", "SEC(A1)", "=SEC(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "SEC(angle)",
+        "values": [
+          {
+            "syntaxName": "angle",
+            "description": "The angle of which to find the secant, measured in radians."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "SECH": {
@@ -4255,8 +4857,18 @@
     "headerDescription": "Returns the hyperbolic secans of the given value.",
     "type": "Math",
     "parameters": "value",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["SECH(A1)", "SECH(1)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "SECH(value)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "Any real value for which to calculate the hyperbolic secant."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "SERIESSUM": {
@@ -4879,8 +5491,39 @@
     "headerDescription": "Returns the denisty of Beta distribution.",
     "type": "Statistical",
     "parameters": "value, alpha, beta, cumulative, lower_bound, upper_bound",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "BETA.DIST(0.65, 1.234, 7, 0.5, 3)",
+      "BETA.DIST(0.42, 3, 8)",
+      "BETA.DIST(0.92, 0.5, 0.7)",
+      "BETA.DIST(A5, 0.5, 0.7, -1, 1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BETA.DIST(value, alpha, beta, lower_bound, upper_bound)",
+        "values": [
+          {
+            "syntaxName": "value",
+            "description": "The value at which to evaluate the probability function.               The given value must be a number from the given lower boundary to the given upper boundary.            "
+          },
+          {
+            "syntaxName": "alpha",
+            "description": "The first shape parameter of the distribution.               The given alpha must be a positive number.            "
+          },
+          {
+            "syntaxName": "beta",
+            "description": "The second shape parameter of the distribution.               The given beta must be a positive number.            "
+          },
+          {
+            "syntaxName": "lower_bound",
+            "description": "The lower boundary of the function.               The default lower boundary is 0.            "
+          },
+          {
+            "syntaxName": "upper-bound",
+            "description": "The upper boundary of the function.               The default upper boundary is 1.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BETADIST": {
@@ -4889,12 +5532,7 @@
     "type": "Statistical",
     "parameters": "value, alpha, beta, lower_bound, upper_bound",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=BETADIST(value, alpha, beta, lower_bound, upper_bound)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "BETA.INV": {
@@ -4902,8 +5540,36 @@
     "headerDescription": "Returns the inverse Beta distribution value.",
     "type": "Statistical",
     "parameters": "probability, alpha, beta, lower_bound, upper_bound",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "BETA.INV(0.65,1.234,7,1,3)  BETA.INV(0.3,5,1)  BETA.INV(A4,3,2,-1,1)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "BETA.INV(probability, alpha, beta, lower_bound, upper_bound)",
+        "values": [
+          {
+            "syntaxName": "probability",
+            "description": "The probability at which the function will be evaluated. Must be between 0 and 1, inclusive."
+          },
+          {
+            "syntaxName": "alpha",
+            "description": "The first shape parameter of the distribution. Must be positive."
+          },
+          {
+            "syntaxName": "beta",
+            "description": "The second shape parameter of the distribution. Must be positive."
+          },
+          {
+            "syntaxName": "lower_bound",
+            "description": "Lower bound of the original beta distribution’s domain. Default value is 1."
+          },
+          {
+            "syntaxName": "upper-bound",
+            "description": "Upper bound of the original beta distributions’s domain. Default value is 1."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "BETAINV": {
@@ -4912,12 +5578,7 @@
     "type": "Statistical",
     "parameters": "probability, alpha, beta, lower_bound, upper_bound",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=BETAINV(probability, alpha, beta, lower_bound, upper_bound)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "BINOM.DIST": {
@@ -4926,12 +5587,7 @@
     "type": "Statistical",
     "parameters": "num_successes, num_trials, prob_success, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=BINOM.DIST(num_successes, num_trials, prob_success, cumulative)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "BINOMDIST": {
@@ -4978,12 +5634,7 @@
     "type": "Statistical",
     "parameters": "num_trials, prob_success, target_prob",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=BINOM.INV(num_trials, prob_success, target_prob)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "CHIDIST": {
@@ -5160,12 +5811,7 @@
     "type": "Statistical",
     "parameters": "observed_range, expected_range",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=CHISQ.TEST(observed_range, expected_range)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "CHITEST": {
@@ -5197,12 +5843,7 @@
     "type": "Statistical",
     "parameters": "alpha, standard_deviation, pop_size",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=CONFIDENCE(alpha, standard_deviation, pop_size)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "CONFIDENCE.NORM": {
@@ -5241,7 +5882,25 @@
     "type": "Statistical",
     "parameters": "alpha, standard_deviation, size",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "CONFIDENCE.T(alpha, standard_deviation, size) ",
+        "values": [
+          {
+            "syntaxName": "alpha ",
+            "description": "      One minus the desired confidence level. E.g. 0.1 for 0.9, or 90%, confidence.      "
+          },
+          {
+            "syntaxName": "standard_deviation",
+            "description": "The standard deviation of the population. "
+          },
+          {
+            "syntaxName": "size",
+            "description": "The size of the population. "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CORREL": {
@@ -5428,9 +6087,7 @@
     "type": "Statistical",
     "parameters": "data_y, data_x",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=COVARIANCE.P(data_y, data_x)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "COVARIANCE.S": {
@@ -5438,8 +6095,22 @@
     "headerDescription": "Returns the covariance between two data sets, sample normalized.",
     "type": "Statistical",
     "parameters": "data_y, data_x",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["A10)", "COVARIANCE.S(1, 2, 3, 4)", "B5, 10)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "COVARIANCE.S(data_y, data_x)",
+        "values": [
+          {
+            "syntaxName": "data_y",
+            "description": "The range representing the array or matrix of dependent data."
+          },
+          {
+            "syntaxName": "data_x",
+            "description": "The range representing the array or matrix of independent data."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "CRITBINOM": {
@@ -5529,9 +6200,7 @@
     "type": "Statistical",
     "parameters": "x, lambda, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=EXPONDIST(x, lambda, cumulative)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "FDIST": {
@@ -5540,12 +6209,7 @@
     "type": "Statistical",
     "parameters": "x, degrees_freedom1, degrees_freedom2",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=FDIST(x, degrees_freedom1, degrees_freedom2)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "FINV": {
@@ -5554,12 +6218,7 @@
     "type": "Statistical",
     "parameters": "probability, degrees_freedom1, degrees_freedom2",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=FINV(probability, degrees_freedom1, degrees_freedom2)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "F.DIST": {
@@ -5739,9 +6398,7 @@
     "type": "Statistical",
     "parameters": "range1, range2",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=F.TEST(range1, range2)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "FTEST": {
@@ -5772,8 +6429,18 @@
     "headerDescription": "Returns value of Gamma function.",
     "type": "Statistical",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["A10)", "GAMMA(1, 2, 3, 4)", "B5, 10)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "GAMMA(number) ",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "The input to the Gamma function. The natural logarithm of Gamma (number) will be returned.      The number must be positive."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "GAMMA.DIST": {
@@ -5824,9 +6491,7 @@
     "type": "Statistical",
     "parameters": "x, alpha, beta, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=GAMMADIST(x, alpha, beta, cumulative)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "GAMMALN": {
@@ -5855,9 +6520,7 @@
     "type": "Math",
     "parameters": "value",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=GAMMALN.PRECISE(value)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "GAMMA.INV": {
@@ -5865,8 +6528,26 @@
     "headerDescription": "Returns inverse Gamma distribution value.",
     "type": "Statistical",
     "parameters": "probability, alpha, beta",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["GAMMA.INV(0.65, 4, 2)", "GAMMA.INV(C3, 3, 2)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "GAMMA.INV(probability, alpha, beta)",
+        "values": [
+          {
+            "syntaxName": "probability",
+            "description": "The input to the inverse gamma distribution function.               Must be between 0 and 1.            "
+          },
+          {
+            "syntaxName": "alpha",
+            "description": "The shape of the gamma distribution.               Must be positive.        The sign of significance is ignored.            "
+          },
+          {
+            "syntaxName": "beta",
+            "description": "The inverse-scale of the gamma distribution.               Must be positive.            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "GAMMAINV": {
@@ -5875,9 +6556,7 @@
     "type": "Statistical",
     "parameters": "probability, alpha, beta",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=GAMMAINV(probability, alpha, beta)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "GAUSS": {
@@ -5885,8 +6564,18 @@
     "headerDescription": "Returns the probability of gaussian variable fall more than this many times standard deviation from mean.",
     "type": "Statistical",
     "parameters": "z",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["GAUSS(1)", "GAUSS(B2)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "GAUSS(z)",
+        "values": [
+          {
+            "syntaxName": "z",
+            "description": "The number of standard deviations from the mean.               The parameter z represents how far away from the mean a random variable might fall.        A normal distribution is characterised by a mean (μ) and a standard deviation (z * σ).            "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "GEOMEAN": {
@@ -5972,12 +6661,7 @@
     "type": "Statistical",
     "parameters": "num_successes, num_draws, successes_in_pop, pop_size",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=HYPGEOM.DIST(num_successes, num_draws, successes_in_pop, pop_size)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "LARGE": {
@@ -6013,12 +6697,7 @@
     "type": "Statistical",
     "parameters": "x, mean, standard_deviation",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=LOGNORM.DIST(x, mean, standard_deviation)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "LOGNORMDIST": {
@@ -6054,12 +6733,7 @@
     "type": "Statistical",
     "parameters": "x, mean, standard_deviation",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=LOGNORM.INV(x, mean, standard_deviation)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "LOGINV": {
@@ -6198,12 +6872,7 @@
     "type": "Statistical",
     "parameters": "num_failures, num_successes, prob_success",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=NEGBINOM.DIST(num_failures, num_successes, prob_success)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "NEGBINOMDIST": {
@@ -6239,12 +6908,7 @@
     "type": "Statistical",
     "parameters": "x, mean, standard_deviation, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=NORM.DIST(x, mean, standard_deviation, cumulative)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "NORMDIST": {
@@ -6284,7 +6948,7 @@
     "type": "Statistical",
     "parameters": "x",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [{ "codeSyntax": "=NORM.S.DIST(x)", "values": [] }],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "NORM.INV": {
@@ -6293,9 +6957,7 @@
     "type": "Statistical",
     "parameters": "x, mean, standard_deviation",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=NORM.INV(x, mean, standard_deviation)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "NORMINV": {
@@ -6331,7 +6993,7 @@
     "type": "Statistical",
     "parameters": "x",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [{ "codeSyntax": "=NORM.S.INV(x)", "values": [] }],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "NORMSINV": {
@@ -6381,8 +7043,18 @@
     "headerDescription": "Returns probability densitity of normal distribution.",
     "type": "Statistical",
     "parameters": "x",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["PHI(0.25)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "PHI(x)",
+        "values": [
+          {
+            "syntaxName": "x",
+            "description": "The input to the standard normal distribution function."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "POISSON": {
@@ -6391,9 +7063,7 @@
     "type": "Statistical",
     "parameters": "x, mean, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=POISSON(x, mean, cumulative)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "POISSON.DIST": {
@@ -6478,7 +7148,21 @@
     "type": "Statistical",
     "parameters": "value1, value2",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "SKEW.P(value1, value2)",
+        "values": [
+          {
+            "syntaxName": "value1",
+            "description": "The first value or range of the data set."
+          },
+          {
+            "syntaxName": "value2",
+            "description": "Additional values or ranges to include in the data set. "
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "SLOPE": {
@@ -6537,12 +7221,7 @@
     "type": "Statistical",
     "parameters": "value, mean, standard_deviation",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=STANDARDIZE(value, mean, standard_deviation)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "STDEV": {
@@ -6617,9 +7296,7 @@
     "type": "Statistical",
     "parameters": "value1, [value2, ..]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=STDEV.P(value1, [value2, ..])", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "STDEVPA": {
@@ -6651,9 +7328,7 @@
     "type": "Statistical",
     "parameters": "value1, [value2, ..]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=STDEV.S(value1, [value2, ..])", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "STEYX": {
@@ -6711,8 +7386,26 @@
     "headerDescription": "Returns density of Student-t distribution.",
     "type": "Statistical",
     "parameters": "x, degrees_freedom, cumulative",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["A1 has T.DIST(1.96, 60, false)  Example 2"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "T.DIST(x, degrees_freedom, cumulative)",
+        "values": [
+          {
+            "syntaxName": "x",
+            "description": "Required. The x value to evaluate the distribution at."
+          },
+          {
+            "syntaxName": "degrees_freedom",
+            "description": "Required. The degrees of freedom."
+          },
+          {
+            "syntaxName": "cumulative",
+            "description": "Required. True/false value field. If true, returns the cumulative probability for x. If false, returns the probability density function for x."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "T.DIST.2T": {
@@ -6720,8 +7413,22 @@
     "headerDescription": "Returns density of Student-t distribution, both-sided.",
     "type": "Statistical",
     "parameters": "x, degrees_freedom",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["T.DIST.2T(1.96, 60)", "T.DIST.2T(1, 2)"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "T.DIST.2T(x, degrees_freedom)",
+        "values": [
+          {
+            "syntaxName": "x",
+            "description": "Required. The x value to evaluate the distribution at."
+          },
+          {
+            "syntaxName": "degrees_freedom",
+            "description": "Required. The degrees of freedom."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "T.DIST.RT": {
@@ -6729,8 +7436,22 @@
     "headerDescription": "Returns density of Student-t distribution, right-tailed.",
     "type": "Statistical",
     "parameters": "x, degrees_freedom",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": ["A1 has T.DIST.RT(1.96, 60)  Example 2"],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "T.DIST.2T(x, degrees_freedom)",
+        "values": [
+          {
+            "syntaxName": "x",
+            "description": "Required. The x value to evaluate the distribution at."
+          },
+          {
+            "syntaxName": "degrees_freedom",
+            "description": "Required. The degrees of freedom."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "TINV": {
@@ -6739,9 +7460,7 @@
     "type": "Statistical",
     "parameters": "probability, degrees_freedom",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=TINV(probability, degrees_freedom)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "T.INV": {
@@ -6820,9 +7539,7 @@
     "type": "Statistical",
     "parameters": "range1, range2, tails, type",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=TTEST(range1, range2, tails, type)", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "T.TEST": {
@@ -6951,9 +7668,7 @@
     "type": "Statistical",
     "parameters": "value1, [value2, ..]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=VAR.P(value1, [value2, ..])", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "VARPA": {
@@ -6985,9 +7700,7 @@
     "type": "Statistical",
     "parameters": "value1, [value2, ..]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      { "codeSyntax": "=VAR.S(value1, [value2, ..])", "values": [] }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "WEIBULL": {
@@ -7037,12 +7750,7 @@
     "type": "Statistical",
     "parameters": "x, shape, scale, cumulative",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=WEIBULL.DIST(x, shape, scale, cumulative)",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "Z.TEST": {
@@ -7078,12 +7786,7 @@
     "type": "Statistical",
     "parameters": "data, value, [standard_deviation]",
     "codeSyntaxUsage": [],
-    "codeSyntaxElements": [
-      {
-        "codeSyntax": "=ZTEST(data, value, [standard_deviation])",
-        "values": []
-      }
-    ],
+    "codeSyntaxElements": [],
     "attributes": []
   },
   "CHAR": {
@@ -7592,8 +8295,21 @@
     "headerDescription": "Returns the character created by using provided code point.",
     "type": "Text",
     "parameters": "number",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "UNICHAR(68) returns D",
+      "UNICHAR(307) returns \\u0133, which may appear as ĳ"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "UNICHAR(number)",
+        "values": [
+          {
+            "syntaxName": "number",
+            "description": "Required. The number to convert into a Unicode character. The number should be greater than 0."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "UNICODE": {
@@ -7601,8 +8317,22 @@
     "headerDescription": "Returns the Unicode code point of a first character of a text.",
     "type": "Text",
     "parameters": "text",
-    "codeSyntaxUsage": [],
-    "codeSyntaxElements": [],
+    "codeSyntaxUsage": [
+      "UNICODE(\"\"A\"\")",
+      "UNICODE(123)",
+      "UNICODE(😀😀😄)"
+    ],
+    "codeSyntaxElements": [
+      {
+        "codeSyntax": "UNICODE(text)",
+        "values": [
+          {
+            "syntaxName": "text",
+            "description": "The string containing the character to be evaluated."
+          }
+        ]
+      }
+    ],
     "attributes": []
   },
   "UPPER": {

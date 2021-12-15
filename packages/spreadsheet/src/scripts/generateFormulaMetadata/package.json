@@ -1,0 +1,13 @@
+{
+  "name": "generate-formula-metadata",
+  "version": "1.0.0",
+  "description": "",
+  "author": "TRACKTAK LTD",
+  "main": "./index.js",
+  "scripts": {
+    "start": "node generateFormulaMetadata.js"
+  },
+  "dependencies": {
+    "jsdom": "19.0.0"
+  }
+}

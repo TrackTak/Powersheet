@@ -909,7 +909,10 @@
     "headerDescription": "Returns a bitwise logical \"and\" of the parameters.",
     "type": "Engineering",
     "parameters": "value1, value2",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": [
+      "=BITAND(10,9)",
+      "=BITAND(BIN2DEC(\"1110\"), BIN2DEC(\"0100\"))"
+    ],
     "codeSyntaxElements": [
       {
         "codeSyntax": "BITAND(value1,value2)",
@@ -2750,7 +2753,7 @@
     "headerDescription": "Returns number of periods to reach specific value.",
     "type": "Financial",
     "parameters": "rate, present_value, future_value",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": ["=PDURATION(0.25, 10, 15)", "=PDURATION(0.75, 2, 15)"],
     "codeSyntaxElements": [
       {
         "codeSyntax": "PDURATION(rate, present_value, future_value)",
@@ -2910,7 +2913,7 @@
     "headerDescription": "Returns an equivalent interest rate for the growth of an investment.",
     "type": "Financial",
     "parameters": "number_of_periods, present_value, future_value",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": ["=RRI(10.5, 10, 3)", "=RRI(3, 2, 4)", "=RRI(1, 10, 0)"],
     "codeSyntaxElements": [
       {
         "codeSyntax": "RRI(number_of_periods, present_value, future_value)",
@@ -3426,7 +3429,7 @@
     "headerDescription": "Returns a formula in a given cell as a string.",
     "type": "Lookup",
     "parameters": "cell",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": ["=FORMULATEXT($A2)", "=FORMULATEXT($A4:$A5)"],
     "codeSyntaxElements": [
       {
         "codeSyntax": "FORMULATEXT(cell) ",
@@ -5881,7 +5884,7 @@
     "headerDescription": "Returns upper confidence bound for T distribution.",
     "type": "Statistical",
     "parameters": "alpha, standard_deviation, size",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": ["=CONFIDENCE.T(A2,B2,C2)"],
     "codeSyntaxElements": [
       {
         "codeSyntax": "CONFIDENCE.T(alpha, standard_deviation, size) ",
@@ -7147,7 +7150,7 @@
     "headerDescription": "Returns skeweness of a population.",
     "type": "Statistical",
     "parameters": "value1, value2",
-    "codeSyntaxUsage": [],
+    "codeSyntaxUsage": ["=SKEW.P(A2:A9, 30, 40)", "=SKEW.P(A2:A9)"],
     "codeSyntaxElements": [
       {
         "codeSyntax": "SKEW.P(value1, value2)",

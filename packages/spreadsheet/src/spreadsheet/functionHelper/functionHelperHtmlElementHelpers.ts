@@ -59,6 +59,7 @@ export const createSyntaxListItem = (
 
   if (description) {
     codeDescriptionEl.textContent = ` - ${description}`
+    codeDescriptionEl.classList.add(`${functionHelperPrefix}-paragraph`)
   }
 
   codeStyle.classList.add(`${functionHelperPrefix}-code-style`)

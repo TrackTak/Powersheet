@@ -61,7 +61,7 @@ export const tokenize = (parameters: string) => {
   const parameterArray = []
   let word = ''
   for (let i = 0; i < parameters.length; i++) {
-    if (parameters[i] === '[') {
+    if (parameters[i] === '[' && i < parameters.length - 1) {
       while (parameters[i] !== ']') {
         word += parameters[i]
         i++
@@ -69,6 +69,7 @@ export const tokenize = (parameters: string) => {
       }
       word += ']'
       parameterArray.push(word)
+      word = ''
       continue
     }
     if (',' === parameters[i]) {
@@ -80,7 +81,11 @@ export const tokenize = (parameters: string) => {
 
     if (i === parameters.length) {
       parameterArray.push(word)
+      word = ''
     }
+  }
+  if (word.length > 0) {
+    parameterArray.push(word)
   }
   return parameterArray
 }

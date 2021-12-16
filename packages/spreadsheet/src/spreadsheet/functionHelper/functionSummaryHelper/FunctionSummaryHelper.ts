@@ -102,9 +102,8 @@ class FunctionSummaryHelper {
 
       this._spreadsheet.render()
     })
-
+    this.functionSummaryHelperListContainerEl.appendChild(mainHeaderEl)
     this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)
-    this.textWrapper.appendChild(mainHeaderEl)
     this.textWrapper.appendChild(description)
 
     if (formulaMetadata.codeSyntaxUsage.length) {
@@ -138,23 +137,21 @@ class FunctionSummaryHelper {
 
   private _toggleAccordion = () => {
     if (
-      this.functionSummaryHelperListContainerEl.classList.contains(
+      this.textWrapper.classList.contains(
         `${functionSummaryHelperPrefix}-expanded`
       )
     ) {
       this.expandIcon.classList.remove(
         `${functionSummaryHelperPrefix}-collapse-icon`
       )
-      this.functionSummaryHelperListContainerEl.classList.remove(
+      this.textWrapper.classList.remove(
         `${functionSummaryHelperPrefix}-expanded`
       )
     } else {
       this.expandIcon.classList.add(
         `${functionSummaryHelperPrefix}-collapse-icon`
       )
-      this.functionSummaryHelperListContainerEl.classList.add(
-        `${functionSummaryHelperPrefix}-expanded`
-      )
+      this.textWrapper.classList.add(`${functionSummaryHelperPrefix}-expanded`)
     }
   }
 

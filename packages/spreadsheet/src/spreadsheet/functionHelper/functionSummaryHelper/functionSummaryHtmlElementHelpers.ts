@@ -37,7 +37,7 @@ export const createMainHeader = (
   closingBracketEl.textContent = ')'
 
   const currentParameterIndex = inputText.split(',').length - 1
-  const parameterArray = parameterText.split(',')
+  const parameterArray = tokenize(parameterText)
   parameterArray.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
     if (currentParameterIndex === index) {
@@ -51,11 +51,38 @@ export const createMainHeader = (
       parameterContainerEl.appendChild(commaEl)
     }
   })
-
   parameterContainerEl.appendChild(closingBracketEl)
   mainHeaderEl.appendChild(parameterContainerEl)
 
   return { mainHeaderEl }
+}
+
+export const tokenize = (parameters: string) => {
+  const parameterArray = []
+  let word = ''
+  for (let i = 0; i < parameters.length; i++) {
+    if (parameters[i] === '[') {
+      while (parameters[i] !== ']') {
+        word += parameters[i]
+        i++
+        continue
+      }
+      word += ']'
+      parameterArray.push(word)
+      continue
+    }
+    if (',' === parameters[i]) {
+      parameterArray.push(word)
+      word = ''
+      continue
+    }
+    word += parameters[i]
+
+    if (i === parameters.length) {
+      parameterArray.push(word)
+    }
+  }
+  return parameterArray
 }
 
 export const createButton = (buttonText: string) => {

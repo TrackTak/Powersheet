@@ -35,9 +35,9 @@ Default.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'Default',
+        sheetName: 'Default'
       }
-    },
+    }
   }
 }
 
@@ -164,9 +164,9 @@ Mobile.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'Mobile',
+        sheetName: 'Mobile'
       }
-    },
+    }
   }
 }
 
@@ -214,9 +214,9 @@ CustomStyles.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'CustomStyles',
+        sheetName: 'CustomStyles'
       }
-    },
+    }
   },
   styles: {
     row: {
@@ -286,9 +286,9 @@ BareMinimumSpreadsheet.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'BareMinimumSpreadsheet',
+        sheetName: 'BareMinimumSpreadsheet'
       }
-    },
+    }
   }
 }
 
@@ -299,9 +299,9 @@ CustomSizeSpreadsheet.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'CustomSizeSpreadsheet',
+        sheetName: 'CustomSizeSpreadsheet'
       }
-    },
+    }
   },
   options: {
     ...defaultOptions,
@@ -361,9 +361,9 @@ MultipleSpreadsheets.args = {
     sheets: {
       0: {
         id: 0,
-        sheetName: 'MultipleSpreadsheets',
+        sheetName: 'MultipleSpreadsheets'
       }
-    },
+    }
   }
 }
 
@@ -434,6 +434,7 @@ CellsData.args = {
         id: 0,
         sheetName: 'Cells Data',
         cells: {
+          '0_0_5': '0_0_5',
           '0_1_0': '0_1_0',
           '0_1_1': '0_1_1',
           '0_3_3': '0_3_3',
@@ -444,6 +445,10 @@ CellsData.args = {
       }
     },
     cells: {
+      '0_0_5': {
+        id: '0_0_5',
+        value: '=2/0'
+      },
       '0_1_0': {
         id: '0_1_0',
         value: 'HI!',

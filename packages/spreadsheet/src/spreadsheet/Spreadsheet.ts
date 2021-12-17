@@ -155,7 +155,7 @@ class Spreadsheet {
    * hyperformula cells if powersheet has not been initialized yet.
    * This must be called after `setData()`
    */
-   private initialize() {
+  private initialize() {
     if (!this.isInitialized) {
       this.isInitialized = true
 

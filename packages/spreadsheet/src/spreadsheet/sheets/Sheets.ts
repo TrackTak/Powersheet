@@ -21,6 +21,9 @@ import { ISheetData } from './Data'
 import Merger from './Merger'
 import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
+import CellError from './cellError/CellError'
+import { DetailedCellError } from '@tracktak/hyperformula'
+import { Instance, Props } from 'tippy.js'
 
 export interface IDimensions {
   width: number
@@ -102,6 +105,7 @@ class Sheets {
   cellEditor: CellEditor
   rightClickMenu: RightClickMenu
   comment: Comment
+  cellError: CellError
   activeSheetId = 0
   totalSheetCount = 0
   /**
@@ -235,6 +239,7 @@ class Sheets {
     this.selector = new Selector(this)
     this.rightClickMenu = new RightClickMenu(this)
     this.comment = new Comment(this)
+    this.cellError = new CellError(this)
 
     this.stage.on('contextmenu', this._onContextMenu)
     this.stage.on('mousedown', this._stageOnMousedown)
@@ -374,6 +379,13 @@ class Sheets {
 
     if (this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
       this.comment.show(simpleCellAddress)
+    }
+
+    const cellValue = this._spreadsheet.hyperformula.getCellValue(
+      simpleCellAddress
+    )
+    if (cellValue instanceof DetailedCellError) {
+      this.cellError.show(cellValue.message || cellValue.type)
     }
   }
 
@@ -688,6 +700,55 @@ class Sheets {
   /**
    * @internal
    */
+  _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
+    const {
+      top,
+      left,
+      right,
+      bottom,
+      x,
+      y,
+      width,
+      height,
+      toJSON
+    } = this.sheetEl.getBoundingClientRect()
+    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
+
+    const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
+
+    let xPosition = left + selectedCellRect.x + selectedCellRect.width
+    let yPosition = top + selectedCellRect.y
+
+    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
+      .width
+
+    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
+      .height
+
+    if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
+      xPosition = left + selectedCellRect.x - tippyBox.offsetWidth
+    }
+
+    if (yPosition + tippyBox.offsetHeight + colScrollBarHeight > height) {
+      yPosition = top + selectedCellRect.y - tippyBox.offsetHeight
+    }
+
+    return {
+      top: yPosition,
+      left: xPosition,
+      right,
+      bottom,
+      x,
+      y,
+      width,
+      height,
+      toJSON
+    }
+  }
+
+  /**
+   * @internal
+   */
   _destroy() {
     this.stage.off('contextmenu', this._onContextMenu)
     this.stage.off('mousedown', this._stageOnMousedown)
@@ -712,6 +773,7 @@ class Sheets {
     this.rows._destroy()
     this.cellEditor?._destroy()
     this.comment._destroy()
+    this.cellError._destroy()
     this.rightClickMenu._destroy()
   }
 

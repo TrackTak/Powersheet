@@ -82,6 +82,10 @@ class Cells {
       ...this._spreadsheet.styles.cell.commentMarker,
       name: 'commentMarker'
     })
+    const errorMarker = new Line({
+      ...this._spreadsheet.styles.cell.errorMarker,
+      name: 'errorMarker'
+    })
     const cellText = new Text({
       name: 'text',
       ...this._spreadsheet.styles.cell.text
@@ -102,7 +106,7 @@ class Cells {
 
     cellBordersGroup.add(...borderLines)
 
-    cellGroup.add(cellRect, cellText, commentMarker)
+    cellGroup.add(cellRect, cellText, commentMarker, errorMarker)
 
     return {
       cellGroup,
@@ -201,9 +205,10 @@ class Cells {
    * @internal
    */
   _render() {
-    const frozenCells = this._spreadsheet.data._spreadsheetData.frozenCells?.[
-      this._sheets.activeSheetId
-    ]
+    const frozenCells =
+      this._spreadsheet.data._spreadsheetData.frozenCells?.[
+        this._sheets.activeSheetId
+      ]
     const frozenRow = frozenCells?.row
     const frozenCol = frozenCells?.col
 
@@ -269,8 +274,8 @@ class Cells {
    */
   _updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCellId = this._spreadsheet.sheets.merger
-      .associatedMergedCellAddressMap[cellId]
+    const mergedCellId =
+      this._spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId]
 
     const sheetName =
       this._spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''

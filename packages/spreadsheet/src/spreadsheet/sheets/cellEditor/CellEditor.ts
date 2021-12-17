@@ -165,7 +165,9 @@ class CellEditor {
       )
     } else {
       this.cellEditorEl.classList.remove(styles.formulaInput)
-      this.formulaHelper?.formulaHelperEl.classList.remove(styles.formulaInput)
+      this._spreadsheet.formulaBar?.editableContent.classList.remove(
+        styles.formulaInput
+      )
       this.formulaHelper?.hide()
       this.functionSummaryHelper.hide()
     }
@@ -201,49 +203,6 @@ class CellEditor {
         this.currentPlaceholderEl.remove()
         this.currentPlaceholderEl = null
       }
-    }
-  }
-
-  private _createPlaceholderIfNeeded = (
-    currentEditor: HTMLDivElement,
-    secondaryEditor?: HTMLDivElement
-  ) => {
-    const currentCaretPosition = getCaretPosition(currentEditor)
-
-    const precedingTokenPosition = currentCaretPosition - 1
-
-    if (precedingTokenPosition === -1) return
-
-    // @ts-ignore
-    const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const { tokens } = lexer.tokenizeFormula(this.currentCellText)
-    // Have to use token positions & indexes due to some tokens
-    // taking up multiple characters such as ranges
-    const precedingToken = tokens.find(
-      (token: IToken) => token.endOffset === precedingTokenPosition
-    )
-
-    if (!precedingToken) return
-
-    const shouldAddPlaceholder = PLACEHOLDER_WHITELIST.includes(
-      precedingToken.tokenType.name
-    )
-
-    if (shouldAddPlaceholder) {
-      this.currentPlaceholderEl = document.createElement('span')
-
-      this.currentPlaceholderEl.classList.add(styles.placeholder)
-
-      const childIndex = tokens.indexOf(precedingToken)
-
-      currentEditor.children[childIndex].insertAdjacentElement(
-        'afterend',
-        this.currentPlaceholderEl
-      )
-      secondaryEditor?.children[childIndex].insertAdjacentElement(
-        'afterend',
-        this.currentPlaceholderEl.cloneNode(true) as HTMLSpanElement
-      )
     }
   }
 
@@ -298,6 +257,53 @@ class CellEditor {
   }
 
   /**
+   *
+   * @internal
+   */
+  _createPlaceholderIfNeeded = (
+    currentEditor: HTMLDivElement,
+    secondaryEditor?: HTMLDivElement
+  ) => {
+    const currentCaretPosition = getCaretPosition(currentEditor)
+
+    const precedingTokenPosition = currentCaretPosition - 1
+
+    if (precedingTokenPosition === -1) return
+
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const { tokens } = lexer.tokenizeFormula(this.currentCellText)
+    // Have to use token positions & indexes due to some tokens
+    // taking up multiple characters such as ranges
+    const precedingToken = tokens.find(
+      (token: IToken) => token.endOffset === precedingTokenPosition
+    )
+
+    if (!precedingToken) return
+
+    const shouldAddPlaceholder = PLACEHOLDER_WHITELIST.includes(
+      precedingToken.tokenType.name
+    )
+
+    if (shouldAddPlaceholder) {
+      this.currentPlaceholderEl = document.createElement('span')
+
+      this.currentPlaceholderEl.classList.add(styles.placeholder)
+
+      const childIndex = tokens.indexOf(precedingToken)
+
+      currentEditor.children[childIndex].insertAdjacentElement(
+        'afterend',
+        this.currentPlaceholderEl
+      )
+      secondaryEditor?.children[childIndex].insertAdjacentElement(
+        'afterend',
+        this.currentPlaceholderEl.cloneNode(true) as HTMLSpanElement
+      )
+    }
+  }
+
+  /**
    * @internal
    */
   _destroy() {
@@ -342,9 +348,8 @@ class CellEditor {
         styles.formulaInput
       )
     }
-    const tokenParts = isFormula
-      ? this.cellHighlighter.getStyledTokens(text ?? '')
-      : [this._getSpanFromText(text ?? '')]
+    const tokenParts = this.cellHighlighter.getStyledTokens(text ?? '')
+
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
 
@@ -355,12 +360,6 @@ class CellEditor {
     this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
     this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
-  }
-
-  private _getSpanFromText = (text: string) => {
-    const span = document.createElement('span')
-    span.textContent = text
-    return span
   }
 
   /**

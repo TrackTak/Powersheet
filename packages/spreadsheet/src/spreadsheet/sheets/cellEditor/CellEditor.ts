@@ -165,7 +165,9 @@ class CellEditor {
       )
     } else {
       this.cellEditorEl.classList.remove(styles.formulaInput)
-      this.formulaHelper?.formulaHelperEl.classList.remove(styles.formulaInput)
+      this._spreadsheet.formulaBar?.editableContent.classList.remove(
+        styles.formulaInput
+      )
       this.formulaHelper?.hide()
       this.functionSummaryHelper.hide()
     }

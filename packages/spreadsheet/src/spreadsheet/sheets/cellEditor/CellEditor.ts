@@ -290,7 +290,6 @@ class CellEditor {
     secondaryEditor?: HTMLDivElement
   ) => {
     const currentCaretPosition = getCaretPosition(currentEditor)
-
     const precedingTokenPosition = currentCaretPosition - 1
 
     if (precedingTokenPosition === -1) return

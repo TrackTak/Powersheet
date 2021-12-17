@@ -117,7 +117,7 @@ export function getCaretPosition(node: Node): number {
     node,
     undefined,
     function (node) {
-      var nodeRange = document.createRange()
+      const nodeRange = document.createRange()
       nodeRange.selectNodeContents(node)
       return nodeRange.compareBoundaryPoints(Range.END_TO_END, range) < 1
         ? NodeFilter.FILTER_ACCEPT

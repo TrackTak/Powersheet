@@ -15,6 +15,9 @@ import {
 import Spreadsheet from '../../Spreadsheet'
 import { functionMetadata } from '../functionMetadata'
 import { IFunctionHelperData } from '../FunctionHelper'
+import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
+import { IToken } from 'chevrotain'
+import { last } from 'lodash'
 
 class FunctionSummaryHelper {
   functionSummaryHelperEl: HTMLDivElement
@@ -55,6 +58,50 @@ class FunctionSummaryHelper {
       this._update(metadata, inputParameters)
       this.helper.show()
     }
+  }
+
+  updateParameterHighlights(currentCaretPosition: number, text: string) {
+    const precedingTokenPosition = currentCaretPosition - 1
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const { tokens } = lexer.tokenizeFormula(text)
+    const eligibleTokensToHighlight = tokens.filter((token: IToken) =>
+      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+    )
+    const indexToHighlight = eligibleTokensToHighlight.findIndex(
+      (token: IToken) => {
+        const endOffset = token.endOffset ?? Number.MAX_VALUE
+        return (
+          (currentCaretPosition >= token.startOffset &&
+            currentCaretPosition <= endOffset) ||
+          (precedingTokenPosition >= token.startOffset &&
+            precedingTokenPosition <= endOffset)
+        )
+      }
+    )
+
+    const parameterElems =
+      this.functionSummaryHelperListContainerEl
+        ?.getElementsByClassName(`${functionSummaryHelperPrefix}-parameters`)[0]
+        .getElementsByTagName('span') || {}
+    const elemsEligibleForHighlight = Array.from(parameterElems).filter(
+      elem => !['(', ')', ','].includes(elem.textContent!.trim())
+    )
+    const isInInfiniteParameter =
+      indexToHighlight >= elemsEligibleForHighlight.length &&
+      last(elemsEligibleForHighlight)?.textContent?.includes('[') &&
+      currentCaretPosition >=
+        eligibleTokensToHighlight[elemsEligibleForHighlight.length - 1]
+          .startOffset
+
+    elemsEligibleForHighlight.forEach(elem => {
+      elem.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+    })
+
+    const elemToHighlight = isInInfiniteParameter
+      ? last(elemsEligibleForHighlight)
+      : elemsEligibleForHighlight[indexToHighlight]
+
+    elemToHighlight?.classList.add(`${functionSummaryHelperPrefix}-highlight`)
   }
 
   private _update(

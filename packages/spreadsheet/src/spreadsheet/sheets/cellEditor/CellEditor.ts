@@ -24,7 +24,7 @@ export interface ICurrentScroll {
   col: number
 }
 
-const PLACEHOLDER_WHITELIST = [
+export const PLACEHOLDER_WHITELIST = [
   'WhiteSpace',
   'PlusOp',
   'MinusOp',
@@ -39,6 +39,7 @@ const PLACEHOLDER_WHITELIST = [
   'GreaterThanOp',
   'LessThanOp',
   'LParen',
+  'RParen',
   'ArrayLParen',
   'ArrayRParen',
   'OffsetProcedureName',
@@ -112,6 +113,8 @@ class CellEditor {
 
     this.cellEditorEl.addEventListener('input', this._onInput)
     this.cellEditorEl.addEventListener('keydown', this._onKeyDown)
+    this.cellEditorEl.addEventListener('keyup', this._onKeyUp)
+    this.cellEditorEl.addEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.addEventListener('click', this._onClick)
   }
 
@@ -155,6 +158,7 @@ class CellEditor {
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
         this.functionSummaryHelper.show(functionName, parameters)
+        this._updateFunctionSummaryHelperHighlights()
       } else {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
@@ -186,6 +190,27 @@ class CellEditor {
     }
   }
 
+  private _onKeyUp = (e: KeyboardEvent) => {
+    e.stopPropagation()
+    this._updateFunctionSummaryHelperHighlights()
+  }
+
+  private _onMouseUp = (e: MouseEvent) => {
+    e.stopPropagation()
+    this._updateFunctionSummaryHelperHighlights()
+  }
+
+  private _updateFunctionSummaryHelperHighlights = () => {
+    const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
+    const textContent = nodes.length
+      ? this._nodesToText(nodes)
+      : this.cellEditorEl.textContent
+    this.functionSummaryHelper.updateParameterHighlights(
+      getCaretPosition(this.cellEditorEl),
+      textContent ?? ''
+    )
+  }
+
   private _removePlaceholderIfNeeded = () => {
     if (this.currentCellText === null) return
 
@@ -209,7 +234,6 @@ class CellEditor {
     secondaryEditor?: HTMLDivElement
   ) => {
     const currentCaretPosition = getCaretPosition(currentEditor)
-
     const precedingTokenPosition = currentCaretPosition - 1
 
     if (precedingTokenPosition === -1) return

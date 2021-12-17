@@ -157,7 +157,7 @@ class CellEditor {
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
         this.functionSummaryHelper.show(functionName)
-        this._updateFunctionSummaryHelperHighlights()
+        this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
       } else {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
@@ -193,21 +193,21 @@ class CellEditor {
 
   private _onKeyUp = (e: KeyboardEvent) => {
     e.stopPropagation()
-    this._updateFunctionSummaryHelperHighlights()
+    this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
   }
 
   private _onMouseUp = (e: MouseEvent) => {
     e.stopPropagation()
-    this._updateFunctionSummaryHelperHighlights()
+    this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
   }
 
-  private _updateFunctionSummaryHelperHighlights = () => {
+  _updateFunctionSummaryHelperHighlights = (currentEditor: HTMLDivElement) => {
     const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
     const textContent = nodes.length
       ? this._nodesToText(nodes)
       : this.cellEditorEl.textContent
     this.functionSummaryHelper.updateParameterHighlights(
-      getCaretPosition(this.cellEditorEl),
+      getCaretPosition(currentEditor),
       textContent ?? ''
     )
   }
@@ -335,6 +335,8 @@ class CellEditor {
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
+    this.cellEditorEl.removeEventListener('keyup', this._onKeyUp)
+    this.cellEditorEl.removeEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.removeEventListener('click', this._onClick)
     this.formulaHelper?._destroy()
     this.functionSummaryHelper._destroy()

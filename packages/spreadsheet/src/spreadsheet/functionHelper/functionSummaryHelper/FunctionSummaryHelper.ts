@@ -67,7 +67,7 @@ class FunctionSummaryHelper {
     const eligibleTokensToHighlight = tokens.filter((token: IToken) =>
       PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
     )
-    const indexToHighlight = eligibleTokensToHighlight.findIndex(
+    let indexToHighlight = eligibleTokensToHighlight.findIndex(
       (token: IToken) => {
         const endOffset = token.endOffset ?? Number.MAX_VALUE
         return (
@@ -79,29 +79,53 @@ class FunctionSummaryHelper {
       }
     )
 
-    const parameterElems =
+    const parameterPlaceholderElements =
       this.functionSummaryHelperListContainerEl
         ?.getElementsByClassName(`${functionSummaryHelperPrefix}-parameters`)[0]
-        .getElementsByTagName('span') || {}
-    const elemsEligibleForHighlight = Array.from(parameterElems).filter(
-      elem => !['(', ')', ','].includes(elem.textContent!.trim())
-    )
+        ?.getElementsByTagName('span') || {}
+    const parameterElementsEligibleForHighlight = Array.from(
+      parameterPlaceholderElements
+    ).filter(elem => !['(', ')', ','].includes(elem.textContent!.trim()))
     const isInInfiniteParameter =
-      indexToHighlight >= elemsEligibleForHighlight.length &&
-      last(elemsEligibleForHighlight)?.textContent?.includes('[') &&
+      last(parameterElementsEligibleForHighlight)?.textContent?.includes('[') &&
       currentCaretPosition >=
-        eligibleTokensToHighlight[elemsEligibleForHighlight.length - 1]
-          .startOffset
+        eligibleTokensToHighlight[
+          parameterElementsEligibleForHighlight.length - 1
+        ]?.startOffset
 
-    elemsEligibleForHighlight.forEach(elem => {
+    const separators = tokens.filter(
+      (token: IToken) => token.tokenType.name === 'ArrayColSep'
+    )
+    const precedingSeparatorIndex = separators.findIndex(
+      (token: IToken) => token.endOffset === precedingTokenPosition
+    )
+
+    parameterElementsEligibleForHighlight.forEach(elem => {
       elem.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
     })
 
-    const elemToHighlight = isInInfiniteParameter
-      ? last(elemsEligibleForHighlight)
-      : elemsEligibleForHighlight[indexToHighlight]
+    if (indexToHighlight === -1 && precedingSeparatorIndex === -1) {
+      return
+    }
 
-    elemToHighlight?.classList.add(`${functionSummaryHelperPrefix}-highlight`)
+    // Highlight after a separator
+    if (
+      indexToHighlight === -1 ||
+      (precedingSeparatorIndex !== -1 && !isInInfiniteParameter)
+    ) {
+      indexToHighlight = precedingSeparatorIndex + 1
+    }
+
+    const placeholderElementToHighlight =
+      (precedingSeparatorIndex ||
+        indexToHighlight >= parameterElementsEligibleForHighlight.length) &&
+      isInInfiniteParameter
+        ? last(parameterElementsEligibleForHighlight)
+        : parameterElementsEligibleForHighlight[indexToHighlight]
+
+    placeholderElementToHighlight?.classList.add(
+      `${functionSummaryHelperPrefix}-highlight`
+    )
   }
 
   private _update(

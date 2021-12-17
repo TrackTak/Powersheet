@@ -3,6 +3,11 @@ import { prefix } from '../../utils'
 
 export const functionSummaryHelperPrefix = `${prefix}-function-summary-helper`
 
+export interface IPlaceholderParameter {
+  element: HTMLSpanElement
+  isInfiniteParameter: boolean
+}
+
 export const createWrapperContent = () => {
   const functionSummaryHelperContainerEl = document.createElement('div')
   const functionSummaryHelperEl = document.createElement('div')
@@ -14,11 +19,7 @@ export const createWrapperContent = () => {
   }
 }
 
-export const createMainHeader = (
-  headerText: string,
-  parameterText: string,
-  inputText: string
-) => {
+export const createMainHeader = (headerText: string, parameterText: string) => {
   const mainHeaderEl = document.createElement('div')
 
   const headerEl = document.createElement('h1')
@@ -36,9 +37,15 @@ export const createMainHeader = (
   const closingBracketEl = document.createElement('span')
   closingBracketEl.textContent = ')'
   const parameterArray = tokenize(parameterText)
+  const placeholderParameters: IPlaceholderParameter[] = []
   parameterArray.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
+    parameterEl.classList.add(`${functionSummaryHelperPrefix}-parameter`)
     parameterEl.textContent = parameter
+    placeholderParameters.push({
+      element: parameterEl,
+      isInfiniteParameter: parameter.includes('[')
+    })
     parameterContainerEl.appendChild(parameterEl)
     if (index !== parameterArray.length - 1) {
       const commaEl = document.createElement('span')
@@ -49,7 +56,7 @@ export const createMainHeader = (
   parameterContainerEl.appendChild(closingBracketEl)
   mainHeaderEl.appendChild(parameterContainerEl)
 
-  return { mainHeaderEl }
+  return { mainHeaderEl, placeholderParameters }
 }
 
 export const tokenize = (parameters: string) => {

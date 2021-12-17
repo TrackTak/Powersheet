@@ -10,7 +10,8 @@ import {
   createMainHeader,
   createButton,
   createWrapperContent,
-  functionSummaryHelperPrefix
+  functionSummaryHelperPrefix,
+  IPlaceholderParameter
 } from './functionSummaryHtmlElementHelpers'
 import Spreadsheet from '../../Spreadsheet'
 import { functionMetadata } from '../functionMetadata'
@@ -26,6 +27,7 @@ class FunctionSummaryHelper {
   accordionButton!: HTMLButtonElement
   helper: DelegateInstance
   textWrapper!: HTMLDivElement
+  placeholderParameters: IPlaceholderParameter[]
   private _spreadsheet!: Spreadsheet
 
   /**
@@ -44,6 +46,7 @@ class FunctionSummaryHelper {
       interactive: true,
       hideOnClick: false
     })
+    this.placeholderParameters = []
     this._spreadsheet = spreadsheet
   }
   /**
@@ -52,22 +55,23 @@ class FunctionSummaryHelper {
    * @param functionName - The input function
    * @param inputParameters - The input parameters that have currently been typed by user
    */
-  show(functionName: string, inputParameters: string) {
+  show(functionName: string) {
     const metadata = functionMetadata[functionName]
     if (metadata) {
-      this._update(metadata, inputParameters)
+      this._update(metadata)
       this.helper.show()
     }
   }
 
   updateParameterHighlights(currentCaretPosition: number, text: string) {
     const precedingTokenPosition = currentCaretPosition - 1
+    // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
     const { tokens } = lexer.tokenizeFormula(text)
-    const eligibleTokensToHighlight = tokens.filter((token: IToken) =>
+    const eligibleTokensToHighlight: IToken[] = tokens.filter((token: IToken) =>
       PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
     )
-    let indexToHighlight = eligibleTokensToHighlight.findIndex(
+    const caretElementIndex = eligibleTokensToHighlight.findIndex(
       (token: IToken) => {
         const endOffset = token.endOffset ?? Number.MAX_VALUE
         return (
@@ -79,59 +83,75 @@ class FunctionSummaryHelper {
       }
     )
 
-    const parameterPlaceholderElements =
-      this.functionSummaryHelperListContainerEl
-        ?.getElementsByClassName(`${functionSummaryHelperPrefix}-parameters`)[0]
-        ?.getElementsByTagName('span') || {}
-    const parameterElementsEligibleForHighlight = Array.from(
-      parameterPlaceholderElements
-    ).filter(elem => !['(', ')', ','].includes(elem.textContent!.trim()))
-    const isInInfiniteParameter =
-      last(parameterElementsEligibleForHighlight)?.textContent?.includes('[') &&
-      currentCaretPosition >=
-        eligibleTokensToHighlight[
-          parameterElementsEligibleForHighlight.length - 1
-        ]?.startOffset
-
-    const separators = tokens.filter(
+    const separators: IToken[] = tokens.filter(
       (token: IToken) => token.tokenType.name === 'ArrayColSep'
     )
     const precedingSeparatorIndex = separators.findIndex(
       (token: IToken) => token.endOffset === precedingTokenPosition
     )
 
-    parameterElementsEligibleForHighlight.forEach(elem => {
-      elem.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+    this.placeholderParameters.forEach(placeholder => {
+      placeholder.element.classList.remove(
+        `${functionSummaryHelperPrefix}-highlight`
+      )
     })
 
-    if (indexToHighlight === -1 && precedingSeparatorIndex === -1) {
+    if (caretElementIndex === -1 && precedingSeparatorIndex === -1) {
       return
     }
 
-    // Highlight after a separator
-    if (
-      indexToHighlight === -1 ||
-      (precedingSeparatorIndex !== -1 && !isInInfiniteParameter)
-    ) {
-      indexToHighlight = precedingSeparatorIndex + 1
+    const isWithinInfiniteParameterSection =
+      this._isWithinInfiniteParameterSection(
+        eligibleTokensToHighlight,
+        currentCaretPosition
+      )
+    let elementIndexToHighlight = caretElementIndex
+    const isAfterSeparator =
+      caretElementIndex === -1 ||
+      (precedingSeparatorIndex !== -1 && !isWithinInfiniteParameterSection)
+    if (isAfterSeparator) {
+      elementIndexToHighlight = precedingSeparatorIndex + 1
     }
 
-    const placeholderElementToHighlight =
-      (precedingSeparatorIndex ||
-        indexToHighlight >= parameterElementsEligibleForHighlight.length) &&
-      isInInfiniteParameter
-        ? last(parameterElementsEligibleForHighlight)
-        : parameterElementsEligibleForHighlight[indexToHighlight]
+    const placeholderElementToHighlight = this._getElementToHighlight(
+      precedingSeparatorIndex,
+      elementIndexToHighlight,
+      isWithinInfiniteParameterSection
+    )
 
     placeholderElementToHighlight?.classList.add(
       `${functionSummaryHelperPrefix}-highlight`
     )
   }
 
-  private _update(
-    formulaMetadata: IFunctionHelperData,
-    inputParameters: string
+  private _isWithinInfiniteParameterSection(
+    tokens: IToken[],
+    currentCaretPosition: number
   ) {
+    const tokenBeforeInfiniteParameterPosition =
+      tokens[this.placeholderParameters.length - 1]?.startOffset
+    return !!(
+      last(this.placeholderParameters)?.isInfiniteParameter &&
+      currentCaretPosition >= tokenBeforeInfiniteParameterPosition
+    )
+  }
+
+  private _getElementToHighlight(
+    precedingSeparatorIndex: number,
+    elementIndexToHighlight: number,
+    isWithinInfiniteParameterSection: boolean
+  ) {
+    const shouldHighlightLastElement =
+      (precedingSeparatorIndex ||
+        elementIndexToHighlight >= this.placeholderParameters?.length) &&
+      isWithinInfiniteParameterSection
+
+    return shouldHighlightLastElement
+      ? last(this.placeholderParameters)?.element
+      : this.placeholderParameters[elementIndexToHighlight]?.element
+  }
+
+  private _update(formulaMetadata: IFunctionHelperData) {
     this.functionSummaryHelperListContainerEl = document.createElement('div')
     this.functionSummaryHelperListContainerEl.classList.add(
       `${functionSummaryHelperPrefix}`
@@ -154,11 +174,11 @@ class FunctionSummaryHelper {
       `${functionSummaryHelperPrefix}-text-wrapper`
     )
 
-    const { mainHeaderEl } = createMainHeader(
+    const { mainHeaderEl, placeholderParameters } = createMainHeader(
       formulaMetadata.header,
-      formulaMetadata.parameters ?? '',
-      inputParameters
+      formulaMetadata.parameters ?? ''
     )
+    this.placeholderParameters = placeholderParameters
 
     const { paragraphEl: description } = createParagraph(
       formulaMetadata.headerDescription

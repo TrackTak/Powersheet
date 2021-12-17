@@ -153,11 +153,10 @@ class CellEditor {
       const hasOpenBracket = functionName.includes('(')
       const input = functionName.split('(')
       functionName = hasOpenBracket ? input[0] : functionName
-      const parameters = input[1]
 
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
-        this.functionSummaryHelper.show(functionName, parameters)
+        this.functionSummaryHelper.show(functionName)
         this._updateFunctionSummaryHelperHighlights()
       } else {
         this.formulaHelper?.show(functionName)

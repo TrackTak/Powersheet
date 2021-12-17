@@ -1,5 +1,5 @@
 import Sheets from '../Sheets'
-import tippy, { followCursor, Instance, Props } from 'tippy.js'
+import tippy, { Instance, Props } from 'tippy.js'
 import {
   createButtonContainer,
   createCancelButton,
@@ -36,20 +36,21 @@ class Comment {
     this.buttonContainer.appendChild(this.cancelButton)
 
     this.container = tippy(this._sheets.sheetEl, {
-      placement: 'auto',
+      placement: 'top-start',
+      offset: [0, 0],
       interactive: true,
       arrow: false,
       trigger: 'manual',
       delay: 100,
-      plugins: [followCursor],
-      followCursor: 'initial',
       theme: 'comment',
       showOnCreate: false,
       content: this.content,
       hideOnClick: true,
       onHide: () => {
         this.textarea.value = ''
-      }
+      },
+      getReferenceClientRect: () =>
+        this._sheets._getTippyCellReferenceClientRect(this.container)
     })
 
     this.hide()

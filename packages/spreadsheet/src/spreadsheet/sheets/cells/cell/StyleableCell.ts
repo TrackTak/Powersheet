@@ -12,7 +12,12 @@ import {
   TextWrap,
   VerticalTextAlign
 } from '../../Data'
-import { CellValue, CellValueType, DetailedCellError } from '@tracktak/hyperformula'
+import {
+  CellValue,
+  CellValueDetailedType,
+  CellValueType,
+  DetailedCellError
+} from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
 
@@ -22,6 +27,7 @@ import { isNil } from 'lodash'
 class StyleableCell extends Cell {
   text: Text
   commentMarker: Line
+  errorMarker: Line
   borders: Record<BorderStyle, Line>
 
   constructor(
@@ -37,6 +43,10 @@ class StyleableCell extends Cell {
     this.text = group.children!.find(x => x.name() === 'text') as Text
     this.commentMarker = group.children!.find(
       x => x.name() === 'commentMarker'
+    ) as Line
+
+    this.errorMarker = group.children!.find(
+      x => x.name() === 'errorMarker'
     ) as Line
 
     const borders = bordersGroup.children!.filter(
@@ -124,7 +134,9 @@ class StyleableCell extends Cell {
   }
 
   private _setFontColor(fontColor?: string) {
-    this.text.fill(fontColor ?? this._sheets._spreadsheet.styles.cell.text.fill!)
+    this.text.fill(
+      fontColor ?? this._sheets._spreadsheet.styles.cell.text.fill!
+    )
   }
 
   private _setFontSize(fontSize?: number) {
@@ -207,9 +219,24 @@ class StyleableCell extends Cell {
     }
   }
 
+  private _setCellErrorMarker(hasError?: boolean) {
+    if (hasError) {
+      const width = this.rect.width()
+
+      this.errorMarker.x(width - 1)
+      this.errorMarker.y(this.errorMarker.height() + 1)
+
+      this.errorMarker.show()
+    } else {
+      this.errorMarker.hide()
+    }
+  }
+
   private _setCellTextValue(cellValue?: string, textFormatPattern?: string) {
     let value: CellValue | undefined =
-      this._sheets._spreadsheet.hyperformula.getCellValue(this.simpleCellAddress)
+      this._sheets._spreadsheet.hyperformula.getCellValue(
+        this.simpleCellAddress
+      )
 
     if (this._sheets._spreadsheet.data._spreadsheetData.showFormulas) {
       value = cellValue
@@ -226,7 +253,7 @@ class StyleableCell extends Cell {
 
       if (cellType === CellValueType.ERROR) {
         value = (value as DetailedCellError).value
-      }  else if (
+      } else if (
         textFormatPattern &&
         cellType !== CellValueType.STRING &&
         cellType !== CellValueType.BOOLEAN &&
@@ -303,6 +330,12 @@ class StyleableCell extends Cell {
     this._setTopBorder(borders)
     this._setRightBorder(borders)
     this._setBottomBorder(borders)
+
+    const cellType =
+      this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
+        this.simpleCellAddress
+      )
+    this._setCellErrorMarker(CellValueDetailedType.ERROR === cellType)
 
     const stickyGroup = this.getStickyGroupCellBelongsTo()
 

@@ -174,6 +174,9 @@ class ScrollBar {
       this._sheets.cellEditor.hideCellTooltip()
     }
 
+    this._spreadsheet.sheets.cellError.hide()
+    this._spreadsheet.sheets.comment.hide()
+
     this._spreadsheet.eventEmitter.emit(
       this._isCol ? 'scrollHorizontal' : 'scrollVertical',
       e,

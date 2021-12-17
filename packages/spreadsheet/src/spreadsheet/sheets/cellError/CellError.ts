@@ -1,5 +1,5 @@
 import Sheets from '../Sheets'
-import tippy, { followCursor, Instance, Props } from 'tippy.js'
+import tippy, { Instance, Props } from 'tippy.js'
 import { createContent, createHeader } from './cellErrorHtmlHelpers'
 
 class CellError {
@@ -20,20 +20,21 @@ class CellError {
     this.wrapper.appendChild(this.content)
 
     this.container = tippy(this._sheets.sheetEl, {
-      placement: 'auto',
+      placement: 'top-start',
+      offset: [0, 0],
       interactive: true,
       arrow: false,
       trigger: 'manual',
       delay: 100,
-      plugins: [followCursor],
-      followCursor: 'initial',
       theme: 'cellError',
       showOnCreate: false,
       content: this.wrapper,
       hideOnClick: true,
       onHide: () => {
         this.content.textContent = ''
-      }
+      },
+      getReferenceClientRect: () =>
+        this._sheets._getTippyCellReferenceClientRect(this.container)
     })
 
     this.hide()

@@ -23,6 +23,7 @@ import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
 import { DetailedCellError } from '@tracktak/hyperformula'
+import { Instance, Props } from 'tippy.js'
 
 export interface IDimensions {
   width: number
@@ -380,8 +381,9 @@ class Sheets {
       this.comment.show(simpleCellAddress)
     }
 
-    const cellValue =
-      this._spreadsheet.hyperformula.getCellValue(simpleCellAddress)
+    const cellValue = this._spreadsheet.hyperformula.getCellValue(
+      simpleCellAddress
+    )
     if (cellValue instanceof DetailedCellError) {
       this.cellError.show(cellValue.message || cellValue.type)
     }
@@ -462,10 +464,9 @@ class Sheets {
         default:
           if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
             const selectedCell = this.selector.selectedCell!
-            const serializedValue =
-              this._spreadsheet.hyperformula.getCellSerialized(
-                selectedCell.simpleCellAddress
-              )
+            const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
             if (serializedValue) {
               this.cellEditor.clear()
@@ -652,10 +653,11 @@ class Sheets {
         const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId]
 
         if (mergedCellId) {
-          const mergedCell =
-            this._spreadsheet.data._spreadsheetData.mergedCells![mergedCellId]
-          const existingRangeSimpleCellAddress =
-            RangeSimpleCellAddress.mergedCellToAddress(mergedCell)
+          const mergedCell = this._spreadsheet.data._spreadsheetData
+            .mergedCells![mergedCellId]
+          const existingRangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
+            mergedCell
+          )
 
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
             'col',
@@ -692,6 +694,55 @@ class Sheets {
       return 'xSticky'
     } else {
       return 'main'
+    }
+  }
+
+  /**
+   * @internal
+   */
+  _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
+    const {
+      top,
+      left,
+      right,
+      bottom,
+      x,
+      y,
+      width,
+      height,
+      toJSON
+    } = this.sheetEl.getBoundingClientRect()
+    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
+
+    const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
+
+    let xPosition = left + selectedCellRect.x + selectedCellRect.width
+    let yPosition = top + selectedCellRect.y
+
+    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
+      .width
+
+    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
+      .height
+
+    if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
+      xPosition = left + selectedCellRect.x - tippyBox.offsetWidth
+    }
+
+    if (yPosition + tippyBox.offsetHeight + colScrollBarHeight > height) {
+      yPosition = top + selectedCellRect.y - tippyBox.offsetHeight
+    }
+
+    return {
+      top: yPosition,
+      left: xPosition,
+      right,
+      bottom,
+      x,
+      y,
+      width,
+      height,
+      toJSON
     }
   }
 

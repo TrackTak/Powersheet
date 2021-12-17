@@ -35,14 +35,9 @@ export const createMainHeader = (
   parameterContainerEl.appendChild(openingBracketEl)
   const closingBracketEl = document.createElement('span')
   closingBracketEl.textContent = ')'
-
-  const currentParameterIndex = inputText.split(',').length - 1
   const parameterArray = tokenize(parameterText)
   parameterArray.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
-    if (currentParameterIndex === index) {
-      parameterEl.classList.add(`${functionSummaryHelperPrefix}-highlight`)
-    }
     parameterEl.textContent = parameter
     parameterContainerEl.appendChild(parameterEl)
     if (index !== parameterArray.length - 1) {

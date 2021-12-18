@@ -1,4 +1,3 @@
-import CellHighlighter from '../cellHighlighter/CellHighlighter'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import { prefix, saveCaretPosition } from '../utils'
@@ -12,7 +11,6 @@ class FormulaBar {
   editorArea!: HTMLDivElement
   editableContentContainer!: HTMLDivElement
   editableContent!: HTMLDivElement
-  cellHighlighter!: CellHighlighter
   private _spreadsheet!: Spreadsheet
 
   private _onInput = (e: Event) => {
@@ -60,13 +58,15 @@ class FormulaBar {
    */
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
-    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
 
     this.formulaBarEl = document.createElement('div')
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix)
 
-    const { editorArea, editableContentContainer, editableContent } =
-      createFormulaEditorArea()
+    const {
+      editorArea,
+      editableContentContainer,
+      editableContent
+    } = createFormulaEditorArea()
 
     this.formulaBarEl.appendChild(editorArea)
 
@@ -107,8 +107,8 @@ class FormulaBar {
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     this.clear()
 
-    const cellEditorContentEditableChildren =
-      this._spreadsheet.sheets?.cellEditor?.cellEditorEl.children
+    const cellEditorContentEditableChildren = this._spreadsheet.sheets
+      ?.cellEditor?.cellEditorEl.children
 
     let spanElements = cellEditorContentEditableChildren
       ? Array.from(cellEditorContentEditableChildren).map(node =>
@@ -122,16 +122,17 @@ class FormulaBar {
         ''
 
       if (this._spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue =
-          this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
-
-        const tokenParts = this.cellHighlighter.getStyledTokens(
-          serializedValue?.toString() ?? ''
+        const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+          simpleCellAddress
         )
 
-        if (tokenParts.length) {
-          spanElements = tokenParts
-        }
+        // const tokenParts = this._spreadsheet.sheets.cellHighlighter.getStyledTokens(
+        //   serializedValue?.toString() ?? ''
+        // )
+
+        // if (tokenParts.length) {
+        //   spanElements = tokenParts
+        // }
       }
     }
 
@@ -145,7 +146,6 @@ class FormulaBar {
    */
   destroy() {
     this.formulaBarEl.remove()
-    this.cellHighlighter.destroy()
     this.editableContent.removeEventListener('input', this._onInput)
     this.editableContent.removeEventListener('keydown', this._onKeyDown)
   }

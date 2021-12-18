@@ -16,16 +16,18 @@ export interface ISelectionArea {
   end: Vector2d
 }
 
-interface IGroupedCell {
-  cells: SelectedCell[]
-  rect?: Rect
+interface IGroupedCells {
+  main: SelectedCell[]
+  xSticky: SelectedCell[]
+  ySticky: SelectedCell[]
+  xySticky: SelectedCell[]
 }
 
-interface IGroupedCells {
-  main: IGroupedCell
-  xSticky: IGroupedCell
-  ySticky: IGroupedCell
-  xySticky: IGroupedCell
+interface IGroupedCellSelectionAreas {
+  main: Rect | null
+  xSticky: Rect | null
+  ySticky: Rect | null
+  xySticky: Rect | null
 }
 
 class Selector {
@@ -36,8 +38,9 @@ class Selector {
   selectedCell?: SelectedCell
   selectedCells: SelectedCell[] = []
   selectedSimpleCellAddress: SimpleCellAddress
-  groupedCells?: IGroupedCells | null
+  groupedCellSelectionArea: IGroupedCellSelectionAreas
   selectionArea?: ISelectionArea | null
+  isInCellSelectionMode = false
   private _spreadsheet: Spreadsheet
   private _previousSelectedSimpleCellAddress?: SimpleCellAddress
 
@@ -52,6 +55,12 @@ class Selector {
       0,
       0
     )
+    this.groupedCellSelectionArea = {
+      main: null,
+      xSticky: null,
+      ySticky: null,
+      xySticky: null
+    }
   }
 
   private _renderSelectedCell() {
@@ -72,12 +81,6 @@ class Selector {
 
   private _renderSelectionArea() {
     if (this.selectionArea) {
-      Object.keys(this.groupedCells ?? {}).forEach(key => {
-        const type = key as keyof IGroupedCells
-
-        this.groupedCells?.[type].rect?.destroy()
-      })
-
       const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
         this.selectionArea.start,
         this.selectionArea.end
@@ -90,32 +93,24 @@ class Selector {
         }
       )
 
-      this.groupedCells = {
-        main: {
-          cells: []
-        },
-        xSticky: {
-          cells: []
-        },
-        ySticky: {
-          cells: []
-        },
-        xySticky: {
-          cells: []
-        }
+      const groupedCells: IGroupedCells = {
+        main: [],
+        xSticky: [],
+        ySticky: [],
+        xySticky: []
       }
 
       this.selectedCells.forEach(cell => {
         const stickyGroup = cell.getStickyGroupCellBelongsTo()
 
-        this.groupedCells![stickyGroup].cells.push(cell)
+        groupedCells![stickyGroup].push(cell)
       })
 
-      Object.keys(this.groupedCells).forEach(key => {
-        const type = key as keyof IGroupedCells
-        const cells = this.groupedCells![type].cells
+      Object.keys(this.groupedCellSelectionArea).forEach(key => {
+        const type = key as keyof IGroupedCellSelectionAreas
+        const cells = groupedCells![type]
 
-        this.groupedCells?.[type].rect?.destroy()
+        this.groupedCellSelectionArea[type]?.destroy()
 
         if (cells.length) {
           const topLeftCellClientRect = cells[0]._getClientRectWithoutStroke()
@@ -141,7 +136,7 @@ class Selector {
 
           const sheetGroup = this._sheets.scrollGroups[type].sheetGroup
 
-          this.groupedCells![type].rect = new Rect({
+          const rect = new Rect({
             ...this._spreadsheet.styles.selection,
             ...topLeftCellClientRect,
             name: 'selectionRect',
@@ -150,10 +145,30 @@ class Selector {
             height
           })
 
-          sheetGroup.add(this.groupedCells![type].rect!)
+          this.groupedCellSelectionArea[type] = rect
+
+          sheetGroup.add(rect)
         }
       })
     }
+  }
+
+  getSelectedCellsFromArea() {
+    if (!this.selectionArea) {
+      throw new Error('selectionArea is undefined')
+    }
+
+    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
+      this.selectionArea.start,
+      this.selectionArea.end
+    )
+
+    return rangeSimpleCellAddress.getCellsBetweenRange(
+      this._sheets,
+      simpleCellAddress => {
+        return new SelectedCell(this._sheets, simpleCellAddress)
+      }
+    )
   }
 
   /**
@@ -162,10 +177,10 @@ class Selector {
   _destroy() {
     this.selectedCell?._destroy()
 
-    Object.keys(this.groupedCells ?? {}).forEach(key => {
+    Object.keys(this.groupedCellSelectionArea).forEach(key => {
       const type = key as keyof IGroupedCells
 
-      this.groupedCells?.[type].rect?.destroy()
+      this.groupedCellSelectionArea[type]?.destroy()
     })
   }
 
@@ -222,6 +237,10 @@ class Selector {
 
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
+    if (this.isInCellSelectionMode) {
+      this._sheets.cellHighlighter._createNewHighlightedCellsFromCurrentSelection()
+    }
+
     this._spreadsheet.render()
 
     this._spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
@@ -246,6 +265,10 @@ class Selector {
         }
       }
 
+      if (this.isInCellSelectionMode) {
+        this._sheets.cellHighlighter._updateCurrentHighlightedCell()
+      }
+
       // We don't update sheet viewport for performance reasons
       this._render()
       this._spreadsheet.toolbar?._render()
@@ -257,13 +280,11 @@ class Selector {
   endSelection() {
     this.isInSelectionMode = false
 
-    Object.keys(this.groupedCells ?? {}).forEach(key => {
+    Object.keys(this.groupedCellSelectionArea).forEach(key => {
       const type = key as keyof IGroupedCells
-      const value = this.groupedCells![type]
+      const rect = this.groupedCellSelectionArea![type]
 
-      if (value.cells.length > 1) {
-        value.rect?.stroke(this._spreadsheet.styles.selection.stroke as string)
-      }
+      rect?.stroke(this._spreadsheet.styles.selection.stroke as string)
     })
 
     this._spreadsheet.eventEmitter.emit('endSelection', this.selectionArea!)

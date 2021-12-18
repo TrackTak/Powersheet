@@ -24,6 +24,7 @@ import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
 import { DetailedCellError } from '@tracktak/hyperformula'
 import { Instance, Props } from 'tippy.js'
+import CellHighlighter from '../cellHighlighter/CellHighlighter'
 
 export interface IDimensions {
   width: number
@@ -103,6 +104,7 @@ class Sheets {
     height: 0
   }
   cellEditor: CellEditor
+  cellHighlighter: CellHighlighter
   rightClickMenu: RightClickMenu
   comment: Comment
   cellError: CellError
@@ -235,6 +237,7 @@ class Sheets {
     this.cells = new Cells(this)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
+    this.cellHighlighter = new CellHighlighter(this)
 
     this.selector = new Selector(this)
     this.rightClickMenu = new RightClickMenu(this)
@@ -303,10 +306,12 @@ class Sheets {
 
     const { clientX, clientY } = touch1
 
-    this.cellEditor.hideAndSave()
-
     this.cols.scrollBar._previousTouchMovePosition = clientX
     this.rows.scrollBar._previousTouchMovePosition = clientY
+
+    if (!this.selector.isInCellSelectionMode) {
+      this.cellEditor.hideAndSave()
+    }
   }
 
   private _sheetOnTouchMove = (e: KonvaEventObject<TouchEvent>) => {
@@ -365,7 +370,9 @@ class Sheets {
   }
 
   private _stageOnMousedown = () => {
-    this.cellEditor.hideAndSave()
+    if (!this.selector.isInCellSelectionMode) {
+      this.cellEditor.hideAndSave()
+    }
   }
 
   private _setCellOnAction() {
@@ -771,7 +778,8 @@ class Sheets {
     this.stage.destroy()
     this.cols._destroy()
     this.rows._destroy()
-    this.cellEditor?._destroy()
+    this.cellEditor._destroy()
+    this.cellHighlighter._destroy()
     this.comment._destroy()
     this.cellError._destroy()
     this.rightClickMenu._destroy()

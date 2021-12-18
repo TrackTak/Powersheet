@@ -15,7 +15,6 @@ import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
-import CellHighlighter from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
 
@@ -57,7 +56,6 @@ class CellEditor {
   cellTooltip: DelegateInstance
   formulaHelper?: FormulaHelper
   functionSummaryHelper: FunctionSummaryHelper
-  cellHighlighter: CellHighlighter
   currentCell: Cell | null = null
   currentScroll: ICurrentScroll | null = null
   currentCellText: string | null = null
@@ -67,10 +65,8 @@ class CellEditor {
   /**
    * @internal
    */
-  constructor(private _sheet: Sheet) {
-    this._spreadsheet = this._sheet._spreadsheet
-
-    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
+  constructor(private _sheets: Sheet) {
+    this._spreadsheet = this._sheets._spreadsheet
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
@@ -97,7 +93,7 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5]
     })
-    this._sheet.sheetEl.appendChild(this.cellEditorContainerEl)
+    this._sheets.sheetEl.appendChild(this.cellEditorContainerEl)
 
     this.cellEditorContainerEl.style.display = 'none'
 
@@ -227,6 +223,7 @@ class CellEditor {
       if (placeholderIndex !== currentCaretPosition) {
         this.currentPlaceholderEl.remove()
         this.currentPlaceholderEl = null
+        this._sheets.selector.isInCellSelectionMode = false
       }
     }
   }
@@ -313,6 +310,7 @@ class CellEditor {
       this.currentPlaceholderEl = document.createElement('span')
 
       this.currentPlaceholderEl.classList.add(styles.placeholder)
+      this._sheets.selector.isInCellSelectionMode = true
 
       const childIndex = tokens.indexOf(precedingToken)
 
@@ -332,7 +330,6 @@ class CellEditor {
    */
   _destroy() {
     this.cellTooltip.destroy()
-    this.cellHighlighter.destroy()
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
@@ -360,19 +357,14 @@ class CellEditor {
 
     this.currentCellText = text
 
-    const {
-      cellReferenceParts
-    } = this.cellHighlighter.getHighlightedCellReferenceSections(
-      this.currentCellText ?? ''
-    )
-    const isFormula = text?.startsWith('=')
+    const isFormula = this.currentCellText?.startsWith('=')
     if (isFormula) {
       this.cellEditorEl.classList.add(styles.formulaInput)
       this._spreadsheet.formulaBar?.editableContent.classList.add(
         styles.formulaInput
       )
     }
-    const tokenParts = this.cellHighlighter.getStyledTokens(text ?? '')
+    const tokenParts = this._sheets.cellHighlighter.getStyledTokens(this.currentCellText ?? '')
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
@@ -381,9 +373,8 @@ class CellEditor {
         part.cloneNode(true)
       )
     })
-    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
-    this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
+    this._spreadsheet.eventEmitter.emit('cellEditorChange', this.currentCellText)
   }
 
   /**
@@ -407,8 +398,8 @@ class CellEditor {
   show(cell: Cell) {
     this.currentCell = cell
     this.currentScroll = {
-      row: this._sheet.rows.scrollBar._scroll,
-      col: this._sheet.cols.scrollBar._scroll
+      row: this._sheets.rows.scrollBar._scroll,
+      col: this._sheets.cols.scrollBar._scroll
     }
 
     this.clear()
@@ -423,7 +414,7 @@ class CellEditor {
   clear() {
     this.currentCellText = null
     this.cellEditorEl.textContent = null
-    this.cellHighlighter.destroyHighlightedCells()
+    this._sheets.cellHighlighter.destroyHighlightedCells()
   }
 
   /**
@@ -449,7 +440,7 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none'
 
     this.cellEditorEl.blur()
-    this._sheet.sheetEl.focus()
+    this._sheets.sheetEl.focus()
 
     this._spreadsheet.render()
   }

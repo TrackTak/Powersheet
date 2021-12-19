@@ -5,13 +5,17 @@ import {
   // @ts-ignore
 } from '@tracktak/hyperformula/es/parser/LexerConfig'
 import { prefix } from '../utils'
-import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 import { IToken } from 'chevrotain'
 import styles from './CellHighlighter.module.scss'
 import Sheets from '../sheets/Sheets'
+import { Rect } from 'konva/lib/shapes/Rect'
+import Cell from '../sheets/cells/cell/Cell'
+import { getInnerRectConfig } from '../sheets/cells/cell/getInnerRectConfig'
+import { Group } from 'konva/lib/Group'
+import { IGroupedCells } from '../sheets/cells/Cells'
 
 export interface ICellReferenceToken {
   startOffset: number
@@ -21,9 +25,20 @@ export interface ICellReferenceToken {
   type: 'simpleCellString' | 'rangeCellString'
 }
 
+export interface ICellHighlightedArea {
+  rect: Rect
+  innerRect: Rect
+}
+
+export interface IGroupedCellHighlightedArea {
+  main?: ICellHighlightedArea
+  xSticky?: ICellHighlightedArea
+  ySticky?: ICellHighlightedArea
+  xySticky?: ICellHighlightedArea
+}
+
 class CellHighlighter {
-  highlightedCells: HighlightedCell[] = []
-  currentHighlightedCell: HighlightedCell | null = null
+  groupedCellHighlightedAreas: IGroupedCellHighlightedArea[] = []
   currentHue: number
   private _spreadsheet: Spreadsheet
 
@@ -37,17 +52,23 @@ class CellHighlighter {
 
   /**
    * @internal
-   * Alias for `destroyHighlightedCells()`.
+   * Alias for `destroyHighlightedArea()`.
    */
   _destroy() {
-    this.destroyHighlightedCells()
+    this.destroyHighlightedArea()
   }
 
   /**
-   * Destroys all of the highlighted cells.
+   * Destroys all of the highlighted rects.
    */
-  destroyHighlightedCells() {
-    this.highlightedCells.forEach(cell => cell._destroy())
+  destroyHighlightedArea() {
+    this.groupedCellHighlightedAreas.forEach(groups => {
+      Object.values(groups).forEach(({ rect, innerRect }) => {
+        rect.destroy()
+        innerRect.destroy()
+      })
+    })
+    this.groupedCellHighlightedAreas = []
   }
 
   getCurrentColor() {
@@ -85,7 +106,6 @@ class CellHighlighter {
   textToHighlightedCellReferenceToken(text: string) {
     const { goldenRatio } = this._spreadsheet.options.cellHighlight
 
-    // TODO: Remove all this when https://github.com/handsontable/hyperformula/issues/854 is done
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
 
@@ -136,10 +156,10 @@ class CellHighlighter {
 
     const sheet = this._sheets.cellEditor.currentCell!.simpleCellAddress.sheet
 
-    this.destroyHighlightedCells()
+    this.destroyHighlightedArea()
 
     cellReferenceTokens.forEach(({ referenceText, type, color }) => {
-      let highlightedCell
+      let rangeSimpleCellAddress
 
       if (type === 'simpleCellString') {
         const precedentSimpleCellAddress = this._spreadsheet.hyperformula.simpleCellAddressFromString(
@@ -147,58 +167,101 @@ class CellHighlighter {
           sheet
         )!
 
-        // Don't highlight cells if cell reference is another sheet
-        if (sheet === precedentSimpleCellAddress.sheet) {
-          highlightedCell = new HighlightedCell(
-            this._sheets,
-            new SimpleCellAddress(
-              precedentSimpleCellAddress.sheet,
-              precedentSimpleCellAddress.row,
-              precedentSimpleCellAddress.col
-            ),
-            color
-          )
-        }
+        const simpleCellAddress = new SimpleCellAddress(
+          precedentSimpleCellAddress.sheet,
+          precedentSimpleCellAddress.row,
+          precedentSimpleCellAddress.col
+        )
+
+        rangeSimpleCellAddress = new RangeSimpleCellAddress(
+          simpleCellAddress,
+          simpleCellAddress
+        )
       } else {
         const precedentSimpleCellRange = this._spreadsheet.hyperformula.simpleCellRangeFromString(
           referenceText,
           sheet
         )!
 
-        // Don't highlight cells if cell reference is another sheet
-        if (sheet === precedentSimpleCellRange.start.sheet) {
-          const startSimpleCellAddress = new SimpleCellAddress(
-            precedentSimpleCellRange.start.sheet,
-            precedentSimpleCellRange.start.row,
-            precedentSimpleCellRange.start.col
-          )
-          const endSimpleCellAddress = new SimpleCellAddress(
-            precedentSimpleCellRange.end.sheet,
-            precedentSimpleCellRange.end.row,
-            precedentSimpleCellRange.end.col
-          )
+        const startSimpleCellAddress = new SimpleCellAddress(
+          precedentSimpleCellRange.start.sheet,
+          precedentSimpleCellRange.start.row,
+          precedentSimpleCellRange.start.col
+        )
+        const endSimpleCellAddress = new SimpleCellAddress(
+          precedentSimpleCellRange.end.sheet,
+          precedentSimpleCellRange.end.row,
+          precedentSimpleCellRange.end.col
+        )
 
-          const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-            startSimpleCellAddress,
-            endSimpleCellAddress
-          )
-
-          highlightedCell = new HighlightedCell(
-            this._sheets,
-            startSimpleCellAddress,
-            color
-          )
-
-          highlightedCell._setRangeCellAddress(rangeSimpleCellAddress)
-        }
+        rangeSimpleCellAddress = new RangeSimpleCellAddress(
+          startSimpleCellAddress,
+          endSimpleCellAddress
+        )
       }
-      if (highlightedCell) {
-        const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
-        const sheetGroup = this._sheets.scrollGroups[stickyGroup].sheetGroup
 
-        sheetGroup.add(highlightedCell.group)
+      // Only highlight cells from correct sheet
+      if (rangeSimpleCellAddress.topLeftSimpleCellAddress.sheet === sheet) {
+        const cells = rangeSimpleCellAddress.getCellsBetweenRange(
+          this._sheets,
+          simpleCellAddress => {
+            return new Cell(this._sheets, simpleCellAddress)
+          }
+        )
 
-        this.highlightedCells.push(highlightedCell)
+        const groupedCells = this._sheets.cells._getGroupedCellsByStickyGroup(
+          cells
+        )
+
+        const groupedCellHighlightedArea: IGroupedCellHighlightedArea = {}
+
+        Object.keys(groupedCells).forEach(key => {
+          const type = key as keyof IGroupedCells
+          const cells = groupedCells![type]
+
+          if (cells.length) {
+            const topLeftCellClientRect = cells[0]._getClientRectWithoutStroke()
+
+            const size = this._sheets._getSizeFromCells(cells)
+
+            const sheetGroup = this._sheets.scrollGroups[type].sheetGroup
+
+            const group = new Group({
+              ...topLeftCellClientRect
+            })
+
+            const rect = new Rect({
+              ...this._spreadsheet.styles.highlightedCell.rect,
+              name: 'highlightedRect',
+              stroke: undefined,
+              fill: color,
+              width: size.width,
+              height: size.height
+            })
+
+            const innerRectConfig = getInnerRectConfig(
+              {
+                ...this._sheets._spreadsheet.styles.highlightedCell.innerRect,
+                name: 'highlightedInnerRect',
+                stroke: color
+              },
+              rect.size()
+            )
+
+            const innerRect = new Rect(innerRectConfig)
+
+            groupedCellHighlightedArea[type] = {
+              rect,
+              innerRect
+            }
+
+            group.add(rect, innerRect)
+
+            sheetGroup.add(group)
+          }
+        })
+
+        this.groupedCellHighlightedAreas.push(groupedCellHighlightedArea)
       }
     })
 
@@ -282,40 +345,80 @@ class CellHighlighter {
   /**
    * @internal
    */
-  _createNewHighlightedCellsFromCurrentSelection() {
-    const rangeSimpleCellAddress = this._sheets.selector._convertSelectionAreaToRangeSimpleCellAddress()
-
-    const highlightedCell = new HighlightedCell(
+  _createHighlightedAreaFromCurrentSelection() {
+    const rangeSimpleCellAddress = this._sheets.selector._getSelectionAreaFromRangeSimpleCellAddress()
+    const cells = rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,
-      rangeSimpleCellAddress.topLeftSimpleCellAddress,
-      this.getCurrentColor()
+      simpleCellAddress => {
+        return new Cell(this._sheets, simpleCellAddress)
+      }
     )
 
-    highlightedCell._setRangeCellAddress(rangeSimpleCellAddress)
+    this.destroyHighlightedArea()
 
-    if (highlightedCell) {
-      const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
-      const sheetGroup = this._sheets.scrollGroups[stickyGroup].sheetGroup
+    const groupedCells = this._sheets.cells._getGroupedCellsByStickyGroup(cells)
 
-      sheetGroup.add(highlightedCell.group)
+    const groupedCellHighlightedArea: IGroupedCellHighlightedArea = {}
 
-      this.currentHighlightedCell = highlightedCell
+    Object.keys(groupedCells).forEach(key => {
+      const type = key as keyof IGroupedCells
+      const cells = groupedCells![type]
 
-      this.highlightedCells.push(highlightedCell)
-    }
-  }
+      if (cells.length) {
+        const topLeftCellClientRect = cells[0]._getClientRectWithoutStroke()
 
-  /**
-   * @internal
-   */
-  _updateCurrentHighlightedCell() {
-    if (!this.currentHighlightedCell) {
-      return
-    }
+        const size = this._sheets._getSizeFromCells(cells)
 
-    const rangeSimpleCellAddress = this._sheets.selector._convertSelectionAreaToRangeSimpleCellAddress()
+        const sheetGroup = this._sheets.scrollGroups[type].sheetGroup
 
-    this.currentHighlightedCell._setRangeCellAddress(rangeSimpleCellAddress)
+        const group = new Group({
+          ...topLeftCellClientRect
+        })
+
+        const rect = new Rect({
+          ...this._spreadsheet.styles.highlightedCell.rect,
+          name: 'highlightedRect',
+          stroke: undefined,
+          fill: this.getCurrentColor(),
+          width: size.width,
+          height: size.height
+        })
+
+        const innerRectConfig = getInnerRectConfig(
+          {
+            ...this._sheets._spreadsheet.styles.highlightedCell.innerRect,
+            name: 'highlightedInnerRect',
+            stroke: this.getCurrentColor()
+          },
+          rect.size()
+        )
+
+        const innerRect = new Rect(innerRectConfig)
+
+        groupedCellHighlightedArea[type] = {
+          rect,
+          innerRect
+        }
+
+        group.add(rect, innerRect)
+
+        sheetGroup.add(group)
+      }
+    })
+
+    const startCellReferenceString = rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
+    const endCellReferenceString = rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
+
+    const cellReference =
+      startCellReferenceString === endCellReferenceString
+        ? startCellReferenceString
+        : `${startCellReferenceString}:${endCellReferenceString}`
+
+    this._sheets.cellEditor.replaceCellReferenceTextAtCaretPosition(
+      cellReference
+    )
+
+    this.groupedCellHighlightedAreas.push(groupedCellHighlightedArea)
   }
 }
 

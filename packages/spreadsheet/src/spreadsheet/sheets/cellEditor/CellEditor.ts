@@ -17,13 +17,19 @@ import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
+import { debounce, DebouncedFunc } from 'lodash'
 
 export interface ICurrentScroll {
   row: number
   col: number
 }
 
-export const PLACEHOLDER_WHITELIST = [
+export interface IPreviousCellReference {
+  caretPosition: number
+  cellReferenceText: string
+}
+
+const commonPlaceholderWhitelist = [
   'WhiteSpace',
   'PlusOp',
   'MinusOp',
@@ -38,7 +44,6 @@ export const PLACEHOLDER_WHITELIST = [
   'GreaterThanOp',
   'LessThanOp',
   'LParen',
-  'RParen',
   'ArrayLParen',
   'ArrayRParen',
   'OffsetProcedureName',
@@ -48,6 +53,12 @@ export const PLACEHOLDER_WHITELIST = [
   'MultiplicationOp',
   'ArrayRowSep',
   'ArrayColSep'
+]
+
+export const precedingPlaceholderWhitelist = [...commonPlaceholderWhitelist]
+export const subsequentPlaceholderWhitelist = [
+  ...commonPlaceholderWhitelist,
+  'RParen'
 ]
 
 class CellEditor {
@@ -60,6 +71,8 @@ class CellEditor {
   currentScroll: ICurrentScroll | null = null
   currentCellText: string | null = null
   currentPlaceholderEl: HTMLSpanElement | null = null
+  previousCellReference: IPreviousCellReference | null = null
+  setDebouncedCaretPosition: DebouncedFunc<(node: Node) => any>
   private _spreadsheet: Spreadsheet
 
   /**
@@ -71,6 +84,8 @@ class CellEditor {
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
     this.cellEditorEl.spellcheck = false
+
+    this.setDebouncedCaretPosition = debounce(setCaretToEndOfElement, 200)
 
     const cellEditorClassName = `${prefix}-cell-editor`
 
@@ -136,6 +151,8 @@ class CellEditor {
       ? this._nodesToText(nodes)
       : target.textContent
 
+    this._removePlaceholderIfNeeded()
+
     const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
 
     this.setContentEditable(textContent ?? null)
@@ -159,7 +176,7 @@ class CellEditor {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
       }
-      this._createPlaceholderIfNeeded(
+      this._addPlaceholderIfNeeded(
         this.cellEditorEl,
         this._spreadsheet.formulaBar?.editableContent
       )
@@ -204,15 +221,19 @@ class CellEditor {
       ? this._nodesToText(nodes)
       : this.cellEditorEl.textContent
     this.functionSummaryHelper.updateParameterHighlights(
-      getCaretPosition(this.cellEditorEl),
+      this._getCaretPosition(),
       textContent ?? ''
     )
+  }
+
+  private _getCaretPosition() {
+    return getCaretPosition(this.cellEditorEl)
   }
 
   private _removePlaceholderIfNeeded = () => {
     if (this.currentCellText === null) return
 
-    const currentCaretPosition = getCaretPosition(this.cellEditorEl)
+    const currentCaretPosition = this._getCaretPosition()
 
     if (this.currentPlaceholderEl) {
       const childrenNodes = this.currentPlaceholderEl.parentNode?.children ?? []
@@ -224,6 +245,7 @@ class CellEditor {
         this.currentPlaceholderEl.remove()
         this.currentPlaceholderEl = null
         this._sheets.selector.isInCellSelectionMode = false
+        this.previousCellReference = null
       }
     }
   }
@@ -241,6 +263,63 @@ class CellEditor {
     this.setContentEditable(serializedValue?.toString() ?? null)
 
     this.cellEditorEl.focus()
+  }
+
+  /**
+   * Replaces text at the current caret position in the contentEditable
+   */
+  replaceCellReferenceTextAtCaretPosition(cellReferenceText: string) {
+    // Blur so the caret doesn't go back to start of input
+    this.cellEditorEl.blur()
+
+    const currentCellText = this.currentCellText ?? ''
+    const caretPosition = this._getCaretPosition()
+
+    const currentCaretPosition = this.previousCellReference
+      ? this.previousCellReference.caretPosition
+      : caretPosition
+
+    let parts = []
+
+    if (this.previousCellReference) {
+      parts = [
+        currentCellText.slice(0, currentCaretPosition),
+        currentCellText.slice(
+          currentCaretPosition +
+            this.previousCellReference!.cellReferenceText.length
+        )
+      ]
+    } else {
+      parts = [
+        currentCellText.slice(0, currentCaretPosition),
+        currentCellText.slice(currentCaretPosition)
+      ]
+    }
+
+    const newText = parts[0] + cellReferenceText + parts[1]
+
+    this.previousCellReference = {
+      cellReferenceText,
+      caretPosition: currentCaretPosition
+    }
+
+    this.setContentEditable(newText)
+
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(newText).tokens as IToken[]
+
+    const nodeIndex = tokens.findIndex(
+      token =>
+        token.endOffset === currentCaretPosition + cellReferenceText.length - 1
+    )!
+
+    try {
+      const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
+      this.setDebouncedCaretPosition(node)
+    } catch (error) {
+      debugger
+    }
   }
 
   /**
@@ -282,10 +361,12 @@ class CellEditor {
    *
    * @internal
    */
-  _createPlaceholderIfNeeded = (
+  _addPlaceholderIfNeeded = (
     currentEditor: HTMLDivElement,
     secondaryEditor?: HTMLDivElement
   ) => {
+    this._removePlaceholderIfNeeded()
+
     const currentCaretPosition = getCaretPosition(currentEditor)
     const precedingTokenPosition = currentCaretPosition - 1
 
@@ -293,20 +374,27 @@ class CellEditor {
 
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const { tokens } = lexer.tokenizeFormula(this.currentCellText)
+    const tokens = lexer.tokenizeFormula(this.currentCellText)
+      .tokens as IToken[]
     // Have to use token positions & indexes due to some tokens
     // taking up multiple characters such as ranges
     const precedingToken = tokens.find(
-      (token: IToken) => token.endOffset === precedingTokenPosition
+      token => token.endOffset === precedingTokenPosition
+    )
+    const subsequentToken = tokens.find(
+      token => token.startOffset === currentCaretPosition
     )
 
     if (!precedingToken) return
 
-    const shouldAddPlaceholder = PLACEHOLDER_WHITELIST.includes(
+    const isValidPrecedingToken = precedingPlaceholderWhitelist.includes(
       precedingToken.tokenType.name
     )
+    const isValidSubsequentToken = subsequentToken
+      ? subsequentPlaceholderWhitelist.includes(subsequentToken.tokenType.name)
+      : true
 
-    if (shouldAddPlaceholder) {
+    if (isValidPrecedingToken && isValidSubsequentToken) {
       this.currentPlaceholderEl = document.createElement('span')
 
       this.currentPlaceholderEl.classList.add(styles.placeholder)
@@ -364,7 +452,9 @@ class CellEditor {
         styles.formulaInput
       )
     }
-    const tokenParts = this._sheets.cellHighlighter.getStyledTokens(this.currentCellText ?? '')
+    const tokenParts = this._sheets.cellHighlighter.getStyledTokens(
+      this.currentCellText ?? ''
+    )
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
@@ -374,7 +464,10 @@ class CellEditor {
       )
     })
 
-    this._spreadsheet.eventEmitter.emit('cellEditorChange', this.currentCellText)
+    this._spreadsheet.eventEmitter.emit(
+      'cellEditorChange',
+      this.currentCellText
+    )
   }
 
   /**
@@ -414,7 +507,7 @@ class CellEditor {
   clear() {
     this.currentCellText = null
     this.cellEditorEl.textContent = null
-    this._sheets.cellHighlighter.destroyHighlightedCells()
+    this._sheets.cellHighlighter.destroyHighlightedArea()
   }
 
   /**
@@ -433,6 +526,7 @@ class CellEditor {
   hide() {
     this.clear()
 
+    this.previousCellReference = null
     this.currentCell = null
     this.currentScroll = null
     this.cellTooltip.hide()

@@ -28,7 +28,7 @@ class FormulaBar {
 
     restoreCaretPosition()
 
-    this._spreadsheet.sheets.cellEditor._createPlaceholderIfNeeded(
+    this._spreadsheet.sheets.cellEditor._addPlaceholderIfNeeded(
       this.editableContent,
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )

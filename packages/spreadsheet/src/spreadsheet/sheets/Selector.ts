@@ -4,6 +4,7 @@ import { Vector2d } from 'konva/lib/types'
 import Spreadsheet from '../Spreadsheet'
 import SelectedCell from './cells/cell/SelectedCell'
 import SimpleCellAddress from './cells/cell/SimpleCellAddress'
+import { IGroupedCells } from './cells/Cells'
 import Sheets from './Sheets'
 
 export interface ISelectedRowCols {
@@ -16,14 +17,7 @@ export interface ISelectionArea {
   end: Vector2d
 }
 
-interface IGroupedCells {
-  main: SelectedCell[]
-  xSticky: SelectedCell[]
-  ySticky: SelectedCell[]
-  xySticky: SelectedCell[]
-}
-
-interface IGroupedCellSelectionAreas {
+export interface IGroupedCellSelectionArea {
   main: Rect | null
   xSticky: Rect | null
   ySticky: Rect | null
@@ -38,7 +32,7 @@ class Selector {
   selectedCell?: SelectedCell
   selectedCells: SelectedCell[] = []
   selectedSimpleCellAddress: SimpleCellAddress
-  groupedCellSelectionArea: IGroupedCellSelectionAreas
+  groupedCellSelectionArea: IGroupedCellSelectionArea
   selectionArea?: ISelectionArea | null
   isInCellSelectionMode = false
   private _spreadsheet: Spreadsheet
@@ -81,10 +75,7 @@ class Selector {
 
   private _renderSelectionArea() {
     if (this.selectionArea) {
-      const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
-        this.selectionArea.start,
-        this.selectionArea.end
-      )
+      const rangeSimpleCellAddress = this._getSelectionAreaFromRangeSimpleCellAddress()
 
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this._sheets,
@@ -93,21 +84,12 @@ class Selector {
         }
       )
 
-      const groupedCells: IGroupedCells = {
-        main: [],
-        xSticky: [],
-        ySticky: [],
-        xySticky: []
-      }
+      const groupedCells = this._sheets.cells._getGroupedCellsByStickyGroup(
+        this.selectedCells
+      )
 
-      this.selectedCells.forEach(cell => {
-        const stickyGroup = cell.getStickyGroupCellBelongsTo()
-
-        groupedCells![stickyGroup].push(cell)
-      })
-
-      Object.keys(this.groupedCellSelectionArea).forEach(key => {
-        const type = key as keyof IGroupedCellSelectionAreas
+      Object.keys(groupedCells).forEach(key => {
+        const type = key as keyof IGroupedCells
         const cells = groupedCells![type]
 
         this.groupedCellSelectionArea[type]?.destroy()
@@ -115,24 +97,7 @@ class Selector {
         if (cells.length) {
           const topLeftCellClientRect = cells[0]._getClientRectWithoutStroke()
 
-          let width = 0
-          let height = 0
-
-          const minMaxRangeSimpleCellAddress = this._sheets._getMinMaxRangeSimpleCellAddress(
-            cells
-          )
-
-          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
-            'row'
-          )) {
-            height += this._sheets.rows.getSize(index)
-          }
-
-          for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
-            'col'
-          )) {
-            width += this._sheets.cols.getSize(index)
-          }
+          const size = this._sheets._getSizeFromCells(cells)
 
           const sheetGroup = this._sheets.scrollGroups[type].sheetGroup
 
@@ -141,8 +106,8 @@ class Selector {
             ...topLeftCellClientRect,
             name: 'selectionRect',
             stroke: undefined,
-            width,
-            height
+            width: size.width,
+            height: size.height
           })
 
           this.groupedCellSelectionArea[type] = rect
@@ -154,6 +119,20 @@ class Selector {
   }
 
   getSelectedCellsFromArea() {
+    const rangeSimpleCellAddress = this._getSelectionAreaFromRangeSimpleCellAddress()
+
+    return rangeSimpleCellAddress.getCellsBetweenRange(
+      this._sheets,
+      simpleCellAddress => {
+        return new SelectedCell(this._sheets, simpleCellAddress)
+      }
+    )
+  }
+
+  /**
+   * @internal
+   */
+  _getSelectionAreaFromRangeSimpleCellAddress() {
     if (!this.selectionArea) {
       throw new Error('selectionArea is undefined')
     }
@@ -163,12 +142,7 @@ class Selector {
       this.selectionArea.end
     )
 
-    return rangeSimpleCellAddress.getCellsBetweenRange(
-      this._sheets,
-      simpleCellAddress => {
-        return new SelectedCell(this._sheets, simpleCellAddress)
-      }
-    )
+    return rangeSimpleCellAddress
   }
 
   /**
@@ -238,7 +212,7 @@ class Selector {
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
     if (this.isInCellSelectionMode) {
-      this._sheets.cellHighlighter._createNewHighlightedCellsFromCurrentSelection()
+      this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
     }
 
     this._spreadsheet.render()
@@ -266,7 +240,7 @@ class Selector {
       }
 
       if (this.isInCellSelectionMode) {
-        this._sheets.cellHighlighter._updateCurrentHighlightedCell()
+        this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
       }
 
       // We don't update sheet viewport for performance reasons

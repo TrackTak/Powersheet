@@ -15,7 +15,7 @@ import {
 import Spreadsheet from '../../Spreadsheet'
 import { functionMetadata } from '../functionMetadata'
 import { IFunctionHelperData } from '../FunctionHelper'
-import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
+import { subsequentPlaceholderWhitelist } from '../../sheets/cellEditor/CellEditor'
 import { IToken } from 'chevrotain'
 import { last } from 'lodash'
 
@@ -32,8 +32,10 @@ class FunctionSummaryHelper {
    * @internal
    */
   constructor(spreadsheet: Spreadsheet) {
-    const { functionSummaryHelperContainerEl, functionSummaryHelperEl } =
-      createWrapperContent()
+    const {
+      functionSummaryHelperContainerEl,
+      functionSummaryHelperEl
+    } = createWrapperContent()
     this.functionSummaryHelperListContainerEl = functionSummaryHelperContainerEl
     this.functionSummaryHelperEl = functionSummaryHelperEl
     this.helper = delegate(functionSummaryHelperEl, {
@@ -62,10 +64,13 @@ class FunctionSummaryHelper {
 
   updateParameterHighlights(currentCaretPosition: number, text: string) {
     const precedingTokenPosition = currentCaretPosition - 1
+    // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
     const { tokens } = lexer.tokenizeFormula(text)
     const eligibleTokensToHighlight = tokens.filter((token: IToken) =>
-      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+      subsequentPlaceholderWhitelist.every(
+        ch => !token.tokenType.name.includes(ch)
+      )
     )
     let indexToHighlight = eligibleTokensToHighlight.findIndex(
       (token: IToken) => {

@@ -608,6 +608,36 @@ class Sheets {
   }
 
   /**
+   *
+   * @internal
+   */
+  _getSizeFromCells(cells: Cell[]) {
+    const minMaxRangeSimpleCellAddress = this._getMinMaxRangeSimpleCellAddress(
+      cells
+    )
+
+    let height = 0
+    let width = 0
+
+    for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+      'row'
+    )) {
+      height += this.rows.getSize(index)
+    }
+
+    for (const index of minMaxRangeSimpleCellAddress.iterateFromTopToBottom(
+      'col'
+    )) {
+      width += this.cols.getSize(index)
+    }
+
+    return {
+      width,
+      height
+    }
+  }
+
+  /**
    * @internal
    */
   _getViewportVector() {

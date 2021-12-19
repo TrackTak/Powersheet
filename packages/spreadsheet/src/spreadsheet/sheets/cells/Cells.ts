@@ -8,6 +8,14 @@ import { Text } from 'konva/lib/shapes/Text'
 import { Line } from 'konva/lib/shapes/Line'
 import { isNil } from 'lodash'
 import RowColAddress from './cell/RowColAddress'
+import Cell from './cell/Cell'
+
+export interface IGroupedCells {
+  main: Cell[]
+  xSticky: Cell[]
+  ySticky: Cell[]
+  xySticky: Cell[]
+}
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>
@@ -205,10 +213,9 @@ class Cells {
    * @internal
    */
   _render() {
-    const frozenCells =
-      this._spreadsheet.data._spreadsheetData.frozenCells?.[
-        this._sheets.activeSheetId
-      ]
+    const frozenCells = this._spreadsheet.data._spreadsheetData.frozenCells?.[
+      this._sheets.activeSheetId
+    ]
     const frozenRow = frozenCells?.row
     const frozenCol = frozenCells?.col
 
@@ -274,8 +281,8 @@ class Cells {
    */
   _updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCellId =
-      this._spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId]
+    const mergedCellId = this._spreadsheet.sheets.merger
+      .associatedMergedCellAddressMap[cellId]
 
     const sheetName =
       this._spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''
@@ -301,6 +308,26 @@ class Cells {
     if (!cellExists) {
       this._setStyleableCell(simpleCellAddress)
     }
+  }
+
+  /**
+   * @internal
+   */
+  _getGroupedCellsByStickyGroup(cells: Cell[]) {
+    const groupedCells: IGroupedCells = {
+      main: [],
+      xSticky: [],
+      ySticky: [],
+      xySticky: []
+    }
+
+    cells.forEach(cell => {
+      const stickyGroup = cell.getStickyGroupCellBelongsTo()
+
+      groupedCells![stickyGroup].push(cell)
+    })
+
+    return groupedCells
   }
 }
 

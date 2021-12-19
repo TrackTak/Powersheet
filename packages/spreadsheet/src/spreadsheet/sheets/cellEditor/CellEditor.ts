@@ -314,12 +314,9 @@ class CellEditor {
         token.endOffset === currentCaretPosition + cellReferenceText.length - 1
     )!
 
-    try {
-      const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
-      this.setDebouncedCaretPosition(node)
-    } catch (error) {
-      debugger
-    }
+    const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
+
+    this.setDebouncedCaretPosition(node)
   }
 
   /**
@@ -526,6 +523,7 @@ class CellEditor {
   hide() {
     this.clear()
 
+    this._sheets.selector.isInCellSelectionMode = false
     this.previousCellReference = null
     this.currentCell = null
     this.currentScroll = null

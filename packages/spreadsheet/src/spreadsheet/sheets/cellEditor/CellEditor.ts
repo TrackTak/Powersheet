@@ -17,7 +17,6 @@ import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
-import { debounce, DebouncedFunc } from 'lodash'
 
 export interface ICurrentScroll {
   row: number
@@ -27,6 +26,11 @@ export interface ICurrentScroll {
 export interface IPreviousCellReference {
   caretPosition: number
   cellReferenceText: string
+}
+
+export interface IMoveSelectCellParam {
+  rowsToMove?: number
+  colsToMove?: number
 }
 
 const commonPlaceholderWhitelist = [
@@ -72,7 +76,8 @@ class CellEditor {
   currentCellText: string | null = null
   currentPlaceholderEl: HTMLSpanElement | null = null
   previousCellReference: IPreviousCellReference | null = null
-  setDebouncedCaretPosition: DebouncedFunc<(node: Node) => any>
+  isInCellSelectionMode = false
+  activeSheetId: number
   private _spreadsheet: Spreadsheet
 
   /**
@@ -80,12 +85,11 @@ class CellEditor {
    */
   constructor(private _sheets: Sheet) {
     this._spreadsheet = this._sheets._spreadsheet
+    this.activeSheetId = this._sheets.activeSheetId
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
     this.cellEditorEl.spellcheck = false
-
-    this.setDebouncedCaretPosition = debounce(setCaretToEndOfElement, 200)
 
     const cellEditorClassName = `${prefix}-cell-editor`
 
@@ -190,6 +194,27 @@ class CellEditor {
     }
   }
 
+  private moveSelectedCellIfInSelectionMode({
+    rowsToMove = 0,
+    colsToMove = 0
+  }) {
+    if (this._sheets.cellEditor.isInCellSelectionMode) {
+      const {
+        sheet,
+        row,
+        col
+      } = this._sheets.selector.selectedCell?.simpleCellAddress!
+
+      const simpleCellAddress = new SimpleCellAddress(
+        sheet,
+        row + rowsToMove,
+        col + colsToMove
+      )
+
+      this._sheets.selector.selectCellFromSimpleCellAddress(simpleCellAddress)
+    }
+  }
+
   private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
 
@@ -200,6 +225,30 @@ class CellEditor {
       }
       case 'Enter': {
         this.hideAndSave()
+        break
+      }
+      case 'ArrowRight': {
+        e.preventDefault()
+
+        this.moveSelectedCellIfInSelectionMode({ colsToMove: 1 })
+        break
+      }
+      case 'ArrowLeft': {
+        e.preventDefault()
+
+        this.moveSelectedCellIfInSelectionMode({ colsToMove: -1 })
+        break
+      }
+      case 'ArrowUp': {
+        e.preventDefault()
+
+        this.moveSelectedCellIfInSelectionMode({ rowsToMove: -1 })
+        break
+      }
+      case 'ArrowDown': {
+        e.preventDefault()
+
+        this.moveSelectedCellIfInSelectionMode({ rowsToMove: 1 })
         break
       }
     }
@@ -244,7 +293,7 @@ class CellEditor {
       if (placeholderIndex !== currentCaretPosition) {
         this.currentPlaceholderEl.remove()
         this.currentPlaceholderEl = null
-        this._sheets.selector.isInCellSelectionMode = false
+        this._sheets.cellEditor.isInCellSelectionMode = false
         this.previousCellReference = null
       }
     }
@@ -266,12 +315,18 @@ class CellEditor {
   }
 
   /**
+   * @internal
+   */
+  _setActiveSheetId() {
+    if (this.getIsHidden()) {
+      this.activeSheetId = this._sheets.activeSheetId
+    }
+  }
+
+  /**
    * Replaces text at the current caret position in the contentEditable
    */
   replaceCellReferenceTextAtCaretPosition(cellReferenceText: string) {
-    // Blur so the caret doesn't go back to start of input
-    this.cellEditorEl.blur()
-
     const currentCellText = this.currentCellText ?? ''
     const caretPosition = this._getCaretPosition()
 
@@ -280,6 +335,16 @@ class CellEditor {
       : caretPosition
 
     let parts = []
+
+    let newCellReferenceText = cellReferenceText
+
+    if (this.activeSheetId !== this._sheets.activeSheetId) {
+      const sheetName = this._spreadsheet.hyperformula.getSheetName(
+        this._sheets.activeSheetId
+      )
+
+      newCellReferenceText = `'${sheetName}'!` + newCellReferenceText
+    }
 
     if (this.previousCellReference) {
       parts = [
@@ -296,10 +361,10 @@ class CellEditor {
       ]
     }
 
-    const newText = parts[0] + cellReferenceText + parts[1]
+    const newText = parts[0] + newCellReferenceText + parts[1]
 
     this.previousCellReference = {
-      cellReferenceText,
+      cellReferenceText: newCellReferenceText,
       caretPosition: currentCaretPosition
     }
 
@@ -311,12 +376,13 @@ class CellEditor {
 
     const nodeIndex = tokens.findIndex(
       token =>
-        token.endOffset === currentCaretPosition + cellReferenceText.length - 1
+        token.endOffset ===
+        currentCaretPosition + newCellReferenceText.length - 1
     )!
 
     const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
 
-    this.setDebouncedCaretPosition(node)
+    setCaretToEndOfElement(node)
   }
 
   /**
@@ -395,7 +461,7 @@ class CellEditor {
       this.currentPlaceholderEl = document.createElement('span')
 
       this.currentPlaceholderEl.classList.add(styles.placeholder)
-      this._sheets.selector.isInCellSelectionMode = true
+      this._sheets.cellEditor.isInCellSelectionMode = true
 
       const childIndex = tokens.indexOf(precedingToken)
 
@@ -523,7 +589,7 @@ class CellEditor {
   hide() {
     this.clear()
 
-    this._sheets.selector.isInCellSelectionMode = false
+    this._sheets.cellEditor.isInCellSelectionMode = false
     this.previousCellReference = null
     this.currentCell = null
     this.currentScroll = null

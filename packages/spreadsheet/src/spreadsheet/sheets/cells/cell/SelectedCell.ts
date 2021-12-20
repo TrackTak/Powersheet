@@ -15,10 +15,10 @@ class SelectedCell extends Cell {
     public simpleCellAddress: SimpleCellAddress
   ) {
     super(_sheets, simpleCellAddress)
-
     this.innerRect = new Rect({
       name: 'innerRect'
     })
+
     this.group.add(this.innerRect)
 
     this._setInnerRectProperties()

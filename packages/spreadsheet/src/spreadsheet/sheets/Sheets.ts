@@ -309,7 +309,7 @@ class Sheets {
     this.cols.scrollBar._previousTouchMovePosition = clientX
     this.rows.scrollBar._previousTouchMovePosition = clientY
 
-    if (!this.selector.isInCellSelectionMode) {
+    if (!this.cellEditor.isInCellSelectionMode) {
       this.cellEditor.hideAndSave()
     }
   }
@@ -370,7 +370,7 @@ class Sheets {
   }
 
   private _stageOnMousedown = () => {
-    if (!this.selector.isInCellSelectionMode) {
+    if (!this.cellEditor.isInCellSelectionMode) {
       this.cellEditor.hideAndSave()
     }
   }
@@ -424,72 +424,68 @@ class Sheets {
     )
   }
 
-  private _keyHandler = (e: KeyboardEvent) => {
+  private _keyHandler = async (e: KeyboardEvent) => {
     e.stopPropagation()
 
-    new Promise(resolve => {
-      switch (e.key) {
-        case 'Escape': {
-          break
-        }
-        case 'Delete': {
-          this._spreadsheet.hyperformula.batch(() => {
-            this._spreadsheet.pushToHistory(() => {
-              this.selector.selectedCells.forEach(cell => {
-                const simpleCellAddress = cell.simpleCellAddress
+    switch (e.key) {
+      case 'Escape': {
+        break
+      }
+      case 'Delete': {
+        this._spreadsheet.hyperformula.batch(() => {
+          this._spreadsheet.pushToHistory(() => {
+            this.selector.selectedCells.forEach(cell => {
+              const simpleCellAddress = cell.simpleCellAddress
 
-                this._spreadsheet.data.setCell(simpleCellAddress, {
-                  value: undefined
-                })
+              this._spreadsheet.data.setCell(simpleCellAddress, {
+                value: undefined
               })
             })
           })
-          break
-        }
-        case e.ctrlKey && 'z': {
-          e.preventDefault()
-
-          this._spreadsheet.undo()
-          break
-        }
-        case e.ctrlKey && 'y': {
-          this._spreadsheet.redo()
-          break
-        }
-        case e.ctrlKey && 'x': {
-          this.clipboard.cut()
-          break
-        }
-        case e.ctrlKey && 'c': {
-          this.clipboard.copy()
-          break
-        }
-        case e.ctrlKey && 'v': {
-          this.clipboard.paste()
-          break
-        }
-        default:
-          if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
-            const selectedCell = this.selector.selectedCell!
-            const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
-              selectedCell.simpleCellAddress
-            )
-
-            if (serializedValue) {
-              this.cellEditor.clear()
-              this.cellEditor.show(selectedCell)
-
-              this.cellEditor.cellEditorEl.focus()
-            } else {
-              this.cellEditor.showAndSetValue(selectedCell)
-            }
-          }
+        })
+        break
       }
+      case e.ctrlKey && 'z': {
+        e.preventDefault()
 
-      resolve(undefined)
-    }).then(() => {
-      this._spreadsheet.render()
-    })
+        this._spreadsheet.undo()
+        break
+      }
+      case e.ctrlKey && 'y': {
+        this._spreadsheet.redo()
+        break
+      }
+      case e.ctrlKey && 'x': {
+        await this.clipboard.cut()
+        break
+      }
+      case e.ctrlKey && 'c': {
+        await this.clipboard.copy()
+        break
+      }
+      case e.ctrlKey && 'v': {
+        this.clipboard.paste()
+        break
+      }
+      default:
+        if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
+          const selectedCell = this.selector.selectedCell!
+          const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+            selectedCell.simpleCellAddress
+          )
+
+          if (serializedValue) {
+            this.cellEditor.clear()
+            this.cellEditor.show(selectedCell)
+
+            this.cellEditor.cellEditorEl.focus()
+          } else {
+            this.cellEditor.showAndSetValue(selectedCell)
+          }
+        }
+    }
+
+    this._spreadsheet.render()
   }
 
   private _updateSheetDimensions() {
@@ -520,6 +516,7 @@ class Sheets {
     this.rows._destroy()
     this.cols._destroy()
     this.selector._destroy()
+    this.cellHighlighter._destroy()
 
     this.activeSheetId = sheetId
 
@@ -528,7 +525,9 @@ class Sheets {
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
+    this.cellHighlighter = new CellHighlighter(this)
 
+    this.cellEditor._setActiveSheetId()
     this._spreadsheet.render()
   }
 

@@ -34,7 +34,6 @@ class Selector {
   selectedSimpleCellAddress: SimpleCellAddress
   groupedCellSelectionArea: IGroupedCellSelectionArea
   selectionArea?: ISelectionArea | null
-  isInCellSelectionMode = false
   private _spreadsheet: Spreadsheet
   private _previousSelectedSimpleCellAddress?: SimpleCellAddress
 
@@ -166,25 +165,13 @@ class Selector {
     this._renderSelectedCell()
   }
 
-  /**
-   *
-   * @param vector The X,Y co-ordinates to start the selection at
-   */
-  startSelection(vector: Vector2d) {
-    this._previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
-    this.selectionArea = null
-
-    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
-      vector,
-      vector
-    )
-
-    const cell = rangeSimpleCellAddress.getCellsBetweenRange(
+  selectCellFromSimpleCellAddress(simpleCellAddress: SimpleCellAddress) {
+    const cell = simpleCellAddress.getCellFromAddress(
       this._sheets,
       simpleCellAddress => {
         return new SelectedCell(this._sheets, simpleCellAddress)
       }
-    )[0]
+    )
 
     const rect = cell._getClientRectWithoutStroke()
 
@@ -211,13 +198,40 @@ class Selector {
 
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
-    if (this.isInCellSelectionMode) {
+    if (this._sheets.cellEditor.isInCellSelectionMode) {
       this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
     }
 
-    this._spreadsheet.render()
+    // We don't update sheet viewport for performance reasons
+    this._render()
+    this._spreadsheet.toolbar?._render()
 
-    this._spreadsheet.eventEmitter.emit('startSelection', this.selectionArea)
+    this._spreadsheet.eventEmitter.emit('selectCell', cell)
+  }
+
+  /**
+   *
+   * @param vector The X,Y co-ordinates to start the selection at
+   */
+  startSelection(vector: Vector2d) {
+    this._previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
+    this.selectionArea = null
+
+    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
+      vector,
+      vector
+    )
+
+    const cell = rangeSimpleCellAddress.getCellsBetweenRange(
+      this._sheets,
+      simpleCellAddress => {
+        return new SelectedCell(this._sheets, simpleCellAddress)
+      }
+    )[0]
+
+    this.selectCellFromSimpleCellAddress(cell.simpleCellAddress)
+
+    this._spreadsheet.eventEmitter.emit('startSelection', cell)
   }
 
   /**
@@ -239,7 +253,7 @@ class Selector {
         }
       }
 
-      if (this.isInCellSelectionMode) {
+      if (this._sheets.cellEditor.isInCellSelectionMode) {
         this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
       }
 

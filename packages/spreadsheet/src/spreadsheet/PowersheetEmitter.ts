@@ -1,5 +1,6 @@
 import { KonvaEventObject } from 'konva/lib/Node'
 import { TypedEmitter } from 'tiny-typed-emitter'
+import SelectedCell from './sheets/cells/cell/SelectedCell'
 import { ISpreadsheetData } from './sheets/Data'
 import { ISelectionArea } from './sheets/Selector'
 
@@ -16,7 +17,8 @@ export interface PowersheetEvents {
   resizeColEnd: (e: KonvaEventObject<DragEvent>, size: number) => void
   historyPush: (stringifiedSpreadsheetData: string) => void
   persistData: (_spreadsheetData: ISpreadsheetData, done: () => void) => void
-  startSelection: (selectionArea: ISelectionArea) => void
+  selectCell: (simpleCellAddress: SelectedCell) => void
+  startSelection: (selectionArea: SelectedCell) => void
   moveSelection: (selectionArea: ISelectionArea) => void
   endSelection: (selectionArea: ISelectionArea) => void
 }

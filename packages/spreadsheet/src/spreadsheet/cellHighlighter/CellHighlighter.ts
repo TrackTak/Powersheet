@@ -12,10 +12,10 @@ import { IToken } from 'chevrotain'
 import styles from './CellHighlighter.module.scss'
 import Sheets from '../sheets/Sheets'
 import { Rect } from 'konva/lib/shapes/Rect'
-import Cell from '../sheets/cells/cell/Cell'
 import { getInnerRectConfig } from '../sheets/cells/cell/getInnerRectConfig'
 import { Group } from 'konva/lib/Group'
 import { IGroupedCells } from '../sheets/cells/Cells'
+import HighlightedCell from '../sheets/cells/cell/HighlightedCell'
 
 export interface ICellReferenceToken {
   startOffset: number
@@ -205,7 +205,7 @@ class CellHighlighter {
         const cells = rangeSimpleCellAddress.getCellsBetweenRange(
           this._sheets,
           simpleCellAddress => {
-            return new Cell(this._sheets, simpleCellAddress)
+            return new HighlightedCell(this._sheets, simpleCellAddress)
           }
         )
 
@@ -350,7 +350,7 @@ class CellHighlighter {
     const cells = rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,
       simpleCellAddress => {
-        return new Cell(this._sheets, simpleCellAddress)
+        return new HighlightedCell(this._sheets, simpleCellAddress)
       }
     )
 

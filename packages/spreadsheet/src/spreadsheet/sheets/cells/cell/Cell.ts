@@ -37,6 +37,10 @@ class Cell {
       this.group.add(this.rect)
     }
     this.rect.setAttrs(this._sheets.cells._getDefaultCellRectAttrs())
+    this.update()
+  }
+
+  update() {
     this._updatePosition()
     this._updateSize()
     this._setIsMergedCell()

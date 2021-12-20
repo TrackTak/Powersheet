@@ -11,7 +11,7 @@ import {
   createButton,
   createWrapperContent,
   functionSummaryHelperPrefix,
-  IPlaceholderParameter
+  IParameterSyntaxElement
 } from './functionSummaryHtmlElementHelpers'
 import Spreadsheet from '../../Spreadsheet'
 import { functionMetadata } from '../functionMetadata'
@@ -19,6 +19,7 @@ import { IFunctionHelperData } from '../FunctionHelper'
 import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
 import { IToken } from 'chevrotain'
 import { last } from 'lodash'
+import { getCaretPosition } from '../../utils'
 
 class FunctionSummaryHelper {
   functionSummaryHelperEl: HTMLDivElement
@@ -27,13 +28,12 @@ class FunctionSummaryHelper {
   accordionButton!: HTMLButtonElement
   helper: DelegateInstance
   textWrapper!: HTMLDivElement
-  placeholderParameters: IPlaceholderParameter[]
-  private _spreadsheet!: Spreadsheet
+  parameterSyntaxElements: IParameterSyntaxElement[]
 
   /**
    * @internal
    */
-  constructor(spreadsheet: Spreadsheet) {
+  constructor(private _spreadsheet: Spreadsheet) {
     const { functionSummaryHelperContainerEl, functionSummaryHelperEl } =
       createWrapperContent()
     this.functionSummaryHelperListContainerEl = functionSummaryHelperContainerEl
@@ -46,8 +46,7 @@ class FunctionSummaryHelper {
       interactive: true,
       hideOnClick: false
     })
-    this.placeholderParameters = []
-    this._spreadsheet = spreadsheet
+    this.parameterSyntaxElements = []
   }
   /**
    * Shows the function summary helper.
@@ -63,63 +62,70 @@ class FunctionSummaryHelper {
     }
   }
 
-  updateParameterHighlights(currentCaretPosition: number, text: string) {
-    const precedingTokenPosition = currentCaretPosition - 1
+  updateParameterHighlights(text: string) {
+    const caretPosition = getCaretPosition(
+      this._spreadsheet.sheets.cellEditor.cellEditorEl
+    )
+    const precedingCaretPosition = caretPosition - 1
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const { tokens } = lexer.tokenizeFormula(text)
-    const eligibleTokensToHighlight: IToken[] = tokens.filter((token: IToken) =>
-      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
-    )
-    const caretElementIndex = eligibleTokensToHighlight.findIndex(
-      (token: IToken) => {
-        const endOffset = token.endOffset ?? Number.MAX_VALUE
-        return (
-          (currentCaretPosition >= token.startOffset &&
-            currentCaretPosition <= endOffset) ||
-          (precedingTokenPosition >= token.startOffset &&
-            precedingTokenPosition <= endOffset)
-        )
-      }
-    )
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
 
-    const separators: IToken[] = tokens.filter(
-      (token: IToken) => token.tokenType.name === 'ArrayColSep'
-    )
-    const precedingSeparatorIndex = separators.findIndex(
-      (token: IToken) => token.endOffset === precedingTokenPosition
-    )
-
-    this.placeholderParameters.forEach(placeholder => {
-      placeholder.element.classList.remove(
-        `${functionSummaryHelperPrefix}-highlight`
-      )
-    })
-
-    if (caretElementIndex === -1 && precedingSeparatorIndex === -1) {
+    if (tokens[1]?.tokenType.name !== 'ProcedureName') {
       return
     }
 
-    const isWithinInfiniteParameterSection =
-      this._isWithinInfiniteParameterSection(
-        eligibleTokensToHighlight,
-        currentCaretPosition
+    const eligibleTokensToHighlight = tokens.filter(token =>
+      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+    )
+    const caretElementIndex = eligibleTokensToHighlight.findIndex(token => {
+      const endOffset = token.endOffset! // ?? Number.MAX_VALUE
+      return (
+        (caretPosition >= token.startOffset && caretPosition <= endOffset) ||
+        (precedingCaretPosition >= token.startOffset &&
+          precedingCaretPosition <= endOffset)
       )
-    let elementIndexToHighlight = caretElementIndex
-    const isAfterSeparator =
-      caretElementIndex === -1 ||
-      (precedingSeparatorIndex !== -1 && !isWithinInfiniteParameterSection)
-    if (isAfterSeparator) {
-      elementIndexToHighlight = precedingSeparatorIndex + 1
+    })
+
+    const separators = tokens.filter(
+      token => token.tokenType.name === 'ArrayColSep'
+    )
+    const precedingSeparatorIndex = separators.findIndex(
+      token => token.endOffset === precedingCaretPosition
+    )
+
+    this.parameterSyntaxElements.forEach(({ element }) => {
+      element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+    })
+
+    if (caretElementIndex === -1) {
+      // && precedingSeparatorIndex === -1) {
+      return
     }
+
+    // const isWithinInfiniteParameterSection =
+    //   this._isWithinInfiniteParameterSection(
+    //     eligibleTokensToHighlight,
+    //     caretPosition
+    //   )
+
+    let elementIndexToHighlight = caretElementIndex
+
+    // const isAfterSeparator =
+    //   caretElementIndex === -1 ||
+    //   (precedingSeparatorIndex !== -1 && !isWithinInfiniteParameterSection)
+
+    // if (isAfterSeparator) {
+    //   elementIndexToHighlight = precedingSeparatorIndex + 1
+    // }
 
     const placeholderElementToHighlight = this._getElementToHighlight(
       precedingSeparatorIndex,
       elementIndexToHighlight,
-      isWithinInfiniteParameterSection
+      false // isWithinInfiniteParameterSection
     )
 
-    placeholderElementToHighlight?.classList.add(
+    placeholderElementToHighlight.classList.add(
       `${functionSummaryHelperPrefix}-highlight`
     )
   }
@@ -129,9 +135,9 @@ class FunctionSummaryHelper {
     currentCaretPosition: number
   ) {
     const tokenBeforeInfiniteParameterPosition =
-      tokens[this.placeholderParameters.length - 1]?.startOffset
+      tokens[this.parameterSyntaxElements.length - 1]?.startOffset
     return !!(
-      last(this.placeholderParameters)?.isInfiniteParameter &&
+      last(this.parameterSyntaxElements)?.isInfiniteParameter &&
       currentCaretPosition >= tokenBeforeInfiniteParameterPosition
     )
   }
@@ -141,14 +147,16 @@ class FunctionSummaryHelper {
     elementIndexToHighlight: number,
     isWithinInfiniteParameterSection: boolean
   ) {
-    const shouldHighlightLastElement =
-      (precedingSeparatorIndex ||
-        elementIndexToHighlight >= this.placeholderParameters?.length) &&
-      isWithinInfiniteParameterSection
+    // const shouldHighlightLastElement =
+    //   (precedingSeparatorIndex ||
+    //     elementIndexToHighlight >= this.placeholderParameters?.length) &&
+    //   isWithinInfiniteParameterSection
 
-    return shouldHighlightLastElement
-      ? last(this.placeholderParameters)?.element
-      : this.placeholderParameters[elementIndexToHighlight]?.element
+    // return shouldHighlightLastElement
+    //   ? last(this.placeholderParameters)?.element
+    //   : this.placeholderParameters[elementIndexToHighlight]?.element
+
+    return this.parameterSyntaxElements[elementIndexToHighlight]?.element
   }
 
   private _update(formulaMetadata: IFunctionHelperData) {
@@ -174,11 +182,11 @@ class FunctionSummaryHelper {
       `${functionSummaryHelperPrefix}-text-wrapper`
     )
 
-    const { mainHeaderEl, placeholderParameters } = createMainHeader(
+    const { mainHeaderEl, parameterSyntaxElements } = createMainHeader(
       formulaMetadata.header,
-      formulaMetadata.parameters ?? ''
+      formulaMetadata.parameters
     )
-    this.placeholderParameters = placeholderParameters
+    this.parameterSyntaxElements = parameterSyntaxElements
 
     const { paragraphEl: description } = createParagraph(
       formulaMetadata.headerDescription

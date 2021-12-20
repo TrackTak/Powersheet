@@ -157,7 +157,7 @@ class CellEditor {
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
         this.functionSummaryHelper.show(functionName)
-        this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
+        this._updateFunctionSummaryHelperHighlights()
       } else {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
@@ -193,23 +193,20 @@ class CellEditor {
 
   private _onKeyUp = (e: KeyboardEvent) => {
     e.stopPropagation()
-    this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
+    this._updateFunctionSummaryHelperHighlights()
   }
 
   private _onMouseUp = (e: MouseEvent) => {
     e.stopPropagation()
-    this._updateFunctionSummaryHelperHighlights(this.cellEditorEl)
+    this._updateFunctionSummaryHelperHighlights()
   }
 
-  _updateFunctionSummaryHelperHighlights = (currentEditor: HTMLDivElement) => {
+  _updateFunctionSummaryHelperHighlights = () => {
     const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
     const textContent = nodes.length
       ? this._nodesToText(nodes)
       : this.cellEditorEl.textContent
-    this.functionSummaryHelper.updateParameterHighlights(
-      getCaretPosition(currentEditor),
-      textContent ?? ''
-    )
+    this.functionSummaryHelper.updateParameterHighlights(textContent ?? '')
   }
 
   private _removePlaceholderIfNeeded = () => {

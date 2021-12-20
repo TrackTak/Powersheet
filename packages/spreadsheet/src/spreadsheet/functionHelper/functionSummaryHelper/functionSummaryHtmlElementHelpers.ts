@@ -3,7 +3,7 @@ import { prefix } from '../../utils'
 
 export const functionSummaryHelperPrefix = `${prefix}-function-summary-helper`
 
-export interface IPlaceholderParameter {
+export interface IParameterSyntaxElement {
   element: HTMLSpanElement
   isInfiniteParameter: boolean
 }
@@ -19,7 +19,7 @@ export const createWrapperContent = () => {
   }
 }
 
-export const createMainHeader = (headerText: string, parameterText: string) => {
+export const createMainHeader = (headerText: string, parameters: string[]) => {
   const mainHeaderEl = document.createElement('div')
 
   const headerEl = document.createElement('h1')
@@ -36,18 +36,18 @@ export const createMainHeader = (headerText: string, parameterText: string) => {
   parameterContainerEl.appendChild(openingBracketEl)
   const closingBracketEl = document.createElement('span')
   closingBracketEl.textContent = ')'
-  const parameterArray = tokenize(parameterText)
-  const placeholderParameters: IPlaceholderParameter[] = []
-  parameterArray.forEach((parameter, index) => {
+  const parameterSyntaxElements: IParameterSyntaxElement[] = []
+
+  parameters.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
     parameterEl.classList.add(`${functionSummaryHelperPrefix}-parameter`)
     parameterEl.textContent = parameter
-    placeholderParameters.push({
+    parameterSyntaxElements.push({
       element: parameterEl,
       isInfiniteParameter: parameter.includes('[')
     })
     parameterContainerEl.appendChild(parameterEl)
-    if (index !== parameterArray.length - 1) {
+    if (index !== parameters.length - 1) {
       const commaEl = document.createElement('span')
       commaEl.textContent = ', '
       parameterContainerEl.appendChild(commaEl)
@@ -56,40 +56,7 @@ export const createMainHeader = (headerText: string, parameterText: string) => {
   parameterContainerEl.appendChild(closingBracketEl)
   mainHeaderEl.appendChild(parameterContainerEl)
 
-  return { mainHeaderEl, placeholderParameters }
-}
-
-export const tokenize = (parameters: string) => {
-  const parameterArray = []
-  let word = ''
-  for (let i = 0; i < parameters.length; i++) {
-    if (parameters[i] === '[' && i < parameters.length - 1) {
-      while (parameters[i] !== ']') {
-        word += parameters[i]
-        i++
-        continue
-      }
-      word += ']'
-      parameterArray.push(word)
-      word = ''
-      continue
-    }
-    if (',' === parameters[i]) {
-      parameterArray.push(word)
-      word = ''
-      continue
-    }
-    word += parameters[i]
-
-    if (i === parameters.length) {
-      parameterArray.push(word)
-      word = ''
-    }
-  }
-  if (word.length > 0) {
-    parameterArray.push(word)
-  }
-  return parameterArray
+  return { mainHeaderEl, parameterSyntaxElements }
 }
 
 export const createButton = (buttonText: string) => {

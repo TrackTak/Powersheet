@@ -5,7 +5,7 @@ const { JSDOM } = jsdom
 ;(async function () {
   try {
     const gSheetsFormulaData = fs.readFileSync(
-      `./rawData/gSheetsFormulaMetadata.csv`,
+      `${__dirname}/rawData/gSheetsFormulaMetadata.csv`,
       'utf8'
     )
 
@@ -30,7 +30,7 @@ const { JSDOM } = jsdom
 
     // 2. Add Basic Google Formula Information to all Hyperformula functions
     const hfFormulaData = fs.readFileSync(
-      `./rawData/hfFormulaMetadata.csv`,
+      `${__dirname}/rawData/hfFormulaMetadata.csv`,
       'utf8'
     )
     const hfLines = hfFormulaData.split(/\r?\n/)
@@ -54,7 +54,7 @@ const { JSDOM } = jsdom
     // 3. Add Sample Usage and Syntax from scraped Google Sheets sites to Hyperformula functions
     const incorrectFormattedFunctions = []
     const formulaDetails = fs.readFileSync(
-      `./rawData/gSheetsDocumentation.csv`,
+      `${__dirname}/rawData/gSheetsDocumentation.csv`,
       'utf8'
     )
     const formulaDetailsLines = formulaDetails.split(/\r?\n/)
@@ -154,7 +154,7 @@ const { JSDOM } = jsdom
     })
 
     fs.writeFileSync(
-      `./output/powersheetFormulaMetadata.json`,
+      `${__dirname}/../../packages/spreadsheet/src/spreadsheet/functionHelper/powersheetFormulaMetadata.json`,
       JSON.stringify(hfData)
     )
     console.log(

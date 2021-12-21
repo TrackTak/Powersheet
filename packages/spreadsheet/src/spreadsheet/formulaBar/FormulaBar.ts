@@ -32,9 +32,7 @@ class FormulaBar {
       this.editableContent,
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
@@ -58,16 +56,12 @@ class FormulaBar {
 
   private _onKeyUp = (e: KeyboardEvent) => {
     e.stopPropagation()
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   private _onMouseUp = (e: MouseEvent) => {
     e.stopPropagation()
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   /**
@@ -79,11 +73,8 @@ class FormulaBar {
     this.formulaBarEl = document.createElement('div')
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix)
 
-    const {
-      editorArea,
-      editableContentContainer,
-      editableContent
-    } = createFormulaEditorArea()
+    const { editorArea, editableContentContainer, editableContent } =
+      createFormulaEditorArea()
 
     this.formulaBarEl.appendChild(editorArea)
 
@@ -126,8 +117,8 @@ class FormulaBar {
   updateValue(simpleCellAddress: SimpleCellAddress | undefined) {
     this.clear()
 
-    const cellEditorContentEditableChildren = this._spreadsheet.sheets
-      ?.cellEditor?.cellEditorEl.children
+    const cellEditorContentEditableChildren =
+      this._spreadsheet.sheets?.cellEditor?.cellEditorEl.children
 
     let spanElements = cellEditorContentEditableChildren
       ? Array.from(cellEditorContentEditableChildren).map(node =>
@@ -141,17 +132,17 @@ class FormulaBar {
         ''
 
       if (this._spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
-          simpleCellAddress
-        )
+        const serializedValue =
+          this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
-        // const tokenParts = this._spreadsheet.sheets.cellHighlighter.getStyledTokens(
-        //   serializedValue?.toString() ?? ''
-        // )
+        const tokenParts =
+          this._spreadsheet.sheets.cellHighlighter.getStyledTokens(
+            serializedValue?.toString() ?? ''
+          )
 
-        // if (tokenParts.length) {
-        //   spanElements = tokenParts
-        // }
+        if (tokenParts.length) {
+          spanElements = tokenParts
+        }
       }
     }
 

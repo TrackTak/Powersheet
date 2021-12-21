@@ -1,3 +1,4 @@
+import { groupBy } from 'lodash'
 import { IFunctionHelperData } from './FunctionHelper'
 import powersheetFormulaMetadataJSON from './powersheetFormulaMetadata.json'
 
@@ -7,7 +8,7 @@ export const functionMetadata: Record<string, IFunctionHelperData> = {
     header: 'FIN',
     headerDescription:
       'Fetches current or historical securities information from Tracktak Finance.',
-    parameters: 'attribute, [startDate], [endDate]',
+    parameters: ['attribute', '[startDate]', '[endDate]'],
     codeSyntaxUsage: [
       '=FIN("revenue")',
       '=FIN("revenue",,"01/01/2000")',
@@ -19,6 +20,9 @@ export const functionMetadata: Record<string, IFunctionHelperData> = {
         values: []
       }
     ],
-    attributes: []
+    attributes: [],
+    type: 'Stock'
   }
 }
+
+export const functionMetadataByGroup = groupBy(functionMetadata, 'type')

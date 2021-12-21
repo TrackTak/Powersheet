@@ -1,4 +1,5 @@
 import { prefix } from '../utils'
+import { IFunctionHelperData } from './FunctionHelper'
 
 export const functionHelperPrefix = `${prefix}-function-helper`
 
@@ -68,4 +69,44 @@ export const createSyntaxListItem = (
   codeDescriptionEl.prepend(codeStyle)
 
   return { listItem, codeDescriptionEl, codeStyle }
+}
+
+export const createFunctionGroupSection = (name: string) => {
+  const section = document.createElement('section')
+  section.classList.add(`${functionHelperPrefix}-section`)
+
+  const header = document.createElement('h2')
+  header.classList.add(`${functionHelperPrefix}-section-header`)
+  header.textContent = name
+  section.appendChild(header)
+
+  return { section }
+}
+
+export const createFunctionItem = (functionMetadata: IFunctionHelperData) => {
+  const functionItem = document.createElement('div')
+  functionItem.classList.add(`${functionHelperPrefix}-function-item-wrapper`)
+
+  const content = document.createElement('div')
+  content.classList.add(`${functionHelperPrefix}-function-item-content`)
+
+  const nameEl = document.createElement('span')
+  nameEl.classList.add(`${functionHelperPrefix}-function-item-name`)
+  nameEl.textContent = functionMetadata.header
+  content.appendChild(nameEl)
+
+  const parameterEl = document.createElement('span')
+  parameterEl.textContent = `${
+    functionMetadata.header
+  }(${functionMetadata.parameters?.join(',')})`
+  parameterEl.classList.add(`${functionHelperPrefix}-function-item-parameter`)
+  content.appendChild(parameterEl)
+
+  const arrowIcon = document.createElement('span')
+  arrowIcon.classList.add(`${functionHelperPrefix}-function-item-icon`)
+  content.appendChild(arrowIcon)
+
+  functionItem.appendChild(content)
+
+  return { functionItem }
 }

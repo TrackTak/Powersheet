@@ -21,11 +21,10 @@
 
     &-drawer-content {
       padding: 0;
-      padding-left: 15px;
     }
   }
 
-  &-drawer-content {
+  &-drawer-header {
     padding: 0 30px 30px;
   }
 
@@ -66,5 +65,39 @@
     color: #6240c8;
     font-weight: bold;
     font-size: 13px;
+  }
+
+  &-section {
+    margin: 0 40px;
+    margin-top: 10px;
+  }
+
+  &-function-item-wrapper {
+    @include styles.button;
+  }
+
+  &-function-item-content {
+    margin: 0 40px;
+    padding: 12px 0;
+    display: flex;
+    justify-content: space-evenly;
+    flex-direction: column;
+    position: relative;
+  }
+
+  &-function-item-parameter {
+    @include styles.textDescription;
+    max-width: 300px;
+    overflow-wrap: break-word;
+  }
+
+  &-function-item-icon {
+    height: 15px;
+    width: 15px;
+    display: block;
+    background-image: url(./functionSummaryHelper/chevron-down.svg);
+    transform: rotate(-90deg);
+    position: absolute;
+    right: -10px;
   }
 }

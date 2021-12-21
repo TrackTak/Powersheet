@@ -2,22 +2,76 @@ const fs = require('fs')
 const jsdom = require('jsdom')
 const { JSDOM } = jsdom
 
+const tokenize = parameters => {
+  try {
+    const parameterArray = []
+    let word = ''
+    for (let i = 0; i < parameters.length; i++) {
+      if (parameters[i] === '[' && i < parameters.length - 1) {
+        while (parameters[i] !== ']') {
+          word += parameters[i]
+          i++
+          continue
+        }
+        word += ']'
+        parameterArray.push(word)
+        word = ''
+        continue
+      }
+      if (',' === parameters[i]) {
+        parameterArray.push(word)
+        word = ''
+        continue
+      }
+      word += parameters[i]
+
+      if (i === parameters.length) {
+        parameterArray.push(word)
+        word = ''
+      }
+    }
+    if (word.length > 0) {
+      parameterArray.push(word)
+    }
+    return parameterArray
+  } catch (error) {
+    console.log(`failed on parameters: ${parameters}`)
+
+    throw error
+  }
+}
+
 ;(async function () {
   try {
     const gSheetsFormulaData = fs.readFileSync(
-      `./rawData/gSheetsFormulaMetadata.csv`,
+      `${__dirname}/rawData/gSheetsFormulaMetadata.csv`,
       'utf8'
     )
 
     // 1. Read basic function description data from Google Sheets Formula Data
     const gSheetMetadata = {}
     const gSheetsLines = gSheetsFormulaData.split(/\r?\n/)
-    gSheetsLines.forEach(line => {
-      const data = line.split('|')
+
+    const filteredLines = gSheetsLines
+      .map(line => {
+        return line.split('|')
+      })
+      .filter(data => {
+        const name = data[1]
+
+        return name !== 'GOOGLEFINANCE' && name !== 'GOOGLETRANSLATE'
+      })
+
+    filteredLines.forEach(data => {
+      const parametersString = data[2].split('(')[1].replace(')', '')
+      const parameters = tokenize(parametersString)
+        .map(x => x.trim())
+        .filter(x => x)
+
       gSheetMetadata[data[1]] = {
         type: data[0],
         name: data[1],
-        parameters: data[2].split('(')[1].replace(')', ''),
+        parameters,
         codeSyntaxElements: [
           {
             codeSyntax: `=${data[2]}`,
@@ -30,7 +84,7 @@ const { JSDOM } = jsdom
 
     // 2. Add Basic Google Formula Information to all Hyperformula functions
     const hfFormulaData = fs.readFileSync(
-      `./rawData/hfFormulaMetadata.csv`,
+      `${__dirname}/rawData/hfFormulaMetadata.csv`,
       'utf8'
     )
     const hfLines = hfFormulaData.split(/\r?\n/)
@@ -54,7 +108,7 @@ const { JSDOM } = jsdom
     // 3. Add Sample Usage and Syntax from scraped Google Sheets sites to Hyperformula functions
     const incorrectFormattedFunctions = []
     const formulaDetails = fs.readFileSync(
-      `./rawData/gSheetsDocumentation.csv`,
+      `${__dirname}/rawData/gSheetsDocumentation.csv`,
       'utf8'
     )
     const formulaDetailsLines = formulaDetails.split(/\r?\n/)
@@ -154,13 +208,15 @@ const { JSDOM } = jsdom
     })
 
     fs.writeFileSync(
-      `./output/powersheetFormulaMetadata.json`,
+      `${__dirname}/../../packages/spreadsheet/src/spreadsheet/functionHelper/powersheetFormulaMetadata.json`,
       JSON.stringify(hfData)
     )
     console.log(
       `${incorrectFormattedFunctions.length} incorrectly formatted functions: ${incorrectFormattedFunctions}`
     )
   } catch (e) {
-    console.error(e)
+    console.log(e)
+
+    throw e
   }
 })()

@@ -14,11 +14,7 @@ export const createWrapperContent = () => {
   }
 }
 
-export const createMainHeader = (
-  headerText: string,
-  parameterText: string,
-  inputText: string
-) => {
+export const createMainHeader = (headerText: string, parameters: string[]) => {
   const mainHeaderEl = document.createElement('div')
 
   const headerEl = document.createElement('h1')
@@ -35,13 +31,23 @@ export const createMainHeader = (
   parameterContainerEl.appendChild(openingBracketEl)
   const closingBracketEl = document.createElement('span')
   closingBracketEl.textContent = ')'
-  const parameterArray = tokenize(parameterText)
-  parameterArray.forEach((parameter, index) => {
+  const parameterSyntaxElements: HTMLSpanElement[] = []
+
+  parameters.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
+    parameterEl.classList.add(`${functionSummaryHelperPrefix}-parameter`)
+
+    if (parameter.includes('[')) {
+      parameterEl.dataset.isInfiniteParameter = ''
+    }
+
     parameterEl.textContent = parameter
+    parameterSyntaxElements.push(parameterEl)
     parameterContainerEl.appendChild(parameterEl)
-    if (index !== parameterArray.length - 1) {
+
+    if (index !== parameters.length - 1) {
       const commaEl = document.createElement('span')
+
       commaEl.textContent = ', '
       parameterContainerEl.appendChild(commaEl)
     }
@@ -49,40 +55,7 @@ export const createMainHeader = (
   parameterContainerEl.appendChild(closingBracketEl)
   mainHeaderEl.appendChild(parameterContainerEl)
 
-  return { mainHeaderEl }
-}
-
-export const tokenize = (parameters: string) => {
-  const parameterArray = []
-  let word = ''
-  for (let i = 0; i < parameters.length; i++) {
-    if (parameters[i] === '[' && i < parameters.length - 1) {
-      while (parameters[i] !== ']') {
-        word += parameters[i]
-        i++
-        continue
-      }
-      word += ']'
-      parameterArray.push(word)
-      word = ''
-      continue
-    }
-    if (',' === parameters[i]) {
-      parameterArray.push(word)
-      word = ''
-      continue
-    }
-    word += parameters[i]
-
-    if (i === parameters.length) {
-      parameterArray.push(word)
-      word = ''
-    }
-  }
-  if (word.length > 0) {
-    parameterArray.push(word)
-  }
-  return parameterArray
+  return { mainHeaderEl, parameterSyntaxElements }
 }
 
 export const createButton = (buttonText: string) => {

@@ -32,6 +32,9 @@ class FormulaBar {
       this.editableContent,
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
+      this.editableContent
+    )
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
@@ -51,6 +54,20 @@ class FormulaBar {
         break
       }
     }
+  }
+
+  private _onKeyUp = (e: KeyboardEvent) => {
+    e.stopPropagation()
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
+      this.editableContent
+    )
+  }
+
+  private _onMouseUp = (e: MouseEvent) => {
+    e.stopPropagation()
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
+      this.editableContent
+    )
   }
 
   /**
@@ -80,6 +97,8 @@ class FormulaBar {
 
     this.editableContent.addEventListener('input', this._onInput)
     this.editableContent.addEventListener('keydown', this._onKeyDown)
+    this.editableContent.addEventListener('keyup', this._onKeyUp)
+    this.editableContent.addEventListener('mouseup', this._onMouseUp)
   }
 
   /**
@@ -148,6 +167,8 @@ class FormulaBar {
     this.formulaBarEl.remove()
     this.editableContent.removeEventListener('input', this._onInput)
     this.editableContent.removeEventListener('keydown', this._onKeyDown)
+    this.editableContent.removeEventListener('keyup', this._onKeyUp)
+    this.editableContent.removeEventListener('mouseup', this._onMouseUp)
   }
 }
 

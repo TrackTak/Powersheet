@@ -170,11 +170,10 @@ class CellEditor {
       const hasOpenBracket = functionName.includes('(')
       const input = functionName.split('(')
       functionName = hasOpenBracket ? input[0] : functionName
-      const parameters = input[1]
 
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
-        this.functionSummaryHelper.show(functionName, parameters)
+        this.functionSummaryHelper.show(functionName)
         this._updateFunctionSummaryHelperHighlights()
       } else {
         this.formulaHelper?.show(functionName)
@@ -264,15 +263,12 @@ class CellEditor {
     this._updateFunctionSummaryHelperHighlights()
   }
 
-  private _updateFunctionSummaryHelperHighlights = () => {
+  _updateFunctionSummaryHelperHighlights = () => {
     const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
     const textContent = nodes.length
       ? this._nodesToText(nodes)
       : this.cellEditorEl.textContent
-    this.functionSummaryHelper.updateParameterHighlights(
-      this._getCaretPosition(),
-      textContent ?? ''
-    )
+    this.functionSummaryHelper.updateParameterHighlights(textContent ?? '')
   }
 
   private _getCaretPosition() {
@@ -490,6 +486,8 @@ class CellEditor {
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
+    this.cellEditorEl.removeEventListener('keyup', this._onKeyUp)
+    this.cellEditorEl.removeEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.removeEventListener('click', this._onClick)
     this.formulaHelper?._destroy()
     this.functionSummaryHelper._destroy()

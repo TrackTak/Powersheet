@@ -3,7 +3,7 @@
     "header": "ARRAYFORMULA",
     "headerDescription": "Enables array arithmetic inside.",
     "type": "Google",
-    "parameters": "array_formula",
+    "parameters": ["array_formula"],
     "codeSyntaxUsage": [
       "ARRAYFORMULA(SUM(IF(A1:A10>5, A1:A10, 0)))",
       "ARRAYFORMULA(A1:C1+A2:C2)"
@@ -25,7 +25,7 @@
     "header": "FILTER",
     "headerDescription": "Filters the array based on boolean arrays.",
     "type": "Filter",
-    "parameters": "range, condition1, [condition2]",
+    "parameters": ["range", "condition1", "[condition2]"],
     "codeSyntaxUsage": [
       "FILTER(A2:B26, A2:A26 > 5, D2:D26 < 10)",
       "FILTER(A2:C5, {TRUE; TRUE; FALSE; TRUE})",
@@ -54,7 +54,7 @@
     "header": "ARRAY_CONSTRAIN",
     "headerDescription": "Truncates the array to given dimensions.",
     "type": "Array",
-    "parameters": "input_range, num_rows, num_cols",
+    "parameters": ["input_range", "num_rows", "num_cols"],
     "codeSyntaxUsage": [
       "ARRAY_CONSTRAIN(A1:C10, 2, 3)",
       "ARRAY_CONSTRAIN(SORT(A1:F100, 1, TRUE), 10, 6)"
@@ -84,7 +84,7 @@
     "header": "DATE",
     "headerDescription": "Calculates a date specified by year, month, day, and displays it in the cell's formatting.",
     "type": "Date",
-    "parameters": "year, month, day",
+    "parameters": ["year", "month", "day"],
     "codeSyntaxUsage": ["DATE(1969,7,20)", "DATE(A2,B2,C2)"],
     "codeSyntaxElements": [
       {
@@ -111,7 +111,7 @@
     "header": "DATEDIF",
     "headerDescription": "Calculates distance between two dates, in provided unit parameter.",
     "type": "Date",
-    "parameters": "start_date, end_date, unit",
+    "parameters": ["start_date", "end_date", "unit"],
     "codeSyntaxUsage": [
       "DATEDIF(DATE(1969, 7, 16), DATE(1969, 7, 24), \"\"D\"\")",
       "DATEDIF(A1, A2, \"\"YM\"\")",
@@ -166,7 +166,7 @@
     "header": "DATEVALUE",
     "headerDescription": "Interprets string as date.",
     "type": "Date",
-    "parameters": "date_string",
+    "parameters": ["date_string"],
     "codeSyntaxUsage": [
       "DATEVALUE(\"\"1969-7-20\"\")",
       "DATEVALUE(\"\"7/20/1969\"\")",
@@ -193,7 +193,7 @@
     "header": "DAY",
     "headerDescription": "Returns the day of the given date value.",
     "type": "Date",
-    "parameters": "date",
+    "parameters": ["date"],
     "codeSyntaxUsage": [
       "DAY(DATE(1969,7,20))",
       "DAY(A2)",
@@ -217,7 +217,7 @@
     "header": "DAYS",
     "headerDescription": "Calculates the difference between two date values.",
     "type": "Date",
-    "parameters": "end_date, start_date",
+    "parameters": ["end_date", "start_date"],
     "codeSyntaxUsage": [
       "DAYS(\"\"7/24/1969\"\", \"\"7/16/1969\"\")  DAYS(“2/28/2016”, “2/28/2017”)"
     ],
@@ -242,7 +242,7 @@
     "header": "DAYS360",
     "headerDescription": "Calculates the difference between two date values in days, in 360-day basis.",
     "type": "Date",
-    "parameters": "start_date, end_date, [method]",
+    "parameters": ["start_date", "end_date", "[method]"],
     "codeSyntaxUsage": [
       "DAYS360(DATE(1969,7,16),DATE(1969,7,24),1)",
       "DAYS360(A2,A3)",
@@ -278,7 +278,7 @@
     "header": "EDATE",
     "headerDescription": "Shifts the given startdate by given number of months.",
     "type": "Date",
-    "parameters": "start_date, months",
+    "parameters": ["start_date", "months"],
     "codeSyntaxUsage": [
       "EDATE(DATE(1969,7,20), 1)",
       "EDATE(A2, 1)",
@@ -305,7 +305,7 @@
     "header": "EOMONTH",
     "headerDescription": "Returns the date of the last day of a month which falls months away from the start date.",
     "type": "Date",
-    "parameters": "start_date, months",
+    "parameters": ["start_date", "months"],
     "codeSyntaxUsage": [
       "EOMONTH(DATE(1969, 7, 20), 1)",
       "EOMONTH(A2, 1)",
@@ -332,7 +332,7 @@
     "header": "HOUR",
     "headerDescription": "Returns hour component of given time.",
     "type": "Date",
-    "parameters": "time",
+    "parameters": ["time"],
     "codeSyntaxUsage": [
       "HOUR(TIME(11,40,59))",
       "HOUR(A2)",
@@ -356,7 +356,7 @@
     "header": "ISOWEEKNUM",
     "headerDescription": "Returns an ISO week number that corresponds to the week of year.",
     "type": "Date",
-    "parameters": "date",
+    "parameters": ["date"],
     "codeSyntaxUsage": [
       "ISOWEEKNUM(DATE(1969, 7, 20))",
       "ISOWEEKNUM(\"\"6/14/2002\"\")"
@@ -378,7 +378,7 @@
     "header": "MINUTE",
     "headerDescription": "Returns minute component of given time.",
     "type": "Date",
-    "parameters": "time",
+    "parameters": ["time"],
     "codeSyntaxUsage": [
       "MINUTE(TIME(11,40,59))",
       "MINUTE(A2)",
@@ -402,7 +402,7 @@
     "header": "MONTH",
     "headerDescription": "Returns the month for the given date value.",
     "type": "Date",
-    "parameters": "date",
+    "parameters": ["date"],
     "codeSyntaxUsage": [
       "MONTH(DATE(1969, 7, 20))",
       "MONTH(A2)",
@@ -426,7 +426,7 @@
     "header": "NETWORKDAYS",
     "headerDescription": "Returns the number of working days between two given dates.",
     "type": "Date",
-    "parameters": "start_date, end_date, [holidays]",
+    "parameters": ["start_date", "end_date", "[holidays]"],
     "codeSyntaxUsage": [
       "NETWORKDAYS(DATE(1969,7,16),DATE(1969,7,24))",
       "NETWORKDAYS(A2,B2)",
@@ -459,7 +459,7 @@
     "header": "NETWORKDAYS.INTL",
     "headerDescription": "Returns the number of working days between two given dates.",
     "type": "Date",
-    "parameters": "start_date, end_date, [weekend], [holidays]",
+    "parameters": ["start_date", "end_date", "[weekend]", "[holidays]"],
     "codeSyntaxUsage": [
       "NETWORKDAYS.INTL(DATE(1969, 7, 16), DATE(1969, 7, 24), 1, A1:A10)",
       "NETWORKDAYS.INTL(DATE(1969, 7, 16), DATE(1969, 7, 24))",
@@ -501,7 +501,7 @@
     "header": "NOW",
     "headerDescription": "Returns current date + time.",
     "type": "Date",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["NOW()"],
     "codeSyntaxElements": [{ "codeSyntax": "NOW()", "values": [] }],
     "attributes": []
@@ -510,7 +510,7 @@
     "header": "SECOND",
     "headerDescription": "Returns second component of given time.",
     "type": "Date",
-    "parameters": "time",
+    "parameters": ["time"],
     "codeSyntaxUsage": [
       "SECOND(TIME(11,40,59))",
       "SECOND(A2)",
@@ -534,7 +534,7 @@
     "header": "TIME",
     "headerDescription": "Calculates time from given hour, minute and second.",
     "type": "Date",
-    "parameters": "hour, minute, second",
+    "parameters": ["hour", "minute", "second"],
     "codeSyntaxUsage": ["TIME(11,40,59)", "TIME(A2,B2,C2)"],
     "codeSyntaxElements": [
       {
@@ -561,7 +561,7 @@
     "header": "TIMEVALUE",
     "headerDescription": "Interprets string as time.",
     "type": "Date",
-    "parameters": "time_string",
+    "parameters": ["time_string"],
     "codeSyntaxUsage": [
       "TIMEVALUE(\"\"2:15 PM\"\")",
       "TIMEVALUE(\"\"14:15:30\"\")",
@@ -584,7 +584,7 @@
     "header": "TODAY",
     "headerDescription": "Returns current date.",
     "type": "Date",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["TODAY()"],
     "codeSyntaxElements": [{ "codeSyntax": "TODAY()", "values": [] }],
     "attributes": []
@@ -593,7 +593,7 @@
     "header": "WEEKDAY",
     "headerDescription": "Computes a number between 1-7 representing the day of week.",
     "type": "Date",
-    "parameters": "date, [type]",
+    "parameters": ["date", "[type]"],
     "codeSyntaxUsage": [
       "WEEKDAY(DATE(1969,7,20))",
       "WEEKDAY(A2)",
@@ -633,7 +633,7 @@
     "header": "WEEKNUM",
     "headerDescription": "Returns a week number that corresponds to the week of year.",
     "type": "Date",
-    "parameters": "date, [type]",
+    "parameters": ["date", "[type]"],
     "codeSyntaxUsage": [
       "WEEKNUM(DATE(1969, 7, 20), 1)",
       "WEEKNUM(\"\"12/09/1948\"\", 2)",
@@ -657,7 +657,7 @@
     "header": "WORKDAY",
     "headerDescription": "Returns the working day number of days from start day.",
     "type": "Date",
-    "parameters": "start_date, num_days, [holidays]",
+    "parameters": ["start_date", "num_days", "[holidays]"],
     "codeSyntaxUsage": [
       "WORKDAY(DATE(1969,7,20), 4, A1:A10)",
       "WORKDAY(A2, 10)",
@@ -694,7 +694,7 @@
     "header": "WORKDAY.INTL",
     "headerDescription": "Returns the working day number of days from start day.",
     "type": "Date",
-    "parameters": "start_date, num_days, [weekend], [holidays]",
+    "parameters": ["start_date", "num_days", "[weekend]", "[holidays]"],
     "codeSyntaxUsage": [
       "WORKDAY.INTL(DATE(1969, 7, 21), 4, 1, A1:A10)",
       "WORKDAY.INTL(DATE(1995, 8, 13), -2, 2, B1:B10)",
@@ -731,7 +731,7 @@
     "header": "YEAR",
     "headerDescription": "Returns the year as a number according to the internal calculation rules.",
     "type": "Date",
-    "parameters": "date",
+    "parameters": ["date"],
     "codeSyntaxUsage": ["YEAR(DATE(1969,7,20))", "YEAR(A2)", "YEAR(40909)"],
     "codeSyntaxElements": [
       {
@@ -750,7 +750,7 @@
     "header": "YEARFRAC",
     "headerDescription": "Computes the difference between two date values, in fraction of years.",
     "type": "Date",
-    "parameters": "start_date, end_date, [day_count_convention]",
+    "parameters": ["start_date", "end_date", "[day_count_convention]"],
     "codeSyntaxUsage": [
       "YEARFRAC(DATE(1969,7,16),DATE(1969,7,24),1)",
       "YEARFRAC(A2,A3)"
@@ -797,7 +797,7 @@
     "header": "BIN2DEC",
     "headerDescription": "The result is the decimal number for the binary number entered.",
     "type": "Engineering",
-    "parameters": "signed_binary_number",
+    "parameters": ["signed_binary_number"],
     "codeSyntaxUsage": ["BIN2DEC(101)", "BIN2DEC(A2)"],
     "codeSyntaxElements": [
       {
@@ -828,7 +828,7 @@
     "header": "BIN2HEX",
     "headerDescription": "The result is the hexadecimal number for the binary number entered.",
     "type": "Engineering",
-    "parameters": "signed_binary_number, [significant_digits]",
+    "parameters": ["signed_binary_number", "[significant_digits]"],
     "codeSyntaxUsage": ["BIN2HEX(101,8)", "BIN2HEX(A2)"],
     "codeSyntaxElements": [
       {
@@ -868,7 +868,7 @@
     "header": "BIN2OCT",
     "headerDescription": "The result is the octal number for the binary number entered.",
     "type": "Engineering",
-    "parameters": "signed_binary_number, [significant_digits]",
+    "parameters": ["signed_binary_number", "[significant_digits]"],
     "codeSyntaxUsage": ["BIN2OCT(101,8)", "BIN2OCT(A2)"],
     "codeSyntaxElements": [
       {
@@ -908,11 +908,8 @@
     "header": "BITAND",
     "headerDescription": "Returns a bitwise logical \"and\" of the parameters.",
     "type": "Engineering",
-    "parameters": "value1, value2",
-    "codeSyntaxUsage": [
-      "=BITAND(10,9)",
-      "=BITAND(BIN2DEC(\"1110\"), BIN2DEC(\"0100\"))"
-    ],
+    "parameters": ["value1", "value2"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "BITAND(value1,value2)",
@@ -934,7 +931,7 @@
     "header": "BITLSHIFT",
     "headerDescription": "Shifts a number left by n bits.",
     "type": "Engineering",
-    "parameters": "value, shift_amount",
+    "parameters": ["value", "shift_amount"],
     "codeSyntaxUsage": ["BITLSHIFT(9, 2)  BITLSHIFT(A2, 4)"],
     "codeSyntaxElements": [
       {
@@ -957,7 +954,7 @@
     "header": "BITOR",
     "headerDescription": "Returns a bitwise logical \"or\" of the parameters.",
     "type": "Engineering",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["BITOR(9, 5)", "BITOR(A1, 10)", "BITOR(A1, B1)"],
     "codeSyntaxElements": [
       {
@@ -980,7 +977,7 @@
     "header": "BITRSHIFT",
     "headerDescription": "Shifts a number right by n bits.",
     "type": "Engineering",
-    "parameters": "value, shift_amount",
+    "parameters": ["value", "shift_amount"],
     "codeSyntaxUsage": ["BITRSHIFT(18, 2)", "BITRSHIFT(A2, 4)"],
     "codeSyntaxElements": [
       {
@@ -1003,7 +1000,7 @@
     "header": "BITXOR",
     "headerDescription": "Returns a bitwise logical \"exclusive or\" of the parameters.",
     "type": "Engineering",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["BITXOR(9, 5)", "BITXOR(A1, A2)"],
     "codeSyntaxElements": [
       {
@@ -1026,7 +1023,7 @@
     "header": "COMPLEX",
     "headerDescription": "Returns complex number from Re and Im parts.",
     "type": "Engineering",
-    "parameters": "real_part, imaginary_part, [suffix]",
+    "parameters": ["real_part", "imaginary_part", "[suffix]"],
     "codeSyntaxUsage": [
       "COMPLEX(3, 4)",
       "COMPLEX(3, -1, \"\"j\"\")",
@@ -1057,7 +1054,7 @@
     "header": "DEC2BIN",
     "headerDescription": "Returns the binary number for the decimal number entered between –512 and 511.",
     "type": "Engineering",
-    "parameters": "decimal_number, [significant_digits]",
+    "parameters": ["decimal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["DEC2BIN(\"\"100\"\",8)", "DEC2BIN(A2)"],
     "codeSyntaxElements": [
       {
@@ -1096,7 +1093,7 @@
     "header": "DEC2HEX",
     "headerDescription": "Returns the hexadecimal number for the decimal number entered.",
     "type": "Engineering",
-    "parameters": "decimal_number, [significant_digits]",
+    "parameters": ["decimal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["DEC2HEX(100,8)", "DEC2HEX(A2)"],
     "codeSyntaxElements": [
       {
@@ -1132,7 +1129,7 @@
     "header": "DEC2OCT",
     "headerDescription": "Returns the octal number for the decimal number entered.",
     "type": "Engineering",
-    "parameters": "decimal_number, [significant_digits]",
+    "parameters": ["decimal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["DEC2OCT('100',8)", "DEC2OCT(A2)"],
     "codeSyntaxElements": [
       {
@@ -1171,7 +1168,7 @@
     "header": "DELTA",
     "headerDescription": "Returns TRUE (1) if both numbers are equal, otherwise returns FALSE (0).",
     "type": "Engineering",
-    "parameters": "number1, [number2]",
+    "parameters": ["number1", "[number2]"],
     "codeSyntaxUsage": ["DELTA(2, 1)", "DELTA(A2)", "DELTA(B3, 2)"],
     "codeSyntaxElements": [
       {
@@ -1191,7 +1188,7 @@
     "header": "ERF",
     "headerDescription": "Returns values of the Gaussian error integral.",
     "type": "Engineering",
-    "parameters": "lower_bound, [upper_bound]",
+    "parameters": ["lower_bound", "[upper_bound]"],
     "codeSyntaxUsage": ["ERF(-2.3, -0.7)", "ERF(1)"],
     "codeSyntaxElements": [
       {
@@ -1214,7 +1211,7 @@
     "header": "ERFC",
     "headerDescription": "Returns complementary values of the Gaussian error integral between x and infinity.",
     "type": "Math",
-    "parameters": "z",
+    "parameters": ["z"],
     "codeSyntaxUsage": ["ERFC(2)", "ERFC(A2)"],
     "codeSyntaxElements": [
       {
@@ -1233,7 +1230,7 @@
     "header": "HEX2BIN",
     "headerDescription": "The result is the binary number for the hexadecimal number entered.",
     "type": "Engineering",
-    "parameters": "signed_hexadecimal_number, [significant_digits]",
+    "parameters": ["signed_hexadecimal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["HEX2BIN('f3',8)", "HEX2BIN(A2)"],
     "codeSyntaxElements": [
       {
@@ -1276,7 +1273,7 @@
     "header": "HEX2DEC",
     "headerDescription": "The result is the decimal number for the hexadecimal number entered.",
     "type": "Engineering",
-    "parameters": "signed_hexadecimal_number",
+    "parameters": ["signed_hexadecimal_number"],
     "codeSyntaxUsage": ["HEX2DEC(\"\"f3\"\")", "HEX2DEC(A2)"],
     "codeSyntaxElements": [
       {
@@ -1307,7 +1304,7 @@
     "header": "HEX2OCT",
     "headerDescription": "The result is the octal number for the hexadecimal number entered.",
     "type": "Engineering",
-    "parameters": "signed_hexadecimal_number, significant_digits",
+    "parameters": ["signed_hexadecimal_number", "significant_digits"],
     "codeSyntaxUsage": ["HEX2OCT('f3',8)", "HEX2OCT(A2)"],
     "codeSyntaxElements": [
       {
@@ -1350,7 +1347,7 @@
     "header": "IMABS",
     "headerDescription": "Returns module of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMABS(\"\"3+4i\"\")", "IMABS(\"\"6j\"\")"],
     "codeSyntaxElements": [
       {
@@ -1369,7 +1366,7 @@
     "header": "IMAGINARY",
     "headerDescription": "Returns imaginary part of a complex number.",
     "type": "Engineering",
-    "parameters": "complex_number",
+    "parameters": ["complex_number"],
     "codeSyntaxUsage": ["IMAGINARY(\"\"4+5i\"\")", "IMAGINARY(\"\"2j\"\")"],
     "codeSyntaxElements": [
       {
@@ -1388,7 +1385,7 @@
     "header": "IMARGUMENT",
     "headerDescription": "Returns argument of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMARGUMENT(COMPLEX(4, 6)",
       "IMARGUMENT(4)",
@@ -1411,7 +1408,7 @@
     "header": "IMCONJUGATE",
     "headerDescription": "Returns conjugate of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMCONJUGATE(\"\"3+4i\"\")",
       "IMCONJUGATE(\"\"-2i\"\")"
@@ -1433,7 +1430,7 @@
     "header": "IMCOS",
     "headerDescription": "Returns cosine of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMCOS(COMPLEX(4, 6))",
       "IMCOS(4)",
@@ -1456,7 +1453,7 @@
     "header": "IMCOSH",
     "headerDescription": "Returns hyperbolic cosine of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMCOSH(COMPLEX(4, 6))", "IMCOSH(4)", "IMCOSH('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1475,7 +1472,7 @@
     "header": "IMCOT",
     "headerDescription": "Returns cotangens of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMCOT(COMPLEX(4,6))", "IMCOT(4)", "IMCOT('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1494,7 +1491,7 @@
     "header": "IMCSC",
     "headerDescription": "Returns cosecans of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMCSC(COMPLEX(4, 6))",
       "IMCSC(4)",
@@ -1517,7 +1514,7 @@
     "header": "IMCSCH",
     "headerDescription": "Returns hyperbolic cosecans of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMCSCH(COMPLEX(4,6))", "IMCSCH(4)", "IMCSCH('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1536,7 +1533,7 @@
     "header": "IMDIV",
     "headerDescription": "Divides two complex numbers.",
     "type": "Engineering",
-    "parameters": "dividend, divisor",
+    "parameters": ["dividend", "divisor"],
     "codeSyntaxUsage": [
       "IMDIV(\"\"11+16i\"\", \"\"3+2i\"\")",
       "IMDIV(\"\"4+2j\"\", 2)"
@@ -1562,7 +1559,7 @@
     "header": "IMEXP",
     "headerDescription": "Returns exponent of a complex number.",
     "type": "Engineering",
-    "parameters": "exponent",
+    "parameters": ["exponent"],
     "codeSyntaxUsage": [
       "IMEXP(\"\"2+3i\"\")",
       "IMEXP(\"\"2-4j\"\")",
@@ -1585,7 +1582,7 @@
     "header": "IMLN",
     "headerDescription": "Returns natural logarithm of a complex number.",
     "type": "Math",
-    "parameters": "complex_value",
+    "parameters": ["complex_value"],
     "codeSyntaxUsage": ["IMLN(\"\"3+4i\"\")", "IMLN(A2)", "IMLN(\"\"4+2j\"\")"],
     "codeSyntaxElements": [
       {
@@ -1604,7 +1601,7 @@
     "header": "IMLOG2",
     "headerDescription": "Returns binary logarithm of a complex number.",
     "type": "Engineering",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": [
       "IMLOG2('1+i', 3.5)",
       "IMLOG2(COMPLEX(25, 34), 2.3)",
@@ -1627,7 +1624,7 @@
     "header": "IMLOG10",
     "headerDescription": "Returns base-10 logarithm of a complex number.",
     "type": "Engineering",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": [
       "IMLOG10('1+i', 3.5)",
       "IMLOG10(COMPLEX(25, 34), 2.3)",
@@ -1650,7 +1647,7 @@
     "header": "IMPOWER",
     "headerDescription": "Returns a complex number raised to a given power.",
     "type": "Math",
-    "parameters": "complex_base, exponent",
+    "parameters": ["complex_base", "exponent"],
     "codeSyntaxUsage": [
       "IMPOWER(\"\"4-3i\"\",0.5)",
       "IMPOWER(A2,B2)",
@@ -1678,7 +1675,7 @@
     "header": "IMPRODUCT",
     "headerDescription": "Multiplies complex numbers.",
     "type": "Engineering",
-    "parameters": "factor1, [factor2, ..]",
+    "parameters": ["factor1", "[factor2, ..]"],
     "codeSyntaxUsage": [
       "IMPRODUCT(A2:A100)",
       "IMPRODUCT(\"\"1+2i\"\",3,\"\"4i\"\")",
@@ -1705,7 +1702,7 @@
     "header": "IMREAL",
     "headerDescription": "Returns real part of a complex number.",
     "type": "Engineering",
-    "parameters": "complex_number",
+    "parameters": ["complex_number"],
     "codeSyntaxUsage": ["IMREAL(\"\"4+5i\"\")", "IMREAL(\"\"4j\"\")"],
     "codeSyntaxElements": [
       {
@@ -1724,7 +1721,7 @@
     "header": "IMSEC",
     "headerDescription": "Returns secans of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMSEC(COMPLEX(4,6))", "IMSEC(4)", "IMSEC('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1743,7 +1740,7 @@
     "header": "IMSECH",
     "headerDescription": "Returns hyperbolic secans of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMSECH(COMPLEX(4,6))", "IMSECH(4)", "IMSECH('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1762,7 +1759,7 @@
     "header": "IMSIN",
     "headerDescription": "Returns sine of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMSIN(COMPLEX(4,6))",
       "IMSIN(4)",
@@ -1785,7 +1782,7 @@
     "header": "IMSINH",
     "headerDescription": "Returns hyperbolic sine of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["IMSINH(COMPLEX(4,6))", "IMSINH(4)", "IMSINH('2+3i')"],
     "codeSyntaxElements": [
       {
@@ -1804,7 +1801,7 @@
     "header": "IMSQRT",
     "headerDescription": "Returns a square root of a complex number.",
     "type": "Math",
-    "parameters": "complex_number",
+    "parameters": ["complex_number"],
     "codeSyntaxUsage": ["IMSQRT(2)", "IMSQRT(\"\"3+2i\"\")"],
     "codeSyntaxElements": [
       {
@@ -1823,7 +1820,7 @@
     "header": "IMSUB",
     "headerDescription": "Subtracts two complex numbers.",
     "type": "Engineering",
-    "parameters": "first_number, second_number",
+    "parameters": ["first_number", "second_number"],
     "codeSyntaxUsage": ["IMSUB(\"\"6+5i\"\", \"\"2+3i\"\")"],
     "codeSyntaxElements": [
       {
@@ -1846,7 +1843,7 @@
     "header": "IMSUM",
     "headerDescription": "Adds complex numbers.",
     "type": "Engineering",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "IMSUM(A2:A100)",
       "IMSUM(\"\"1+2i\"\",3,\"\"4i\"\")",
@@ -1873,7 +1870,7 @@
     "header": "IMTAN",
     "headerDescription": "Returns tangens of a complex number.",
     "type": "Engineering",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "IMTAN(COMPLEX(4, 6))",
       "IMTAN(4)",
@@ -1896,7 +1893,7 @@
     "header": "OCT2BIN",
     "headerDescription": "The result is the binary number for the octal number entered.",
     "type": "Engineering",
-    "parameters": "signed_octal_number, [significant_digits]",
+    "parameters": ["signed_octal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["OCT2BIN(37,8)", "OCT2BIN(A2)"],
     "codeSyntaxElements": [
       {
@@ -1939,7 +1936,7 @@
     "header": "OCT2DEC",
     "headerDescription": "The result is the decimal number for the octal number entered.",
     "type": "Engineering",
-    "parameters": "signed_octal_number",
+    "parameters": ["signed_octal_number"],
     "codeSyntaxUsage": ["OCT2DEC(37)", "OCT2DEC(A2)"],
     "codeSyntaxElements": [
       {
@@ -1970,7 +1967,7 @@
     "header": "OCT2HEX",
     "headerDescription": "The result is the hexadecimal number for the octal number entered.",
     "type": "Engineering",
-    "parameters": "signed_octal_number, [significant_digits]",
+    "parameters": ["signed_octal_number", "[significant_digits]"],
     "codeSyntaxUsage": ["OCT2HEX(37,8)", "OCT2HEX(A2)"],
     "codeSyntaxElements": [
       {
@@ -2010,7 +2007,7 @@
     "header": "ISBLANK",
     "headerDescription": "Returns TRUE if the reference to a cell is blank.",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISBLANK(A2)", "IF(ISBLANK(B1),,A1/B1)"],
     "codeSyntaxElements": [
       {
@@ -2033,7 +2030,7 @@
     "header": "ISERR",
     "headerDescription": "Returns TRUE if the value is error value except ",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISERR(A2)"],
     "codeSyntaxElements": [
       {
@@ -2056,7 +2053,7 @@
     "header": "ISERROR",
     "headerDescription": "Returns TRUE if the value is general error value.",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": [
       "ISERROR(A2)",
       "ISERROR(A1/A2)",
@@ -2083,7 +2080,7 @@
     "header": "ISEVEN",
     "headerDescription": "Returns TRUE if the value is an even integer, or FALSE if the value is odd.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISEVEN(4)", "ISEVEN(A2)"],
     "codeSyntaxElements": [
       {
@@ -2106,7 +2103,7 @@
     "header": "ISFORMULA",
     "headerDescription": "Checks whether referenced cell is a formula.",
     "type": "Info",
-    "parameters": "cell",
+    "parameters": ["cell"],
     "codeSyntaxUsage": ["ISFORMULA(A2)"],
     "codeSyntaxElements": [
       {
@@ -2129,7 +2126,7 @@
     "header": "ISLOGICAL",
     "headerDescription": "Tests for a logical value (TRUE or FALSE).",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISLOGICAL(A2)"],
     "codeSyntaxElements": [
       {
@@ -2148,7 +2145,7 @@
     "header": "ISNA",
     "headerDescription": "Returns TRUE if the value is ",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISNA(A2)"],
     "codeSyntaxElements": [
       {
@@ -2167,7 +2164,7 @@
     "header": "ISNONTEXT",
     "headerDescription": "Tests if the cell contents are text or numbers, and returns FALSE if the contents are text.",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISNONTEXT(A2)", "ISNONTEXT('cat')"],
     "codeSyntaxElements": [
       {
@@ -2198,7 +2195,7 @@
     "header": "ISNUMBER",
     "headerDescription": "Returns TRUE if the value refers to a number.",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISNUMBER(A2)", "ISNUMBER(4)"],
     "codeSyntaxElements": [
       {
@@ -2217,7 +2214,7 @@
     "header": "ISODD",
     "headerDescription": "Returns TRUE if the value is odd, or FALSE if the number is even.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISODD(4)", "ISODD(A2)"],
     "codeSyntaxElements": [
       {
@@ -2240,7 +2237,7 @@
     "header": "ISREF",
     "headerDescription": "Returns TRUE if provided value is ",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISREF(A2)"],
     "codeSyntaxElements": [
       {
@@ -2263,7 +2260,7 @@
     "header": "ISTEXT",
     "headerDescription": "Returns TRUE if the cell contents refer to text.",
     "type": "Info",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ISTEXT(A2)", "ISTEXT('cat')"],
     "codeSyntaxElements": [
       {
@@ -2286,7 +2283,7 @@
     "header": "NA",
     "headerDescription": "Returns ",
     "type": "Info",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["NA()"],
     "codeSyntaxElements": [{ "codeSyntax": "NA()", "values": [] }],
     "attributes": []
@@ -2295,7 +2292,14 @@
     "header": "CUMIPMT",
     "headerDescription": "Returns the cumulative interest paid on a loan between a start period and an end period.",
     "type": "Financial",
-    "parameters": "rate, number_of_periods, present_value, first_period, last_period, end_or_beginning",
+    "parameters": [
+      "rate",
+      "number_of_periods",
+      "present_value",
+      "first_period",
+      "last_period",
+      "end_or_beginning"
+    ],
     "codeSyntaxUsage": [
       "CUMIPMT(0.12,12,100,1,5,0)",
       "CUMIPMT(A2,B2,C2,D2,E2,1)"
@@ -2342,7 +2346,14 @@
     "header": "CUMPRINC",
     "headerDescription": "Returns the cumulative principal paid on a loan between a start period and an end period.",
     "type": "Financial",
-    "parameters": "rate, number_of_periods, present_value, first_period, last_period, end_or_beginning",
+    "parameters": [
+      "rate",
+      "number_of_periods",
+      "present_value",
+      "first_period",
+      "last_period",
+      "end_or_beginning"
+    ],
     "codeSyntaxUsage": [
       "CUMPRINC(0.12,12,100,1,5,0)",
       "CUMPRINC(A2,B2,C2,D2,E2,1)"
@@ -2389,7 +2400,7 @@
     "header": "DB",
     "headerDescription": "Returns the depreciation of an asset for a period using the fixed-declining balance method.",
     "type": "Financial",
-    "parameters": "cost, salvage, life, period, [month]",
+    "parameters": ["cost", "salvage", "life", "period", "[month]"],
     "codeSyntaxUsage": ["DB(100,50,10,2)", "DB(A2,A3,A4,A5,10)"],
     "codeSyntaxElements": [
       {
@@ -2421,7 +2432,7 @@
     "header": "DDB",
     "headerDescription": "Returns the depreciation of an asset for a period using the double-declining balance method.",
     "type": "Financial",
-    "parameters": "cost, salvage, life, period, [factor]",
+    "parameters": ["cost", "salvage", "life", "period", "[factor]"],
     "codeSyntaxUsage": ["DDB(100,50,10,2)", "DDB(A2,A3,A4,A5,2.25)"],
     "codeSyntaxElements": [
       {
@@ -2453,7 +2464,7 @@
     "header": "DOLLARDE",
     "headerDescription": "Converts a price entered with a special notation to a price displayed as a decimal number.",
     "type": "Financial",
-    "parameters": "fractional_price, unit",
+    "parameters": ["fractional_price", "unit"],
     "codeSyntaxUsage": ["DOLLARDE(100.10,32)", "DOLLARDE(A2,8)"],
     "codeSyntaxElements": [
       {
@@ -2476,7 +2487,7 @@
     "header": "DOLLARFR",
     "headerDescription": "Converts a price displayed as a decimal number to a price entered with a special notation.",
     "type": "Financial",
-    "parameters": "decimal_price, unit",
+    "parameters": ["decimal_price", "unit"],
     "codeSyntaxUsage": ["DOLLARFR(100.125,32)", "DOLLARFR(A2,8)"],
     "codeSyntaxElements": [
       {
@@ -2499,7 +2510,7 @@
     "header": "EFFECT",
     "headerDescription": "Calculates the effective annual interest rate from a nominal interest rate and the number of compounding periods per year.",
     "type": "Financial",
-    "parameters": "nominal_rate, periods_per_year",
+    "parameters": ["nominal_rate", "periods_per_year"],
     "codeSyntaxUsage": ["EFFECT(0.99,12)", "EFFECT(A2,A3)"],
     "codeSyntaxElements": [
       {
@@ -2522,7 +2533,13 @@
     "header": "FV",
     "headerDescription": "Returns the future value of an investment.",
     "type": "Financial",
-    "parameters": "rate, number_of_periods, payment_amount, [present_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "number_of_periods",
+      "payment_amount",
+      "[present_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": ["FV(2,12,100,400)", "FV(A2,B2,C2,D2,1)"],
     "codeSyntaxElements": [
       {
@@ -2548,7 +2565,7 @@
     "header": "FVSCHEDULE",
     "headerDescription": "Returns the future value of an investment based on a rate schedule.",
     "type": "Financial",
-    "parameters": "principal, rate_schedule",
+    "parameters": ["principal", "rate_schedule"],
     "codeSyntaxUsage": [
       "FVSCHEDULE(10000,A2:A100)",
       "FVSCHEDULE(10000,{0.1,0.95,0.9,0.85})",
@@ -2579,7 +2596,14 @@
     "header": "IPMT",
     "headerDescription": "Returns the interest portion of a given loan payment in a given payment period.",
     "type": "Financial",
-    "parameters": "rate, period, number_of_periods, present_value, [future_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "period",
+      "number_of_periods",
+      "present_value",
+      "[future_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": [
       "IPMT(0.05/12, 1, 30*12, 100000)",
       "IPMT(2,5,12,100)",
@@ -2617,7 +2641,7 @@
     "header": "ISPMT",
     "headerDescription": "Returns the interest paid for a given period of an investment with equal principal payments.",
     "type": "Financial",
-    "parameters": "rate, period, number_of_periods, present_value",
+    "parameters": ["rate", "period", "number_of_periods", "present_value"],
     "codeSyntaxUsage": ["ISMPT(15%, 2, 5, 1000)"],
     "codeSyntaxElements": [
       {
@@ -2645,7 +2669,11 @@
     "header": "MIRR",
     "headerDescription": "Returns modified internal value for cashflows.",
     "type": "Financial",
-    "parameters": "cashflow_amounts, financing_rate, reinvestment_return_rate",
+    "parameters": [
+      "cashflow_amounts",
+      "financing_rate",
+      "reinvestment_return_rate"
+    ],
     "codeSyntaxUsage": [
       "MIRR(A2:A25,B2,B3)",
       "MIRR({-4000,200,250,300,350},0.08,0.11)"
@@ -2679,7 +2707,7 @@
     "header": "NOMINAL",
     "headerDescription": "Returns the nominal interest rate.",
     "type": "Financial",
-    "parameters": "effective_rate, periods_per_year",
+    "parameters": ["effective_rate", "periods_per_year"],
     "codeSyntaxUsage": ["NOMINAL(0.85,12)", "NOMINAL(A2,A3)"],
     "codeSyntaxElements": [
       {
@@ -2702,7 +2730,13 @@
     "header": "NPER",
     "headerDescription": "Returns the number of periods for an investment assuming periodic, constant payments and a constant interest rate.",
     "type": "Financial",
-    "parameters": "rate, payment_amount, present_value, [future_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "payment_amount",
+      "present_value",
+      "[future_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": ["NPER(2,500,40000)", "NPER(A2,B2,C2,D2,1)"],
     "codeSyntaxElements": [
       {
@@ -2728,7 +2762,7 @@
     "header": "NPV",
     "headerDescription": "Returns net present value.",
     "type": "Financial",
-    "parameters": "discount, cashflow1, [cashflow2, ..]",
+    "parameters": ["discount", "cashflow1", "[cashflow2, ..]"],
     "codeSyntaxUsage": ["NPV(0.08,200,250,300)", "NPV(A2,A3,A4,A5)"],
     "codeSyntaxElements": [
       {
@@ -2752,8 +2786,8 @@
     "header": "PDURATION",
     "headerDescription": "Returns number of periods to reach specific value.",
     "type": "Financial",
-    "parameters": "rate, present_value, future_value",
-    "codeSyntaxUsage": ["=PDURATION(0.25, 10, 15)", "=PDURATION(0.75, 2, 15)"],
+    "parameters": ["rate", "present_value", "future_value"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "PDURATION(rate, present_value, future_value)",
@@ -2779,7 +2813,13 @@
     "header": "PMT",
     "headerDescription": "Returns the periodic payment for a loan.",
     "type": "Financial",
-    "parameters": "rate, number_of_periods, present_value, [future_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "number_of_periods",
+      "present_value",
+      "[future_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": [
       "PMT(0.05/12, 30*12, 100000)",
       "PMT(2,12,100)",
@@ -2809,7 +2849,14 @@
     "header": "PPMT",
     "headerDescription": "Calculates the principal portion of a given loan payment.",
     "type": "Financial",
-    "parameters": "rate, period, number_of_periods, present_value, [future_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "period",
+      "number_of_periods",
+      "present_value",
+      "[future_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": [
       "PPMT(0.05/12, 1, 30*12, 100000)",
       "PPMT(2,5,12,100)",
@@ -2847,7 +2894,13 @@
     "header": "PV",
     "headerDescription": "Returns the present value of an investment.",
     "type": "Financial",
-    "parameters": "rate, number_of_periods, payment_amount, [future_value], [end_or_beginning]",
+    "parameters": [
+      "rate",
+      "number_of_periods",
+      "payment_amount",
+      "[future_value]",
+      "[end_or_beginning]"
+    ],
     "codeSyntaxUsage": ["PV(2,12,100)", "PV(A2,B2,C2,D2,1)"],
     "codeSyntaxElements": [
       {
@@ -2876,7 +2929,14 @@
     "header": "RATE",
     "headerDescription": "Returns the interest rate per period of an annuity.",
     "type": "Financial",
-    "parameters": "number_of_periods, payment_per_period, present_value, [future_value], [end_or_beginning], [rate_guess]",
+    "parameters": [
+      "number_of_periods",
+      "payment_per_period",
+      "present_value",
+      "[future_value]",
+      "[end_or_beginning]",
+      "[rate_guess]"
+    ],
     "codeSyntaxUsage": [
       "RATE(12,-100,400,0,0,0.1)",
       "RATE(A2,B2,C2,D2,1,0.08)"
@@ -2912,8 +2972,8 @@
     "header": "RRI",
     "headerDescription": "Returns an equivalent interest rate for the growth of an investment.",
     "type": "Financial",
-    "parameters": "number_of_periods, present_value, future_value",
-    "codeSyntaxUsage": ["=RRI(10.5, 10, 3)", "=RRI(3, 2, 4)", "=RRI(1, 10, 0)"],
+    "parameters": ["number_of_periods", "present_value", "future_value"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "RRI(number_of_periods, present_value, future_value)",
@@ -2939,7 +2999,7 @@
     "header": "SLN",
     "headerDescription": "Returns the depreciation of an asset for one period, based on a straight-line method.",
     "type": "Financial",
-    "parameters": "cost, salvage, life",
+    "parameters": ["cost", "salvage", "life"],
     "codeSyntaxUsage": ["SLN(100,50,10)", "SLN(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -2966,7 +3026,7 @@
     "header": "SYD",
     "headerDescription": "Returns the \"sum-of-years\" depreciation for an asset in a period.",
     "type": "Financial",
-    "parameters": "cost, salvage, life, period",
+    "parameters": ["cost", "salvage", "life", "period"],
     "codeSyntaxUsage": ["SYD(100,50,10,2)", "SYD(A2,A3,A4,A5)"],
     "codeSyntaxElements": [
       {
@@ -2997,7 +3057,7 @@
     "header": "TBILLEQ",
     "headerDescription": "Returns the bond-equivalent yield for a Treasury bill.",
     "type": "Financial",
-    "parameters": "settlement, maturity, discount",
+    "parameters": ["settlement", "maturity", "discount"],
     "codeSyntaxUsage": [
       "TBILLEQ(DATE(2010,1,2), DATE(2010,12,31), .09)",
       "TBILLEQ(A2,B2,C2)"
@@ -3027,7 +3087,7 @@
     "header": "TBILLPRICE",
     "headerDescription": "Returns the price per $100 face value for a Treasury bill.",
     "type": "Financial",
-    "parameters": "settlement, maturity, discount",
+    "parameters": ["settlement", "maturity", "discount"],
     "codeSyntaxUsage": [
       "TBILLPRICE(DATE(2010,1,2), DATE(2010,12,31), .0125)",
       "TBILLPRICE(A2,B2,C2)"
@@ -3057,7 +3117,7 @@
     "header": "TBILLYIELD",
     "headerDescription": "Returns the yield for a Treasury bill.",
     "type": "Financial",
-    "parameters": "settlement, maturity, price",
+    "parameters": ["settlement", "maturity", "price"],
     "codeSyntaxUsage": [
       "TBILLYIELD(DATE(2010,1,2), DATE(2010,12,31), 98.45)",
       "TBILLYIELD(A2,B2,C2)"
@@ -3087,7 +3147,7 @@
     "header": "XNPV",
     "headerDescription": "Returns net present value.",
     "type": "Financial",
-    "parameters": "discount, cashflow_amounts, cashflow_dates",
+    "parameters": ["discount", "cashflow_amounts", "cashflow_dates"],
     "codeSyntaxUsage": [
       "XNPV(A2,B2:B25,C2:C25)",
       "XNPV(0.08,{200,250,300},{DATE(2012,06,23),DATE(2013,05,12),DATE(2014,02,09)})"
@@ -3117,7 +3177,7 @@
     "header": "AND",
     "headerDescription": "Returns TRUE if all arguments are TRUE.",
     "type": "Logical",
-    "parameters": "logical_expression1, [logical_expression2, ..]",
+    "parameters": ["logical_expression1", "[logical_expression2, ..]"],
     "codeSyntaxUsage": [
       "AND(A2 = 'foo', A3 = 'bar')",
       "AND(TRUE,FALSE,TRUE)",
@@ -3145,7 +3205,7 @@
     "header": "FALSE",
     "headerDescription": "Returns the logical value FALSE.",
     "type": "Logical",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["FALSE()"],
     "codeSyntaxElements": [{ "codeSyntax": "FALSE()", "values": [] }],
     "attributes": []
@@ -3154,7 +3214,7 @@
     "header": "IF",
     "headerDescription": "Specifies a logical test to be performed.",
     "type": "Logical",
-    "parameters": "logical_expression, value_if_true, value_if_false",
+    "parameters": ["logical_expression", "value_if_true", "value_if_false"],
     "codeSyntaxUsage": [
       "IF(A2 = 'foo','A2 is foo')",
       "IF(A2,'A2 was true','A2 was false')",
@@ -3182,7 +3242,7 @@
     "header": "IFNA",
     "headerDescription": "Returns the value if the cell does not contains the ",
     "type": "Logical",
-    "parameters": "value, value_if_na",
+    "parameters": ["value", "value_if_na"],
     "codeSyntaxUsage": ["IFNA(205, 'Na error') ", "IFNA(#N/A, 'Na error') "],
     "codeSyntaxElements": [
       {
@@ -3205,7 +3265,7 @@
     "header": "IFERROR",
     "headerDescription": "Returns the value if the cell does not contains an error value, or the alternative value if it does.",
     "type": "Logical",
-    "parameters": "value, [value_if_error]",
+    "parameters": ["value", "[value_if_error]"],
     "codeSyntaxUsage": [
       "IFERROR(A1,\"\"Error in cell A1\"\")",
       "IFERROR(A2)",
@@ -3239,7 +3299,7 @@
     "header": "NOT",
     "headerDescription": "Complements (inverts) a logical value.",
     "type": "Logical",
-    "parameters": "logical_expression",
+    "parameters": ["logical_expression"],
     "codeSyntaxUsage": ["NOT(A2)", "NOT(ISERR(A2))"],
     "codeSyntaxElements": [
       {
@@ -3258,7 +3318,13 @@
     "header": "SWITCH",
     "headerDescription": "Evaluates a list of arguments, consisting of an expression followed by a value.",
     "type": "Logical",
-    "parameters": "expression, case1, value1, [default or case2, value2], …",
+    "parameters": [
+      "expression",
+      "case1",
+      "value1",
+      "[default or case2, value2]",
+      "…"
+    ],
     "codeSyntaxUsage": [
       "SWITCH(A1:A10, 0, “No”, 1, “Other”)",
       "SWITCH(A3:A8, 4, “Four”, 8, “Eight”)"
@@ -3293,7 +3359,7 @@
     "header": "OR",
     "headerDescription": "Returns TRUE if at least one argument is TRUE.",
     "type": "Logical",
-    "parameters": "logical_expression1, [logical_expression2, ..]",
+    "parameters": ["logical_expression1", "[logical_expression2, ..]"],
     "codeSyntaxUsage": [
       "OR(A2 = 'foo', A3 = 'bar')",
       "OR(TRUE,FALSE,TRUE)",
@@ -3321,7 +3387,7 @@
     "header": "TRUE",
     "headerDescription": "The logical value is set to TRUE.",
     "type": "Logical",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["TRUE()"],
     "codeSyntaxElements": [{ "codeSyntax": "TRUE()", "values": [] }],
     "attributes": []
@@ -3330,7 +3396,7 @@
     "header": "XOR",
     "headerDescription": "Returns true if an odd number of arguments evaluates to TRUE.",
     "type": "Logical",
-    "parameters": "logical_expression1, [logical_expression2, ..]",
+    "parameters": ["logical_expression1", "[logical_expression2, ..]"],
     "codeSyntaxUsage": [
       "XOR(TRUE, FALSE, TRUE)",
       "XOR(A2=TRUE, A3=FALSE)",
@@ -3358,7 +3424,7 @@
     "header": "CHOOSE",
     "headerDescription": "Uses an index to return a value from a list of up to 30 values.",
     "type": "Lookup",
-    "parameters": "index, choice1, [choice2, ..]",
+    "parameters": ["index", "choice1", "[choice2, ..]"],
     "codeSyntaxUsage": ["CHOOSE(2,'A','B','C')"],
     "codeSyntaxElements": [
       {
@@ -3389,7 +3455,7 @@
     "header": "COLUMN",
     "headerDescription": "Returns column number of a given reference or formula reference if argument not provided.",
     "type": "Lookup",
-    "parameters": "[cell_reference]",
+    "parameters": ["[cell_reference]"],
     "codeSyntaxUsage": ["COLUMN(A9)"],
     "codeSyntaxElements": [
       {
@@ -3409,7 +3475,7 @@
     "header": "COLUMNS",
     "headerDescription": "Returns the number of columns in the given reference.",
     "type": "Lookup",
-    "parameters": "range",
+    "parameters": ["range"],
     "codeSyntaxUsage": ["COLUMNS(A9:W62)", "COLUMNS({1,2,3,4,5})"],
     "codeSyntaxElements": [
       {
@@ -3428,8 +3494,8 @@
     "header": "FORMULATEXT",
     "headerDescription": "Returns a formula in a given cell as a string.",
     "type": "Lookup",
-    "parameters": "cell",
-    "codeSyntaxUsage": ["=FORMULATEXT($A2)", "=FORMULATEXT($A4:$A5)"],
+    "parameters": ["cell"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "FORMULATEXT(cell) ",
@@ -3447,7 +3513,7 @@
     "header": "HLOOKUP",
     "headerDescription": "Searches horizontally with reference to adjacent cells to the bottom.",
     "type": "Lookup",
-    "parameters": "search_key, range, index, [is_sorted]",
+    "parameters": ["search_key", "range", "index", "[is_sorted]"],
     "codeSyntaxUsage": ["HLOOKUP(10003, A2:Z6, 2, FALSE)"],
     "codeSyntaxElements": [
       {
@@ -3491,7 +3557,7 @@
     "header": "INDEX",
     "headerDescription": "Returns the content of a cell, specified by row and column number, or an optional range name.",
     "type": "Lookup",
-    "parameters": "reference, [row], [column]",
+    "parameters": ["reference", "[row]", "[column]"],
     "codeSyntaxUsage": ["INDEX(A1:C20, 5, 1)"],
     "codeSyntaxElements": [
       {
@@ -3518,7 +3584,7 @@
     "header": "MATCH",
     "headerDescription": "Returns the relative position of an item in an array that matches a specified value.",
     "type": "Lookup",
-    "parameters": "search_key, range, [search_type]",
+    "parameters": ["search_key", "range", "[search_type]"],
     "codeSyntaxUsage": [
       "MATCH('Sunday',A2:A9,0)",
       "MATCH(DATE(2012,1,1),A2:F2)"
@@ -3561,7 +3627,13 @@
     "header": "OFFSET",
     "headerDescription": "Returns the value of a cell offset by a certain number of rows and columns from a given reference point.",
     "type": "Lookup",
-    "parameters": "cell_reference, offset_rows, offset_columns, [height], [width]",
+    "parameters": [
+      "cell_reference",
+      "offset_rows",
+      "offset_columns",
+      "[height]",
+      "[width]"
+    ],
     "codeSyntaxUsage": ["OFFSET(A2,3,4,2,2)", "OFFSET(A2,1,1)"],
     "codeSyntaxElements": [
       {
@@ -3598,7 +3670,7 @@
     "header": "ROW",
     "headerDescription": "Returns row number of a given reference or formula reference if argument not provided.",
     "type": "Lookup",
-    "parameters": "[cell_reference]",
+    "parameters": ["[cell_reference]"],
     "codeSyntaxUsage": ["ROW(A9)"],
     "codeSyntaxElements": [
       {
@@ -3618,7 +3690,7 @@
     "header": "ROWS",
     "headerDescription": "Returns the number of rows in the given reference.",
     "type": "Lookup",
-    "parameters": "range",
+    "parameters": ["range"],
     "codeSyntaxUsage": ["ROWS(A9:A62)", "ROWS({1;2;3;4;5})"],
     "codeSyntaxElements": [
       {
@@ -3637,7 +3709,7 @@
     "header": "VLOOKUP",
     "headerDescription": "Searches vertically with reference to adjacent cells to the right.",
     "type": "Lookup",
-    "parameters": "search_key, range, index, [is_sorted]",
+    "parameters": ["search_key", "range", "index", "[is_sorted]"],
     "codeSyntaxUsage": ["VLOOKUP(10003, A2:B26, 2, FALSE)"],
     "codeSyntaxElements": [
       {
@@ -3677,7 +3749,7 @@
     "header": "ABS",
     "headerDescription": "Returns the absolute value of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ABS(-2)", "ABS(A2)"],
     "codeSyntaxElements": [
       {
@@ -3696,7 +3768,7 @@
     "header": "ACOS",
     "headerDescription": "Returns the inverse trigonometric cosine of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ACOS(0)", "ACOS(A2)", "ACOS(1)"],
     "codeSyntaxElements": [
       {
@@ -3715,7 +3787,7 @@
     "header": "ACOSH",
     "headerDescription": "Returns the inverse hyperbolic cosine of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ACOSH(2)", "ACOSH(A1)"],
     "codeSyntaxElements": [
       {
@@ -3734,7 +3806,7 @@
     "header": "ACOT",
     "headerDescription": "Returns the inverse trigonometric cotangent of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ACOT(0)", "ACOT(-1)", "ACOT(A1)"],
     "codeSyntaxElements": [
       {
@@ -3753,7 +3825,7 @@
     "header": "ACOTH",
     "headerDescription": "Returns the inverse hyperbolic cotangent of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ACOTH(2)", "ACOTH(10)", "ACOTH(A1)"],
     "codeSyntaxElements": [
       {
@@ -3772,7 +3844,7 @@
     "header": "ARABIC",
     "headerDescription": "Converts number from roman form.",
     "type": "Text",
-    "parameters": "roman_numeral",
+    "parameters": ["roman_numeral"],
     "codeSyntaxUsage": ["ARABIC(\"\"XIV\"\")", "ARABIC(\"\"MMXIII\"\")"],
     "codeSyntaxElements": [
       {
@@ -3791,7 +3863,7 @@
     "header": "ASIN",
     "headerDescription": "Returns the inverse trigonometric sine of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ASIN(0)", "ASIN(A2)", "ASIN(1)"],
     "codeSyntaxElements": [
       {
@@ -3810,7 +3882,7 @@
     "header": "ASINH",
     "headerDescription": "Returns the inverse hyperbolic sine of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ASINH(0.9)", "ASINH(A1)"],
     "codeSyntaxElements": [
       {
@@ -3829,7 +3901,7 @@
     "header": "ATAN",
     "headerDescription": "Returns the inverse trigonometric tangent of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ATAN(0)", "ATAN(A2)", "ATAN(1)"],
     "codeSyntaxElements": [
       {
@@ -3848,7 +3920,7 @@
     "header": "ATAN2",
     "headerDescription": "Returns the inverse trigonometric tangent of the specified x and y coordinates.",
     "type": "Math",
-    "parameters": "x, y",
+    "parameters": ["x", "y"],
     "codeSyntaxUsage": ["ATAN2(4,3)", "ATAN2(A2)"],
     "codeSyntaxElements": [
       {
@@ -3871,7 +3943,7 @@
     "header": "ATANH",
     "headerDescription": "Returns the inverse hyperbolic tangent of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ATANH(0.9)", "ATANH(A1)"],
     "codeSyntaxElements": [
       {
@@ -3890,7 +3962,7 @@
     "header": "BASE",
     "headerDescription": "Converts a positive integer to a specified base into a text from the numbering system.",
     "type": "Math",
-    "parameters": "value, base, [min_length]",
+    "parameters": ["value", "base", "[min_length]"],
     "codeSyntaxUsage": ["BASE(255, 16)", "BASE(A2, 2)", "BASE(4095, 16, 6)"],
     "codeSyntaxElements": [
       {
@@ -3917,7 +3989,7 @@
     "header": "CEILING",
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "value, [factor]",
+    "parameters": ["value", "[factor]"],
     "codeSyntaxUsage": ["CEILING(23.25,0.1)", "CEILING(A2,1)"],
     "codeSyntaxElements": [
       {
@@ -3938,7 +4010,7 @@
     "header": "CEILING.MATH",
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "number, [significance], [mode]",
+    "parameters": ["number", "[significance]", "[mode]"],
     "codeSyntaxUsage": [
       "CEILING.MATH(5.4)  CEILING.MATH(32, 5)  CEILING.MATH(-26.2, 10, 1)"
     ],
@@ -3967,7 +4039,7 @@
     "header": "CEILING.PRECISE",
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "number, [significance]",
+    "parameters": ["number", "[significance]"],
     "codeSyntaxUsage": [
       "CEILING.PRECISE(-10.5, 1)  CEILING.PRECISE(96, 10)  CEILING.PRECISE(-23.25, 0.1)"
     ],
@@ -3992,7 +4064,7 @@
     "header": "COMBIN",
     "headerDescription": "Returns number of combinations (without repetitions).",
     "type": "Math",
-    "parameters": "n, k",
+    "parameters": ["n", "k"],
     "codeSyntaxUsage": ["COMBIN(4,2)", "COMBIN(A2,B2)"],
     "codeSyntaxElements": [
       {
@@ -4015,7 +4087,7 @@
     "header": "COMBINA",
     "headerDescription": "Returns number of combinations (with repetitions).",
     "type": "Math",
-    "parameters": "n, k",
+    "parameters": ["n", "k"],
     "codeSyntaxUsage": ["COMBINA(5, 3)", "COMBINA(A1, B1)"],
     "codeSyntaxElements": [
       {
@@ -4038,7 +4110,7 @@
     "header": "COS",
     "headerDescription": "Returns the cosine of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["COS(PI())", "COS(A2)", "COS(1)"],
     "codeSyntaxElements": [
       {
@@ -4057,7 +4129,7 @@
     "header": "COSH",
     "headerDescription": "Returns the hyperbolic cosine of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["COSH(A2)", "COSH(1)"],
     "codeSyntaxElements": [
       {
@@ -4076,7 +4148,7 @@
     "header": "COT",
     "headerDescription": "Returns the cotangent of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["COT(3.14)", "COT(A1)", "COT(1)"],
     "codeSyntaxElements": [
       {
@@ -4095,7 +4167,7 @@
     "header": "COTH",
     "headerDescription": "Returns the hyperbolic cotangent of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["COTH(A1)", "COTH(1)"],
     "codeSyntaxElements": [
       {
@@ -4114,7 +4186,7 @@
     "header": "COUNTUNIQUE",
     "headerDescription": "Counts the number of unique values in a list of specified values and ranges.",
     "type": "Math",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "COUNTUNIQUE(A1:C100)",
       "COUNTUNIQUE(1,1,2,3,5,8,13,A2,B6:B9)"
@@ -4137,7 +4209,7 @@
     "header": "CSC",
     "headerDescription": "Returns the cosecans of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["CSC(PI())", "CSC(A1)", "CSC(1)"],
     "codeSyntaxElements": [
       {
@@ -4156,7 +4228,7 @@
     "header": "CSCH",
     "headerDescription": "Returns the hyperbolic cosecans of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["CSCH(A1)", "CSCH(1)"],
     "codeSyntaxElements": [
       {
@@ -4175,7 +4247,7 @@
     "header": "DECIMAL",
     "headerDescription": "Converts text with characters from a number system to a positive integer in the base radix given.",
     "type": "Math",
-    "parameters": "value, base",
+    "parameters": ["value", "base"],
     "codeSyntaxUsage": ["DECIMAL(101,2)"],
     "codeSyntaxElements": [
       {
@@ -4198,7 +4270,7 @@
     "header": "DEGREES",
     "headerDescription": "Converts radians into degrees.",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["DEGREES(PI())", "DEGREES(6)", "DEGREES(A2)"],
     "codeSyntaxElements": [
       {
@@ -4217,7 +4289,7 @@
     "header": "EVEN",
     "headerDescription": "Rounds a positive number up to the next even integer and a negative number down to the next even integer.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["EVEN(3)", "EVEN(-0.6)", "EVEN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4240,7 +4312,7 @@
     "header": "EXP",
     "headerDescription": "Returns constant e raised to the power of a number.",
     "type": "Math",
-    "parameters": "exponent",
+    "parameters": ["exponent"],
     "codeSyntaxUsage": ["EXP(2)", "EXP(A2)"],
     "codeSyntaxElements": [
       {
@@ -4259,7 +4331,7 @@
     "header": "FACT",
     "headerDescription": "Returns a factorial of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["FACT(3)", "FACT(A2)"],
     "codeSyntaxElements": [
       {
@@ -4278,7 +4350,7 @@
     "header": "FACTDOUBLE",
     "headerDescription": "Returns a double factorial of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["FACTDOUBLE(6)", "FACTDOUBLE(A2)"],
     "codeSyntaxElements": [
       {
@@ -4297,7 +4369,7 @@
     "header": "FLOOR",
     "headerDescription": "Rounds a number down to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "value, [factor]",
+    "parameters": ["value", "[factor]"],
     "codeSyntaxUsage": ["FLOOR(23.25,0.1)", "FLOOR(A2,1)"],
     "codeSyntaxElements": [
       {
@@ -4318,7 +4390,7 @@
     "header": "FLOOR.MATH",
     "headerDescription": "Rounds a number down to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "number, [significance], [mode]",
+    "parameters": ["number", "[significance]", "[mode]"],
     "codeSyntaxUsage": [
       "FLOOR.MATH(5.4)  FLOOR.MATH(A2)  FLOOR.MATH(32, 5)  FLOOR.MATH(-26.2, 10, 1)"
     ],
@@ -4347,7 +4419,7 @@
     "header": "FLOOR.PRECISE",
     "headerDescription": "Rounds a number down to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "number, [significance]",
+    "parameters": ["number", "[significance]"],
     "codeSyntaxUsage": [
       "FLOOR.PRECISE(-10.5, 1)",
       "FLOOR.PRECISE(96, 10)",
@@ -4374,7 +4446,7 @@
     "header": "GCD",
     "headerDescription": "Computes greatest common divisor of numbers.",
     "type": "Math",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["GCD(A2:A5)", "GCD(24,96,A4)"],
     "codeSyntaxElements": [
       {
@@ -4394,7 +4466,7 @@
     "header": "INT",
     "headerDescription": "Rounds a number down to the nearest integer.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["INT(99.44)", "INT(A2)"],
     "codeSyntaxElements": [
       {
@@ -4413,7 +4485,7 @@
     "header": "ISO.CEILING",
     "headerDescription": "Rounds a number up to the nearest multiple of Significance.",
     "type": "Math",
-    "parameters": "number, [significance]",
+    "parameters": ["number", "[significance]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -4422,7 +4494,7 @@
     "header": "LCM",
     "headerDescription": "Computes least common multiplicity of numbers.",
     "type": "Math",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["LCM(A2:A5)", "LCM(2,3,A4)"],
     "codeSyntaxElements": [
       {
@@ -4442,7 +4514,7 @@
     "header": "LN",
     "headerDescription": "Returns the natural logarithm based on the constant e of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["LN", "LN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4462,7 +4534,7 @@
     "header": "LOG",
     "headerDescription": "Returns the logarithm of a number to the specified base.",
     "type": "Math",
-    "parameters": "value, base",
+    "parameters": ["value", "base"],
     "codeSyntaxUsage": ["LOG(128,2)", "LOG(A2,3)"],
     "codeSyntaxElements": [
       {
@@ -4486,7 +4558,7 @@
     "header": "LOG10",
     "headerDescription": "Returns the base-10 logarithm of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["LOG10(100)", "LOG10(A2)"],
     "codeSyntaxElements": [
       {
@@ -4506,7 +4578,7 @@
     "header": "MOD",
     "headerDescription": "Returns the remainder when one integer is divided by another.",
     "type": "Math",
-    "parameters": "dividend, divisor",
+    "parameters": ["dividend", "divisor"],
     "codeSyntaxUsage": ["MOD(10,4)", "MOD(A2,B2)"],
     "codeSyntaxElements": [
       {
@@ -4526,7 +4598,7 @@
     "header": "MROUND",
     "headerDescription": "Rounds number to the neares multiplicity.",
     "type": "Math",
-    "parameters": "value, factor",
+    "parameters": ["value", "factor"],
     "codeSyntaxUsage": ["MROUND(21,14)", "MROUND(A2,3)"],
     "codeSyntaxElements": [
       {
@@ -4549,7 +4621,7 @@
     "header": "MULTINOMIAL",
     "headerDescription": "Returns number of multiset combinations.",
     "type": "Math",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["MULTINOMIAL(1,2,3)", "MULTINOMIAL(A2:A9)"],
     "codeSyntaxElements": [
       {
@@ -4572,7 +4644,7 @@
     "header": "ODD",
     "headerDescription": "Rounds a positive number up to the nearest odd integer and a negative number down to the nearest odd integer.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["ODD(2)", "ODD(-0.6)", "ODD(A2)"],
     "codeSyntaxElements": [
       {
@@ -4595,7 +4667,7 @@
     "header": "PI",
     "headerDescription": "Returns 3.14159265358979, the value of the mathematical constant PI to 14 decimal places.",
     "type": "Math",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["PI()"],
     "codeSyntaxElements": [{ "codeSyntax": "PI()", "values": [] }],
     "attributes": []
@@ -4604,7 +4676,7 @@
     "header": "POWER",
     "headerDescription": "Returns a number raised to another number.",
     "type": "Math",
-    "parameters": "base, exponent",
+    "parameters": ["base", "exponent"],
     "codeSyntaxUsage": ["POWER(4,0.5)", "POWER(A2,B2)", "POWER(2,5)"],
     "codeSyntaxElements": [
       {
@@ -4631,7 +4703,7 @@
     "header": "PRODUCT",
     "headerDescription": "Returns product of numbers.",
     "type": "Math",
-    "parameters": "factor1, [factor2, ..]",
+    "parameters": ["factor1", "[factor2, ..]"],
     "codeSyntaxUsage": ["PRODUCT(A2:A100)", "PRODUCT(1,2,3,4,5,A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -4654,7 +4726,7 @@
     "header": "QUOTIENT",
     "headerDescription": "Returns integer part of a division.",
     "type": "Math",
-    "parameters": "dividend, divisor",
+    "parameters": ["dividend", "divisor"],
     "codeSyntaxUsage": ["QUOTIENT(4,2)", "QUOTIENT(A2,B2)"],
     "codeSyntaxElements": [
       {
@@ -4677,7 +4749,7 @@
     "header": "RADIANS",
     "headerDescription": "Converts degrees to radians.",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["RADIANS(180)", "RADIANS(6)", "RADIANS(A2)"],
     "codeSyntaxElements": [
       {
@@ -4696,7 +4768,7 @@
     "header": "RAND",
     "headerDescription": "Returns a random number between 0 and 1.",
     "type": "Math",
-    "parameters": "",
+    "parameters": [],
     "codeSyntaxUsage": ["RAND()"],
     "codeSyntaxElements": [{ "codeSyntax": "RAND()", "values": [] }],
     "attributes": []
@@ -4705,7 +4777,7 @@
     "header": "RANDBETWEEN",
     "headerDescription": "Returns a random integer between two numbers.",
     "type": "Math",
-    "parameters": "low, high",
+    "parameters": ["low", "high"],
     "codeSyntaxUsage": ["RANDBETWEEN(1,10)", "RANDBETWEEN(A2,A3)"],
     "codeSyntaxElements": [
       {
@@ -4728,7 +4800,7 @@
     "header": "ROMAN",
     "headerDescription": "Converts number to roman form.",
     "type": "Text",
-    "parameters": "number, [rule_relaxation]",
+    "parameters": ["number", "[rule_relaxation]"],
     "codeSyntaxUsage": ["ROMAN(499,0)", "ROMAN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4768,7 +4840,7 @@
     "header": "ROUND",
     "headerDescription": "Rounds a number to a certain number of decimal places.",
     "type": "Math",
-    "parameters": "value, [places]",
+    "parameters": ["value", "[places]"],
     "codeSyntaxUsage": ["ROUND(99.44,1)", "ROUND(A2)"],
     "codeSyntaxElements": [
       {
@@ -4792,7 +4864,7 @@
     "header": "ROUNDDOWN",
     "headerDescription": "Rounds a number down, toward zero, to a certain precision.",
     "type": "Math",
-    "parameters": "value, [places]",
+    "parameters": ["value", "[places]"],
     "codeSyntaxUsage": ["ROUNDDOWN(99.44,1)", "ROUNDDOWN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4816,7 +4888,7 @@
     "header": "ROUNDUP",
     "headerDescription": "Rounds a number up, away from zero, to a certain precision.",
     "type": "Math",
-    "parameters": "value, [places]",
+    "parameters": ["value", "[places]"],
     "codeSyntaxUsage": ["ROUNDUP(99.44,1)", "ROUNDUP(A2)"],
     "codeSyntaxElements": [
       {
@@ -4840,7 +4912,7 @@
     "header": "SEC",
     "headerDescription": "Returns the secans of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["SEC(3.14)", "SEC(A1)", "=SEC(1)"],
     "codeSyntaxElements": [
       {
@@ -4859,7 +4931,7 @@
     "header": "SECH",
     "headerDescription": "Returns the hyperbolic secans of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["SECH(A1)", "SECH(1)"],
     "codeSyntaxElements": [
       {
@@ -4878,7 +4950,7 @@
     "header": "SERIESSUM",
     "headerDescription": "Evaluates series at a point.",
     "type": "Math",
-    "parameters": "x, n, m, a",
+    "parameters": ["x", "n", "m", "a"],
     "codeSyntaxUsage": [
       "SERIESSUM(1,0,1,{FACT(0),FACT(1),FACT(2),FACT(3),FACT(4)})",
       "SERIESSUM(A2,0,2,B2:B10)"
@@ -4912,7 +4984,7 @@
     "header": "SIN",
     "headerDescription": "Returns the sine of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["SIN(PI())", "SIN(1)", "SIN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4931,7 +5003,7 @@
     "header": "SINH",
     "headerDescription": "Returns the hyperbolic sine of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["SINH(A2)", "SINH(1)"],
     "codeSyntaxElements": [
       {
@@ -4950,7 +5022,7 @@
     "header": "SIGN",
     "headerDescription": "Returns sign of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["SIGN(-42)", "SIGN(A2)"],
     "codeSyntaxElements": [
       {
@@ -4969,7 +5041,7 @@
     "header": "SQRT",
     "headerDescription": "Returns the positive square root of a number.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["SQRT(9)", "SQRT(A2)"],
     "codeSyntaxElements": [
       {
@@ -4992,7 +5064,7 @@
     "header": "SQRTPI",
     "headerDescription": "Returns sqrt of number times pi.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["SQRTPI(9)", "SQRTPI(A2)"],
     "codeSyntaxElements": [
       {
@@ -5015,7 +5087,7 @@
     "header": "SUBTOTAL",
     "headerDescription": "Computes aggregation using function specified by number.",
     "type": "Math",
-    "parameters": "function_code, range1, [range2, ..]",
+    "parameters": ["function_code", "range1", "[range2, ..]"],
     "codeSyntaxUsage": ["SUBTOTAL(1,A2:A5,B2:B8)"],
     "codeSyntaxElements": [
       {
@@ -5057,7 +5129,7 @@
     "header": "SUM",
     "headerDescription": "Adds all the numbers in a range of cells.",
     "type": "Math",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["SUM(A2:A100)", "SUM(1,2,3,4,5)", "SUM(1,2,A2:A50)"],
     "codeSyntaxElements": [
       {
@@ -5077,7 +5149,7 @@
     "header": "SUMIF",
     "headerDescription": "Adds the cells specified by given criteria.",
     "type": "Math",
-    "parameters": "range, criterion, [sum_range]",
+    "parameters": ["range", "criterion", "[sum_range]"],
     "codeSyntaxUsage": [
       "SUMIF(A1:A10,\"\">20\"\")",
       "SUMIF(A1:A10,'Paid',B1:B10)"
@@ -5115,7 +5187,12 @@
     "header": "SUMIFS",
     "headerDescription": "Returns the sum of the values of cells in a range that meets multiple criteria in multiple ranges.",
     "type": "Math",
-    "parameters": "sum_range, criteria_range1, criterion1, [criteria_range2, criterion2, ..]",
+    "parameters": [
+      "sum_range",
+      "criteria_range1",
+      "criterion1",
+      "[criteria_range2, criterion2, ..]"
+    ],
     "codeSyntaxUsage": [
       "SUMIFS(A1:A10, B1:B10, \"\">20\"\")",
       "SUMIFS(A1:A10, B1:B10, \"\">20\"\", C1:C10, \"\"<30\"\")",
@@ -5150,7 +5227,7 @@
     "header": "SUMPRODUCT",
     "headerDescription": "Multiplies corresponding elements in the given arrays, and returns the sum of those products.",
     "type": "Array",
-    "parameters": "array1, [array2, ..]",
+    "parameters": ["array1", "[array2, ..]"],
     "codeSyntaxUsage": [
       "SUMPRODUCT(A2:C5,D2:F5)",
       "SUMPRODUCT({1,2,3,4},{5,6,7,8})"
@@ -5173,7 +5250,7 @@
     "header": "SUMSQ",
     "headerDescription": "Returns the sum of the squares of the arguments",
     "type": "Math",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "SUMSQ(A2:A100)",
       "SUMSQ(1,2,3,4,5)",
@@ -5197,7 +5274,7 @@
     "header": "SUMX2MY2",
     "headerDescription": "Returns the sum of the square differences.",
     "type": "Array",
-    "parameters": "array_x, array_y",
+    "parameters": ["array_x", "array_y"],
     "codeSyntaxUsage": ["SUMX2MY2({1,2,3},{4,5,6})", "SUMX2MY2(A2:A9,B2:B9)"],
     "codeSyntaxElements": [
       {
@@ -5220,7 +5297,7 @@
     "header": "SUMX2PY2",
     "headerDescription": "Returns the sum of the square sums.",
     "type": "Array",
-    "parameters": "array_x, array_y",
+    "parameters": ["array_x", "array_y"],
     "codeSyntaxUsage": ["SUMX2PY2({1,2,3},{4,5,6})", "SUMX2PY2(A2:A9,B2:B9)"],
     "codeSyntaxElements": [
       {
@@ -5243,7 +5320,7 @@
     "header": "SUMXMY2",
     "headerDescription": "Returns the sum of the square of differences.",
     "type": "Array",
-    "parameters": "array_x, array_y",
+    "parameters": ["array_x", "array_y"],
     "codeSyntaxUsage": ["SUMXMY2({1,2,3},{4,5,6})", "SUMXMY2(A2:A9,B2:B9)"],
     "codeSyntaxElements": [
       {
@@ -5266,7 +5343,7 @@
     "header": "TAN",
     "headerDescription": "Returns the tangent of the given angle (in radians).",
     "type": "Math",
-    "parameters": "angle",
+    "parameters": ["angle"],
     "codeSyntaxUsage": ["TAN(PI())", "TAN(A2)", "TAN(1)"],
     "codeSyntaxElements": [
       {
@@ -5285,7 +5362,7 @@
     "header": "TANH",
     "headerDescription": "Returns the hyperbolic tangent of the given value.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["TANH(A2)", "TANH(1)"],
     "codeSyntaxElements": [
       {
@@ -5304,7 +5381,7 @@
     "header": "TRUNC",
     "headerDescription": "Truncates a number by removing decimal places.",
     "type": "Math",
-    "parameters": "value, [places]",
+    "parameters": ["value", "[places]"],
     "codeSyntaxUsage": ["TRUNC(3.141592654,2)", "TRUNC(A2,0)", "TRUNC(1.23)"],
     "codeSyntaxElements": [
       {
@@ -5332,7 +5409,7 @@
     "header": "MMULT",
     "headerDescription": "Calculates the array product of two arrays.",
     "type": "Array",
-    "parameters": "matrix1, matrix2",
+    "parameters": ["matrix1", "matrix2"],
     "codeSyntaxUsage": ["MMULT(A1:B3,C1:F2)", "MMULT({1,2,3;4,5,6},{7;8;9})"],
     "codeSyntaxElements": [
       {
@@ -5355,7 +5432,7 @@
     "header": "TRANSPOSE",
     "headerDescription": "Transposes the rows and columns of an array.",
     "type": "Array",
-    "parameters": "array_or_range",
+    "parameters": ["array_or_range"],
     "codeSyntaxUsage": ["TRANSPOSE({1,2;3,4;5,6})", "TRANSPOSE(A2:F9)"],
     "codeSyntaxElements": [
       {
@@ -5374,7 +5451,7 @@
     "header": "AVEDEV",
     "headerDescription": "Returns the average deviation of the arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["AVEDEV(1,2,3,4,5,6,7,8,9,10)", "AVEDEV(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -5397,7 +5474,7 @@
     "header": "AVERAGE",
     "headerDescription": "Returns the average of the arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "AVERAGE(A2:A100,B2:B100,4,26)",
       "AVERAGE(1,2,3,4,5,C6:C20)"
@@ -5420,7 +5497,7 @@
     "header": "AVERAGEA",
     "headerDescription": "Returns the average of the arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "AVERAGEA(A2:A100,B2:B100,4,26)",
       "AVERAGEA(1,2,3,4,5,C6:C20)"
@@ -5446,7 +5523,7 @@
     "header": "AVERAGEIF",
     "headerDescription": "Returns the arithmetic mean of all cells in a range that satisfy a given condition.",
     "type": "Statistical",
-    "parameters": "criteria_range, criterion, [average_range]",
+    "parameters": ["criteria_range", "criterion", "[average_range]"],
     "codeSyntaxUsage": [
       "AVERAGEIF(A1:A10, \"\">20\"\", B1:B10)",
       "AVERAGEIF(A1:A10, \"\"<10\"\")",
@@ -5493,7 +5570,14 @@
     "header": "BETA.DIST",
     "headerDescription": "Returns the denisty of Beta distribution.",
     "type": "Statistical",
-    "parameters": "value, alpha, beta, cumulative, lower_bound, upper_bound",
+    "parameters": [
+      "value",
+      "alpha",
+      "beta",
+      "cumulative",
+      "lower_bound",
+      "upper_bound"
+    ],
     "codeSyntaxUsage": [
       "BETA.DIST(0.65, 1.234, 7, 0.5, 3)",
       "BETA.DIST(0.42, 3, 8)",
@@ -5533,7 +5617,7 @@
     "header": "BETADIST",
     "headerDescription": "Returns the denisty of Beta distribution.",
     "type": "Statistical",
-    "parameters": "value, alpha, beta, lower_bound, upper_bound",
+    "parameters": ["value", "alpha", "beta", "lower_bound", "upper_bound"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5542,7 +5626,13 @@
     "header": "BETA.INV",
     "headerDescription": "Returns the inverse Beta distribution value.",
     "type": "Statistical",
-    "parameters": "probability, alpha, beta, lower_bound, upper_bound",
+    "parameters": [
+      "probability",
+      "alpha",
+      "beta",
+      "lower_bound",
+      "upper_bound"
+    ],
     "codeSyntaxUsage": [
       "BETA.INV(0.65,1.234,7,1,3)  BETA.INV(0.3,5,1)  BETA.INV(A4,3,2,-1,1)"
     ],
@@ -5579,7 +5669,13 @@
     "header": "BETAINV",
     "headerDescription": "Returns the inverse of Beta distribution value.",
     "type": "Statistical",
-    "parameters": "probability, alpha, beta, lower_bound, upper_bound",
+    "parameters": [
+      "probability",
+      "alpha",
+      "beta",
+      "lower_bound",
+      "upper_bound"
+    ],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5588,7 +5684,7 @@
     "header": "BINOM.DIST",
     "headerDescription": "Returns density of binomial distribution.",
     "type": "Statistical",
-    "parameters": "num_successes, num_trials, prob_success, cumulative",
+    "parameters": ["num_successes", "num_trials", "prob_success", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5597,7 +5693,7 @@
     "header": "BINOMDIST",
     "headerDescription": "Returns density of binomial distribution.",
     "type": "Statistical",
-    "parameters": "num_successes, num_trials, prob_success, cumulative",
+    "parameters": ["num_successes", "num_trials", "prob_success", "cumulative"],
     "codeSyntaxUsage": [
       "BINOMDIST(4,100,0.005,FALSE)",
       "BINOMDIST(A2,A3,A4,TRUE)"
@@ -5635,7 +5731,7 @@
     "header": "BINOM.INV",
     "headerDescription": "Returns inverse binomial distribution value.",
     "type": "Statistical",
-    "parameters": "num_trials, prob_success, target_prob",
+    "parameters": ["num_trials", "prob_success", "target_prob"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5644,7 +5740,7 @@
     "header": "CHIDIST",
     "headerDescription": "Returns probability of chi-square right-side distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom",
+    "parameters": ["x", "degrees_freedom"],
     "codeSyntaxUsage": ["CHIDIST(3.45, 2)", "CHIDIST(A2, B2)"],
     "codeSyntaxElements": [
       {
@@ -5668,7 +5764,7 @@
     "header": "CHIINV",
     "headerDescription": "Returns inverse of chi-square right-side distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": ["CHIINV(0.42, 2)", "CHIINV(A2, B2)"],
     "codeSyntaxElements": [
       {
@@ -5695,7 +5791,7 @@
     "header": "CHISQ.DIST",
     "headerDescription": "Returns value of chi-square distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom, cumulative",
+    "parameters": ["x", "degrees_freedom", "cumulative"],
     "codeSyntaxUsage": [
       "CHISQ.DIST(3.45, 2, TRUE)",
       "CHISQ.DIST(A2, B2, TRUE)"
@@ -5734,7 +5830,7 @@
     "header": "CHISQ.DIST.RT",
     "headerDescription": "Returns probability of chi-square right-side distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom",
+    "parameters": ["x", "degrees_freedom"],
     "codeSyntaxUsage": ["CHISQ.DIST.RT(3.45, 2)", "CHISQ.DIST.RT(A2, B2)"],
     "codeSyntaxElements": [
       {
@@ -5758,7 +5854,7 @@
     "header": "CHISQ.INV",
     "headerDescription": "Returns inverse of chi-square distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": ["CHISQ.INV(0.42, 2)", "CHISQ.INV(A2, B2)"],
     "codeSyntaxElements": [
       {
@@ -5785,7 +5881,7 @@
     "header": "CHISQ.INV.RT",
     "headerDescription": "Returns inverse of chi-square right-side distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": ["CHISQ.INV.RT(0.42, 2)", "CHISQ.INV.RT(A2, B2)"],
     "codeSyntaxElements": [
       {
@@ -5812,7 +5908,7 @@
     "header": "CHISQ.TEST",
     "headerDescription": "Returns chisquared-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "observed_range, expected_range",
+    "parameters": ["observed_range", "expected_range"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5821,7 +5917,7 @@
     "header": "CHITEST",
     "headerDescription": "Returns chisquared-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "observed_range, expected_range",
+    "parameters": ["observed_range", "expected_range"],
     "codeSyntaxUsage": ["CHITEST(A1:A5, B1:B5)", "CHITEST(A1:D3, A5:D7)"],
     "codeSyntaxElements": [
       {
@@ -5844,7 +5940,7 @@
     "header": "CONFIDENCE",
     "headerDescription": "Returns upper confidence bound for normal distribution.",
     "type": "Statistical",
-    "parameters": "alpha, standard_deviation, pop_size",
+    "parameters": ["alpha", "standard_deviation", "pop_size"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -5853,7 +5949,7 @@
     "header": "CONFIDENCE.NORM",
     "headerDescription": "Returns upper confidence bound for normal distribution.",
     "type": "Statistical",
-    "parameters": "alpha, standard_deviation, pop_size",
+    "parameters": ["alpha", "standard_deviation", "pop_size"],
     "codeSyntaxUsage": [
       "CONFIDENCE.NORM(0.05,1.6,250)",
       "CONFIDENCE.NORM(A2,A3,A4)"
@@ -5883,8 +5979,8 @@
     "header": "CONFIDENCE.T",
     "headerDescription": "Returns upper confidence bound for T distribution.",
     "type": "Statistical",
-    "parameters": "alpha, standard_deviation, size",
-    "codeSyntaxUsage": ["=CONFIDENCE.T(A2,B2,C2)"],
+    "parameters": ["alpha", "standard_deviation", "size"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "CONFIDENCE.T(alpha, standard_deviation, size) ",
@@ -5910,7 +6006,7 @@
     "header": "CORREL",
     "headerDescription": "Returns the correlation coefficient between two data sets.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["CORREL(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -5933,7 +6029,7 @@
     "header": "COUNT",
     "headerDescription": "Counts how many numbers are in the list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "COUNT(A2:A100,B2:B100,4,26)",
       "COUNT(1,2,3,4,5,C6:C20)"
@@ -5956,7 +6052,7 @@
     "header": "COUNTA",
     "headerDescription": "Counts how many values are in the list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "COUNTA(A2:A100,B2:B100,4,26)",
       "COUNTA(1,2,3,4,5,C6:C20)"
@@ -5979,7 +6075,7 @@
     "header": "COUNTBLANK",
     "headerDescription": "Returns the number of empty cells.",
     "type": "Math",
-    "parameters": "range",
+    "parameters": ["range"],
     "codeSyntaxUsage": ["COUNTBLANK(A2:C100)"],
     "codeSyntaxElements": [
       {
@@ -5999,7 +6095,7 @@
     "header": "COUNTIF",
     "headerDescription": "Returns the number of cells that meet with certain criteria within a cell range.",
     "type": "Math",
-    "parameters": "range, criterion",
+    "parameters": ["range", "criterion"],
     "codeSyntaxUsage": [
       "COUNTIF(A1:A10,\"\">20\"\")",
       "COUNTIF(A1:A10,\"\"Paid\"\")"
@@ -6033,7 +6129,11 @@
     "header": "COUNTIFS",
     "headerDescription": "Returns the count of rows or columns that meet criteria in multiple ranges.",
     "type": "Math",
-    "parameters": "criteria_range1, criterion1, [criteria_range2, criterion2, ..]",
+    "parameters": [
+      "criteria_range1",
+      "criterion1",
+      "[criteria_range2, criterion2, ..]"
+    ],
     "codeSyntaxUsage": [
       "COUNTIFS(A1:A10, \"\">20\"\", B1:B10, \"\"<30\"\")",
       "COUNTIFS(A7:A24, \"\">6\"\", B7:B24, \"\"<\"\"&DATE(1969,7,20))",
@@ -6065,7 +6165,7 @@
     "header": "COVAR",
     "headerDescription": "Returns the covariance between two data sets, population normalized.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["COVAR(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -6088,7 +6188,7 @@
     "header": "COVARIANCE.P",
     "headerDescription": "Returns the covariance between two data sets, population normalized.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6097,7 +6197,7 @@
     "header": "COVARIANCE.S",
     "headerDescription": "Returns the covariance between two data sets, sample normalized.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["A10)", "COVARIANCE.S(1, 2, 3, 4)", "B5, 10)"],
     "codeSyntaxElements": [
       {
@@ -6120,7 +6220,7 @@
     "header": "CRITBINOM",
     "headerDescription": "Returns inverse binomial distribution value.",
     "type": "Statistical",
-    "parameters": "num_trials, prob_success, target_prob",
+    "parameters": ["num_trials", "prob_success", "target_prob"],
     "codeSyntaxUsage": ["CRITBINOM(100,0.005,0.8)", "CRITBINOM(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6147,7 +6247,7 @@
     "header": "DEVSQ",
     "headerDescription": "Returns sum of squared deviations.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["DEVSQ(1,2,3,4,5,6,7,8,9,10)", "DEVSQ(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -6170,7 +6270,7 @@
     "header": "EXPON.DIST",
     "headerDescription": "Returns density of a exponential distribution.",
     "type": "Statistical",
-    "parameters": "x, lambda, cumulative",
+    "parameters": ["x", "lambda", "cumulative"],
     "codeSyntaxUsage": ["EXPON.DIST(4,0.5,FALSE)", "EXPON.DIST(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6201,7 +6301,7 @@
     "header": "EXPONDIST",
     "headerDescription": "Returns density of a exponential distribution.",
     "type": "Statistical",
-    "parameters": "x, lambda, cumulative",
+    "parameters": ["x", "lambda", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6210,7 +6310,7 @@
     "header": "FDIST",
     "headerDescription": "Returns probability of F right-side distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom1, degrees_freedom2",
+    "parameters": ["x", "degrees_freedom1", "degrees_freedom2"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6219,7 +6319,7 @@
     "header": "FINV",
     "headerDescription": "Returns inverse of F right-side distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom1, degrees_freedom2",
+    "parameters": ["probability", "degrees_freedom1", "degrees_freedom2"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6228,7 +6328,7 @@
     "header": "F.DIST",
     "headerDescription": "Returns value of F distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom1, degrees_freedom2, cumulative",
+    "parameters": ["x", "degrees_freedom1", "degrees_freedom2", "cumulative"],
     "codeSyntaxUsage": [
       "F.DIST(15.35, 7, 6, TRUE)",
       "F.DIST(A2, B2, C2, FALSE)"
@@ -6271,7 +6371,7 @@
     "header": "F.DIST.RT",
     "headerDescription": "Returns probability of F right-side distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom1, degrees_freedom2",
+    "parameters": ["x", "degrees_freedom1", "degrees_freedom2"],
     "codeSyntaxUsage": ["F.DIST.RT(15.35, 7, 6)", "F.DIST.RT(A2, B2, C2)"],
     "codeSyntaxElements": [
       {
@@ -6299,7 +6399,7 @@
     "header": "F.INV",
     "headerDescription": "Returns inverse of F distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom1, degrees_freedom2",
+    "parameters": ["probability", "degrees_freedom1", "degrees_freedom2"],
     "codeSyntaxUsage": ["F.INV(0.42, 2, 3)", "F.INV(A2, B2, C2)"],
     "codeSyntaxElements": [
       {
@@ -6330,7 +6430,7 @@
     "header": "F.INV.RT",
     "headerDescription": "Returns inverse of F right-side distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom1, degrees_freedom2",
+    "parameters": ["probability", "degrees_freedom1", "degrees_freedom2"],
     "codeSyntaxUsage": ["F.INV.RT(0.42, 2, 3)", "F.INV.RT(A2, B2, C2)"],
     "codeSyntaxElements": [
       {
@@ -6361,7 +6461,7 @@
     "header": "FISHER",
     "headerDescription": "Returns Fisher transformation value.",
     "type": "Statistical",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["FISHER(0.962)", "FISHER(A2)"],
     "codeSyntaxElements": [
       {
@@ -6380,7 +6480,7 @@
     "header": "FISHERINV",
     "headerDescription": "Returns inverse Fischer transformation value.",
     "type": "Statistical",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["FISHERINV(0.962)", "FISHERINV(A2)"],
     "codeSyntaxElements": [
       {
@@ -6399,7 +6499,7 @@
     "header": "F.TEST",
     "headerDescription": "Returns f-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "range1, range2",
+    "parameters": ["range1", "range2"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6408,7 +6508,7 @@
     "header": "FTEST",
     "headerDescription": "Returns f-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "range1, range2",
+    "parameters": ["range1", "range2"],
     "codeSyntaxUsage": ["FTEST(A1:A5, B1:B5)", "FTEST(A1:D3, A5:D7)"],
     "codeSyntaxElements": [
       {
@@ -6431,7 +6531,7 @@
     "header": "GAMMA",
     "headerDescription": "Returns value of Gamma function.",
     "type": "Statistical",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": ["A10)", "GAMMA(1, 2, 3, 4)", "B5, 10)"],
     "codeSyntaxElements": [
       {
@@ -6450,7 +6550,7 @@
     "header": "GAMMA.DIST",
     "headerDescription": "Returns density of Gamma distribution.",
     "type": "Statistical",
-    "parameters": "x, alpha, beta, cumulative",
+    "parameters": ["x", "alpha", "beta", "cumulative"],
     "codeSyntaxUsage": [
       "GAMMA.DIST(4.79, 1.234, 7, TRUE)",
       "GAMMA.DIST(A1, B1, C1, FALSE)"
@@ -6492,7 +6592,7 @@
     "header": "GAMMADIST",
     "headerDescription": "Returns density of Gamma distribution.",
     "type": "Statistical",
-    "parameters": "x, alpha, beta, cumulative",
+    "parameters": ["x", "alpha", "beta", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6501,7 +6601,7 @@
     "header": "GAMMALN",
     "headerDescription": "Returns natural logarithm of Gamma function.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["GAMMALN(4)", "GAMMALN(A2)"],
     "codeSyntaxElements": [
       {
@@ -6521,7 +6621,7 @@
     "header": "GAMMALN.PRECISE",
     "headerDescription": "Returns natural logarithm of Gamma function.",
     "type": "Math",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6530,7 +6630,7 @@
     "header": "GAMMA.INV",
     "headerDescription": "Returns inverse Gamma distribution value.",
     "type": "Statistical",
-    "parameters": "probability, alpha, beta",
+    "parameters": ["probability", "alpha", "beta"],
     "codeSyntaxUsage": ["GAMMA.INV(0.65, 4, 2)", "GAMMA.INV(C3, 3, 2)"],
     "codeSyntaxElements": [
       {
@@ -6557,7 +6657,7 @@
     "header": "GAMMAINV",
     "headerDescription": "Returns inverse Gamma distribution value.",
     "type": "Statistical",
-    "parameters": "probability, alpha, beta",
+    "parameters": ["probability", "alpha", "beta"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6566,7 +6666,7 @@
     "header": "GAUSS",
     "headerDescription": "Returns the probability of gaussian variable fall more than this many times standard deviation from mean.",
     "type": "Statistical",
-    "parameters": "z",
+    "parameters": ["z"],
     "codeSyntaxUsage": ["GAUSS(1)", "GAUSS(B2)"],
     "codeSyntaxElements": [
       {
@@ -6585,7 +6685,7 @@
     "header": "GEOMEAN",
     "headerDescription": "Returns the geometric average.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["GEOMEAN(1,2,3,4,5,6,7,8,9,10)", "GEOMEAN(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -6608,7 +6708,7 @@
     "header": "HARMEAN",
     "headerDescription": "Returns the harmonic average.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["HARMEAN(1,2,3,4,5,6,7,8,9,10)", "HARMEAN(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -6631,7 +6731,12 @@
     "header": "HYPGEOMDIST",
     "headerDescription": "Returns density of hypergeometric distribution.",
     "type": "Statistical",
-    "parameters": "num_successes, num_draws, successes_in_pop, pop_size",
+    "parameters": [
+      "num_successes",
+      "num_draws",
+      "successes_in_pop",
+      "pop_size"
+    ],
     "codeSyntaxUsage": ["HYPGEOMDIST(4,12,20,40)", "HYPGEOMDIST(A2,A3,A4,A5)"],
     "codeSyntaxElements": [
       {
@@ -6662,7 +6767,12 @@
     "header": "HYPGEOM.DIST",
     "headerDescription": "Returns density of hypergeometric distribution.",
     "type": "Statistical",
-    "parameters": "num_successes, num_draws, successes_in_pop, pop_size",
+    "parameters": [
+      "num_successes",
+      "num_draws",
+      "successes_in_pop",
+      "pop_size"
+    ],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6671,7 +6781,7 @@
     "header": "LARGE",
     "headerDescription": "Returns k-th largest value in a range.",
     "type": "Statistical",
-    "parameters": "data, n",
+    "parameters": ["data", "n"],
     "codeSyntaxUsage": ["LARGE(A2:B100,4)", "LARGE(A2:B100,C2)"],
     "codeSyntaxElements": [
       {
@@ -6698,7 +6808,7 @@
     "header": "LOGNORM.DIST",
     "headerDescription": "Returns density of lognormal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6707,7 +6817,7 @@
     "header": "LOGNORMDIST",
     "headerDescription": "Returns density of lognormal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": ["LOGNORMDIST(4,4,6)", "LOGNORMDIST(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6734,7 +6844,7 @@
     "header": "LOGNORM.INV",
     "headerDescription": "Returns value of inverse lognormal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6743,7 +6853,7 @@
     "header": "LOGINV",
     "headerDescription": "Returns value of inverse lognormal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": ["LOGINV(0.4,4,6)", "LOGINV(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6770,7 +6880,7 @@
     "header": "MAX",
     "headerDescription": "Returns the maximum value in a list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["MAX(A2:A100,B2:B100,4,26)", "MAX(1,2,3,4,5,C6:C20)"],
     "codeSyntaxElements": [
       {
@@ -6790,7 +6900,7 @@
     "header": "MAXA",
     "headerDescription": "Returns the maximum value in a list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["MAXA(A2:A100,B2:B100,4,26)", "MAXA(1,2,3,4,5,C6:C20)"],
     "codeSyntaxElements": [
       {
@@ -6810,7 +6920,7 @@
     "header": "MEDIAN",
     "headerDescription": "Returns the median of a set of numbers.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [
       "MEDIAN(A2:A100,B2:B100,4,26)",
       "MEDIAN(1,2,3,4,5,C6:C20)"
@@ -6833,7 +6943,7 @@
     "header": "MIN",
     "headerDescription": "Returns the minimum value in a list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["MIN(A2:A100,B2:B100,4,26)", "MIN(1,2,3,4,5,C6:C20)"],
     "codeSyntaxElements": [
       {
@@ -6853,7 +6963,7 @@
     "header": "MINA",
     "headerDescription": "Returns the minimum value in a list of arguments.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["MINA(A2:A100,B2:B100,4,26)", "MINA(1,2,3,4,5,C6:C20)"],
     "codeSyntaxElements": [
       {
@@ -6873,7 +6983,7 @@
     "header": "NEGBINOM.DIST",
     "headerDescription": "Returns density of negative binomial distribution.",
     "type": "Statistical",
-    "parameters": "num_failures, num_successes, prob_success",
+    "parameters": ["num_failures", "num_successes", "prob_success"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6882,7 +6992,7 @@
     "header": "NEGBINOMDIST",
     "headerDescription": "Returns density of negative binomial distribution.",
     "type": "Statistical",
-    "parameters": "num_failures, num_successes, prob_success",
+    "parameters": ["num_failures", "num_successes", "prob_success"],
     "codeSyntaxUsage": ["NEGBINOMDIST(4,2,0.1)", "NEGBINOMDIST(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6909,7 +7019,7 @@
     "header": "NORM.DIST",
     "headerDescription": "Returns density of normal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation, cumulative",
+    "parameters": ["x", "mean", "standard_deviation", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6918,7 +7028,7 @@
     "header": "NORMDIST",
     "headerDescription": "Returns density of normal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation, cumulative",
+    "parameters": ["x", "mean", "standard_deviation", "cumulative"],
     "codeSyntaxUsage": ["NORMDIST(2.4,1,4,FALSE)", "NORMDIST(A2,A3,A4,TRUE)"],
     "codeSyntaxElements": [
       {
@@ -6949,7 +7059,7 @@
     "header": "NORM.S.DIST",
     "headerDescription": "Returns density of normal distribution.",
     "type": "Statistical",
-    "parameters": "x",
+    "parameters": ["x"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6958,7 +7068,7 @@
     "header": "NORM.INV",
     "headerDescription": "Returns value of inverse normal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -6967,7 +7077,7 @@
     "header": "NORMINV",
     "headerDescription": "Returns value of inverse normal distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, standard_deviation",
+    "parameters": ["x", "mean", "standard_deviation"],
     "codeSyntaxUsage": ["NORMINV(.75,1,4)", "NORMINV(A2,A3,A4)"],
     "codeSyntaxElements": [
       {
@@ -6994,7 +7104,7 @@
     "header": "NORM.S.INV",
     "headerDescription": "Returns value of inverse normal distribution.",
     "type": "Statistical",
-    "parameters": "x",
+    "parameters": ["x"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7003,7 +7113,7 @@
     "header": "NORMSINV",
     "headerDescription": "Returns value of inverse normal distribution.",
     "type": "Statistical",
-    "parameters": "x",
+    "parameters": ["x"],
     "codeSyntaxUsage": ["NORMSINV(.75)", "NORMSINV(A2)"],
     "codeSyntaxElements": [
       {
@@ -7022,7 +7132,7 @@
     "header": "PEARSON",
     "headerDescription": "Returns the correlation coefficient between two data sets.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["PEARSON(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -7045,7 +7155,7 @@
     "header": "PHI",
     "headerDescription": "Returns probability densitity of normal distribution.",
     "type": "Statistical",
-    "parameters": "x",
+    "parameters": ["x"],
     "codeSyntaxUsage": ["PHI(0.25)"],
     "codeSyntaxElements": [
       {
@@ -7064,7 +7174,7 @@
     "header": "POISSON",
     "headerDescription": "Returns density of Poisson distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, cumulative",
+    "parameters": ["x", "mean", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7073,7 +7183,7 @@
     "header": "POISSON.DIST",
     "headerDescription": "Returns density of Poisson distribution.",
     "type": "Statistical",
-    "parameters": "x, mean, [cumulative]",
+    "parameters": ["x", "mean", "[cumulative]"],
     "codeSyntaxUsage": [
       "POISSON.DIST(2.4,1,FALSE)",
       "POISSON.DIST(A2,A3,TRUE)"
@@ -7103,7 +7213,7 @@
     "header": "RSQ",
     "headerDescription": "Returns the squared correlation coefficient between two data sets.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["RSQ(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -7126,7 +7236,7 @@
     "header": "SKEW",
     "headerDescription": "Returns skeweness of a sample.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["SKEW(1,2,3,4,5,6,7,8,9,10)", "SKEW(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7149,8 +7259,8 @@
     "header": "SKEW.P",
     "headerDescription": "Returns skeweness of a population.",
     "type": "Statistical",
-    "parameters": "value1, value2",
-    "codeSyntaxUsage": ["=SKEW.P(A2:A9, 30, 40)", "=SKEW.P(A2:A9)"],
+    "parameters": ["value1", "value2"],
+    "codeSyntaxUsage": [],
     "codeSyntaxElements": [
       {
         "codeSyntax": "SKEW.P(value1, value2)",
@@ -7172,7 +7282,7 @@
     "header": "SLOPE",
     "headerDescription": "Returns the slope of a linear regression line.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["SLOPE(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -7195,7 +7305,7 @@
     "header": "SMALL",
     "headerDescription": "Returns k-th smallest value in a range.",
     "type": "Statistical",
-    "parameters": "data, n",
+    "parameters": ["data", "n"],
     "codeSyntaxUsage": ["SMALL(A2:B100,4)", "SMALL(A2:B100,C2)"],
     "codeSyntaxElements": [
       {
@@ -7222,7 +7332,7 @@
     "header": "STANDARDIZE",
     "headerDescription": "Returns normalized value wrt expected value and standard deviation.",
     "type": "Statistical",
-    "parameters": "value, mean, standard_deviation",
+    "parameters": ["value", "mean", "standard_deviation"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7231,7 +7341,7 @@
     "header": "STDEV",
     "headerDescription": "Returns standard deviation of a sample.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["STDEV(1,2,3,4,5,6,7,8,9,10)", "STDEV(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7251,7 +7361,7 @@
     "header": "STDEVA",
     "headerDescription": "Returns standard deviation of a sample.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["STDEVA(1,2,3,4,5,6,7,8,9,10)", "STDEVA(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7274,7 +7384,7 @@
     "header": "STDEVP",
     "headerDescription": "Returns standard deviation of a population.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["STDEVP(1,2,3,4,5,6,7,8,9,10)", "STDEVP(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7297,7 +7407,7 @@
     "header": "STDEV.P",
     "headerDescription": "Returns standard deviation of a population.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7306,7 +7416,7 @@
     "header": "STDEVPA",
     "headerDescription": "Returns standard deviation of a population.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["STDEVPA(1,2,3,4,5,6,7,8,9,10)", "STDEVPA(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7329,7 +7439,7 @@
     "header": "STDEV.S",
     "headerDescription": "Returns standard deviation of a sample.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7338,7 +7448,7 @@
     "header": "STEYX",
     "headerDescription": "Returns standard error for predicted of the predicted y value for each x value.",
     "type": "Statistical",
-    "parameters": "data_y, data_x",
+    "parameters": ["data_y", "data_x"],
     "codeSyntaxUsage": ["STEYX(A2:A100,B2:B100)"],
     "codeSyntaxElements": [
       {
@@ -7361,7 +7471,7 @@
     "header": "TDIST",
     "headerDescription": "Returns density of Student-t distribution, both-sided or right-tailed.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom, tails",
+    "parameters": ["x", "degrees_freedom", "tails"],
     "codeSyntaxUsage": ["TDIST(A2, 30, 1)", "TDIST(0.5, 1, 2)"],
     "codeSyntaxElements": [
       {
@@ -7388,7 +7498,7 @@
     "header": "T.DIST",
     "headerDescription": "Returns density of Student-t distribution.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom, cumulative",
+    "parameters": ["x", "degrees_freedom", "cumulative"],
     "codeSyntaxUsage": ["A1 has T.DIST(1.96, 60, false)  Example 2"],
     "codeSyntaxElements": [
       {
@@ -7415,7 +7525,7 @@
     "header": "T.DIST.2T",
     "headerDescription": "Returns density of Student-t distribution, both-sided.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom",
+    "parameters": ["x", "degrees_freedom"],
     "codeSyntaxUsage": ["T.DIST.2T(1.96, 60)", "T.DIST.2T(1, 2)"],
     "codeSyntaxElements": [
       {
@@ -7438,7 +7548,7 @@
     "header": "T.DIST.RT",
     "headerDescription": "Returns density of Student-t distribution, right-tailed.",
     "type": "Statistical",
-    "parameters": "x, degrees_freedom",
+    "parameters": ["x", "degrees_freedom"],
     "codeSyntaxUsage": ["A1 has T.DIST.RT(1.96, 60)  Example 2"],
     "codeSyntaxElements": [
       {
@@ -7461,7 +7571,7 @@
     "header": "TINV",
     "headerDescription": "Returns inverse Student-t distribution, both-sided.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7470,7 +7580,7 @@
     "header": "T.INV",
     "headerDescription": "Returns inverse Student-t distribution.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": ["T.INV(0.35, 1)", "T.INV(A1, A2)"],
     "codeSyntaxElements": [
       {
@@ -7505,7 +7615,7 @@
     "header": "T.INV.2T",
     "headerDescription": "Returns inverse Student-t distribution, both-sided.",
     "type": "Statistical",
-    "parameters": "probability, degrees_freedom",
+    "parameters": ["probability", "degrees_freedom"],
     "codeSyntaxUsage": ["T.INV.2T(0.35, 1)", "T.INV.2T(A1, A2)"],
     "codeSyntaxElements": [
       {
@@ -7540,7 +7650,7 @@
     "header": "TTEST",
     "headerDescription": "Returns t-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "range1, range2, tails, type",
+    "parameters": ["range1", "range2", "tails", "type"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7549,7 +7659,7 @@
     "header": "T.TEST",
     "headerDescription": "Returns t-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "range1, range2, tails, type",
+    "parameters": ["range1", "range2", "tails", "type"],
     "codeSyntaxUsage": ["T.TEST(A1:A4, B1:B4, 2, 1)"],
     "codeSyntaxElements": [
       {
@@ -7600,7 +7710,7 @@
     "header": "VAR",
     "headerDescription": "Returns variance of a sample.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": ["VAR(1,2,3,4,5,6,7,8,9,10)", "VAR(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7623,7 +7733,7 @@
     "header": "VARA",
     "headerDescription": "Returns variance of a sample.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["VARA(1,2,3,4,5,6,7,8,9,10)", "VARA(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7646,7 +7756,7 @@
     "header": "VARP",
     "headerDescription": "Returns variance of a population.",
     "type": "Statistical",
-    "parameters": "value1, value2",
+    "parameters": ["value1", "value2"],
     "codeSyntaxUsage": ["VARP(1,2,3,4,5,6,7,8,9,10)", "VARP(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7669,7 +7779,7 @@
     "header": "VAR.P",
     "headerDescription": "Returns variance of a population.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7678,7 +7788,7 @@
     "header": "VARPA",
     "headerDescription": "Returns variance of a population.",
     "type": "Statistical",
-    "parameters": "value1, value2,..",
+    "parameters": ["value1", "value2", ".."],
     "codeSyntaxUsage": ["VARPA(1,2,3,4,5,6,7,8,9,10)", "VARPA(A2:A100)"],
     "codeSyntaxElements": [
       {
@@ -7701,7 +7811,7 @@
     "header": "VAR.S",
     "headerDescription": "Returns variance of a sample.",
     "type": "Statistical",
-    "parameters": "value1, [value2, ..]",
+    "parameters": ["value1", "[value2, ..]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7710,7 +7820,7 @@
     "header": "WEIBULL",
     "headerDescription": "Returns density of Weibull distribution.",
     "type": "Statistical",
-    "parameters": "x, shape, scale, cumulative",
+    "parameters": ["x", "shape", "scale", "cumulative"],
     "codeSyntaxUsage": ["WEIBULL(2.4, 2, 3, TRUE)", "WEIBULL(A2,A3,A4,TRUE)"],
     "codeSyntaxElements": [
       {
@@ -7751,7 +7861,7 @@
     "header": "WEIBULL.DIST",
     "headerDescription": "Returns density of Weibull distribution.",
     "type": "Statistical",
-    "parameters": "x, shape, scale, cumulative",
+    "parameters": ["x", "shape", "scale", "cumulative"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7760,7 +7870,7 @@
     "header": "Z.TEST",
     "headerDescription": "Returns z-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "data, value, [standard_deviation]",
+    "parameters": ["data", "value", "[standard_deviation]"],
     "codeSyntaxUsage": ["Z.TEST(A2:A100,B2)", "Z.TEST({1,2,3,4,5,6},5.5,1.2)"],
     "codeSyntaxElements": [
       {
@@ -7787,7 +7897,7 @@
     "header": "ZTEST",
     "headerDescription": "Returns z-test value for a dataset.",
     "type": "Statistical",
-    "parameters": "data, value, [standard_deviation]",
+    "parameters": ["data", "value", "[standard_deviation]"],
     "codeSyntaxUsage": [],
     "codeSyntaxElements": [],
     "attributes": []
@@ -7796,7 +7906,7 @@
     "header": "CHAR",
     "headerDescription": "Converts a number into a character according to the current code table.",
     "type": "Text",
-    "parameters": "table_number",
+    "parameters": ["table_number"],
     "codeSyntaxUsage": ["CHAR(97)", "CHAR(HEX2DEC('A3'))", "CHAR(A1)"],
     "codeSyntaxElements": [
       {
@@ -7819,7 +7929,7 @@
     "header": "CLEAN",
     "headerDescription": "Returns text that has been \"cleaned\" of line breaks and other non-printable characters.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": ["CLEAN(\"\"AF\"\"&CHAR(31))"],
     "codeSyntaxElements": [
       {
@@ -7838,7 +7948,7 @@
     "header": "CODE",
     "headerDescription": "Returns a numeric code for the first character in a text string.",
     "type": "Text",
-    "parameters": "string",
+    "parameters": ["string"],
     "codeSyntaxUsage": ["CODE(\"\"a\"\")", "CODE(A1)"],
     "codeSyntaxElements": [
       {
@@ -7857,7 +7967,7 @@
     "header": "CONCATENATE",
     "headerDescription": "Combines several text strings into one string.",
     "type": "Text",
-    "parameters": "string1, [string2, ..]",
+    "parameters": ["string1", "[string2, ..]"],
     "codeSyntaxUsage": [
       "CONCATENATE('Welcome', ' ', 'to', ' ', 'Sheets')",
       "CONCATENATE(A1,A2,A3)",
@@ -7878,7 +7988,7 @@
     "header": "EXACT",
     "headerDescription": "Returns TRUE if both text strings are exactly the same.",
     "type": "Text",
-    "parameters": "string1, string2",
+    "parameters": ["string1", "string2"],
     "codeSyntaxUsage": ["EXACT(A1,A2)", "EXACT(\"\"foo\"\",A3)"],
     "codeSyntaxElements": [
       {
@@ -7901,7 +8011,7 @@
     "header": "FIND",
     "headerDescription": "Returns the location of one text string inside another.",
     "type": "Text",
-    "parameters": "search_for, text_to_search, [starting_at]",
+    "parameters": ["search_for", "text_to_search", "[starting_at]"],
     "codeSyntaxUsage": [
       "FIND(\"\"n\"\",A2)",
       "FIND(\"\"wood\"\",\"\"How much wood can a woodchuck chuck\"\",14)"
@@ -7928,7 +8038,7 @@
     "header": "LEFT",
     "headerDescription": "Extracts a given number of characters from the left side of a text string.",
     "type": "Text",
-    "parameters": "string, [number_of_characters]",
+    "parameters": ["string", "[number_of_characters]"],
     "codeSyntaxUsage": ["LEFT(A2,2)", "LEFT('lorem ipsum')"],
     "codeSyntaxElements": [
       {
@@ -7948,7 +8058,7 @@
     "header": "LEN",
     "headerDescription": "Returns length of a given text.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": ["LEN(A2)", "LEN('lorem ipsum')"],
     "codeSyntaxElements": [
       {
@@ -7967,7 +8077,7 @@
     "header": "LOWER",
     "headerDescription": "Returns text converted to lowercase.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": ["LOWER(\"\"LOREM IPSUM\"\")", "LOWER(A2)"],
     "codeSyntaxElements": [
       {
@@ -7986,7 +8096,7 @@
     "header": "MID",
     "headerDescription": "Returns substring of a given length starting from Start_position.",
     "type": "Text",
-    "parameters": "string, starting_at, extract_length",
+    "parameters": ["string", "starting_at", "extract_length"],
     "codeSyntaxUsage": ["MID(\"\"get this\"\",5,4)", "MID(A2,3,5)"],
     "codeSyntaxElements": [
       {
@@ -8017,7 +8127,7 @@
     "header": "PROPER",
     "headerDescription": "Capitalizes words given text string.",
     "type": "Text",
-    "parameters": "text_to_capitalize",
+    "parameters": ["text_to_capitalize"],
     "codeSyntaxUsage": ["PROPER(\"\"united states\"\")", "PROPER(A2)"],
     "codeSyntaxElements": [
       {
@@ -8036,7 +8146,7 @@
     "header": "REPLACE",
     "headerDescription": "Replaces substring of a text of a given length that starts at given position.",
     "type": "Text",
-    "parameters": "text, position, length, new_text",
+    "parameters": ["text", "position", "length", "new_text"],
     "codeSyntaxUsage": ["REPLACE(\"\"Spreadsheets\"\", 1, 6, \"\"Bed\"\")"],
     "codeSyntaxElements": [
       {
@@ -8067,7 +8177,7 @@
     "header": "REPT",
     "headerDescription": "Repeats text a given number of times.",
     "type": "Text",
-    "parameters": "text_to_repeat, number_of_repetitions",
+    "parameters": ["text_to_repeat", "number_of_repetitions"],
     "codeSyntaxUsage": ["REPT(\"\"ha\"\",4)", "REPT(A2,3)"],
     "codeSyntaxElements": [
       {
@@ -8094,7 +8204,7 @@
     "header": "RIGHT",
     "headerDescription": "Extracts a given number of characters from the right side of a text string.",
     "type": "Text",
-    "parameters": "string, [number_of_characters]",
+    "parameters": ["string", "[number_of_characters]"],
     "codeSyntaxUsage": ["RIGHT(A2,2)", "RIGHT('lorem ipsum')"],
     "codeSyntaxElements": [
       {
@@ -8114,7 +8224,7 @@
     "header": "SEARCH",
     "headerDescription": "Returns the location of one text string inside another. (Allows the use of wildcards.)",
     "type": "Text",
-    "parameters": "search_for, text_to_search, [starting_at]",
+    "parameters": ["search_for", "text_to_search", "[starting_at]"],
     "codeSyntaxUsage": [
       "SEARCH(\"\"n\"\",A2)",
       "SEARCH(\"\"wood\"\",\"\"How much wood can a woodchuck chuck\"\",14)"
@@ -8141,7 +8251,12 @@
     "header": "SPLIT",
     "headerDescription": "Divides text around a specified character or string, and puts each fragment into a separate cell in the row.",
     "type": "Text",
-    "parameters": "text, delimiter, [split_by_each], [remove_empty_text]",
+    "parameters": [
+      "text",
+      "delimiter",
+      "[split_by_each]",
+      "[remove_empty_text]"
+    ],
     "codeSyntaxUsage": [
       "SPLIT(\"\"1,2,3\"\", \"\",\"\")",
       "SPLIT(\"\"Alas, poor Yorick\"\",\"\" \"\")",
@@ -8171,7 +8286,12 @@
     "header": "SUBSTITUTE",
     "headerDescription": "Returns string where occurrences of Old_text are replaced by New_text. Replaces only specific occurrence if last parameter is provided.",
     "type": "Text",
-    "parameters": "text_to_search, search_for, replace_with, [occurrence_number]",
+    "parameters": [
+      "text_to_search",
+      "search_for",
+      "replace_with",
+      "[occurrence_number]"
+    ],
     "codeSyntaxUsage": [
       "SUBSTITUTE(\"\"search for it\"\",\"\"search for\"\",\"\"Google\"\")",
       "SUBSTITUTE(A2,\"\"new york\"\",\"\"New York\"\")",
@@ -8207,7 +8327,7 @@
     "header": "T",
     "headerDescription": "Returns text if given value is text, empty string otherwise.",
     "type": "Text",
-    "parameters": "value",
+    "parameters": ["value"],
     "codeSyntaxUsage": ["T(A2)", "T(\"\"cat\"\")"],
     "codeSyntaxElements": [
       {
@@ -8242,7 +8362,7 @@
     "header": "TEXT",
     "headerDescription": "Converts a number into text according to a given format.",
     "type": "Text",
-    "parameters": "number, format",
+    "parameters": ["number", "format"],
     "codeSyntaxUsage": [
       "TEXT(1.23,\"\"$0.00\"\")",
       "TEXT(A2,\"\"#.###\"\")",
@@ -8278,7 +8398,7 @@
     "header": "TRIM",
     "headerDescription": "Strips extra spaces from text.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": ["TRIM(\"\" lorem ipsum\"\")", "TRIM(A2)"],
     "codeSyntaxElements": [
       {
@@ -8297,7 +8417,7 @@
     "header": "UNICHAR",
     "headerDescription": "Returns the character created by using provided code point.",
     "type": "Text",
-    "parameters": "number",
+    "parameters": ["number"],
     "codeSyntaxUsage": [
       "UNICHAR(68) returns D",
       "UNICHAR(307) returns \\u0133, which may appear as ĳ"
@@ -8319,7 +8439,7 @@
     "header": "UNICODE",
     "headerDescription": "Returns the Unicode code point of a first character of a text.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": [
       "UNICODE(\"\"A\"\")",
       "UNICODE(123)",
@@ -8342,7 +8462,7 @@
     "header": "UPPER",
     "headerDescription": "Returns text converted to uppercase.",
     "type": "Text",
-    "parameters": "text",
+    "parameters": ["text"],
     "codeSyntaxUsage": ["UPPER(\"\"lorem ipsum\"\")", "UPPER(A2)"],
     "codeSyntaxElements": [
       {

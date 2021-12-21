@@ -194,8 +194,6 @@ class Selector {
       }
     }
 
-    this.isInSelectionMode = true
-
     this.selectedSimpleCellAddress = cell.simpleCellAddress
 
     if (this._sheets.cellEditor.isInCellSelectionMode) {
@@ -228,6 +226,8 @@ class Selector {
         return new SelectedCell(this._sheets, simpleCellAddress)
       }
     )[0]
+
+    this.isInSelectionMode = true
 
     this.selectCellFromSimpleCellAddress(cell.simpleCellAddress)
 

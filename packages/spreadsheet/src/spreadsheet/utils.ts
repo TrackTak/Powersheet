@@ -112,6 +112,7 @@ export const saveCaretPosition = (node: Node) => {
 }
 export const getCaretPosition = (node: Node) => {
   const selection = window.getSelection()
+
   const range = selection?.getRangeAt(0)!
   const treeWalker = document.createTreeWalker(
     node,

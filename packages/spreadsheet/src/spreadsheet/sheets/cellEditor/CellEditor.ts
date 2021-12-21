@@ -194,29 +194,37 @@ class CellEditor {
     }
   }
 
-  private moveSelectedCellIfInSelectionMode({
+  private moveSelectedCell({
     rowsToMove = 0,
     colsToMove = 0
-  }) {
-    if (this._sheets.cellEditor.isInCellSelectionMode) {
-      const {
-        sheet,
-        row,
-        col
-      } = this._sheets.selector.selectedCell?.simpleCellAddress!
+  }: IMoveSelectCellParam) {
+    const {
+      sheet,
+      row,
+      col
+    } = this._sheets.selector.selectedCell?.simpleCellAddress!
 
-      const simpleCellAddress = new SimpleCellAddress(
-        sheet,
-        row + rowsToMove,
-        col + colsToMove
-      )
+    const simpleCellAddress = new SimpleCellAddress(
+      sheet,
+      row + rowsToMove,
+      col + colsToMove
+    )
 
-      this._sheets.selector.selectCellFromSimpleCellAddress(simpleCellAddress)
-    }
+    this._sheets.selector.selectCellFromSimpleCellAddress(simpleCellAddress)
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
+
+    const moveSelectedCellIfInSelectionMode = (
+      moveSelection: IMoveSelectCellParam
+    ) => {
+      if (this._sheets.cellEditor.isInCellSelectionMode) {
+        e.preventDefault()
+
+        this.moveSelectedCell(moveSelection)
+      }
+    }
 
     switch (e.key) {
       case 'Escape': {
@@ -228,27 +236,19 @@ class CellEditor {
         break
       }
       case 'ArrowRight': {
-        e.preventDefault()
-
-        this.moveSelectedCellIfInSelectionMode({ colsToMove: 1 })
+        moveSelectedCellIfInSelectionMode({ colsToMove: 1 })
         break
       }
       case 'ArrowLeft': {
-        e.preventDefault()
-
-        this.moveSelectedCellIfInSelectionMode({ colsToMove: -1 })
+        moveSelectedCellIfInSelectionMode({ colsToMove: -1 })
         break
       }
       case 'ArrowUp': {
-        e.preventDefault()
-
-        this.moveSelectedCellIfInSelectionMode({ rowsToMove: -1 })
+        moveSelectedCellIfInSelectionMode({ rowsToMove: -1 })
         break
       }
       case 'ArrowDown': {
-        e.preventDefault()
-
-        this.moveSelectedCellIfInSelectionMode({ rowsToMove: 1 })
+        moveSelectedCellIfInSelectionMode({ rowsToMove: 1 })
         break
       }
     }
@@ -382,7 +382,13 @@ class CellEditor {
 
     const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
 
+    // For some reason we need it in 2 places here for single cell selections
+    // otherwise it intermittently does not set the caret
     setCaretToEndOfElement(node)
+
+    setTimeout(() => {
+      setCaretToEndOfElement(node)
+    }, 0)
   }
 
   /**

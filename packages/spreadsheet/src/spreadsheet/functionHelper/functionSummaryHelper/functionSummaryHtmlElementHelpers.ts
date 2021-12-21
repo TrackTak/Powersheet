@@ -3,11 +3,6 @@ import { prefix } from '../../utils'
 
 export const functionSummaryHelperPrefix = `${prefix}-function-summary-helper`
 
-export interface IParameterSyntaxElement {
-  element: HTMLSpanElement
-  isInfiniteParameter: boolean
-}
-
 export const createWrapperContent = () => {
   const functionSummaryHelperContainerEl = document.createElement('div')
   const functionSummaryHelperEl = document.createElement('div')
@@ -36,19 +31,23 @@ export const createMainHeader = (headerText: string, parameters: string[]) => {
   parameterContainerEl.appendChild(openingBracketEl)
   const closingBracketEl = document.createElement('span')
   closingBracketEl.textContent = ')'
-  const parameterSyntaxElements: IParameterSyntaxElement[] = []
+  const parameterSyntaxElements: HTMLSpanElement[] = []
 
   parameters.forEach((parameter, index) => {
     const parameterEl = document.createElement('span')
     parameterEl.classList.add(`${functionSummaryHelperPrefix}-parameter`)
+
+    if (parameter.includes('[')) {
+      parameterEl.dataset.isInfiniteParameter = ''
+    }
+
     parameterEl.textContent = parameter
-    parameterSyntaxElements.push({
-      element: parameterEl,
-      isInfiniteParameter: parameter.includes('[')
-    })
+    parameterSyntaxElements.push(parameterEl)
     parameterContainerEl.appendChild(parameterEl)
+
     if (index !== parameters.length - 1) {
       const commaEl = document.createElement('span')
+
       commaEl.textContent = ', '
       parameterContainerEl.appendChild(commaEl)
     }

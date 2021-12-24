@@ -64,19 +64,22 @@ class FunctionSummaryHelper {
   }
 
   updateParameterHighlights(text: string) {
-    // @ts-ignore
-    const lexer = this._spreadsheet.hyperformula._parser.lexer
-    let tokens = lexer.tokenizeFormula(text).tokens as IToken[]
     // tokens = tokens.filter(x => x.tokenType.name !== 'WhiteSpace')
     // const updatedText = tokens.map(token => token.image).join('')
-    const formula = this._getFormulaText(text, tokens)
+    const formula = this._getFormulaText(text)
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
     const { ast } =
       // @ts-ignore
       this._spreadsheet.hyperformula.extractTemporaryFormula(
         formula,
         this._spreadsheet.sheets.activeSheetId
       )
-    const parameters = ast.args as Ast[]
+
+    if (!ast?.args) return
+
+    const parameters = ast.args as IToken[]
 
     const caretPosition = getCaretPosition(
       this._spreadsheet.sheets.cellEditor.cellEditorEl
@@ -89,9 +92,9 @@ class FunctionSummaryHelper {
       : parameters.findIndex(
           token =>
             (caretPosition >= token.startOffset &&
-              caretPosition <= token.endOffset) ||
+              caretPosition <= token.endOffset!) ||
             (precedingCaretPosition >= token.startOffset &&
-              precedingCaretPosition <= token.endOffset)
+              precedingCaretPosition <= token.endOffset!)
         )
 
     this.parameterSyntaxElements.forEach(({ element }) => {
@@ -99,6 +102,7 @@ class FunctionSummaryHelper {
     })
     const placeholderElementToHighlight =
       this.parameterSyntaxElements[indexToHighlight]?.element
+
     placeholderElementToHighlight?.classList.add(
       `${functionSummaryHelperPrefix}-highlight`
     )
@@ -176,7 +180,11 @@ class FunctionSummaryHelper {
     ) */
   }
 
-  private _getFormulaText(text: string, tokens: IToken[]) {
+  private _getFormulaText(text: string) {
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
+
     const leftParentheses = tokens.filter(
       x => x.tokenType.name === 'ProcedureName' || x.tokenType.name === 'LParen'
     )
@@ -195,7 +203,6 @@ class FunctionSummaryHelper {
         formula += ')'
       }
     }
-
 
     return formula
   }

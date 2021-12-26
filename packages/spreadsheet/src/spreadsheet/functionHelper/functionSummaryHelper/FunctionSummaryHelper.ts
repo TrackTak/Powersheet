@@ -73,9 +73,9 @@ class FunctionSummaryHelper {
         formula,
         this._spreadsheet.sheets.activeSheetId
       )
-    // @ts-ignore
+
     if (ast?.args === undefined) return
-    // @ts-ignore
+
     const parameters = ast.args as IToken[]
 
     const caretPosition = getCaretPosition(

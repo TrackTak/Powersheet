@@ -76,9 +76,8 @@ class FunctionSummaryHelper {
     const caretPosition = getCaretPosition(
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
-    const rightParentheses = tokens.find(x => x.tokenType.name === 'RParen')
     // @ts-ignore
-    if (ast?.args === undefined || rightParentheses && caretPosition >= rightParentheses.startOffset) {
+    if (ast?.args === undefined || caretPosition > ast.endOffset) {
       this._clearHighlights()
       return
     }

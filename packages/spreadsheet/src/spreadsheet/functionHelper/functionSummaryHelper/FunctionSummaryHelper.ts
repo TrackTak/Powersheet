@@ -69,7 +69,7 @@ class FunctionSummaryHelper {
     const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
     const { ast } =
       // @ts-ignore
-      this._spreadsheet.hyperformula.extractTemporaryFormula(
+      this._spreadsheet.hyperformula.extractFormula(
         formula,
         this._spreadsheet.sheets.activeSheetId
       )

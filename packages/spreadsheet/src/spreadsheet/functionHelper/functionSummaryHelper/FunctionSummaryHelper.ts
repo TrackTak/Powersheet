@@ -73,14 +73,18 @@ class FunctionSummaryHelper {
         formula,
         this._spreadsheet.sheets.activeSheetId
       )
-    // @ts-ignore
-    if (ast?.args === undefined) return
-    // @ts-ignore
-    const parameters = ast.args as IToken[]
-
     const caretPosition = getCaretPosition(
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
+    const rightParentheses = tokens.find(x => x.tokenType.name === 'RParen')
+    // @ts-ignore
+    if (ast?.args === undefined || rightParentheses && caretPosition >= rightParentheses.startOffset) {
+      this._clearHighlights()
+      return
+    }
+    // @ts-ignore
+    const parameters = ast.args as IToken[]
+
     const precedingCaretPosition = caretPosition - 1
     const isWithinInfiniteParameterSection =
       this._isWithinInfiniteParameterSection(tokens, caretPosition)
@@ -96,9 +100,7 @@ class FunctionSummaryHelper {
     if (parameters.length === 0) {
       indexToHighlight = 0
     }
-    this.parameterSyntaxElements.forEach(({ element }) => {
-      element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
-    })
+    this._clearHighlights()
     const placeholderElementToHighlight =
       this.parameterSyntaxElements[indexToHighlight]?.element
 
@@ -106,6 +108,10 @@ class FunctionSummaryHelper {
       `${functionSummaryHelperPrefix}-highlight`
     )
   }
+
+  private _clearHighlights = () =>  this.parameterSyntaxElements.forEach(({ element }) => {
+    element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+  })
 
   private _getFormulaText(text: string) {
     // @ts-ignore

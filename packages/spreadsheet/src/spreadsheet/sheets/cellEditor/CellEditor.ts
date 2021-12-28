@@ -201,6 +201,10 @@ class CellEditor {
     this._updateFunctionSummaryHelperHighlights()
   }
 
+  /**
+   *
+   * @internal
+   */
   _updateFunctionSummaryHelperHighlights = () => {
     const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
     const textContent = nodes.length

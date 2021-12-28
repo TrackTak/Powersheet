@@ -63,100 +63,92 @@ class FunctionSummaryHelper {
   }
 
   updateParameterHighlights(text: string) {
+    const formula = this._getFormulaText(text)
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
+    const { ast } =
+      // @ts-ignore
+      this._spreadsheet.hyperformula.extractFormula(
+        formula,
+        this._spreadsheet.sheets.activeSheetId
+      )
     const caretPosition = getCaretPosition(
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
+    // @ts-ignore
+    if (ast?.args === undefined || caretPosition > ast.endOffset) {
+      this._clearHighlights()
+      return
+    }
+    // @ts-ignore
+    const parameters = ast.args as IToken[]
+
     const precedingCaretPosition = caretPosition - 1
+    const isWithinInfiniteParameterSection =
+      this._isWithinInfiniteParameterSection(tokens, caretPosition)
+    let indexToHighlight = isWithinInfiniteParameterSection
+      ? this.parameterSyntaxElements.length - 1
+      : parameters.findIndex(
+          token =>
+            (caretPosition >= token.startOffset &&
+              caretPosition <= token.endOffset!) ||
+            (precedingCaretPosition >= token.startOffset &&
+              precedingCaretPosition <= token.endOffset!)
+        )
+    if (parameters.length === 0) {
+      indexToHighlight = 0
+    }
+    this._clearHighlights()
+    const placeholderElementToHighlight =
+      this.parameterSyntaxElements[indexToHighlight]?.element
+
+    placeholderElementToHighlight?.classList.add(
+      `${functionSummaryHelperPrefix}-highlight`
+    )
+  }
+
+  private _clearHighlights = () =>  this.parameterSyntaxElements.forEach(({ element }) => {
+    element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+  })
+
+  private _getFormulaText(text: string) {
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
     const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
 
-    if (tokens[1]?.tokenType.name !== 'ProcedureName') {
-      return
+    const leftParentheses = tokens.filter(
+      x => x.tokenType.name === 'ProcedureName' || x.tokenType.name === 'LParen'
+    )
+    const rightParentheses = tokens.filter(x => x.tokenType.name === 'RParen')
+    const missingRightParenthesesNumber =
+      leftParentheses.length - rightParentheses.length
+
+    let formula = text
+
+    if (missingRightParenthesesNumber > 0) {
+      for (let index = 0; index < missingRightParenthesesNumber; index++) {
+        formula += ')'
+      }
     }
 
-    const eligibleTokensToHighlight = tokens.filter(token =>
-      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
-    )
-    const caretElementIndex = eligibleTokensToHighlight.findIndex(token => {
-      const endOffset = token.endOffset! // ?? Number.MAX_VALUE
-      return (
-        (caretPosition >= token.startOffset && caretPosition <= endOffset) ||
-        (precedingCaretPosition >= token.startOffset &&
-          precedingCaretPosition <= endOffset)
-      )
-    })
-
-    const separators = tokens.filter(
-      token => token.tokenType.name === 'ArrayColSep'
-    )
-    const precedingSeparatorIndex = separators.findIndex(
-      token => token.endOffset === precedingCaretPosition
-    )
-
-    this.parameterSyntaxElements.forEach(({ element }) => {
-      element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
-    })
-
-    if (caretElementIndex === -1) {
-      // && precedingSeparatorIndex === -1) {
-      return
-    }
-
-    // const isWithinInfiniteParameterSection =
-    //   this._isWithinInfiniteParameterSection(
-    //     eligibleTokensToHighlight,
-    //     caretPosition
-    //   )
-
-    let elementIndexToHighlight = caretElementIndex
-
-    // const isAfterSeparator =
-    //   caretElementIndex === -1 ||
-    //   (precedingSeparatorIndex !== -1 && !isWithinInfiniteParameterSection)
-
-    // if (isAfterSeparator) {
-    //   elementIndexToHighlight = precedingSeparatorIndex + 1
-    // }
-
-    const placeholderElementToHighlight = this._getElementToHighlight(
-      precedingSeparatorIndex,
-      elementIndexToHighlight,
-      false // isWithinInfiniteParameterSection
-    )
-
-    placeholderElementToHighlight.classList.add(
-      `${functionSummaryHelperPrefix}-highlight`
-    )
+    return formula
   }
 
   private _isWithinInfiniteParameterSection(
     tokens: IToken[],
     currentCaretPosition: number
   ) {
+    const eligibleTokensToHighlight = tokens.filter(token =>
+      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+    )
     const tokenBeforeInfiniteParameterPosition =
-      tokens[this.parameterSyntaxElements.length - 1]?.startOffset
+      eligibleTokensToHighlight[this.parameterSyntaxElements.length - 1]
+        ?.startOffset
     return !!(
       last(this.parameterSyntaxElements)?.isInfiniteParameter &&
       currentCaretPosition >= tokenBeforeInfiniteParameterPosition
     )
-  }
-
-  private _getElementToHighlight(
-    precedingSeparatorIndex: number,
-    elementIndexToHighlight: number,
-    isWithinInfiniteParameterSection: boolean
-  ) {
-    // const shouldHighlightLastElement =
-    //   (precedingSeparatorIndex ||
-    //     elementIndexToHighlight >= this.placeholderParameters?.length) &&
-    //   isWithinInfiniteParameterSection
-
-    // return shouldHighlightLastElement
-    //   ? last(this.placeholderParameters)?.element
-    //   : this.placeholderParameters[elementIndexToHighlight]?.element
-
-    return this.parameterSyntaxElements[elementIndexToHighlight]?.element
   }
 
   private _update(formulaMetadata: IFunctionHelperData) {

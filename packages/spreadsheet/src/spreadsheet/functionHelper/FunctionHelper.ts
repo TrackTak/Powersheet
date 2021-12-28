@@ -21,7 +21,7 @@ interface IAttribute {
 export interface IFunctionHelperData {
   header: string
   headerDescription: string
-  parameters?: string[]
+  parameters: string[]
   codeSyntaxUsage: string[]
   codeSyntaxElements: ICodeSyntaxCode[]
   attributes: IAttribute[]

@@ -10,11 +10,16 @@ import {
   createMainHeader,
   createButton,
   createWrapperContent,
-  functionSummaryHelperPrefix
+  functionSummaryHelperPrefix,
+  IParameterSyntaxElement
 } from './functionSummaryHtmlElementHelpers'
 import Spreadsheet from '../../Spreadsheet'
 import { functionMetadata } from '../functionMetadata'
 import { IFunctionHelperData } from '../FunctionHelper'
+import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
+import { IToken } from 'chevrotain'
+import { last } from 'lodash'
+import { getCaretPosition } from '../../utils'
 
 class FunctionSummaryHelper {
   functionSummaryHelperEl: HTMLDivElement
@@ -23,12 +28,12 @@ class FunctionSummaryHelper {
   accordionButton!: HTMLButtonElement
   helper: DelegateInstance
   textWrapper!: HTMLDivElement
-  private _spreadsheet!: Spreadsheet
+  parameterSyntaxElements: IParameterSyntaxElement[]
 
   /**
    * @internal
    */
-  constructor(spreadsheet: Spreadsheet) {
+  constructor(private _spreadsheet: Spreadsheet) {
     const { functionSummaryHelperContainerEl, functionSummaryHelperEl } =
       createWrapperContent()
     this.functionSummaryHelperListContainerEl = functionSummaryHelperContainerEl
@@ -41,7 +46,7 @@ class FunctionSummaryHelper {
       interactive: true,
       hideOnClick: false
     })
-    this._spreadsheet = spreadsheet
+    this.parameterSyntaxElements = []
   }
   /**
    * Shows the function summary helper.
@@ -49,18 +54,104 @@ class FunctionSummaryHelper {
    * @param functionName - The input function
    * @param inputParameters - The input parameters that have currently been typed by user
    */
-  show(functionName: string, inputParameters: string) {
+  show(functionName: string) {
     const metadata = functionMetadata[functionName]
     if (metadata) {
-      this._update(metadata, inputParameters)
+      this._update(metadata)
       this.helper.show()
     }
   }
 
-  private _update(
-    formulaMetadata: IFunctionHelperData,
-    inputParameters: string
+  updateParameterHighlights(text: string) {
+    const formula = this._getFormulaText(text)
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
+    const { ast } =
+      // @ts-ignore
+      this._spreadsheet.hyperformula.extractFormula(
+        formula,
+        this._spreadsheet.sheets.activeSheetId
+      )
+    const caretPosition = getCaretPosition(
+      this._spreadsheet.sheets.cellEditor.cellEditorEl
+    )
+    // @ts-ignore
+    if (ast?.args === undefined || caretPosition > ast.endOffset) {
+      this._clearHighlights()
+      return
+    }
+    // @ts-ignore
+    const parameters = ast.args as IToken[]
+
+    const precedingCaretPosition = caretPosition - 1
+    const isWithinInfiniteParameterSection =
+      this._isWithinInfiniteParameterSection(tokens, caretPosition)
+    let indexToHighlight = isWithinInfiniteParameterSection
+      ? this.parameterSyntaxElements.length - 1
+      : parameters.findIndex(
+          token =>
+            (caretPosition >= token.startOffset &&
+              caretPosition <= token.endOffset!) ||
+            (precedingCaretPosition >= token.startOffset &&
+              precedingCaretPosition <= token.endOffset!)
+        )
+    if (parameters.length === 0) {
+      indexToHighlight = 0
+    }
+    this._clearHighlights()
+    const placeholderElementToHighlight =
+      this.parameterSyntaxElements[indexToHighlight]?.element
+
+    placeholderElementToHighlight?.classList.add(
+      `${functionSummaryHelperPrefix}-highlight`
+    )
+  }
+
+  private _clearHighlights = () =>  this.parameterSyntaxElements.forEach(({ element }) => {
+    element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+  })
+
+  private _getFormulaText(text: string) {
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(text).tokens as IToken[]
+
+    const leftParentheses = tokens.filter(
+      x => x.tokenType.name === 'ProcedureName' || x.tokenType.name === 'LParen'
+    )
+    const rightParentheses = tokens.filter(x => x.tokenType.name === 'RParen')
+    const missingRightParenthesesNumber =
+      leftParentheses.length - rightParentheses.length
+
+    let formula = text
+
+    if (missingRightParenthesesNumber > 0) {
+      for (let index = 0; index < missingRightParenthesesNumber; index++) {
+        formula += ')'
+      }
+    }
+
+    return formula
+  }
+
+  private _isWithinInfiniteParameterSection(
+    tokens: IToken[],
+    currentCaretPosition: number
   ) {
+    const eligibleTokensToHighlight = tokens.filter(token =>
+      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+    )
+    const tokenBeforeInfiniteParameterPosition =
+      eligibleTokensToHighlight[this.parameterSyntaxElements.length - 1]
+        ?.startOffset
+    return !!(
+      last(this.parameterSyntaxElements)?.isInfiniteParameter &&
+      currentCaretPosition >= tokenBeforeInfiniteParameterPosition
+    )
+  }
+
+  private _update(formulaMetadata: IFunctionHelperData) {
     this.functionSummaryHelperListContainerEl = document.createElement('div')
     this.functionSummaryHelperListContainerEl.classList.add(
       `${functionSummaryHelperPrefix}`
@@ -83,11 +174,11 @@ class FunctionSummaryHelper {
       `${functionSummaryHelperPrefix}-text-wrapper`
     )
 
-    const { mainHeaderEl } = createMainHeader(
+    const { mainHeaderEl, parameterSyntaxElements } = createMainHeader(
       formulaMetadata.header,
-      formulaMetadata.parameters ?? '',
-      inputParameters
+      formulaMetadata.parameters
     )
+    this.parameterSyntaxElements = parameterSyntaxElements
 
     const { paragraphEl: description } = createParagraph(
       formulaMetadata.headerDescription
@@ -102,11 +193,13 @@ class FunctionSummaryHelper {
 
       this._spreadsheet.render()
     })
-
+    this.functionSummaryHelperListContainerEl.appendChild(mainHeaderEl)
     this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)
-    this.textWrapper.appendChild(mainHeaderEl)
     this.textWrapper.appendChild(description)
-    this.textWrapper.appendChild(headerUsage)
+
+    if (formulaMetadata.codeSyntaxUsage.length) {
+      this.textWrapper.appendChild(headerUsage)
+    }
 
     formulaMetadata.codeSyntaxUsage.forEach(usageName => {
       const { codeEl } = createCodeText(usageName)
@@ -135,23 +228,21 @@ class FunctionSummaryHelper {
 
   private _toggleAccordion = () => {
     if (
-      this.functionSummaryHelperListContainerEl.classList.contains(
+      this.textWrapper.classList.contains(
         `${functionSummaryHelperPrefix}-expanded`
       )
     ) {
       this.expandIcon.classList.remove(
         `${functionSummaryHelperPrefix}-collapse-icon`
       )
-      this.functionSummaryHelperListContainerEl.classList.remove(
+      this.textWrapper.classList.remove(
         `${functionSummaryHelperPrefix}-expanded`
       )
     } else {
       this.expandIcon.classList.add(
         `${functionSummaryHelperPrefix}-collapse-icon`
       )
-      this.functionSummaryHelperListContainerEl.classList.add(
-        `${functionSummaryHelperPrefix}-expanded`
-      )
+      this.textWrapper.classList.add(`${functionSummaryHelperPrefix}-expanded`)
     }
   }
 

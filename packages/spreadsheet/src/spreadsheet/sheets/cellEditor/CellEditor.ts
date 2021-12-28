@@ -24,7 +24,7 @@ export interface ICurrentScroll {
   col: number
 }
 
-const PLACEHOLDER_WHITELIST = [
+export const PLACEHOLDER_WHITELIST = [
   'WhiteSpace',
   'PlusOp',
   'MinusOp',
@@ -39,6 +39,7 @@ const PLACEHOLDER_WHITELIST = [
   'GreaterThanOp',
   'LessThanOp',
   'LParen',
+  'RParen',
   'ArrayLParen',
   'ArrayRParen',
   'OffsetProcedureName',
@@ -112,6 +113,8 @@ class CellEditor {
 
     this.cellEditorEl.addEventListener('input', this._onInput)
     this.cellEditorEl.addEventListener('keydown', this._onKeyDown)
+    this.cellEditorEl.addEventListener('keyup', this._onKeyUp)
+    this.cellEditorEl.addEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.addEventListener('click', this._onClick)
   }
 
@@ -150,11 +153,11 @@ class CellEditor {
       const hasOpenBracket = functionName.includes('(')
       const input = functionName.split('(')
       functionName = hasOpenBracket ? input[0] : functionName
-      const parameters = input[1]
 
       if (hasOpenBracket) {
         this.formulaHelper?.hide()
-        this.functionSummaryHelper.show(functionName, parameters)
+        this.functionSummaryHelper.show(functionName)
+        this._updateFunctionSummaryHelperHighlights()
       } else {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
@@ -186,6 +189,28 @@ class CellEditor {
         break
       }
     }
+  }
+
+  private _onKeyUp = (e: KeyboardEvent) => {
+    e.stopPropagation()
+    this._updateFunctionSummaryHelperHighlights()
+  }
+
+  private _onMouseUp = (e: MouseEvent) => {
+    e.stopPropagation()
+    this._updateFunctionSummaryHelperHighlights()
+  }
+
+  /**
+   *
+   * @internal
+   */
+  _updateFunctionSummaryHelperHighlights = () => {
+    const nodes = this.cellEditorEl.getElementsByClassName('powersheet-token')
+    const textContent = nodes.length
+      ? this._nodesToText(nodes)
+      : this.cellEditorEl.textContent
+    this.functionSummaryHelper.updateParameterHighlights(textContent ?? '')
   }
 
   private _removePlaceholderIfNeeded = () => {
@@ -265,7 +290,6 @@ class CellEditor {
     secondaryEditor?: HTMLDivElement
   ) => {
     const currentCaretPosition = getCaretPosition(currentEditor)
-
     const precedingTokenPosition = currentCaretPosition - 1
 
     if (precedingTokenPosition === -1) return
@@ -312,6 +336,8 @@ class CellEditor {
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
+    this.cellEditorEl.removeEventListener('keyup', this._onKeyUp)
+    this.cellEditorEl.removeEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.removeEventListener('click', this._onClick)
     this.formulaHelper?._destroy()
     this.functionSummaryHelper._destroy()

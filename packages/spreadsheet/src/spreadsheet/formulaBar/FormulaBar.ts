@@ -1,3 +1,4 @@
+import { getCellDataValue } from '@tracktak/hyperformula'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import { prefix, saveCaretPosition } from '../utils'
@@ -132,8 +133,9 @@ class FormulaBar {
         ''
 
       if (this._spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue =
+        const serializedValue = getCellDataValue(
           this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+        )
 
         const tokenParts =
           this._spreadsheet.sheets.cellHighlighter.getStyledTokens(

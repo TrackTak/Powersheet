@@ -13,10 +13,14 @@ import {
   VerticalTextAlign
 } from '../../Data'
 import {
+  CellDataDetailedType,
+  CellDataType,
   CellValue,
   CellValueDetailedType,
   CellValueType,
-  DetailedCellError
+  DetailedCellError,
+  getCellDataValue,
+  RawCellContent
 } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
@@ -232,11 +236,11 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setCellTextValue(cellValue?: string, textFormatPattern?: string) {
-    let value: CellValue | undefined =
-      this._sheets._spreadsheet.hyperformula.getCellValue(
+  private _setCellTextValue(cellValue?: RawCellContent, textFormatPattern?: string) {
+    let value: CellValue | RawCellContent | undefined  =
+      getCellDataValue(this._sheets._spreadsheet.hyperformula.getCellValue(
         this.simpleCellAddress
-      )
+      ))
 
     if (this._sheets._spreadsheet.data._spreadsheetData.showFormulas) {
       value = cellValue
@@ -247,9 +251,13 @@ class StyleableCell extends Cell {
 
       let text = value
 
-      const cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
+      let cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
         this.simpleCellAddress
       )
+
+      if (cellType instanceof CellDataType) {
+        cellType = cellType.cellValueType
+      }
 
       if (cellType === CellValueType.ERROR) {
         value = (value as DetailedCellError).value
@@ -331,10 +339,15 @@ class StyleableCell extends Cell {
     this._setRightBorder(borders)
     this._setBottomBorder(borders)
 
-    const cellType =
+    let cellType =
       this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
         this.simpleCellAddress
       )
+
+    if (cellType instanceof CellDataDetailedType) {
+      cellType = cellType.cellValueDetailedType
+    }
+
     this._setCellErrorMarker(CellValueDetailedType.ERROR === cellType)
 
     const stickyGroup = this.getStickyGroupCellBelongsTo()

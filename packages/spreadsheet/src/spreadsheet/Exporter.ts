@@ -118,7 +118,7 @@ class Exporter {
               simpleCellAddress.sheet
             )
 
-            const cellType = this._spreadsheet.hyperformula.getCellType(
+            let cellType = this._spreadsheet.hyperformula.getCellType(
               simpleCellAddress
             )
 

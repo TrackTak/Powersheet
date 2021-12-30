@@ -9,6 +9,7 @@ import { Line } from 'konva/lib/shapes/Line'
 import { isNil } from 'lodash'
 import RowColAddress from './cell/RowColAddress'
 import Cell from './cell/Cell'
+import { getCellDataValue } from '@tracktak/hyperformula'
 
 export interface IGroupedCells {
   main: Cell[]
@@ -31,12 +32,12 @@ class Cells {
     const cell = this._spreadsheet.data._spreadsheetData.cells?.[cellId]
     // Need to check hyperformula value too because some
     // functions spill values into adjacent cells
-    const cellSerializedValueExists = !isNil(
-      this._spreadsheet.hyperformula.getCellValue(simpleCellAddress)
+    const cellValueExists = !isNil(
+      getCellDataValue(this._spreadsheet.hyperformula.getCellValue(simpleCellAddress))
     )
     const hasCellData = !!(
       cell ||
-      cellSerializedValueExists ||
+      cellValueExists ||
       this._spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
     )
 

@@ -11,7 +11,7 @@ import {
   saveCaretPosition,
   setCaretToEndOfElement
 } from '../../utils'
-import { HyperFormula } from '@tracktak/hyperformula'
+import { getCellDataValue, HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
 import { ICellData } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
@@ -305,8 +305,8 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
-      simpleCellAddress
+    const serializedValue = getCellDataValue(
+      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
     )
 
     this.setContentEditable(serializedValue?.toString() ?? null)
@@ -401,9 +401,8 @@ class CellEditor {
       simpleCellAddress.toCellId()
     ]
     const cellValue =
-      this._spreadsheet.hyperformula
-        .getCellSerialized(simpleCellAddress)
-        ?.toString() ?? undefined
+      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress) ??
+      undefined
 
     this._spreadsheet.pushToHistory(() => {
       const value = this.currentCellText ? this.currentCellText : undefined

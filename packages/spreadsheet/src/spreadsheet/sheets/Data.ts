@@ -1,3 +1,4 @@
+import { RawCellContent } from '@tracktak/hyperformula'
 import { Vector2d } from 'konva/lib/types'
 import { isNil } from 'lodash'
 import Spreadsheet from '../Spreadsheet'
@@ -18,7 +19,7 @@ export type BorderStyle =
 
 export interface ICellData {
   id: CellId
-  value?: string
+  value?: RawCellContent
   comment?: string
   borders?: BorderStyle[]
   backgroundColor?: string
@@ -202,10 +203,12 @@ class Data {
         ) &&
         setHyperformula
       ) {
-        this._spreadsheet.hyperformula.setCellContents(
-          simpleCellAddress,
-          this._spreadsheetData.cells[cellId]?.value
-        )
+        const { value, ...metadata } = this._spreadsheetData.cells[cellId]
+
+        this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+          cellValue: value,
+          metadata
+        })
       }
     } catch (e) {
       console.error(e, simpleCellAddress)

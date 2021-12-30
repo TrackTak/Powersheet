@@ -52,8 +52,6 @@ export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
     {
       ...config,
       chooseAddressMappingPolicy: new AlwaysSparse(),
-      // We use our own undo/redo instead
-      undoLimit: 0,
       licenseKey: 'gpl-v3'
     },
     [trueNamedExpression, falseNamedExpression]

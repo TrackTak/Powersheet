@@ -22,7 +22,7 @@ import Merger from './Merger'
 import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
-import { DetailedCellError } from '@tracktak/hyperformula'
+import { DetailedCellError, getCellDataValue } from '@tracktak/hyperformula'
 import { Instance, Props } from 'tippy.js'
 import CellHighlighter from '../cellHighlighter/CellHighlighter'
 
@@ -388,9 +388,10 @@ class Sheets {
       this.comment.show(simpleCellAddress)
     }
 
-    const cellValue = this._spreadsheet.hyperformula.getCellValue(
+    let cellValue = getCellDataValue(this._spreadsheet.hyperformula.getCellValue(
       simpleCellAddress
-    )
+    ))
+
     if (cellValue instanceof DetailedCellError) {
       this.cellError.show(cellValue.message || cellValue.type)
     }
@@ -470,9 +471,9 @@ class Sheets {
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+          const serializedValue = getCellDataValue(this._spreadsheet.hyperformula.getCellSerialized(
             selectedCell.simpleCellAddress
-          )
+          ))
 
           if (serializedValue) {
             this.cellEditor.clear()

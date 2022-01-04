@@ -3,10 +3,12 @@ import { functionMetadataByGroup } from '../functionMetadata'
 import {
   ClickHandler,
   createFunctionList,
+  functionHelperListPrefix,
   updateFunctionList
 } from './functionHelperListHtmlElementHelpers'
+import { first } from 'lodash'
 
-class FunctionHelper {
+class FunctionHelperList {
   functionListEl!: HTMLDivElement
   drawerContentEl!: HTMLDivElement
   drawerHeaderEl!: HTMLDivElement
@@ -15,7 +17,7 @@ class FunctionHelper {
     const { functionListEl, drawerHeaderEl, drawerContentEl } =
       createFunctionList(
         this._onSearch,
-        this.onFunctionItemClick,
+        this._toggleAccordion,
         functionMetadataByGroup
       )
     this.functionListEl = functionListEl
@@ -30,10 +32,29 @@ class FunctionHelper {
     const searchText = (e.target as HTMLInputElement).value
     updateFunctionList(
       this.drawerContentEl,
-      this.onFunctionItemClick,
+      this._toggleAccordion,
       functionMetadataByGroup,
       searchText
     )
+  }
+
+  private _toggleAccordion = (e: Event) => {
+    const target = e.currentTarget as HTMLElement
+    const listItem = first(
+      target.getElementsByClassName(
+        `${functionHelperListPrefix}-function-item-content`
+      )
+    )
+    if (!listItem) {
+      return
+    }
+    if (listItem.classList.contains(`${functionHelperListPrefix}-expanded`)) {
+      listItem.classList.remove(`${functionHelperListPrefix}-expanded`)
+      target.classList.remove(`${functionHelperListPrefix}-expanded`)
+    } else {
+      listItem.classList.add(`${functionHelperListPrefix}-expanded`)
+      target.classList.add(`${functionHelperListPrefix}-expanded`)
+    }
   }
 
   /**
@@ -42,4 +63,4 @@ class FunctionHelper {
   _destroy() {}
 }
 
-export default FunctionHelper
+export default FunctionHelperList

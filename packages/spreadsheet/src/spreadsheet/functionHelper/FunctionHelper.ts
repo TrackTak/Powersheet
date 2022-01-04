@@ -3,6 +3,7 @@ import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
 import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 import FunctionHelperList from './functionHelperList/FunctionHelperList'
+import { functionHelperListPrefix } from './functionHelperList/functionHelperListHtmlElementHelpers'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -57,6 +58,19 @@ class FunctionHelper {
       'mdc-drawer--dismissible'
     )
 
+    this.closeIcon = document.createElement('span')
+    this.closeIcon.classList.add(`${functionHelperPrefix}-close-icon`)
+
+    this.closeButton = document.createElement('button')
+    this.closeButton.classList.add(`${functionHelperPrefix}-close-button`)
+
+    this.closeButton.addEventListener('click', () => {
+      this._spreadsheet.options.showFunctionHelper = false
+
+      this._spreadsheet.render()
+    })
+    this.functionHelperEl.appendChild(this.closeButton)
+    this.closeButton.append(this.closeIcon)
     this.functionHelperEl.dir = 'rtl'
     this.functionHelperEl.appendChild(this._functionHelperList.functionListEl)
 
@@ -70,6 +84,9 @@ class FunctionHelper {
   private _onFunctionItemClick = (e: Event) => {
     const target = e.currentTarget as HTMLElement
     const clickedFunction = target.getAttribute('data-function-name')
+    target.classList.add(
+      `${functionHelperListPrefix}-function-item-content-expanded`
+    )
     if (!clickedFunction) {
       return
     }

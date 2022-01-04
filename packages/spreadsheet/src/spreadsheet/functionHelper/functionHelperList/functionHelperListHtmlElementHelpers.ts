@@ -1,7 +1,14 @@
 import { Dictionary } from 'lodash'
 import { prefix } from '../../utils'
 import { IFunctionHelperData } from '../FunctionHelper'
-import { functionHelperPrefix } from '../functionHelperHtmlElementHelpers'
+import {
+  createCodeText,
+  createHeader,
+  createParagraph,
+  createSubHeader,
+  createSyntaxListItem,
+  functionHelperPrefix
+} from '../functionHelperHtmlElementHelpers'
 import './FunctionHelperList.scss'
 
 export const functionHelperListPrefix = `${prefix}-function-helper-list`
@@ -24,18 +31,6 @@ export const createFunctionList = (
     'mdc-drawer__header'
   )
   drawerHeaderEl.dir = 'ltr'
-
-  // const closeIcon = document.createElement('span')
-  //   this.closeIcon.classList.add(`${functionHelperListPrefix}-close-icon`)
-  //   this.closeButton = document.createElement('button')
-  //   this.closeButton.classList.add(`${functionHelperListPrefix}-close-button`)
-  //   this.closeButton.addEventListener('click', () => {
-  //     this._spreadsheet.options.showFunctionHelper = false
-
-  //     this._spreadsheet.render()
-  //   })
-  //   this.closeButton.append(this.closeIcon)
-  //   drawerHeaderEl.appendChild(this.closeButton)
 
   const headerText = document.createElement('h3')
   headerText.textContent = 'Function Helper'
@@ -112,13 +107,15 @@ export const createFunctionItem = (functionMetadata: IFunctionHelperData) => {
     `${functionHelperListPrefix}-function-item-wrapper`
   )
 
-  const content = document.createElement('div')
-  content.classList.add(`${functionHelperListPrefix}-function-item-content`)
+  const collapsedContent = document.createElement('div')
+  collapsedContent.classList.add(
+    `${functionHelperListPrefix}-function-item-header`
+  )
 
   const nameEl = document.createElement('span')
   nameEl.classList.add(`${functionHelperListPrefix}-function-item-name`)
   nameEl.textContent = functionMetadata.header
-  content.appendChild(nameEl)
+  collapsedContent.appendChild(nameEl)
 
   const parameterEl = document.createElement('span')
   parameterEl.textContent = `${
@@ -127,13 +124,107 @@ export const createFunctionItem = (functionMetadata: IFunctionHelperData) => {
   parameterEl.classList.add(
     `${functionHelperListPrefix}-function-item-parameter`
   )
-  content.appendChild(parameterEl)
+  collapsedContent.appendChild(parameterEl)
 
   const arrowIcon = document.createElement('span')
   arrowIcon.classList.add(`${functionHelperListPrefix}-function-item-icon`)
-  content.appendChild(arrowIcon)
+  collapsedContent.appendChild(arrowIcon)
 
-  functionItem.appendChild(content)
+  functionItem.appendChild(collapsedContent)
+
+  // const functionDetailsContent = document.createElement('div')
+  // functionDetailsContent.classList.add(`${functionHelperListPrefix}-function-item-content`)
+  // functionDetailsContent.appendChild(parameterEl.cloneNode(true))
+  const { functionDetailsContent } =
+    _createFunctionDetailsContent(functionMetadata)
+
+  functionItem.appendChild(functionDetailsContent)
+
+  // functionItem.addEventListener('click', onClick)
 
   return { functionItem }
 }
+
+const _createFunctionDetailsContent = (
+  functionMetadata: IFunctionHelperData
+) => {
+  const functionDetailsContent = document.createElement('div')
+  functionDetailsContent.classList.add(
+    `${functionHelperListPrefix}-function-item-content`
+  )
+
+  const { paragraphEl: description } = createParagraph(
+    functionMetadata.headerDescription
+  )
+  description.classList.add(`${functionHelperListPrefix}-description`)
+
+  const { header: headerUsage } = createHeader('Sample Usage')
+  const { header: headerSyntax } = createHeader('Syntax')
+  const { header: headerAttributes } = createHeader('Attributes')
+
+  // this.functionSummaryHelperListContainerEl.appendChild(mainHeaderEl)
+  // this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)
+  functionDetailsContent.appendChild(description)
+
+  if (functionMetadata.codeSyntaxUsage.length) {
+    functionDetailsContent.appendChild(headerUsage)
+  }
+
+  functionMetadata.codeSyntaxUsage.forEach(usageName => {
+    const { codeEl } = createCodeText(usageName)
+    functionDetailsContent.appendChild(codeEl)
+  })
+
+  functionMetadata.codeSyntaxElements?.length &&
+    functionDetailsContent.appendChild(headerSyntax)
+  functionMetadata.codeSyntaxElements.forEach(({ codeSyntax, values }) => {
+    const codeSyntaxList = document.createElement('ul')
+    const { codeEl } = createCodeText(codeSyntax)
+
+    functionDetailsContent.appendChild(codeEl)
+    functionDetailsContent.appendChild(codeSyntaxList)
+
+    values.forEach(({ syntaxName, description }) => {
+      const { listItem } = createSyntaxListItem(syntaxName, description)
+      codeSyntaxList.appendChild(listItem)
+    })
+  })
+
+  functionMetadata.attributes?.length &&
+    functionDetailsContent.appendChild(headerAttributes)
+  functionMetadata.attributes.forEach(({ attributeNames, header }) => {
+    const attributeList = document.createElement('ul')
+
+    functionDetailsContent.appendChild(createSubHeader(header).subHeader)
+    functionDetailsContent.appendChild(attributeList)
+
+    attributeNames.forEach(attributeName => {
+      const { listItem } = createSyntaxListItem(attributeName)
+
+      attributeList.appendChild(listItem)
+    })
+  })
+
+  return { functionDetailsContent }
+}
+
+// const _toggleAccordion = (e: Event) => {
+//   const target = e.currentTarget as HTMLElement
+//   if (
+//     target.classList.contains(
+//       `${functionHelperListPrefix}-expanded`
+//     )
+//   ) {
+//     target.classList.remove(
+//       `${functionHelperListPrefix}-collapse-icon`
+//     )
+//     target.classList.remove(
+//       `${functionHelperListPrefix}-expanded`
+//     )
+//   } else {
+//     target.classList.add(
+//       `${functionHelperListPrefix}-collapse-icon`
+//     )
+//     target.classList.add(`${functionHelperListPrefix}-expanded`)
+//   }
+// }

@@ -1,9 +1,16 @@
 import { groupBy } from 'lodash'
+import {
+  incomeStatementAttributes,
+  balanceSheetAttributes,
+  cashFlowStatementAttributes,
+  riskPremiumsAndBetasAttributes,
+  generalAttributes,
+  otherAttributes
+} from './financialStatements'
 import { IFunctionHelperData } from './FunctionHelper'
 import powersheetFormulaMetadataJSON from './powersheetFormulaMetadata.json'
 
 export const functionMetadata: Record<string, IFunctionHelperData> = {
-  ...powersheetFormulaMetadataJSON,
   FIN: {
     header: 'FIN',
     headerDescription:
@@ -20,9 +27,35 @@ export const functionMetadata: Record<string, IFunctionHelperData> = {
         values: []
       }
     ],
-    attributes: [],
-    type: 'Stock'
-  }
+    type: 'Stock',
+    attributes: [
+      {
+        header: 'Income Statement',
+        attributeNames: incomeStatementAttributes
+      },
+      {
+        header: 'Balance Sheet',
+        attributeNames: balanceSheetAttributes
+      },
+      {
+        header: 'Cashflow Statement',
+        attributeNames: cashFlowStatementAttributes
+      },
+      {
+        header: 'Risk Premiums and Betas',
+        attributeNames: riskPremiumsAndBetasAttributes
+      },
+      {
+        header: 'General',
+        attributeNames: generalAttributes
+      },
+      {
+        header: 'Other',
+        attributeNames: otherAttributes
+      }
+    ]
+  },
+  ...powersheetFormulaMetadataJSON
 }
 
 export const functionMetadataByGroup = groupBy(functionMetadata, 'type')

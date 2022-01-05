@@ -170,14 +170,20 @@ class RowCols {
   }
 
   private *_getSizeForFrozenCell() {
-    const { frozenCells } = this._spreadsheet.data._spreadsheetData
-    const frozenCell = frozenCells?.[this._sheets.activeSheetId]?.[this._type]
+    const sheetName = this._sheets.getActiveSheetName()
 
-    if (isNil(frozenCell)) return null
+    const {
+      frozenRow,
+      frozenCol
+    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+
+    const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
+
+    if (isNil(frozenRowCol)) return null
 
     let size = 0
 
-    for (let index = 0; index <= frozenCell; index++) {
+    for (let index = 0; index <= frozenRowCol; index++) {
       size += this.getSize(index)
 
       yield { size, index }
@@ -250,10 +256,14 @@ class RowCols {
       visible: false
     })
 
-    const frozenCells = this._spreadsheet.data._spreadsheetData.frozenCells?.[
-      this._sheets.activeSheetId
-    ]
-    const frozenRowCol = frozenCells?.[this._type]
+    const sheetName = this._sheets.getActiveSheetName()
+
+    const {
+      frozenRow,
+      frozenCol
+    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+
+    const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
 
     this._updateFrozenRowCols(frozenRowCol)
 
@@ -318,22 +328,22 @@ class RowCols {
   getAxis(index: number) {
     const data = this._spreadsheet.data._spreadsheetData
     const defaultSize = this._spreadsheet.options[this._type].defaultSize
-    const rowCols =
-      data.sheets?.[this._sheets.activeSheetId][this._pluralType] ?? {}
+    // const rowCols =
+    //   data.sheets?.[this._sheets.activeSheetId][this._pluralType] ?? {}
 
     let totalPreviousCustomSizeDifferences = 0
 
-    Object.keys(rowCols).forEach(key => {
-      const sheetRowColId = key as SheetRowColId
-      const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
-        sheetRowColId
-      )
-      const rowCol = data[this._pluralType]![sheetRowColId]
+    // Object.keys(rowCols).forEach(key => {
+    //   const sheetRowColId = key as SheetRowColId
+    //   const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
+    //     sheetRowColId
+    //   )
+    //   const rowCol = data[this._pluralType]![sheetRowColId]
 
-      if (sheetRowColAddress.rowCol >= index) return
+    //   if (sheetRowColAddress.rowCol >= index) return
 
-      totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize
-    })
+    //   totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize
+    // })
 
     const axis =
       defaultSize * index +
@@ -355,11 +365,16 @@ class RowCols {
   }
 
   getIsFrozen(index: number) {
-    const data = this._spreadsheet.data._spreadsheetData
-    const frozenCell =
-      data.frozenCells?.[this._sheets.activeSheetId]?.[this._type]
+    const sheetName = this._sheets.getActiveSheetName()
 
-    return isNil(frozenCell) ? false : index <= frozenCell
+    const {
+      frozenRow,
+      frozenCol
+    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+
+    const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
+
+    return isNil(frozenRowCol) ? false : index <= frozenRowCol
   }
 
   /**

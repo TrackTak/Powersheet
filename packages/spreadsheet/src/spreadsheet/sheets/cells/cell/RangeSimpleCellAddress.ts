@@ -1,5 +1,4 @@
 import { reverseVectorsIfStartBiggerThanEnd } from '../../../utils'
-import { IMergedCellData } from '../../Data'
 import { RowColType } from '../../rowCols/RowCols'
 import Sheets from '../../Sheets'
 import Cell from './Cell'
@@ -14,25 +13,6 @@ class RangeSimpleCellAddress {
     public bottomRightSimpleCellAddress: SimpleCellAddress
   ) {
     this.reverseIfTopBiggerThanBottom()
-  }
-
-  static mergedCellToAddress(mergedCell: IMergedCellData) {
-    const simpleCellAddress = SimpleCellAddress.cellIdToAddress(mergedCell.id)
-
-    const rangeSimpleCellAddress = new RangeSimpleCellAddress(
-      new SimpleCellAddress(
-        simpleCellAddress.sheet,
-        mergedCell.row.x,
-        mergedCell.col.x
-      ),
-      new SimpleCellAddress(
-        simpleCellAddress.sheet,
-        mergedCell.row.y,
-        mergedCell.col.y
-      )
-    )
-
-    return rangeSimpleCellAddress
   }
 
   height() {
@@ -145,14 +125,13 @@ class RangeSimpleCellAddress {
     }
 
     const filterOutAssociatedMergedCells = (cell: C) => {
-      const mergedCellId =
-        sheets.merger.associatedMergedCellAddressMap[
-          cell.simpleCellAddress.toCellId()
-        ]
+      const isCellPartOfMerge = sheets.merger.getIsCellPartOfMerge(
+        cell.simpleCellAddress
+      )
 
       if (
-        !mergedCellId ||
-        sheets._spreadsheet.data.getIsCellAMergedCell(cell.simpleCellAddress)
+        !isCellPartOfMerge ||
+        sheets.merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)
       ) {
         return true
       }

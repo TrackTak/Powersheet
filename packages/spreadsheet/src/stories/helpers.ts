@@ -20,7 +20,8 @@ import {
   AlwaysSparse,
   ConfigParams,
   HyperFormula,
-  SerializedNamedExpression
+  SerializedNamedExpression,
+  Sheets
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
@@ -37,7 +38,10 @@ const eventLog = (event: string, ...args: any[]) => {
   console.log(event, ...args)
 }
 
-export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
+export const getHyperformulaInstance = (
+  sheets: Sheets,
+  config?: Partial<ConfigParams>
+) => {
   const trueNamedExpression: SerializedNamedExpression = {
     name: 'TRUE',
     expression: '=TRUE()'
@@ -48,7 +52,8 @@ export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
     expression: '=FALSE()'
   }
 
-  return HyperFormula.buildEmpty(
+  const hyperformula = HyperFormula.buildFromSheets(
+    sheets,
     {
       ...config,
       chooseAddressMappingPolicy: new AlwaysSparse(),
@@ -56,6 +61,8 @@ export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
     },
     [trueNamedExpression, falseNamedExpression]
   )[0]
+
+  return hyperformula
 }
 
 const getSpreadsheet = (
@@ -152,6 +159,8 @@ export const buildSpreadsheetWithEverything = (
 }
 
 export const Template: Story<IArgs> = args => {
-  return buildSpreadsheetWithEverything(args, getHyperformulaInstance())
-    .spreadsheetEl
+  return buildSpreadsheetWithEverything(
+    args,
+    getHyperformulaInstance(args.data.sheets!)
+  ).spreadsheetEl
 }

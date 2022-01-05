@@ -2,12 +2,8 @@ import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx'
 import Spreadsheet from './Spreadsheet'
 import { isNil } from 'lodash'
 import { isText, isDate, isPercent } from 'numfmt'
-import { SheetId } from './sheets/Sheets'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
-import SimpleCellAddress, {
-  CellId
-} from './sheets/cells/cell/SimpleCellAddress'
-import RowColAddress, { SheetRowColId } from './sheets/cells/cell/RowColAddress'
+import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
 import {
   CellType,
   CellValue,
@@ -16,6 +12,7 @@ import {
 // TODO: Make dynamic async import when https://github.com/parcel-bundler/parcel/issues/7268 is fixed
 // @ts-ignore
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
+import { ICellMetadata } from './sheets/Data'
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions']
@@ -38,22 +35,19 @@ class Exporter {
 
   private async _getWorkbook(utils: XLSX$Utils) {
     const workbook = utils.book_new()
-    const sheets = this._spreadsheet.data._spreadsheetData.sheets ?? {}
+    const sheets = this._spreadsheet.hyperformula.getSheetNames()
 
-    for (const key in sheets) {
-      const sheetIndex = parseInt(key, 10)
-      const sheetData = this._spreadsheet.data._spreadsheetData.sheets![
-        sheetIndex
-      ]
-      const worksheet = await this._getWorksheet(sheetData.id)
+    for (const name in sheets) {
+      const sheetId = this._spreadsheet.hyperformula.getSheetId(name)!
+      const worksheet = await this._getWorksheet(sheetId)
 
-      utils.book_append_sheet(workbook, worksheet, sheetData.sheetName)
+      utils.book_append_sheet(workbook, worksheet, name)
     }
 
     return workbook
   }
 
-  private async _getWorksheet(sheetId: SheetId) {
+  private async _getWorksheet(sheetId: number) {
     const worksheet: WorkSheet = {}
 
     const rangeSimpleCellAddress = new RangeSimpleCellAddress(
@@ -61,171 +55,174 @@ class Exporter {
       new SimpleCellAddress(sheetId, 0, 0)
     )
 
-    const cellIds = this._spreadsheet.data._spreadsheetData.sheets?.[sheetId]
-      .cells
+    const serializedCells = this._spreadsheet.hyperformula.getSheetSerialized<ICellMetadata>(
+      sheetId
+    )
 
-    for (const key in cellIds) {
-      const cellId = key as CellId
-      const cells = this._spreadsheet.data._spreadsheetData.cells!
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-      const cell = { ...cells[cellId] }
-      const cellString = simpleCellAddress.addressToString()
-      const mergedCell = this._spreadsheet.data._spreadsheetData.mergedCells?.[
-        cellId
-      ]
+    for (let row = 0; row < serializedCells.length; row++) {
+      const rowData = serializedCells[row]
 
-      rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
-        simpleCellAddress.row,
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.row
-      )
-      rangeSimpleCellAddress.topLeftSimpleCellAddress.col = Math.min(
-        simpleCellAddress.col,
-        rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-      )
+      for (let col = 0; col < rowData.length; col++) {
+        const cell = rowData[col]
+        const simpleCellAddress = new SimpleCellAddress(sheetId, row, col)
+        const cellString = simpleCellAddress.addressToString()
+        const isMergedCell = this._spreadsheet.sheets.merger.getIsCellTopLeftMergedCell(
+          simpleCellAddress
+        )
 
-      rangeSimpleCellAddress.bottomRightSimpleCellAddress.row = Math.max(
-        simpleCellAddress.row,
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row
-      )
-      rangeSimpleCellAddress.bottomRightSimpleCellAddress.col = Math.max(
-        simpleCellAddress.col,
-        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
-      )
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.row = Math.min(
+          simpleCellAddress.row,
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.row
+        )
+        rangeSimpleCellAddress.topLeftSimpleCellAddress.col = Math.min(
+          simpleCellAddress.col,
+          rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+        )
 
-      worksheet[cellString] = {
-        ...worksheet[cellString]
-      }
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.row = Math.max(
+          simpleCellAddress.row,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row
+        )
+        rangeSimpleCellAddress.bottomRightSimpleCellAddress.col = Math.max(
+          simpleCellAddress.col,
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress.col
+        )
 
-      if (
-        this._spreadsheet.hyperformula.doesCellHaveFormula(simpleCellAddress)
-      ) {
-        worksheet[cellString].f = cell.value?.toString()?.slice(1)
+        worksheet[cellString] = {
+          ...worksheet[cellString]
+        }
 
-        const setFormula = async (functionName: string) => {
-          // TODO: Not perfect regex, doesn't handle nested custom functions
-          const regex = new RegExp(`${functionName}\\(.*?\\)`, 'g')
-          const matches = worksheet[cellString].f?.match(regex) ?? []
+        if (
+          this._spreadsheet.hyperformula.doesCellHaveFormula(simpleCellAddress)
+        ) {
+          worksheet[cellString].f = cell.cellValue?.toString()?.slice(1)
 
-          // Replace any custom function calls with
-          // the actual value because excel won't support
-          // custom functions natively
-          for (const match of matches) {
-            // TODO: await promise when we fix HF
-            let [
-              formulaResult
-            ] = this._spreadsheet.hyperformula.calculateFormula(
-              `=${match}`,
-              simpleCellAddress.sheet
-            )
+          const setFormula = async (functionName: string) => {
+            // TODO: Not perfect regex, doesn't handle nested custom functions
+            const regex = new RegExp(`${functionName}\\(.*?\\)`, 'g')
+            const matches = worksheet[cellString].f?.match(regex) ?? []
 
-            let cellType = this._spreadsheet.hyperformula.getCellType(
-              simpleCellAddress
-            )
-
-            if (
-              cellType === CellType.ARRAY ||
-              cellType === CellType.ARRAYFORMULA
-            ) {
-              ;(formulaResult as CellValue[][]).forEach((colData, row) => {
-                colData.forEach((data, col) => {
-                  const cellString = new SimpleCellAddress(
-                    simpleCellAddress.sheet,
-                    simpleCellAddress.row + row,
-                    simpleCellAddress.col + col
-                  ).addressToString()
-
-                  let type
-
-                  if (isNil(data)) {
-                    type = 'z'
-                  } else if (isNaN(Number(data))) {
-                    type = 's'
-                  } else {
-                    type = 'n'
-                  }
-
-                  worksheet[cellString] = {
-                    ...worksheet[cellString],
-                    t: type,
-                    v: data
-                  }
-                })
-              })
-              delete worksheet[cellString].f
-              delete cell.value
-            } else if (cellType === CellType.FORMULA) {
-              if (typeof formulaResult === 'string') {
-                if (formulaResult) {
-                  formulaResult = `"${formulaResult}"`
-                } else {
-                  formulaResult = '0'
-                }
-              }
-
-              worksheet[cellString].f = worksheet[cellString].f?.replace(
-                match,
-                formulaResult?.toString() ?? ''
+            // Replace any custom function calls with
+            // the actual value because excel won't support
+            // custom functions natively
+            for (const match of matches) {
+              // TODO: await promise when we fix HF
+              let [
+                formulaResult
+              ] = this._spreadsheet.hyperformula.calculateFormula(
+                `=${match}`,
+                simpleCellAddress.sheet
               )
 
-              worksheet[cellString].t = 's'
+              let cellType = this._spreadsheet.hyperformula.getCellType(
+                simpleCellAddress
+              )
+
+              if (
+                cellType === CellType.ARRAY ||
+                cellType === CellType.ARRAYFORMULA
+              ) {
+                ;(formulaResult as CellValue[][]).forEach((colData, row) => {
+                  colData.forEach((data, col) => {
+                    const cellString = new SimpleCellAddress(
+                      simpleCellAddress.sheet,
+                      simpleCellAddress.row + row,
+                      simpleCellAddress.col + col
+                    ).addressToString()
+
+                    let type
+
+                    if (isNil(data)) {
+                      type = 'z'
+                    } else if (isNaN(Number(data))) {
+                      type = 's'
+                    } else {
+                      type = 'n'
+                    }
+
+                    worksheet[cellString] = {
+                      ...worksheet[cellString],
+                      t: type,
+                      v: data
+                    }
+                  })
+                })
+                delete worksheet[cellString].f
+                delete cell.cellValue
+              } else if (cellType === CellType.FORMULA) {
+                if (typeof formulaResult === 'string') {
+                  if (formulaResult) {
+                    formulaResult = `"${formulaResult}"`
+                  } else {
+                    formulaResult = '0'
+                  }
+                }
+
+                worksheet[cellString].f = worksheet[cellString].f?.replace(
+                  match,
+                  formulaResult?.toString() ?? ''
+                )
+
+                worksheet[cellString].t = 's'
+              }
+            }
+          }
+
+          for (const { aliases, implementedFunctions } of this
+            .customRegisteredPluginDefinitions) {
+            for (const key in aliases ?? {}) {
+              await setFormula(key)
+            }
+
+            for (const key in implementedFunctions ?? {}) {
+              await setFormula(key)
             }
           }
         }
 
-        for (const { aliases, implementedFunctions } of this
-          .customRegisteredPluginDefinitions) {
-          for (const key in aliases ?? {}) {
-            await setFormula(key)
-          }
+        const value = worksheet[cellString].v ?? cell?.cellValue
 
-          for (const key in implementedFunctions ?? {}) {
-            await setFormula(key)
-          }
-        }
-      }
+        let type
 
-      const value = worksheet[cellString].v ?? cell?.value
+        let textFormatPattern = cell?.metadata?.textFormatPattern
 
-      let type
-
-      let textFormatPattern = cell?.textFormatPattern
-
-      if (isPercent(value)) {
-        textFormatPattern = undefined
-      }
-
-      if (isNil(value) && isNil(textFormatPattern)) {
-        type = 'z'
-      } else if (isText(textFormatPattern) || isNil(textFormatPattern)) {
-        type = 's'
-      } else if (isDate(textFormatPattern)) {
-        type = 'd'
-      } else {
-        type = 'n'
-      }
-
-      if (value) {
-        worksheet[cellString].v = value
-      }
-
-      worksheet[cellString].z = textFormatPattern
-      worksheet[cellString].t = type
-
-      if (mergedCell) {
-        if (!worksheet['!merges']) {
-          worksheet['!merges'] = []
+        if (isPercent(value)) {
+          textFormatPattern = undefined
         }
 
-        worksheet['!merges'].push({
-          s: {
-            r: mergedCell.row.x,
-            c: mergedCell.col.x
-          },
-          e: {
-            r: mergedCell.row.y,
-            c: mergedCell.col.y
+        if (isNil(value) && isNil(textFormatPattern)) {
+          type = 'z'
+        } else if (isText(textFormatPattern) || isNil(textFormatPattern)) {
+          type = 's'
+        } else if (isDate(textFormatPattern)) {
+          type = 'd'
+        } else {
+          type = 'n'
+        }
+
+        if (value) {
+          worksheet[cellString].v = value
+        }
+
+        worksheet[cellString].z = textFormatPattern
+        worksheet[cellString].t = type
+
+        if (isMergedCell) {
+          if (!worksheet['!merges']) {
+            worksheet['!merges'] = []
           }
-        })
+
+          worksheet['!merges'].push({
+            s: {
+              r: simpleCellAddress.row,
+              c: simpleCellAddress.col
+            },
+            e: {
+              r: simpleCellAddress.row + cell.metadata!.height!,
+              c: simpleCellAddress.col + cell.metadata!.width!
+            }
+          })
+        }
       }
     }
 
@@ -235,30 +232,26 @@ class Exporter {
 
     const colInfos: ColInfo[] = []
     const rowInfos: RowInfo[] = []
-    const colIds =
-      this._spreadsheet.data._spreadsheetData.sheets?.[sheetId].cols ?? {}
-    const rowIds =
-      this._spreadsheet.data._spreadsheetData.sheets?.[sheetId].rows ?? {}
 
-    Object.keys(colIds).forEach(key => {
-      const sheetColId = key as SheetRowColId
-      const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
-      const col = this._spreadsheet.data._spreadsheetData.cols![sheetColId]
+    // Object.keys(colIds).forEach(key => {
+    //   const sheetColId = key as SheetRowColId
+    //   const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
+    //   const col = this._spreadsheet.data._spreadsheetData.cols![sheetColId]
 
-      colInfos[address.rowCol] = {
-        wpx: col.size
-      }
-    })
+    //   colInfos[address.rowCol] = {
+    //     wpx: col.size
+    //   }
+    // })
 
-    Object.keys(rowIds).forEach(key => {
-      const sheetRowId = key as SheetRowColId
-      const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
-      const row = this._spreadsheet.data._spreadsheetData.rows![sheetRowId]
+    // Object.keys(rowIds).forEach(key => {
+    //   const sheetRowId = key as SheetRowColId
+    //   const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
+    //   const row = this._spreadsheet.data._spreadsheetData.rows![sheetRowId]
 
-      rowInfos[address.rowCol] = {
-        hpx: row.size
-      }
-    })
+    //   rowInfos[address.rowCol] = {
+    //     hpx: row.size
+    //   }
+    // })
 
     worksheet['!cols'] = colInfos
     worksheet['!rows'] = rowInfos

@@ -8,17 +8,21 @@ import { prefix } from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
-import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { HyperFormula } from '@tracktak/hyperformula'
+import {
+  UndoEntry,
+  HyperFormula,
+  RemoveRowsUndoEntry,
+  ExportedChange
+} from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
-import SimpleCellAddress, {
-  CellId
-} from './sheets/cells/cell/SimpleCellAddress'
+import { CellId } from './sheets/cells/cell/SimpleCellAddress'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
+import Operations from './Operations'
+import { IUIBaseUndoRedoEntry, UIUndoRedo } from './UndoRedo'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -47,16 +51,17 @@ class Spreadsheet {
   functionHelper?: FunctionHelper
   exporter?: Exporter
   hyperformula: HyperFormula
+  operations: Operations
+  uiUndoRedo: UIUndoRedo
   history: any
   bottomBar?: BottomBar
   isSaving = false
-  isInitialized = false
+  sheetSizesSet = false
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = new Data(this)
+    this.data = new Data()
     this.options = defaultOptions
     this.styles = defaultStyles
-    this.eventEmitter = new PowersheetEmitter()
 
     this.toolbar = params.toolbar
     this.formulaBar = params.formulaBar
@@ -69,6 +74,10 @@ class Spreadsheet {
       `${prefix}-spreadsheet`,
       styles.spreadsheet
     )
+
+    this.eventEmitter = new PowersheetEmitter()
+    this.operations = new Operations(this.data)
+    this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
 
     if (!isNil(this.options.width)) {
       this.spreadsheetEl.style.width = `${this.options.width}px`
@@ -84,39 +93,7 @@ class Spreadsheet {
     this.bottomBar?.initialize(this)
     this.functionHelper?.initialize(this)
 
-    // TODO: Change to command pattern later so we don't
-    // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine
-    this.history = new Manager((data: string) => {
-      const currentData: IHistoryData = {
-        data: this.data._spreadsheetData,
-        activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap: this.sheets.merger
-          .associatedMergedCellAddressMap
-      }
-
-      const parsedData: IHistoryData = JSON.parse(data)
-
-      this.data._spreadsheetData = parsedData.data
-      this.sheets.activeSheetId = parsedData.activeSheetId
-      this.sheets.merger.associatedMergedCellAddressMap =
-        parsedData.associatedMergedCellAddressMap
-
-      this.hyperformula.batch(() => {
-        const sheetName = this.hyperformula.getSheetName(
-          this.sheets.activeSheetId
-        )!
-
-        const sheetId = this.hyperformula.getSheetId(sheetName)!
-
-        this.hyperformula.clearSheet(sheetId)
-        this._setCells()
-      })
-
-      return JSON.stringify(currentData)
-    }, this.options.undoRedoLimit)
     this.sheets = new Sheets(this)
-
-    this.data.setSheet(0)
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
@@ -124,23 +101,87 @@ class Spreadsheet {
     })
 
     this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
+    this.hyperformula.on('sheetAdded', this.onSheetAdded)
+    this.hyperformula.on('sheetRemoved', this.onSheetRemoved)
+    this.hyperformula.on('sheetRenamed', this.onSheetRenamed)
+    this.hyperformula.on('addUndoEntry', this.onAddUndoEntry)
+    this.hyperformula.on('undo', this.onUndo)
+    this.hyperformula.on('redo', this.onRedo)
+  }
+
+  private onSheetAdded = (name: string) => {
+    this.data._spreadsheetData.uiSheets[name] = {}
+
+    this.render()
+  }
+
+  private onSheetRemoved = (
+    name: string,
+    _: ExportedChange[],
+    previousSheetNames: string[]
+  ) => {
+    const sheetId = this.hyperformula.getSheetId(name)!
+
+    if (this.sheets.activeSheetId === sheetId) {
+      const currentIndex = previousSheetNames.indexOf(name)
+
+      if (currentIndex === 0) {
+        const sheetId = this.hyperformula.getSheetId(previousSheetNames[1])!
+
+        this.sheets.switchSheet(sheetId)
+      } else {
+        const sheetId = this.hyperformula.getSheetId(
+          previousSheetNames[currentIndex - 1]
+        )!
+
+        this.sheets.switchSheet(sheetId)
+      }
+    }
+
+    delete this.data._spreadsheetData.uiSheets[name]
+
+    this.render()
+  }
+
+  private onSheetRenamed = (oldDisplayName: string, newDisplayName: string) => {
+    this.data._spreadsheetData.uiSheets[
+      newDisplayName
+    ] = this.data._spreadsheetData.uiSheets[oldDisplayName]
+
+    delete this.data._spreadsheetData.uiSheets[oldDisplayName]
+
+    this.render()
   }
 
   private onAsyncValuesUpdated = () => {
     this.render()
   }
 
-  private _setCells() {
-    for (const key in this.data._spreadsheetData.cells) {
-      const cellId = key as CellId
-      const cell = this.data._spreadsheetData.cells?.[cellId]
+  private removeRows(operation: RemoveRowsUndoEntry) {
+    const [index, amount] = operation.command.indexes[0]
+    const sheetId = operation.command.sheet
+    const sheetName = this.hyperformula.getSheetName(sheetId)!
 
-      this.hyperformula.setCellContents(
-        SimpleCellAddress.cellIdToAddress(cellId),
-        cell?.value
-      )
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
+
+    if (this.sheets.rows.getIsFrozen(index)) {
+      sheet.frozenRow! -= amount
     }
   }
+
+  private onAddUndoEntry = (operation: UndoEntry) => {
+    if (operation instanceof RemoveRowsUndoEntry) {
+      this.removeRows(operation)
+    }
+  }
+
+  private onUndo = (operation: UndoEntry) => {
+    if (operation instanceof RemoveRowsUndoEntry) {
+      this.removeRows(operation)
+    }
+  }
+
+  private onRedo = (operation: UndoEntry) => {}
 
   private _updateSheetSizes() {
     this.sheets._updateSize()
@@ -148,38 +189,6 @@ class Spreadsheet {
 
   private _onDOMContentLoaded = () => {
     this._updateSheetSizes()
-  }
-
-  /**
-   * Creates the spreadsheets sheets from the data and sets
-   * hyperformula cells if powersheet has not been initialized yet.
-   * This must be called after `setData()`
-   */
-  private initialize() {
-    if (!this.isInitialized) {
-      this.isInitialized = true
-
-      for (const key in this.data._spreadsheetData.sheets) {
-        const sheetId = parseInt(key, 10)
-        const sheet = this.data._spreadsheetData.sheets[sheetId]
-
-        this.sheets.createNewSheet(sheet)
-      }
-
-      if (this.data._spreadsheetData.sheets) {
-        this.hyperformula.batch(() => {
-          this._setCells()
-        })
-      }
-
-      this.isSaving = false
-
-      if (document.readyState !== 'loading') {
-        this._updateSheetSizes()
-      } else {
-        this.render()
-      }
-    }
   }
 
   /**
@@ -191,7 +200,14 @@ class Spreadsheet {
    */
   destroy(destroyHyperformula = true) {
     window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
+
     this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
+    this.hyperformula.off('sheetAdded', this.onSheetAdded)
+    this.hyperformula.off('sheetRemoved', this.onSheetRemoved)
+    this.hyperformula.off('sheetRenamed', this.onSheetRenamed)
+    this.hyperformula.off('addUndoEntry', this.onAddUndoEntry)
+    this.hyperformula.off('undo', this.onUndo)
+    this.hyperformula.off('redo', this.onRedo)
 
     this.spreadsheetEl.remove()
 
@@ -212,10 +228,16 @@ class Spreadsheet {
    * @param data - The persisted data that sets the spreadsheet.
    */
   setData(data: ISpreadsheetData) {
-    this.data._spreadsheetData = data
+    this.data._spreadsheetData = {
+      ...data
+    }
 
-    this.initialize()
-    this.render()
+    if (document.readyState !== 'loading' && !this.sheetSizesSet) {
+      this.sheetSizesSet = true
+      this._updateSheetSizes()
+    } else {
+      this.render()
+    }
   }
 
   /**
@@ -246,18 +268,6 @@ class Spreadsheet {
    * onto the stack.
    */
   pushToHistory(callback?: () => void) {
-    const historyData: IHistoryData = {
-      activeSheetId: this.sheets.activeSheetId,
-      data: this.data._spreadsheetData,
-      associatedMergedCellAddressMap: this.sheets.merger
-        .associatedMergedCellAddressMap
-    }
-    const data = JSON.stringify(historyData)
-
-    this.history.push(data)
-
-    this.eventEmitter.emit('historyPush', data)
-
     if (callback) {
       callback()
     }
@@ -287,9 +297,9 @@ class Spreadsheet {
    * that was done in `pushToHistory()` if an undo exists in the stack.
    */
   undo() {
-    if (!this.history.canUndo) return
+    if (!this.hyperformula.isThereSomethingToUndo()) return
 
-    this.history.undo()
+    this.hyperformula.undo()[0]
 
     this.render()
     this.persistData()
@@ -300,9 +310,9 @@ class Spreadsheet {
    * that was done in `undo()` if an redo exists in the stack.
    */
   redo() {
-    if (!this.history.canRedo) return
+    if (!this.hyperformula.isThereSomethingToRedo()) return
 
-    this.history.redo()
+    this.hyperformula.redo()[0]
 
     this.render()
     this.persistData()

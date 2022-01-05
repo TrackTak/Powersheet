@@ -33,10 +33,10 @@ export const Default = Template.bind({})
 Default.args = {
   data: {
     sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Default'
-      }
+      Default: []
+    },
+    uiSheets: {
+      Default: {}
     }
   }
 }

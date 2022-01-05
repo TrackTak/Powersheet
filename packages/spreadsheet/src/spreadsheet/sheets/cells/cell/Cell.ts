@@ -1,5 +1,6 @@
 import { Group } from 'konva/lib/Group'
 import { Rect } from 'konva/lib/shapes/Rect'
+import { ICellMetadata } from '../../Data'
 import Sheets from '../../Sheets'
 import RangeSimpleCellAddress from './RangeSimpleCellAddress'
 import SimpleCellAddress from './SimpleCellAddress'
@@ -67,25 +68,38 @@ class Cell {
   }
 
   private _setIsMergedCell() {
-    this._sheets.merger._setAssociatedMergedCellIds(this.simpleCellAddress)
+    if (!this._sheets.merger.getIsCellTopLeftMergedCell(this.simpleCellAddress))
+      return
 
-    const cellId = this.simpleCellAddress.toCellId()
-    const mergedCellId = this._sheets.merger.associatedMergedCellAddressMap[
-      cellId
-    ]
-
-    if (!mergedCellId) return
+    const { metadata } =
+      this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        this.simpleCellAddress
+      )
 
     this.isMerged = true
 
-    const mergedCell = this._sheets._spreadsheet.data._spreadsheetData
-      .mergedCells![mergedCellId]
+    let bottomRow = -Infinity
+    let bottomCol = -Infinity
 
-    const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
-      mergedCell
+    for (const address of this._sheets.merger._iterateMergedCellWidthHeight(
+      this.simpleCellAddress,
+      metadata?.width,
+      metadata?.height
+    )) {
+      bottomRow = Math.max(bottomRow, address.row)
+      bottomCol = Math.max(bottomCol, address.col)
+    }
+
+    this._setRangeCellAddress(
+      new RangeSimpleCellAddress(
+        this.simpleCellAddress,
+        new SimpleCellAddress(
+          this.simpleCellAddress.sheet,
+          bottomRow,
+          bottomCol
+        )
+      )
     )
-
-    this._setRangeCellAddress(rangeSimpleCellAddress)
   }
 
   protected _setRangeCellAddress(

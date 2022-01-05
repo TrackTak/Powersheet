@@ -9,21 +9,21 @@ import SimpleCellAddress from './SimpleCellAddress'
 import {
   BorderStyle,
   HorizontalTextAlign,
+  ICellMetadata,
   TextWrap,
   VerticalTextAlign
 } from '../../Data'
 import {
-  CellDataDetailedType,
-  CellDataType,
   CellValue,
   CellValueDetailedType,
   CellValueType,
   DetailedCellError,
-  getCellDataValue,
   RawCellContent
 } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
+// @ts-ignore
+import { CellMetadata } from '@tracktak/hyperformula/es/interpreter/InterpreterValue'
 
 /**
  * @internal
@@ -67,7 +67,7 @@ class StyleableCell extends Cell {
     this._updateStyles()
   }
 
-  private _setBottomBorder(borders?: BorderStyle[]) {
+  private _setBottomBorder(borders: undefined | BorderStyle[]) {
     const border = this.borders.borderBottom
 
     if (borders?.includes('borderBottom')) {
@@ -83,7 +83,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setRightBorder(borders?: BorderStyle[]) {
+  private _setRightBorder(borders: undefined | BorderStyle[]) {
     const border = this.borders.borderRight
 
     if (borders?.includes('borderRight')) {
@@ -99,7 +99,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setTopBorder(borders?: BorderStyle[]) {
+  private _setTopBorder(borders: undefined | BorderStyle[]) {
     const border = this.borders.borderTop
 
     if (borders?.includes('borderTop')) {
@@ -113,7 +113,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setLeftBorder(borders?: BorderStyle[]) {
+  private _setLeftBorder(borders: undefined | BorderStyle[]) {
     const border = this.borders.borderLeft
 
     if (borders?.includes('borderLeft')) {
@@ -127,53 +127,41 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setTextWrap(textWrap?: TextWrap) {
+  private _setTextWrap(textWrap: undefined | TextWrap) {
     this.text.wrap(textWrap ?? this._sheets._spreadsheet.styles.cell.text.wrap!)
   }
 
-  private _setBackgroundColor(backgroundColor?: string) {
+  private _setBackgroundColor(backgroundColor: undefined | string) {
     this.rect.fill(
       backgroundColor ?? this._sheets._spreadsheet.styles.cell.rect.fill!
     )
   }
 
-  private _setFontColor(fontColor?: string) {
+  private _setFontColor(fontColor: undefined | string) {
     this.text.fill(
       fontColor ?? this._sheets._spreadsheet.styles.cell.text.fill!
     )
   }
 
-  private _setFontSize(fontSize?: number) {
+  private _setFontSize(fontSize: undefined | number) {
     this.text.fontSize(
       fontSize ?? this._sheets._spreadsheet.styles.cell.text.fontSize!
     )
   }
 
-  private _setBold(bold?: boolean) {
-    const italic =
-      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.italic ?? false
+  private _setBold(bold: undefined | boolean, italic: undefined | boolean) {
     const fontStyle = new FontStyle(this.text, bold ?? false, italic)
 
     fontStyle.setStyle()
   }
 
-  private _setItalic(italic?: boolean) {
-    const bold =
-      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.bold ?? false
+  private _setItalic(italic: undefined | boolean, bold: undefined | boolean) {
     const fontStyle = new FontStyle(this.text, bold, italic ?? false)
 
     fontStyle.setStyle()
   }
 
-  private _setStrikeThrough(strikeThrough?: boolean) {
-    const underline =
-      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.underline ?? false
+  private _setStrikeThrough(strikeThrough: undefined | boolean, underline: undefined | boolean) {
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough ?? false,
@@ -183,11 +171,7 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private _setUnderline(underline?: boolean) {
-    const strikeThrough =
-      this._sheets._spreadsheet.data._spreadsheetData.cells?.[
-        this.simpleCellAddress.toCellId()
-      ]?.strikeThrough ?? false
+  private _setUnderline(underline: undefined | boolean, strikeThrough: undefined | boolean) {
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough,
@@ -197,20 +181,20 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private _setHorizontalTextAlign(horizontalTextAlign?: HorizontalTextAlign) {
+  private _setHorizontalTextAlign(horizontalTextAlign: undefined | HorizontalTextAlign) {
     this.text.align(
       horizontalTextAlign ?? this._sheets._spreadsheet.styles.cell.text.align!
     )
   }
 
-  private _setVerticalTextAlign(verticalTextAlign?: VerticalTextAlign) {
+  private _setVerticalTextAlign(verticalTextAlign: undefined | VerticalTextAlign) {
     this.text.verticalAlign(
       verticalTextAlign ??
         this._sheets._spreadsheet.styles.cell.text.verticalAlign!
     )
   }
 
-  private _setCellCommentMarker(comment?: string) {
+  private _setCellCommentMarker(comment: undefined | string) {
     if (comment) {
       const width = this.rect.width()
 
@@ -223,7 +207,7 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setCellErrorMarker(hasError?: boolean) {
+  private _setCellErrorMarker(hasError: undefined | boolean) {
     if (hasError) {
       const width = this.rect.width()
 
@@ -236,14 +220,16 @@ class StyleableCell extends Cell {
     }
   }
 
-  private _setCellTextValue(cellValue?: RawCellContent, textFormatPattern?: string) {
-    let value: CellValue | RawCellContent | undefined  =
-      getCellDataValue(this._sheets._spreadsheet.hyperformula.getCellValue(
+  private _setCellTextValue(cellValueSerialized: undefined | RawCellContent, textFormatPattern: undefined | string) {
+    const { cellValue }  =
+      this._sheets._spreadsheet.hyperformula.getCellValue(
         this.simpleCellAddress
-      ))
+      )
+
+    let value: undefined | CellValue | RawCellContent = cellValue
 
     if (this._sheets._spreadsheet.data._spreadsheetData.showFormulas) {
-      value = cellValue
+      value = cellValueSerialized
     }
 
     if (!isNil(value)) {
@@ -251,13 +237,9 @@ class StyleableCell extends Cell {
 
       let text = value
 
-      let cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
+      const cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
         this.simpleCellAddress
       )
-
-      if (cellType instanceof CellDataType) {
-        cellType = cellType.cellValueType
-      }
 
       if (cellType === CellValueType.ERROR) {
         value = (value as DetailedCellError).value
@@ -301,8 +283,7 @@ class StyleableCell extends Cell {
   }
 
   private _updateStyles() {
-    const cellId = this.simpleCellAddress.toCellId()
-    const cell = this._sheets._spreadsheet.data._spreadsheetData.cells?.[cellId]
+    const { cellValue, metadata } = this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(this.simpleCellAddress)
 
     const {
       textWrap,
@@ -318,19 +299,18 @@ class StyleableCell extends Cell {
       verticalTextAlign,
       textFormatPattern,
       comment,
-      value
-    } = cell ?? {}
+    } = metadata ?? {}
 
-    this._setCellTextValue(value, textFormatPattern)
+    this._setCellTextValue(cellValue, textFormatPattern)
     this._setCellCommentMarker(comment)
     this._setBackgroundColor(backgroundColor)
     this._setTextWrap(textWrap)
     this._setFontSize(fontSize)
     this._setFontColor(fontColor)
-    this._setBold(bold)
-    this._setItalic(italic)
-    this._setStrikeThrough(strikeThrough)
-    this._setUnderline(underline)
+    this._setBold(bold, italic)
+    this._setItalic(italic, bold)
+    this._setStrikeThrough(strikeThrough, underline)
+    this._setUnderline(underline, strikeThrough)
     this._setHorizontalTextAlign(horizontalTextAlign)
     this._setVerticalTextAlign(verticalTextAlign)
     this._setCellTextHeight()
@@ -339,14 +319,10 @@ class StyleableCell extends Cell {
     this._setRightBorder(borders)
     this._setBottomBorder(borders)
 
-    let cellType =
+    const cellType =
       this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
         this.simpleCellAddress
       )
-
-    if (cellType instanceof CellDataDetailedType) {
-      cellType = cellType.cellValueDetailedType
-    }
 
     this._setCellErrorMarker(CellValueDetailedType.ERROR === cellType)
 

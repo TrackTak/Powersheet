@@ -17,21 +17,19 @@ import SimpleCellAddress from './cells/cell/SimpleCellAddress'
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress'
 import Cell from './cells/cell/Cell'
 import Cells from './cells/Cells'
-import { ISheetData } from './Data'
 import Merger from './Merger'
 import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
-import { DetailedCellError, getCellDataValue } from '@tracktak/hyperformula'
+import { DetailedCellError } from '@tracktak/hyperformula'
 import { Instance, Props } from 'tippy.js'
 import CellHighlighter from '../cellHighlighter/CellHighlighter'
+import { ICellMetadata } from './Data'
 
 export interface IDimensions {
   width: number
   height: number
 }
-
-export type SheetId = number
 
 interface IScrollGroup {
   group: Group
@@ -83,7 +81,6 @@ class Sheets {
    * either the X, Y, both or no axis.
    */
   scrollGroups!: IScrollGroups
-  sheetIds: SheetId[] = []
   sheetEl: HTMLDivElement
   /**
    * For the comment with tippy so tippy does not throw warnings
@@ -109,7 +106,6 @@ class Sheets {
   comment: Comment
   cellError: CellError
   activeSheetId = 0
-  totalSheetCount = 0
   /**
    * @internal
    */
@@ -378,19 +374,23 @@ class Sheets {
   private _setCellOnAction() {
     const selectedFirstcell = this.selector.selectedCell!
     const simpleCellAddress = selectedFirstcell.simpleCellAddress
-    const cellId = simpleCellAddress.toCellId()
 
     if (this._hasDoubleClickedOnCell()) {
       this.cellEditor.showAndSetValue(selectedFirstcell)
     }
 
-    if (this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.comment) {
+    let {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
+      simpleCellAddress
+    )
+
+    const comment = metadata?.comment
+
+    if (comment) {
       this.comment.show(simpleCellAddress)
     }
-
-    let cellValue = getCellDataValue(this._spreadsheet.hyperformula.getCellValue(
-      simpleCellAddress
-    ))
 
     if (cellValue instanceof DetailedCellError) {
       this.cellError.show(cellValue.message || cellValue.type)
@@ -434,13 +434,11 @@ class Sheets {
       }
       case 'Delete': {
         this._spreadsheet.hyperformula.batch(() => {
-          this._spreadsheet.pushToHistory(() => {
-            this.selector.selectedCells.forEach(cell => {
-              const simpleCellAddress = cell.simpleCellAddress
+          this.selector.selectedCells.forEach(cell => {
+            const simpleCellAddress = cell.simpleCellAddress
 
-              this._spreadsheet.data.setCell(simpleCellAddress, {
-                value: undefined
-              })
+            this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+              cellValue: undefined
             })
           })
         })
@@ -471,11 +469,13 @@ class Sheets {
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const serializedValue = getCellDataValue(this._spreadsheet.hyperformula.getCellSerialized(
+          const {
+            cellValue
+          } = this._spreadsheet.hyperformula.getCellSerialized(
             selectedCell.simpleCellAddress
-          ))
+          )
 
-          if (serializedValue) {
+          if (cellValue) {
             this.cellEditor.clear()
             this.cellEditor.show(selectedCell)
 
@@ -494,25 +494,7 @@ class Sheets {
     this.sheetDimensions.height = this.rows._getTotalSize()
   }
 
-  deleteSheet(sheetId: SheetId) {
-    if (this.activeSheetId === sheetId) {
-      const currentIndex = this.sheetIds.indexOf(sheetId)
-
-      if (currentIndex === 0) {
-        this.switchSheet(this.sheetIds[1])
-      } else {
-        this.switchSheet(this.sheetIds[currentIndex - 1])
-      }
-    }
-
-    this._spreadsheet.data.deleteSheet(sheetId)
-
-    delete this.sheetIds[sheetId]
-
-    this._spreadsheet.render()
-  }
-
-  switchSheet(sheetId: SheetId) {
+  switchSheet(sheetId: number) {
     this.cells._destroy()
     this.rows._destroy()
     this.cols._destroy()
@@ -530,30 +512,6 @@ class Sheets {
 
     this.cellEditor._setActiveSheetId()
     this._spreadsheet.render()
-  }
-
-  renameSheet(sheetId: SheetId, sheetName: string) {
-    this._spreadsheet.data.setSheet(sheetId, {
-      sheetName
-    })
-    this._spreadsheet.hyperformula.renameSheet(sheetId, sheetName)
-
-    this._spreadsheet.render()
-  }
-
-  createNewSheet(data: ISheetData) {
-    this._spreadsheet.data.setSheet(data.id, data)
-    this._spreadsheet.hyperformula.addSheet(data.sheetName)
-
-    this.totalSheetCount++
-
-    this.sheetIds[data.id] = data.id
-
-    this._spreadsheet.render()
-  }
-
-  getSheetName() {
-    return `Sheet${this.totalSheetCount + 1}`
   }
 
   /**
@@ -686,14 +644,27 @@ class Sheets {
           ri,
           ci
         )
-        const cellId = simpleCellAddress.toCellId()
-        const mergedCellId = this.merger.associatedMergedCellAddressMap[cellId]
+        const {
+          metadata
+        } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+          simpleCellAddress
+        )
 
-        if (mergedCellId) {
-          const mergedCell = this._spreadsheet.data._spreadsheetData
-            .mergedCells![mergedCellId]
-          const existingRangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
-            mergedCell
+        if (metadata?.topLeftMergedCellId) {
+          let bottomRow = -Infinity
+          let bottomCol = -Infinity
+
+          for (const address of this.merger._iterateMergedCellWidthHeight(
+            simpleCellAddress,
+            metadata?.width,
+            metadata?.height
+          )) {
+            bottomRow = Math.max(bottomRow, address.row)
+            bottomCol = Math.max(bottomCol, address.col)
+          }
+          const existingRangeSimpleCellAddress = new RangeSimpleCellAddress(
+            simpleCellAddress,
+            new SimpleCellAddress(simpleCellAddress.sheet, bottomRow, bottomCol)
           )
 
           rangeSimpleCellAddress.limitTopLeftAddressToAnotherRange(
@@ -717,6 +688,14 @@ class Sheets {
     }
 
     return rangeSimpleCellAddress
+  }
+
+  getActiveSheetName() {
+    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+      this.activeSheetId
+    )!
+
+    return sheetName
   }
 
   /**

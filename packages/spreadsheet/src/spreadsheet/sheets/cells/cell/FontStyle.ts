@@ -6,8 +6,8 @@ import { Text } from 'konva/lib/shapes/Text'
 class FontStyle {
   constructor(
     public text: Text,
-    public bold: boolean,
-    public italic: boolean
+    public bold?: boolean,
+    public italic?: boolean
   ) {}
 
   getStyle() {

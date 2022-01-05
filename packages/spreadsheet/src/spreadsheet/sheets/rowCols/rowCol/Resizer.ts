@@ -115,13 +115,13 @@ class Resizer {
     this.hideResizeMarker()
     this.hideGuideLine()
 
-    this._spreadsheet.data.setRowCol(
-      this._rowCols._pluralType,
-      new SheetRowColAddress(this._sheets.activeSheetId, this.currentIndex),
-      {
-        size: newSize
-      }
-    )
+    // this._spreadsheet.data.setRowCol(
+    //   this._rowCols._pluralType,
+    //   new SheetRowColAddress(this._sheets.activeSheetId, this.currentIndex),
+    //   {
+    //     size: newSize
+    //   }
+    // )
 
     this._spreadsheet.persistData()
     this._spreadsheet.render()

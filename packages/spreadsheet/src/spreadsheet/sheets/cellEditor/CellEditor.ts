@@ -11,9 +11,9 @@ import {
   saveCaretPosition,
   setCaretToEndOfElement
 } from '../../utils'
-import { getCellDataValue, HyperFormula } from '@tracktak/hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
-import { ICellData } from '../Data'
+import { ICellMetadata } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
@@ -305,11 +305,11 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = getCellDataValue(
-      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+    const { cellValue } = this._spreadsheet.hyperformula.getCellSerialized(
+      simpleCellAddress
     )
 
-    this.setContentEditable(serializedValue?.toString() ?? null)
+    this.setContentEditable(cellValue?.toString() ?? null)
 
     this.cellEditorEl.focus()
   }
@@ -339,9 +339,7 @@ class CellEditor {
     let newCellReferenceText = cellReferenceText
 
     if (this.activeSheetId !== this._sheets.activeSheetId) {
-      const sheetName = this._spreadsheet.hyperformula.getSheetName(
-        this._sheets.activeSheetId
-      )
+      const sheetName = this._sheets.getActiveSheetName()
 
       newCellReferenceText = `'${sheetName}'!` + newCellReferenceText
     }
@@ -397,32 +395,29 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell = this._spreadsheet.data._spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]
-    const cellValue =
-      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress) ??
-      undefined
+    const {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
-    this._spreadsheet.pushToHistory(() => {
-      const value = this.currentCellText ? this.currentCellText : undefined
+    let value = this.currentCellText ? this.currentCellText : undefined
 
-      if (cellValue !== value) {
-        const newCell: Omit<ICellData, 'id'> = {
-          value
+    if (cellValue !== value) {
+      if (isPercent(value)) {
+        if (!isPercent(metadata?.textFormatPattern)) {
+          metadata!.textFormatPattern = '0.00%'
         }
-
-        if (isPercent(value)) {
-          if (!isPercent(cell?.textFormatPattern)) {
-            newCell.textFormatPattern = '0.00%'
-          }
-        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
-          newCell.value += '%'
-        }
-
-        this._spreadsheet.data.setCell(simpleCellAddress, newCell)
+      } else if (!isPercent(value) && isPercent(metadata?.textFormatPattern)) {
+        value += '%'
       }
-    })
+
+      this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+        cellValue: value,
+        metadata
+      })
+    }
   }
 
   /**

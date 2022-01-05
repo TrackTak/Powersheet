@@ -14,7 +14,8 @@ import {
   UndoEntry,
   HyperFormula,
   RemoveRowsUndoEntry,
-  ExportedChange
+  ExportedChange,
+  AddRowsUndoEntry
 } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import { CellId } from './sheets/cells/cell/SimpleCellAddress'
@@ -22,7 +23,7 @@ import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
 import Operations from './Operations'
-import { IUIBaseUndoRedoEntry, UIUndoRedo } from './UndoRedo'
+import { UIUndoRedo } from './UIUndoRedo'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -76,7 +77,7 @@ class Spreadsheet {
     )
 
     this.eventEmitter = new PowersheetEmitter()
-    this.operations = new Operations(this.data)
+    this.operations = new Operations(this.hyperformula, this.data)
     this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
 
     if (!isNil(this.options.width)) {
@@ -157,31 +158,53 @@ class Spreadsheet {
     this.render()
   }
 
-  private removeRows(operation: RemoveRowsUndoEntry) {
-    const [index, amount] = operation.command.indexes[0]
-    const sheetId = operation.command.sheet
-    const sheetName = this.hyperformula.getSheetName(sheetId)!
-
-    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
-
-    if (this.sheets.rows.getIsFrozen(index)) {
-      sheet.frozenRow! -= amount
-    }
-  }
-
   private onAddUndoEntry = (operation: UndoEntry) => {
     if (operation instanceof RemoveRowsUndoEntry) {
-      this.removeRows(operation)
+      this.operations.removeFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
+    }
+
+    if (operation instanceof AddRowsUndoEntry) {
+      this.operations.addFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
     }
   }
 
   private onUndo = (operation: UndoEntry) => {
     if (operation instanceof RemoveRowsUndoEntry) {
-      this.removeRows(operation)
+      this.operations.addFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
+    }
+
+    if (operation instanceof AddRowsUndoEntry) {
+      this.operations.removeFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
     }
   }
 
-  private onRedo = (operation: UndoEntry) => {}
+  private onRedo = (operation: UndoEntry) => {
+    if (operation instanceof RemoveRowsUndoEntry) {
+      this.operations.removeFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
+    }
+
+    if (operation instanceof AddRowsUndoEntry) {
+      this.operations.addFrozenRows(
+        operation.command.sheet,
+        operation.command.indexes
+      )
+    }
+  }
 
   private _updateSheetSizes() {
     this.sheets._updateSize()

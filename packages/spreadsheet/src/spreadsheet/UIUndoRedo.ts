@@ -52,33 +52,33 @@ export class UIUndoRedo extends UndoRedo {
 
   public undoSetFrozenRowCol(operation: SetFrozenRowColUndoEntry) {
     const {
-      command: { sheetName }
+      command: { sheet }
     } = operation
 
-    this.uiOperations.unsetFrozenRowCol(sheetName)
+    this.uiOperations.unsetFrozenRowCol(sheet)
   }
 
   public undoUnsetFrozenRowCol(operation: UnsetFrozenRowColUndoEntry) {
     const {
-      command: { sheetName, indexes }
+      command: { sheet, indexes }
     } = operation
 
-    this.uiOperations.setFrozenRowCol(sheetName, indexes)
+    this.uiOperations.setFrozenRowCol(sheet, indexes)
   }
 
   public redoSetFrozenRowCol(operation: SetFrozenRowColUndoEntry) {
     const {
-      command: { sheetName, indexes }
+      command: { sheet, indexes }
     } = operation
 
-    this.uiOperations.setFrozenRowCol(sheetName, indexes)
+    this.uiOperations.setFrozenRowCol(sheet, indexes)
   }
 
   public redoUnsetFrozenRowCol(operation: UnsetFrozenRowColUndoEntry) {
     const {
-      command: { sheetName }
+      command: { sheet }
     } = operation
 
-    this.uiOperations.unsetFrozenRowCol(sheetName)
+    this.uiOperations.unsetFrozenRowCol(sheet)
   }
 }

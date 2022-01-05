@@ -49,7 +49,7 @@ import { SetFrozenRowColCommand, UnsetFrozenRowColCommand } from '../Commands'
 import {
   SetFrozenRowColUndoEntry,
   UnsetFrozenRowColUndoEntry
-} from '../UndoRedo'
+} from '../UIUndoRedo'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -918,25 +918,28 @@ class Toolbar {
       case 'freeze': {
         const sheetName = this._spreadsheet.sheets.getActiveSheetName()
         const {
+          sheet,
           row,
           col
         } = this._spreadsheet.sheets.selector.selectedCell!.simpleCellAddress
-        const indexes: ColumnRowIndex[] = [[row, col]]
 
         if (this.iconElementsMap.freeze.active) {
-          const command = new UnsetFrozenRowColCommand(sheetName, indexes)
+          const {
+            frozenRow,
+            frozenCol
+          } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+          const indexes: ColumnRowIndex[] = [[frozenRow!, frozenCol!]]
+          const command = new UnsetFrozenRowColCommand(sheet, indexes)
 
-          this._spreadsheet.operations.unsetFrozenRowCol(command.sheetName)
+          this._spreadsheet.operations.unsetFrozenRowCol(sheet)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new UnsetFrozenRowColUndoEntry(command)
           )
         } else {
-          const command = new SetFrozenRowColCommand(sheetName, indexes)
+          const indexes: ColumnRowIndex[] = [[row, col]]
+          const command = new SetFrozenRowColCommand(sheet, indexes)
 
-          this._spreadsheet.operations.setFrozenRowCol(
-            command.sheetName,
-            command.indexes
-          )
+          this._spreadsheet.operations.setFrozenRowCol(sheet, command.indexes)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new SetFrozenRowColUndoEntry(command)
           )

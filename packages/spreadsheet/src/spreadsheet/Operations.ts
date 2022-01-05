@@ -18,54 +18,70 @@ class Operations {
     delete this.data._spreadsheetData.uiSheets[sheetName].frozenCol
   }
 
-  public removeFrozenRows(sheetId: number, indexes: ColumnRowIndex[]) {
+  public removeFrozenRows(
+    sheetId: number,
+    indexes: ColumnRowIndex[],
+    frozenRow: number | undefined
+  ) {
     const sheetName = this.hyperformula.getSheetName(sheetId)!
 
     const [index, amount] = indexes[0]
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    if (sheet.frozenRow === undefined) return
+    if (frozenRow === undefined) return
 
-    if (index <= sheet.frozenRow) {
+    if (index <= frozenRow) {
       sheet.frozenRow! -= amount
     }
   }
 
-  public removeFrozenCols(sheetId: number, indexes: ColumnRowIndex[]) {
+  public removeFrozenCols(
+    sheetId: number,
+    indexes: ColumnRowIndex[],
+    frozenCol: number | undefined
+  ) {
     const sheetName = this.hyperformula.getSheetName(sheetId)!
 
     const [index, amount] = indexes[0]
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    if (sheet.frozenCol === undefined) return
+    if (frozenCol === undefined) return
 
-    if (index <= sheet.frozenCol) {
+    if (index <= frozenCol) {
       sheet.frozenCol! -= amount
     }
   }
 
-  public addFrozenRows(sheetId: number, indexes: ColumnRowIndex[]) {
+  public addFrozenRows(
+    sheetId: number,
+    indexes: ColumnRowIndex[],
+    frozenRow: number | undefined
+  ) {
     const sheetName = this.hyperformula.getSheetName(sheetId)!
 
     const [index, amount] = indexes[0]
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    if (sheet.frozenRow === undefined) return
+    if (frozenRow === undefined) return
 
-    if (index <= sheet.frozenRow) {
+    if (index <= frozenRow) {
       sheet.frozenRow! += amount
     }
   }
 
-  public addFrozenCols(sheetId: number, indexes: ColumnRowIndex[]) {
+  public addFrozenCols(
+    sheetId: number,
+    indexes: ColumnRowIndex[],
+    frozenCol: number | undefined
+  ) {
     const sheetName = this.hyperformula.getSheetName(sheetId)!
 
     const [index, amount] = indexes[0]
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    if (sheet.frozenCol === undefined) return
+    if (frozenCol === undefined) return
 
-    if (index <= sheet.frozenCol) {
+    if (index <= frozenCol) {
       sheet.frozenCol! += amount
     }
   }

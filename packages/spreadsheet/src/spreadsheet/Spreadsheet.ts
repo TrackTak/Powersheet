@@ -15,7 +15,9 @@ import {
   HyperFormula,
   RemoveRowsUndoEntry,
   ExportedChange,
-  AddRowsUndoEntry
+  AddRowsUndoEntry,
+  RemoveColumnsUndoEntry,
+  AddColumnsUndoEntry
 } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import { CellId } from './sheets/cells/cell/SimpleCellAddress'
@@ -159,17 +161,53 @@ class Spreadsheet {
   }
 
   private onAddUndoEntry = (operation: UndoEntry) => {
+    const sheetName = this.sheets.getActiveSheetName()
+
+    const { frozenRow, frozenCol } = this.data._spreadsheetData.uiSheets[
+      sheetName
+    ]
+
     if (operation instanceof RemoveRowsUndoEntry) {
+      // @ts-ignore
+      operation.frozenRow = frozenRow
+
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        frozenRow
       )
     }
 
     if (operation instanceof AddRowsUndoEntry) {
+      // @ts-ignore
+      operation.frozenRow = frozenRow
+
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        frozenRow
+      )
+    }
+
+    if (operation instanceof RemoveColumnsUndoEntry) {
+      // @ts-ignore
+      operation.frozenCol = frozenCol
+
+      this.operations.removeFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        frozenCol
+      )
+    }
+
+    if (operation instanceof AddColumnsUndoEntry) {
+      // @ts-ignore
+      operation.frozenCol = frozenCol
+
+      this.operations.addFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        frozenCol
       )
     }
   }
@@ -178,14 +216,36 @@ class Spreadsheet {
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenRow
       )
     }
 
     if (operation instanceof AddRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenRow
+      )
+    }
+
+    if (operation instanceof RemoveColumnsUndoEntry) {
+      this.operations.addFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenCol
+      )
+    }
+
+    if (operation instanceof AddColumnsUndoEntry) {
+      this.operations.removeFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenCol
       )
     }
   }
@@ -194,14 +254,36 @@ class Spreadsheet {
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenRow
       )
     }
 
     if (operation instanceof AddRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenRow
+      )
+    }
+
+    if (operation instanceof RemoveColumnsUndoEntry) {
+      this.operations.removeFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenCol
+      )
+    }
+
+    if (operation instanceof AddColumnsUndoEntry) {
+      this.operations.addFrozenCols(
+        operation.command.sheet,
+        operation.command.indexes,
+        // @ts-ignore
+        operation.frozenCol
       )
     }
   }

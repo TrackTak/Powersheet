@@ -1,5 +1,4 @@
-import { DataRawCellContent, Sheets } from '@tracktak/hyperformula'
-import { SheetRowColId } from './cells/cell/RowColAddress'
+import { Sheets } from '@tracktak/hyperformula'
 import { CellId } from './cells/cell/SimpleCellAddress'
 
 export type TextWrap = 'wrap'
@@ -33,22 +32,11 @@ export interface ICellMetadata extends ICellStyles {
   height?: number
 }
 
-export interface IRowColData {
-  id: SheetRowColId
-  size: number
-}
-
-export interface IRowsData {
-  [index: SheetRowColId]: IRowColData
-}
-
-export interface IColsData {
-  [index: SheetRowColId]: IRowColData
-}
-
 export interface IUISheet {
   frozenRow?: number
   frozenCol?: number
+  rowSizes: Record<number, number>
+  colSizes: Record<number, number>
 }
 
 export type UISheets = Record<string, IUISheet>
@@ -57,8 +45,6 @@ export interface ISpreadsheetData {
   exportSpreadsheetName?: string
   uiSheets: UISheets
   sheets?: Sheets
-  rows?: IRowsData
-  cols?: IColsData
   showFormulas?: boolean
 }
 
@@ -66,14 +52,23 @@ class Data {
   /**
    * @internal
    */
-  _spreadsheetData: ISpreadsheetData = {
-    uiSheets: {}
-  }
+  _spreadsheetData: ISpreadsheetData
 
   /**
    * @internal
    */
-  constructor() {}
+  constructor(sheetNames: string[]) {
+    this._spreadsheetData = {
+      uiSheets: {}
+    }
+
+    sheetNames.forEach(sheetName => {
+      this._spreadsheetData.uiSheets[sheetName] = {
+        rowSizes: {},
+        colSizes: {}
+      }
+    })
+  }
 }
 
 export default Data

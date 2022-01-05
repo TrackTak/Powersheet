@@ -1,5 +1,10 @@
 import { HyperFormula, UndoRedo } from '@tracktak/hyperformula'
-import { SetFrozenRowColCommand, UnsetFrozenRowColCommand } from './Commands'
+import {
+  SetColSizeCommand,
+  SetFrozenRowColCommand,
+  SetRowSizeCommand,
+  UnsetFrozenRowColCommand
+} from './Commands'
 import Operations from './Operations'
 
 export interface IUIBaseUndoRedoEntry {
@@ -28,6 +33,30 @@ export class UnsetFrozenRowColUndoEntry implements IUIBaseUndoRedoEntry {
 
   public doRedo(undoRedo: UIUndoRedo): void {
     undoRedo.redoUnsetFrozenRowCol(this)
+  }
+}
+
+export class SetRowSizeUndoEntry implements IUIBaseUndoRedoEntry {
+  constructor(public readonly command: SetRowSizeCommand) {}
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    undoRedo.undoSetRowSize(this)
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    undoRedo.redoSetRowSize(this)
+  }
+}
+
+export class SetColSizeUndoEntry implements IUIBaseUndoRedoEntry {
+  constructor(public readonly command: SetColSizeCommand) {}
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    undoRedo.undoSetColSize(this)
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    undoRedo.redoSetColSize(this)
   }
 }
 
@@ -80,5 +109,29 @@ export class UIUndoRedo extends UndoRedo {
     } = operation
 
     this.uiOperations.unsetFrozenRowCol(sheet)
+  }
+
+  public undoSetRowSize(operation: SetRowSizeUndoEntry) {
+    const { sheet, index, oldRowSize } = operation.command
+
+    this.uiOperations.setRowSize(sheet, index, oldRowSize)
+  }
+
+  public undoSetColSize(operation: SetColSizeUndoEntry) {
+    const { sheet, index, oldColSize } = operation.command
+
+    this.uiOperations.setColSize(sheet, index, oldColSize)
+  }
+
+  public redoSetRowSize(operation: SetRowSizeUndoEntry) {
+    const { sheet, index, newRowSize } = operation.command
+
+    this.uiOperations.setRowSize(sheet, index, newRowSize)
+  }
+
+  public redoSetColSize(operation: SetColSizeUndoEntry) {
+    const { sheet, index, newColSize } = operation.command
+
+    this.uiOperations.setColSize(sheet, index, newColSize)
   }
 }

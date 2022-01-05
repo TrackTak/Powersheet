@@ -7,7 +7,7 @@ import Spreadsheet from '../../Spreadsheet'
 import { isNil } from 'lodash'
 import RowCol from './rowCol/RowCol'
 import Resizer from './rowCol/Resizer'
-import RowColAddress, { SheetRowColId } from '../cells/cell/RowColAddress'
+import RowColAddress from '../cells/cell/RowColAddress'
 import { Rect } from 'konva/lib/shapes/Rect'
 import { Text } from 'konva/lib/shapes/Text'
 import { Group } from 'konva/lib/Group'
@@ -327,23 +327,23 @@ class RowCols {
 
   getAxis(index: number) {
     const data = this._spreadsheet.data._spreadsheetData
+    const sheetName = this._sheets.getActiveSheetName()
     const defaultSize = this._spreadsheet.options[this._type].defaultSize
-    // const rowCols =
-    //   data.sheets?.[this._sheets.activeSheetId][this._pluralType] ?? {}
+    const rowCols =
+      this._type === 'row'
+        ? data.uiSheets?.[sheetName].rowSizes
+        : data.uiSheets?.[sheetName].colSizes
 
     let totalPreviousCustomSizeDifferences = 0
 
-    // Object.keys(rowCols).forEach(key => {
-    //   const sheetRowColId = key as SheetRowColId
-    //   const sheetRowColAddress = RowColAddress.sheetRowColIdToAddress(
-    //     sheetRowColId
-    //   )
-    //   const rowCol = data[this._pluralType]![sheetRowColId]
+    Object.keys(rowCols).forEach(key => {
+      const rowColIndex = parseInt(key, 10)
+      const size = rowCols[rowColIndex]
 
-    //   if (sheetRowColAddress.rowCol >= index) return
+      if (rowColIndex >= index) return
 
-    //   totalPreviousCustomSizeDifferences += rowCol?.size - defaultSize
-    // })
+      totalPreviousCustomSizeDifferences += size - defaultSize
+    })
 
     const axis =
       defaultSize * index +
@@ -354,12 +354,10 @@ class RowCols {
   }
 
   getSize(index: number) {
-    const sheetRowColId = new RowColAddress(
-      this._sheets.activeSheetId,
-      index
-    ).toSheetRowColId()
-    const data = this._spreadsheet.data._spreadsheetData
-    const size = data[this._pluralType]?.[sheetRowColId]?.size
+    const sheetName = this._sheets.getActiveSheetName()
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const size =
+      this._type === 'row' ? sheet.rowSizes[index] : sheet.colSizes[index]
 
     return size ?? this._spreadsheet.options[this._type].defaultSize
   }
@@ -419,19 +417,20 @@ class RowCols {
    * @internal
    */
   _getTotalSize() {
-    const rowCols = Object.keys(
-      this._spreadsheet.data._spreadsheetData[this._pluralType] ?? {}
+    const sheetName = this._sheets.getActiveSheetName()
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const sizes = this._type === 'row' ? sheet.rowSizes : sheet.colSizes
+
+    const totalSizeDifference = Object.keys(sizes).reduce(
+      (currentSize, [key]) => {
+        const size = this.getSize(parseInt(key, 10))
+
+        return (
+          size - this._spreadsheet.options[this._type].defaultSize + currentSize
+        )
+      },
+      0
     )
-
-    const totalSizeDifference = rowCols.reduce((currentSize, key) => {
-      const sheetRowColId = key as SheetRowColId
-      const rowColAddress = RowColAddress.sheetRowColIdToAddress(sheetRowColId)
-      const size = this.getSize(rowColAddress.rowCol)
-
-      return (
-        size - this._spreadsheet.options[this._type].defaultSize + currentSize
-      )
-    }, 0)
 
     const totalSize =
       (this._spreadsheet.options[this._type].amount + 1) *

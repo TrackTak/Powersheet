@@ -36,7 +36,10 @@ Default.args = {
       Default: []
     },
     uiSheets: {
-      Default: {}
+      Default: {
+        rowSizes: {},
+        colSizes: {}
+      }
     }
   }
 }

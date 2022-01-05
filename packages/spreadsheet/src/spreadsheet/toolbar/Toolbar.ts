@@ -928,7 +928,7 @@ class Toolbar {
             frozenRow,
             frozenCol
           } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-          const indexes: ColumnRowIndex[] = [[frozenRow!, frozenCol!]]
+          const indexes: ColumnRowIndex = [frozenRow!, frozenCol!]
           const command = new UnsetFrozenRowColCommand(sheet, indexes)
 
           this._spreadsheet.operations.unsetFrozenRowCol(sheet)
@@ -936,7 +936,7 @@ class Toolbar {
             new UnsetFrozenRowColUndoEntry(command)
           )
         } else {
-          const indexes: ColumnRowIndex[] = [[row, col]]
+          const indexes: ColumnRowIndex = [row, col]
           const command = new SetFrozenRowColCommand(sheet, indexes)
 
           this._spreadsheet.operations.setFrozenRowCol(sheet, command.indexes)

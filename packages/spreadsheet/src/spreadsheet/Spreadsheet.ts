@@ -62,7 +62,6 @@ class Spreadsheet {
   sheetSizesSet = false
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = new Data()
     this.options = defaultOptions
     this.styles = defaultStyles
 
@@ -78,6 +77,7 @@ class Spreadsheet {
       styles.spreadsheet
     )
 
+    this.data = new Data(this.hyperformula.getSheetNames())
     this.eventEmitter = new PowersheetEmitter()
     this.operations = new Operations(this.hyperformula, this.data)
     this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
@@ -113,7 +113,10 @@ class Spreadsheet {
   }
 
   private onSheetAdded = (name: string) => {
-    this.data._spreadsheetData.uiSheets[name] = {}
+    this.data._spreadsheetData.uiSheets[name] = {
+      rowSizes: {},
+      colSizes: {}
+    }
 
     this.render()
   }
@@ -173,7 +176,7 @@ class Spreadsheet {
 
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         frozenRow
       )
     }
@@ -184,7 +187,7 @@ class Spreadsheet {
 
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         frozenRow
       )
     }
@@ -195,7 +198,7 @@ class Spreadsheet {
 
       this.operations.removeFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         frozenCol
       )
     }
@@ -206,7 +209,7 @@ class Spreadsheet {
 
       this.operations.addFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         frozenCol
       )
     }
@@ -216,7 +219,7 @@ class Spreadsheet {
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
       )
@@ -225,7 +228,7 @@ class Spreadsheet {
     if (operation instanceof AddRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
       )
@@ -234,7 +237,7 @@ class Spreadsheet {
     if (operation instanceof RemoveColumnsUndoEntry) {
       this.operations.addFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
       )
@@ -243,7 +246,7 @@ class Spreadsheet {
     if (operation instanceof AddColumnsUndoEntry) {
       this.operations.removeFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
       )
@@ -254,7 +257,7 @@ class Spreadsheet {
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
       )
@@ -263,7 +266,7 @@ class Spreadsheet {
     if (operation instanceof AddRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
       )
@@ -272,7 +275,7 @@ class Spreadsheet {
     if (operation instanceof RemoveColumnsUndoEntry) {
       this.operations.removeFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
       )
@@ -281,7 +284,7 @@ class Spreadsheet {
     if (operation instanceof AddColumnsUndoEntry) {
       this.operations.addFrozenCols(
         operation.command.sheet,
-        operation.command.indexes,
+        operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
       )

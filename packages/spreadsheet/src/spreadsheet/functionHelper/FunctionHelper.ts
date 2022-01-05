@@ -3,7 +3,7 @@ import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
 import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 import FunctionHelperList from './functionHelperList/FunctionHelperList'
-import { functionHelperListPrefix } from './functionHelperList/functionHelperListHtmlElementHelpers'
+import { groupBy } from 'lodash'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -49,7 +49,11 @@ class FunctionHelper {
    */
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
-    this._functionHelperList = new FunctionHelperList(this._onFunctionItemClick)
+    const functionMetadataByGroup = groupBy(
+      this._spreadsheet.getFunctionMetadata(),
+      'type'
+    )
+    this._functionHelperList = new FunctionHelperList(functionMetadataByGroup)
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
@@ -79,20 +83,6 @@ class FunctionHelper {
   }
 
   /**
-   * @internal
-   */
-  private _onFunctionItemClick = (e: Event) => {
-    const target = e.currentTarget as HTMLElement
-    const clickedFunction = target.getAttribute('data-function-name')
-    target.classList.add(
-      `${functionHelperListPrefix}-function-item-content-expanded`
-    )
-    if (!clickedFunction) {
-      return
-    }
-  }
-
-  /**
    * Attaches the drawer to the DOM. This must be called
    * after the spreadsheet has been attached to the DOM
    * or material-components will throw errors.
@@ -101,6 +91,10 @@ class FunctionHelper {
   setDrawerContent() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
     this._spreadsheet.render()
+  }
+
+  scrollToFunction(functionName: string) {
+    this._functionHelperList.scrollToFunction(functionName)
   }
 
   /**

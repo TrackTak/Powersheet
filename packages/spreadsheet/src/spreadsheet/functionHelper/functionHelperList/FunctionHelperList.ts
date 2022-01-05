@@ -1,23 +1,26 @@
 import './FunctionHelperList.scss'
-import { functionMetadataByGroup } from '../functionMetadata'
 import {
-  ClickHandler,
   createFunctionList,
   functionHelperListPrefix,
   updateFunctionList
 } from './functionHelperListHtmlElementHelpers'
-import { first } from 'lodash'
+import { Dictionary, first } from 'lodash'
+import { IFunctionHelperData } from '../FunctionHelper'
 
 class FunctionHelperList {
   functionListEl!: HTMLDivElement
   drawerContentEl!: HTMLDivElement
   drawerHeaderEl!: HTMLDivElement
 
-  constructor(private onFunctionItemClick: ClickHandler) {
+  constructor(
+    private functionMetadataByGroup: Dictionary<
+      [IFunctionHelperData, ...IFunctionHelperData[]]
+    >
+  ) {
     const { functionListEl, drawerHeaderEl, drawerContentEl } =
       createFunctionList(
         this._onSearch,
-        this._toggleAccordion,
+        this._handleItemClick,
         functionMetadataByGroup
       )
     this.functionListEl = functionListEl
@@ -25,35 +28,44 @@ class FunctionHelperList {
     this.drawerContentEl = drawerContentEl
   }
 
-  /**
-   * @internal
-   */
+  scrollToFunction(functionName: string) {
+    const functionEl = document.getElementById(functionName)
+    if (functionEl) {
+      const topPos = functionEl.offsetTop
+      this.drawerContentEl.scrollTop = topPos
+      this._toggleAccordion(functionEl)
+    }
+  }
+
   private _onSearch = (e: Event) => {
     const searchText = (e.target as HTMLInputElement).value
     updateFunctionList(
       this.drawerContentEl,
-      this._toggleAccordion,
-      functionMetadataByGroup,
+      this._handleItemClick,
+      this.functionMetadataByGroup,
       searchText
     )
   }
 
-  private _toggleAccordion = (e: Event) => {
+  private _handleItemClick = (e: Event) => {
     const target = e.currentTarget as HTMLElement
-    const listItem = first(
-      target.getElementsByClassName(
+    this._toggleAccordion(target)
+  }
+
+  private _toggleAccordion = (listItem: HTMLElement) => {
+    const content = first(
+      listItem.getElementsByClassName(
         `${functionHelperListPrefix}-function-item-content`
       )
     )
-    if (!listItem) {
-      return
-    }
-    if (listItem.classList.contains(`${functionHelperListPrefix}-expanded`)) {
-      listItem.classList.remove(`${functionHelperListPrefix}-expanded`)
-      target.classList.remove(`${functionHelperListPrefix}-expanded`)
-    } else {
-      listItem.classList.add(`${functionHelperListPrefix}-expanded`)
-      target.classList.add(`${functionHelperListPrefix}-expanded`)
+    if (content) {
+      if (listItem.classList.contains(`${functionHelperListPrefix}-expanded`)) {
+        listItem.classList.remove(`${functionHelperListPrefix}-expanded`)
+        content.classList.remove(`${functionHelperListPrefix}-expanded`)
+      } else {
+        listItem.classList.add(`${functionHelperListPrefix}-expanded`)
+        content.classList.add(`${functionHelperListPrefix}-expanded`)
+      }
     }
   }
 

@@ -2,6 +2,11 @@
 @use '../../styles.scss';
 
 .powersheet-function-helper-list {
+  &-drawer-content {
+    position: relative;
+    scroll-behavior: smooth;
+  }
+
   &-wrapper {
     overflow-y: auto;
     display: flex;

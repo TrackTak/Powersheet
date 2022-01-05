@@ -81,7 +81,7 @@ export const updateFunctionList = (
       content.appendChild(section)
       filtered.map(formulaMetadata => {
         const { functionItem } = createFunctionItem(formulaMetadata)
-        functionItem.setAttribute('data-function-name', formulaMetadata.header)
+        functionItem.id = formulaMetadata.header
         functionItem.addEventListener('click', onClick)
         content.appendChild(functionItem)
       })

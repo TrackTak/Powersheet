@@ -18,7 +18,10 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
-import FunctionHelper from './functionHelper/FunctionHelper'
+import FunctionHelper, {
+  IFunctionHelperData
+} from './functionHelper/FunctionHelper'
+import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -27,6 +30,7 @@ export interface ISpreadsheetConstructor {
   exporter?: Exporter
   bottomBar?: BottomBar
   functionHelper?: FunctionHelper
+  customFunctionMetadata?: Record<string, IFunctionHelperData>
 }
 
 export interface IHistoryData {
@@ -47,6 +51,7 @@ class Spreadsheet {
   functionHelper?: FunctionHelper
   exporter?: Exporter
   hyperformula: HyperFormula
+  customFunctionMetadata?: Record<string, IFunctionHelperData> = {}
   history: any
   bottomBar?: BottomBar
   isSaving = false
@@ -64,6 +69,7 @@ class Spreadsheet {
     this.exporter = params.exporter
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
+    this.customFunctionMetadata = params.customFunctionMetadata ?? {}
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
@@ -90,8 +96,8 @@ class Spreadsheet {
       const currentData: IHistoryData = {
         data: this.data._spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap: this.sheets.merger
-          .associatedMergedCellAddressMap
+        associatedMergedCellAddressMap:
+          this.sheets.merger.associatedMergedCellAddressMap
       }
 
       const parsedData: IHistoryData = JSON.parse(data)
@@ -249,8 +255,8 @@ class Spreadsheet {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
       data: this.data._spreadsheetData,
-      associatedMergedCellAddressMap: this.sheets.merger
-        .associatedMergedCellAddressMap
+      associatedMergedCellAddressMap:
+        this.sheets.merger.associatedMergedCellAddressMap
     }
     const data = JSON.stringify(historyData)
 
@@ -327,6 +333,13 @@ class Spreadsheet {
       this.hyperformula.rebuildAndRecalculate().then(() => {
         this.render()
       })
+    }
+  }
+
+  getFunctionMetadata(): Record<string, IFunctionHelperData> {
+    return {
+      ...this.customFunctionMetadata,
+      ...powersheetFormulaMetadataJSON
     }
   }
 }

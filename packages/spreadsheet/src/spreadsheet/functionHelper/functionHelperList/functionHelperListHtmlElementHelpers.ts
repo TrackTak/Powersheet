@@ -58,7 +58,7 @@ export const createFunctionList = (
   functionListEl.appendChild(drawerHeaderEl)
   functionListEl.appendChild(drawerContentEl)
 
-  return { functionListEl, drawerHeaderEl, drawerContentEl }
+  return { functionListEl, drawerHeaderEl, drawerContentEl, searchInput }
 }
 
 export const updateFunctionList = (

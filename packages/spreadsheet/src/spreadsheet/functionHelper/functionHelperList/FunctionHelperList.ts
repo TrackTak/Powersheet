@@ -11,13 +11,14 @@ class FunctionHelperList {
   functionListEl!: HTMLDivElement
   drawerContentEl!: HTMLDivElement
   drawerHeaderEl!: HTMLDivElement
+  searchInput!: HTMLInputElement
 
   constructor(
     private functionMetadataByGroup: Dictionary<
       [IFunctionHelperData, ...IFunctionHelperData[]]
     >
   ) {
-    const { functionListEl, drawerHeaderEl, drawerContentEl } =
+    const { functionListEl, drawerHeaderEl, drawerContentEl, searchInput } =
       createFunctionList(
         this._onSearch,
         this._handleItemClick,
@@ -26,9 +27,16 @@ class FunctionHelperList {
     this.functionListEl = functionListEl
     this.drawerHeaderEl = drawerHeaderEl
     this.drawerContentEl = drawerContentEl
+    this.searchInput = searchInput
   }
 
   scrollToFunction(functionName: string) {
+    this.searchInput.value = ''
+    updateFunctionList(
+      this.drawerContentEl,
+      this._handleItemClick,
+      this.functionMetadataByGroup
+    )
     const functionEl = document.getElementById(functionName)
     if (functionEl) {
       const topPos = functionEl.offsetTop

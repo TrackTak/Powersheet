@@ -30,7 +30,6 @@ export interface ISpreadsheetConstructor {
   exporter?: Exporter
   bottomBar?: BottomBar
   functionHelper?: FunctionHelper
-  customFunctionMetadata?: Record<string, IFunctionHelperData>
 }
 
 export interface IHistoryData {
@@ -51,7 +50,7 @@ class Spreadsheet {
   functionHelper?: FunctionHelper
   exporter?: Exporter
   hyperformula: HyperFormula
-  customFunctionMetadata?: Record<string, IFunctionHelperData> = {}
+  functionMetadata: Record<string, IFunctionHelperData> = {}
   history: any
   bottomBar?: BottomBar
   isSaving = false
@@ -69,7 +68,6 @@ class Spreadsheet {
     this.exporter = params.exporter
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
-    this.customFunctionMetadata = params.customFunctionMetadata ?? {}
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
@@ -83,6 +81,7 @@ class Spreadsheet {
     if (!isNil(this.options.height)) {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
+    this.functionMetadata = { ...powersheetFormulaMetadataJSON }
 
     this.toolbar?.initialize(this)
     this.formulaBar?.initialize(this)
@@ -336,11 +335,14 @@ class Spreadsheet {
     }
   }
 
-  getFunctionMetadata(): Record<string, IFunctionHelperData> {
-    return {
-      ...this.customFunctionMetadata,
-      ...powersheetFormulaMetadataJSON
+  setFunctionMetadata(
+    customFunctionMetadata: Record<string, IFunctionHelperData>
+  ) {
+    this.functionMetadata = {
+      ...customFunctionMetadata,
+      ...this.functionMetadata
     }
+    this.functionHelper?.setFunctionMetadata(this.functionMetadata)
   }
 }
 

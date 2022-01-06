@@ -54,7 +54,7 @@ class FunctionSummaryHelper {
    * @param inputParameters - The input parameters that have currently been typed by user
    */
   show(functionName: string) {
-    const metadata = this._spreadsheet.getFunctionMetadata()[functionName]
+    const metadata = this._spreadsheet.functionMetadata[functionName]
     if (metadata) {
       this._update(metadata)
       this.helper.show()

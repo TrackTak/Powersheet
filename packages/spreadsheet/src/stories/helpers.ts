@@ -137,8 +137,7 @@ export const buildSpreadsheetWithEverything = (
     formulaBar,
     exporter,
     bottomBar,
-    functionHelper,
-    customFunctionMetadata
+    functionHelper
   })
 
   spreadsheet.spreadsheetEl.prepend(formulaBar.formulaBarEl)
@@ -147,6 +146,7 @@ export const buildSpreadsheetWithEverything = (
   spreadsheet.sheets.sheetElContainer.appendChild(
     functionHelper.functionHelperEl
   )
+  spreadsheet.setFunctionMetadata(customFunctionMetadata)
   functionHelper.setDrawerContent()
   toolbar.setToolbarIcons(getToolbarElementIcons(toolbar))
 

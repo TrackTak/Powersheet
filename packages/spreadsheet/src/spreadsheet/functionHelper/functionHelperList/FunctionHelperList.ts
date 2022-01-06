@@ -45,6 +45,14 @@ class FunctionHelperList {
     }
   }
 
+  setFunctionMetadata(
+    functionMetadataByGroup: Dictionary<
+      [IFunctionHelperData, ...IFunctionHelperData[]]
+    >
+  ) {
+    this.functionMetadataByGroup = functionMetadataByGroup
+  }
+
   private _onSearch = (e: Event) => {
     const searchText = (e.target as HTMLInputElement).value
     updateFunctionList(

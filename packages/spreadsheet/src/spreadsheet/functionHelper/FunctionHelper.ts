@@ -50,7 +50,7 @@ class FunctionHelper {
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
     const functionMetadataByGroup = groupBy(
-      this._spreadsheet.getFunctionMetadata(),
+      this._spreadsheet.functionMetadata,
       'type'
     )
     this._functionHelperList = new FunctionHelperList(functionMetadataByGroup)
@@ -91,6 +91,11 @@ class FunctionHelper {
   setDrawerContent() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
     this._spreadsheet.render()
+  }
+
+  setFunctionMetadata(functionMetadata: Record<string, IFunctionHelperData>) {
+    const functionMetadataByGroup = groupBy(functionMetadata, 'type')
+    this._functionHelperList.setFunctionMetadata(functionMetadataByGroup)
   }
 
   scrollToFunction(functionName: string) {

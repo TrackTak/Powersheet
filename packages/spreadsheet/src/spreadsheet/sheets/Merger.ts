@@ -42,14 +42,40 @@ class Merger {
     }
   }
 
+  getTopLeftMergedCellAddressFromOffsets(
+    simpleCellAddress: SimpleCellAddress,
+    topLeftMergedCellRowOffset: number | undefined,
+    topLeftMergedCellColOffset: number | undefined
+  ) {
+    if (
+      topLeftMergedCellRowOffset === undefined ||
+      topLeftMergedCellColOffset === undefined
+    ) {
+      throw new Error('offsets cannot be undefined')
+    }
+
+    const row = simpleCellAddress.row - topLeftMergedCellRowOffset
+    const col = simpleCellAddress.col - topLeftMergedCellColOffset
+
+    const newSimpleCellAddress = new SimpleCellAddress(
+      simpleCellAddress.sheet,
+      row,
+      col
+    )
+
+    return newSimpleCellAddress
+  }
+
   /**
    * @returns If the cell is part of the merged cell.
    */
   getIsCellTopLeftMergedCell(simpleCellAddress: SimpleCellAddress) {
     const { metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(simpleCellAddress) ?? {}
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      ) ?? {}
 
-    return metadata?.width !== undefined && metadata.width > 1 || metadata?.height !== undefined && metadata.height > 1
+    return metadata?.width !== undefined || metadata?.height !== undefined
   }
 
   /**
@@ -57,9 +83,14 @@ class Merger {
    */
   getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
     const { metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(simpleCellAddress) ?? {}
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      ) ?? {}
 
-    return !!metadata?.topLeftMergedCellId
+    return (
+      metadata?.topLeftMergedCellRowOffset !== undefined ||
+      metadata?.topLeftMergedCellColOffset !== undefined
+    )
   }
 
   addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
@@ -71,32 +102,39 @@ class Merger {
     const width = rangeSimpleCellAddress.width()
     const height = rangeSimpleCellAddress.height()
 
-    for (const address of this._iterateMergedCellWidthHeight(
-      rangeSimpleCellAddress.topLeftSimpleCellAddress,
-      width,
-      height
-    )) {
-      this._spreadsheet.hyperformula.setCellContents(address, {
-        cellValue: undefined,
-        metadata: {
-          topLeftMergedCellId:
-            rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-        }
-      })
-    }
-    this._spreadsheet.hyperformula.setCellContents(
-      {
-        ...rangeSimpleCellAddress.topLeftSimpleCellAddress
-      },
-      {
-        cellValue,
-        metadata: {
-          ...metadata,
-          height,
-          width
-        }
+    this._spreadsheet.hyperformula.batch(() => {
+      for (const address of this._iterateMergedCellWidthHeight(
+        rangeSimpleCellAddress.topLeftSimpleCellAddress,
+        width,
+        height
+      )) {
+        const topLeftMergedCellRowOffset =
+          address.row - rangeSimpleCellAddress.topLeftSimpleCellAddress.row
+        const topLeftMergedCellColOffset =
+          address.col - rangeSimpleCellAddress.topLeftSimpleCellAddress.col
+
+        this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(address, {
+          cellValue: undefined,
+          metadata: {
+            topLeftMergedCellRowOffset,
+            topLeftMergedCellColOffset
+          }
+        })
       }
-    )
+      this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+        {
+          ...rangeSimpleCellAddress.topLeftSimpleCellAddress
+        },
+        {
+          cellValue,
+          metadata: {
+            ...metadata,
+            height,
+            width
+          }
+        }
+      )
+    })
 
     this._sheets.selector.selectedSimpleCellAddress =
       rangeSimpleCellAddress.topLeftSimpleCellAddress
@@ -112,24 +150,26 @@ class Merger {
 
     const { width, height, ...otherMetadata } = metadata ?? {}
 
-    for (const address of this._iterateMergedCellWidthHeight(
-      rangeSimpleCellAddress.topLeftSimpleCellAddress,
-      width,
-      height
-    )) {
-      this._spreadsheet.hyperformula.setCellContents(address, {
-        cellValue,
-        metadata: otherMetadata
-      })
-    }
-
-    this._spreadsheet.hyperformula.setCellContents(
-      rangeSimpleCellAddress.topLeftSimpleCellAddress,
-      {
-        cellValue,
-        metadata: otherMetadata
+    this._spreadsheet.hyperformula.batch(() => {
+      for (const address of this._iterateMergedCellWidthHeight(
+        rangeSimpleCellAddress.topLeftSimpleCellAddress,
+        width,
+        height
+      )) {
+        this._spreadsheet.hyperformula.setCellContents(address, {
+          cellValue,
+          metadata: otherMetadata
+        })
       }
-    )
+
+      this._spreadsheet.hyperformula.setCellContents(
+        rangeSimpleCellAddress.topLeftSimpleCellAddress,
+        {
+          cellValue,
+          metadata: otherMetadata
+        }
+      )
+    })
 
     // this._sheets.cells.cellsMap.forEach(cell => {
     //   const { cellValue, metadata } =

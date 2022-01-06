@@ -50,6 +50,7 @@ import {
   SetFrozenRowColUndoEntry,
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
+import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -403,10 +404,14 @@ class Toolbar {
     selectedCells: Cell[],
     selectedCell: SelectedCell
   ) {
+    const isCellPartOfMerge = this._spreadsheet.sheets.merger.getIsCellPartOfMerge(
+      selectedCell.simpleCellAddress
+    )
+    const isTopLeftMergedCell = this._spreadsheet.sheets.merger.getIsCellTopLeftMergedCell(
+      selectedCell.simpleCellAddress
+    )
     const isMerged =
-      this._spreadsheet.sheets.merger.getIsCellPartOfMerge(
-        selectedCell.simpleCellAddress
-      ) && selectedCells.length === 1
+      (isCellPartOfMerge || isTopLeftMergedCell) && selectedCells.length === 1
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false
@@ -763,17 +768,30 @@ class Toolbar {
    */
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
+      const selectedCellAddressValues: [
+        SimpleCellAddress,
+        GenericDataRawCellContent<ICellMetadata>
+      ][] = this._spreadsheet.sheets.selector.selectedCells.map(cell => {
+        return [
+          cell.simpleCellAddress,
+          this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+            cell.simpleCellAddress
+          )
+        ]
+      })
+
       this._spreadsheet.hyperformula.batch(() => {
-        this._spreadsheet.sheets.selector.selectedCells.forEach(cell => {
-          this._spreadsheet.hyperformula.setCellContents(
-            cell.simpleCellAddress,
-            {
+        selectedCellAddressValues.forEach(
+          ([simpleCellAddress, { cellValue, metadata }]) => {
+            this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+              cellValue,
               metadata: {
+                ...metadata,
                 [key]: value
               }
-            }
-          )
-        })
+            })
+          }
+        )
       })
     }
 

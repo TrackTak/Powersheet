@@ -650,20 +650,29 @@ class Sheets {
           simpleCellAddress
         )
 
-        if (metadata?.topLeftMergedCellId) {
+        if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+          const mergedCellAddress = this.merger.getTopLeftMergedCellAddressFromOffsets(
+            simpleCellAddress,
+            metadata?.topLeftMergedCellRowOffset,
+            metadata?.topLeftMergedCellColOffset
+          )
+          const mergedCell = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+            mergedCellAddress
+          )
+
           let bottomRow = -Infinity
           let bottomCol = -Infinity
 
           for (const address of this.merger._iterateMergedCellWidthHeight(
-            simpleCellAddress,
-            metadata?.width,
-            metadata?.height
+            mergedCellAddress,
+            mergedCell.metadata?.width,
+            mergedCell.metadata?.height
           )) {
             bottomRow = Math.max(bottomRow, address.row)
             bottomCol = Math.max(bottomCol, address.col)
           }
           const existingRangeSimpleCellAddress = new RangeSimpleCellAddress(
-            simpleCellAddress,
+            mergedCellAddress,
             new SimpleCellAddress(simpleCellAddress.sheet, bottomRow, bottomCol)
           )
 

@@ -282,12 +282,18 @@ class Cells {
 
     const { metadata } = cell ?? {}
 
-    if (metadata?.topLeftMergedCellId) {
-      const cellId = metadata?.topLeftMergedCellId
-      const mergedCell = this.cellsMap.get(cellId)
+    if (this._sheets.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+      const mergedCellId = this._sheets.merger
+        .getTopLeftMergedCellAddressFromOffsets(
+          simpleCellAddress,
+          metadata?.topLeftMergedCellRowOffset,
+          metadata?.topLeftMergedCellColOffset
+        )
+        .toCellId()
+      const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {
-        this._setStyleableCell(SimpleCellAddress.cellIdToAddress(cellId))
+        this._setStyleableCell(SimpleCellAddress.cellIdToAddress(mergedCellId))
       }
       return
     }

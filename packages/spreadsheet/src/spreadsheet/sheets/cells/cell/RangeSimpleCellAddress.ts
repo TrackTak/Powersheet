@@ -129,10 +129,7 @@ class RangeSimpleCellAddress {
         cell.simpleCellAddress
       )
 
-      if (
-        !isCellPartOfMerge ||
-        sheets.merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)
-      ) {
+      if (!isCellPartOfMerge) {
         return true
       }
 

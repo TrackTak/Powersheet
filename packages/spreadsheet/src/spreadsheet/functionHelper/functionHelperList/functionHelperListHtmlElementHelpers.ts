@@ -132,15 +132,9 @@ export const createFunctionItem = (functionMetadata: IFunctionHelperData) => {
 
   functionItem.appendChild(collapsedContent)
 
-  // const functionDetailsContent = document.createElement('div')
-  // functionDetailsContent.classList.add(`${functionHelperListPrefix}-function-item-content`)
-  // functionDetailsContent.appendChild(parameterEl.cloneNode(true))
   const { functionDetailsContent } =
     _createFunctionDetailsContent(functionMetadata)
-
   functionItem.appendChild(functionDetailsContent)
-
-  // functionItem.addEventListener('click', onClick)
 
   return { functionItem }
 }
@@ -162,8 +156,6 @@ const _createFunctionDetailsContent = (
   const { header: headerSyntax } = createHeader('Syntax')
   const { header: headerAttributes } = createHeader('Attributes')
 
-  // this.functionSummaryHelperListContainerEl.appendChild(mainHeaderEl)
-  // this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)
   functionDetailsContent.appendChild(description)
 
   if (functionMetadata.codeSyntaxUsage.length) {
@@ -207,24 +199,3 @@ const _createFunctionDetailsContent = (
 
   return { functionDetailsContent }
 }
-
-// const _toggleAccordion = (e: Event) => {
-//   const target = e.currentTarget as HTMLElement
-//   if (
-//     target.classList.contains(
-//       `${functionHelperListPrefix}-expanded`
-//     )
-//   ) {
-//     target.classList.remove(
-//       `${functionHelperListPrefix}-collapse-icon`
-//     )
-//     target.classList.remove(
-//       `${functionHelperListPrefix}-expanded`
-//     )
-//   } else {
-//     target.classList.add(
-//       `${functionHelperListPrefix}-collapse-icon`
-//     )
-//     target.classList.add(`${functionHelperListPrefix}-expanded`)
-//   }
-// }

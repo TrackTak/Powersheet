@@ -68,11 +68,6 @@ class FunctionHelperList {
       }
     }
   }
-
-  /**
-   * @internal
-   */
-  _destroy() {}
 }
 
 export default FunctionHelperList

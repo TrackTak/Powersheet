@@ -111,7 +111,6 @@ class FunctionHelper {
    */
   _destroy() {
     this.drawer?.destroy()
-    this._functionHelperList._destroy()
   }
 }
 

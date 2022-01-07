@@ -131,9 +131,8 @@ class CellHighlighter {
       return [span]
     }
 
-    const { cellReferenceParts } = this.getHighlightedCellReferenceSections(
-      text
-    )
+    const { cellReferenceParts } =
+      this.getHighlightedCellReferenceSections(text)
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
     const { tokens } = lexer.tokenizeFormula(text)
@@ -199,8 +198,8 @@ class CellHighlighter {
    * @param cellReferenceParts - The parts returned from `getHighlightedCellReferenceSections()`.
    */
   setHighlightedCells(cellReferenceParts: ICellReferencePart[]) {
-    const sheet = this._spreadsheet.sheets.cellEditor.currentCell!
-      .simpleCellAddress.sheet
+    const sheet =
+      this._spreadsheet.sheets.cellEditor.currentCell!.simpleCellAddress.sheet
 
     this.destroyHighlightedCells()
 
@@ -208,13 +207,14 @@ class CellHighlighter {
       let highlightedCell
 
       if (type === 'simpleCellString') {
-        const precedentSimpleCellAddress = this._spreadsheet.hyperformula.simpleCellAddressFromString(
-          referenceText,
-          sheet
-        )!
+        const precedentSimpleCellAddress =
+          this._spreadsheet.hyperformula.simpleCellAddressFromString(
+            referenceText,
+            sheet
+          )
 
         // Don't highlight cells if cell reference is another sheet
-        if (sheet === precedentSimpleCellAddress.sheet) {
+        if (sheet === precedentSimpleCellAddress?.sheet) {
           highlightedCell = new HighlightedCell(
             this._spreadsheet.sheets,
             new SimpleCellAddress(
@@ -226,10 +226,11 @@ class CellHighlighter {
           )
         }
       } else {
-        const precedentSimpleCellRange = this._spreadsheet.hyperformula.simpleCellRangeFromString(
-          referenceText,
-          sheet
-        )!
+        const precedentSimpleCellRange =
+          this._spreadsheet.hyperformula.simpleCellRangeFromString(
+            referenceText,
+            sheet
+          )!
 
         // Don't highlight cells if cell reference is another sheet
         if (sheet === precedentSimpleCellRange.start.sheet) {
@@ -260,8 +261,8 @@ class CellHighlighter {
       }
       if (highlightedCell) {
         const stickyGroup = highlightedCell.getStickyGroupCellBelongsTo()
-        const sheetGroup = this._spreadsheet.sheets.scrollGroups[stickyGroup]
-          .sheetGroup
+        const sheetGroup =
+          this._spreadsheet.sheets.scrollGroups[stickyGroup].sheetGroup
 
         sheetGroup.add(highlightedCell.group)
 

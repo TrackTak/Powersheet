@@ -38,7 +38,8 @@ Default.args = {
     uiSheets: {
       Default: {
         rowSizes: {},
-        colSizes: {}
+        colSizes: {},
+        mergedCells: {}
       }
     }
   }

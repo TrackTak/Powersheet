@@ -22,8 +22,6 @@ import {
 } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
-// @ts-ignore
-import { CellMetadata } from '@tracktak/hyperformula/es/interpreter/InterpreterValue'
 
 /**
  * @internal

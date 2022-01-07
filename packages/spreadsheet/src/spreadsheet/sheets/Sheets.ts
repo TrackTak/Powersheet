@@ -656,17 +656,12 @@ class Sheets {
             metadata?.topLeftMergedCellRowOffset,
             metadata?.topLeftMergedCellColOffset
           )
-          const mergedCell = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-            mergedCellAddress
-          )
 
           let bottomRow = -Infinity
           let bottomCol = -Infinity
 
           for (const address of this.merger._iterateMergedCellWidthHeight(
-            mergedCellAddress,
-            mergedCell.metadata?.width,
-            mergedCell.metadata?.height
+            mergedCellAddress
           )) {
             bottomRow = Math.max(bottomRow, address.row)
             bottomCol = Math.max(bottomCol, address.col)

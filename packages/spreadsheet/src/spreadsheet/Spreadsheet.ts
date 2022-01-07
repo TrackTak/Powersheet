@@ -17,7 +17,8 @@ import {
   ExportedChange,
   AddRowsUndoEntry,
   RemoveColumnsUndoEntry,
-  AddColumnsUndoEntry
+  AddColumnsUndoEntry,
+  BatchUndoEntry
 } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
 import { CellId } from './sheets/cells/cell/SimpleCellAddress'
@@ -79,8 +80,6 @@ class Spreadsheet {
 
     this.data = new Data(this.hyperformula.getSheetNames())
     this.eventEmitter = new PowersheetEmitter()
-    this.operations = new Operations(this.hyperformula, this.data)
-    this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
 
     if (!isNil(this.options.width)) {
       this.spreadsheetEl.style.width = `${this.options.width}px`
@@ -97,6 +96,13 @@ class Spreadsheet {
     this.functionHelper?.initialize(this)
 
     this.sheets = new Sheets(this)
+    this.operations = new Operations(
+      this.hyperformula,
+      this.data,
+      this.sheets.merger,
+      this.sheets.selector
+    )
+    this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
@@ -115,7 +121,8 @@ class Spreadsheet {
   private onSheetAdded = (name: string) => {
     this.data._spreadsheetData.uiSheets[name] = {
       rowSizes: {},
-      colSizes: {}
+      colSizes: {},
+      mergedCells: {}
     }
 
     this.render()
@@ -166,62 +173,115 @@ class Spreadsheet {
   private onAddUndoEntry = (operation: UndoEntry) => {
     const sheetName = this.sheets.getActiveSheetName()
 
-    const { frozenRow, frozenCol } = this.data._spreadsheetData.uiSheets[
-      sheetName
-    ]
+    const {
+      mergedCells,
+      frozenRow,
+      frozenCol
+    } = this.data._spreadsheetData.uiSheets[sheetName]
+
+    if (operation instanceof BatchUndoEntry) {
+      operation.operations.forEach(operation => {
+        this.onAddUndoEntry(operation)
+      })
+    }
 
     if (operation instanceof RemoveRowsUndoEntry) {
       // @ts-ignore
       operation.frozenRow = frozenRow
+      // @ts-ignore
+      operation.mergedCells = mergedCells
 
       this.operations.removeFrozenRows(
         operation.command.sheet,
         operation.command.indexes[0],
         frozenRow
       )
+
+      this.operations.removeMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        mergedCells
+      )
     }
 
     if (operation instanceof AddRowsUndoEntry) {
       // @ts-ignore
       operation.frozenRow = frozenRow
+      // @ts-ignore
+      operation.mergedCells = mergedCells
 
       this.operations.addFrozenRows(
         operation.command.sheet,
         operation.command.indexes[0],
         frozenRow
       )
+
+      this.operations.addMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        mergedCells
+      )
     }
 
     if (operation instanceof RemoveColumnsUndoEntry) {
       // @ts-ignore
       operation.frozenCol = frozenCol
+      // @ts-ignore
+      operation.mergedCells = mergedCells
 
       this.operations.removeFrozenCols(
         operation.command.sheet,
         operation.command.indexes[0],
         frozenCol
       )
+
+      this.operations.removeMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        mergedCells
+      )
     }
 
     if (operation instanceof AddColumnsUndoEntry) {
       // @ts-ignore
       operation.frozenCol = frozenCol
+      // @ts-ignore
+      operation.mergedCells = mergedCells
 
       this.operations.addFrozenCols(
         operation.command.sheet,
         operation.command.indexes[0],
         frozenCol
+      )
+
+      this.operations.addMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        mergedCells
       )
     }
   }
 
   private onUndo = (operation: UndoEntry) => {
+    if (operation instanceof BatchUndoEntry) {
+      operation.operations.forEach(operation => {
+        this.onUndo(operation)
+      })
+    }
+
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
         operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
+      )
+
+      this.operations.addMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
       )
     }
 
@@ -232,6 +292,13 @@ class Spreadsheet {
         // @ts-ignore
         operation.frozenRow
       )
+
+      this.operations.removeMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
+      )
     }
 
     if (operation instanceof RemoveColumnsUndoEntry) {
@@ -240,6 +307,13 @@ class Spreadsheet {
         operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
+      )
+
+      this.operations.addMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
       )
     }
 
@@ -250,16 +324,38 @@ class Spreadsheet {
         // @ts-ignore
         operation.frozenCol
       )
+
+      this.operations.removeMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
+      )
     }
+
+    this.render()
   }
 
   private onRedo = (operation: UndoEntry) => {
+    if (operation instanceof BatchUndoEntry) {
+      operation.operations.forEach(operation => {
+        this.onRedo(operation)
+      })
+    }
+
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
         operation.command.indexes[0],
         // @ts-ignore
         operation.frozenRow
+      )
+
+      this.operations.removeMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
       )
     }
 
@@ -270,6 +366,13 @@ class Spreadsheet {
         // @ts-ignore
         operation.frozenRow
       )
+
+      this.operations.addMergedCellRows(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
+      )
     }
 
     if (operation instanceof RemoveColumnsUndoEntry) {
@@ -278,6 +381,13 @@ class Spreadsheet {
         operation.command.indexes[0],
         // @ts-ignore
         operation.frozenCol
+      )
+
+      this.operations.removeMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
       )
     }
 
@@ -288,7 +398,15 @@ class Spreadsheet {
         // @ts-ignore
         operation.frozenCol
       )
+
+      this.operations.addMergedCellCols(
+        operation.command.sheet,
+        operation.command.indexes[0],
+        // @ts-ignore
+        operation.mergedCells
+      )
     }
+    this.render()
   }
 
   private _updateSheetSizes() {
@@ -440,6 +558,9 @@ class Spreadsheet {
     this.toolbar?._render()
     this.functionHelper?._render()
     this.formulaBar?._render()
+
+    console.log(this.hyperformula._crudOperations.undoRedo.redoStack)
+    console.log(this.hyperformula._crudOperations.undoRedo.undoStack)
 
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {

@@ -17,11 +17,14 @@ class Merger {
   /**
    * @internal
    */
-  *_iterateMergedCellWidthHeight(
-    simpleCellAddress: SimpleCellAddress,
-    width: number | undefined = 1,
-    height: number | undefined = 1
-  ) {
+  *_iterateMergedCellWidthHeight(simpleCellAddress: SimpleCellAddress) {
+    const mergedCellId = simpleCellAddress.toCellId()
+    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+      simpleCellAddress.sheet
+    )!
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const { width, height } = sheet.mergedCells[mergedCellId]
+
     for (let index = 0; index < width; index++) {
       const col = simpleCellAddress.col + index
 
@@ -37,7 +40,7 @@ class Merger {
           continue
         }
 
-        yield address
+        yield new SimpleCellAddress(address.sheet, address.row, address.col)
       }
     }
   }
@@ -70,133 +73,30 @@ class Merger {
    * @returns If the cell is part of the merged cell.
    */
   getIsCellTopLeftMergedCell(simpleCellAddress: SimpleCellAddress) {
-    const { metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      ) ?? {}
+    const mergedCellId = simpleCellAddress.toCellId()
+    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+      simpleCellAddress.sheet
+    )!
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const mergedCell = sheet.mergedCells[mergedCellId]
 
-    return metadata?.width !== undefined || metadata?.height !== undefined
+    return mergedCell !== undefined
   }
 
   /**
    * @returns If the cell is part of the merged cell.
    */
   getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    const { metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      ) ?? {}
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
     return (
       metadata?.topLeftMergedCellRowOffset !== undefined ||
       metadata?.topLeftMergedCellColOffset !== undefined
     )
-  }
-
-  addMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress
-      ) ?? {}
-
-    const width = rangeSimpleCellAddress.width()
-    const height = rangeSimpleCellAddress.height()
-
-    this._spreadsheet.hyperformula.batch(() => {
-      for (const address of this._iterateMergedCellWidthHeight(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress,
-        width,
-        height
-      )) {
-        const topLeftMergedCellRowOffset =
-          address.row - rangeSimpleCellAddress.topLeftSimpleCellAddress.row
-        const topLeftMergedCellColOffset =
-          address.col - rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-
-        this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(address, {
-          cellValue: undefined,
-          metadata: {
-            topLeftMergedCellRowOffset,
-            topLeftMergedCellColOffset
-          }
-        })
-      }
-      this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
-        {
-          ...rangeSimpleCellAddress.topLeftSimpleCellAddress
-        },
-        {
-          cellValue,
-          metadata: {
-            ...metadata,
-            height,
-            width
-          }
-        }
-      )
-    })
-
-    this._sheets.selector.selectedSimpleCellAddress =
-      rangeSimpleCellAddress.topLeftSimpleCellAddress
-
-    this._spreadsheet.render()
-  }
-
-  removeMergedCells(rangeSimpleCellAddress: RangeSimpleCellAddress) {
-    const { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress
-      ) ?? {}
-
-    const { width, height, ...otherMetadata } = metadata ?? {}
-
-    this._spreadsheet.hyperformula.batch(() => {
-      for (const address of this._iterateMergedCellWidthHeight(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress,
-        width,
-        height
-      )) {
-        this._spreadsheet.hyperformula.setCellContents(address, {
-          cellValue,
-          metadata: otherMetadata
-        })
-      }
-
-      this._spreadsheet.hyperformula.setCellContents(
-        rangeSimpleCellAddress.topLeftSimpleCellAddress,
-        {
-          cellValue,
-          metadata: otherMetadata
-        }
-      )
-    })
-
-    // this._sheets.cells.cellsMap.forEach(cell => {
-    //   const { cellValue, metadata } =
-    //     this._spreadsheet.hyperformula.getCellSerialized(
-    //       cell.simpleCellAddress
-    //     ) ?? {}
-    //   const { width, height, ...otherMetadata } = metadata ?? {}
-
-    //   if (width > 1 && height > 1) {
-    //     const areMergedCellsOverlapping = this.getAreMergedCellsOverlapping(
-    //       rangeSimpleCellAddress,
-    //       cell.rangeSimpleCellAddress
-    //     )
-
-    //     if (areMergedCellsOverlapping) {
-    //       this._spreadsheet.hyperformula.setCellContents(
-    //         rangeSimpleCellAddress.topLeftSimpleCellAddress,
-    //         {
-    //           cellValue,
-    //           metadata: otherMetadata
-    //         }
-    //       )
-    //     }
-    //   }
-    // })
-
-    this._spreadsheet.render()
   }
 
   getAreMergedCellsOverlapping(
@@ -224,32 +124,6 @@ class Merger {
         secondRangeSimpleCellAddress.bottomRightSimpleCellAddress.col
 
     return isFirstOverlappingSecond || isSecondOverlappingFirst
-  }
-
-  mergeSelectedCells() {
-    const selectedCells = this._sheets.selector.selectedCells
-
-    if (!selectedCells.length) return
-
-    const rangeSimpleCellAddress = this._sheets._getMinMaxRangeSimpleCellAddress(
-      selectedCells
-    )
-
-    this.addMergedCells(rangeSimpleCellAddress)
-  }
-
-  unMergeSelectedCells() {
-    const selectedCells = this._sheets.selector.selectedCells
-
-    if (!selectedCells.length) return
-
-    const rangeSimpleCellAddress = this._sheets._getMinMaxRangeSimpleCellAddress(
-      selectedCells
-    )
-
-    this._spreadsheet.pushToHistory(() => {
-      this.removeMergedCells(rangeSimpleCellAddress)
-    })
   }
 }
 

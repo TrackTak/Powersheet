@@ -45,9 +45,16 @@ import {
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 import SelectedCell from '../sheets/cells/cell/SelectedCell'
 import { ColumnRowIndex, HyperFormula } from '@tracktak/hyperformula'
-import { SetFrozenRowColCommand, UnsetFrozenRowColCommand } from '../Commands'
 import {
+  MergeCellsCommand,
+  SetFrozenRowColCommand,
+  UnMergeCellsCommand,
+  UnsetFrozenRowColCommand
+} from '../Commands'
+import {
+  MergeCellsUndoEntry,
   SetFrozenRowColUndoEntry,
+  UnMergeCellsUndoEntry,
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
 import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
@@ -99,9 +106,11 @@ class Toolbar {
   private _spreadsheet!: Spreadsheet
 
   private _setFunction(functionName: string) {
-    if (this._spreadsheet.sheets.selector.selectedCells.length > 1) {
+    const selectedCells = this._spreadsheet.sheets.selector.selectedCells
+
+    if (selectedCells.length > 1) {
       const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
-        this._spreadsheet.sheets.selector.selectedCells
+        selectedCells
       )
 
       const cell = new Cell(
@@ -767,11 +776,15 @@ class Toolbar {
    * the element as to what value this should be.
    */
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
+    const selectedCell = this._spreadsheet.sheets.selector.selectedCell
+    const selectedCells = this._spreadsheet.sheets.selector.selectedCells
+    const sheetName = this._spreadsheet.sheets.getActiveSheetName()
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
     const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
       const selectedCellAddressValues: [
         SimpleCellAddress,
         GenericDataRawCellContent<ICellMetadata>
-      ][] = this._spreadsheet.sheets.selector.selectedCells.map(cell => {
+      ][] = selectedCells.map(cell => {
         return [
           cell.simpleCellAddress,
           this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
@@ -796,7 +809,7 @@ class Toolbar {
     }
 
     const deleteStyle = (key: keyof ICellMetadata) => {
-      this._spreadsheet.sheets.selector.selectedCells.forEach(cell => {
+      selectedCells.forEach(cell => {
         const {
           cellValue,
           metadata
@@ -925,39 +938,78 @@ class Toolbar {
         break
       }
       case 'merge': {
+        if (!selectedCells.length) return
+
         if (this.iconElementsMap.merge.active) {
-          this._spreadsheet.sheets.merger.unMergeSelectedCells()
+          const { sheet, row, col } = selectedCell!.simpleCellAddress
+          const mergedCellAddress = new SimpleCellAddress(sheet, row, col)
+          const mergedCellId = mergedCellAddress.toCellId()
+          const mergedCell = this._spreadsheet.data._spreadsheetData.uiSheets[
+            sheetName
+          ].mergedCells[mergedCellId]
+          const command = new UnMergeCellsCommand(
+            mergedCellAddress,
+            mergedCell.width,
+            mergedCell.height
+          )
+
+          this._spreadsheet.operations.unMergeCells(mergedCellAddress)
+
+          this._spreadsheet.uiUndoRedo.saveOperation(
+            new UnMergeCellsUndoEntry(command)
+          )
         } else if (!this.iconElementsMap.merge.button.disabled) {
-          this._spreadsheet.sheets.merger.mergeSelectedCells()
+          const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
+            selectedCells
+          )
+          const mergedCellId = rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
+
+          const width = rangeSimpleCellAddress.width()
+          const height = rangeSimpleCellAddress.height()
+
+          const existingMergedCell = sheet.mergedCells[mergedCellId]
+
+          const removedMergedCells = this._spreadsheet.operations.mergeCells(
+            rangeSimpleCellAddress.topLeftSimpleCellAddress,
+            width,
+            height
+          )
+
+          if (existingMergedCell) {
+            removedMergedCells[mergedCellId] = existingMergedCell
+          }
+
+          const command = new MergeCellsCommand(
+            rangeSimpleCellAddress.topLeftSimpleCellAddress,
+            width,
+            height,
+            removedMergedCells
+          )
+
+          this._spreadsheet.uiUndoRedo.saveOperation(
+            new MergeCellsUndoEntry(command)
+          )
         }
 
         break
       }
       case 'freeze': {
-        const sheetName = this._spreadsheet.sheets.getActiveSheetName()
-        const {
-          sheet,
-          row,
-          col
-        } = this._spreadsheet.sheets.selector.selectedCell!.simpleCellAddress
+        const { sheet: sheetId, row, col } = selectedCell!.simpleCellAddress
 
         if (this.iconElementsMap.freeze.active) {
-          const {
-            frozenRow,
-            frozenCol
-          } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+          const { frozenRow, frozenCol } = sheet
           const indexes: ColumnRowIndex = [frozenRow!, frozenCol!]
-          const command = new UnsetFrozenRowColCommand(sheet, indexes)
+          const command = new UnsetFrozenRowColCommand(sheetId, indexes)
 
-          this._spreadsheet.operations.unsetFrozenRowCol(sheet)
+          this._spreadsheet.operations.unsetFrozenRowCol(sheetId)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new UnsetFrozenRowColUndoEntry(command)
           )
         } else {
           const indexes: ColumnRowIndex = [row, col]
-          const command = new SetFrozenRowColCommand(sheet, indexes)
+          const command = new SetFrozenRowColCommand(sheetId, indexes)
 
-          this._spreadsheet.operations.setFrozenRowCol(sheet, command.indexes)
+          this._spreadsheet.operations.setFrozenRowCol(sheetId, command.indexes)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new SetFrozenRowColUndoEntry(command)
           )
@@ -975,75 +1027,61 @@ class Toolbar {
       }
       case 'borderBottom': {
         this._spreadsheet.pushToHistory(() => {
-          this._setBottomBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+          this._setBottomBorders(selectedCells)
         })
         break
       }
       case 'borderRight': {
         this._spreadsheet.pushToHistory(() => {
-          this._setRightBorders(this._spreadsheet.sheets.selector.selectedCells)
+          this._setRightBorders(selectedCells)
         })
         break
       }
       case 'borderTop': {
         this._spreadsheet.pushToHistory(() => {
-          this._setTopBorders(this._spreadsheet.sheets.selector.selectedCells)
+          this._setTopBorders(selectedCells)
         })
         break
       }
       case 'borderLeft': {
         this._spreadsheet.pushToHistory(() => {
-          this._setLeftBorders(this._spreadsheet.sheets.selector.selectedCells)
+          this._setLeftBorders(selectedCells)
         })
         break
       }
       case 'borderVertical': {
         this._spreadsheet.pushToHistory(() => {
-          this._setVerticalBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+          this._setVerticalBorders(selectedCells)
         })
         break
       }
       case 'borderHorizontal': {
         this._spreadsheet.pushToHistory(() => {
-          this._setHorizontalBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+          this._setHorizontalBorders(selectedCells)
         })
         break
       }
       case 'borderInside': {
         this._spreadsheet.pushToHistory(() => {
-          this._setInsideBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+          this._setInsideBorders(selectedCells)
         })
         break
       }
       case 'borderOutside': {
         this._spreadsheet.pushToHistory(() => {
-          this._setOutsideBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+          this._setOutsideBorders(selectedCells)
         })
         break
       }
       case 'borderAll': {
         this._spreadsheet.pushToHistory(() => {
-          this._setAllBorders(this._spreadsheet.sheets.selector.selectedCells)
+          this._setAllBorders(selectedCells)
         })
         break
       }
       case 'borderNone': {
         this._spreadsheet.pushToHistory(() => {
-          this._clearBorders(
-            this._spreadsheet.sheets.selector.selectedCells.map(
-              cell => cell.simpleCellAddress
-            )
-          )
+          this._clearBorders(selectedCells.map(cell => cell.simpleCellAddress))
         })
         break
       }

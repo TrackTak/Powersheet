@@ -1,12 +1,9 @@
 import { SimpleCellRange as HFSimpleCellRange } from '@tracktak/hyperformula'
 // @ts-ignore
 import { isSimpleCellAddress } from '@tracktak/hyperformula/es/Cell'
-// @ts-ignore
-import { CellMetadata } from '@tracktak/hyperformula/es/interpreter/InterpreterValue'
 import { isEmpty } from 'lodash'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
-import { ICellMetadata } from './sheets/Data'
 import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
 
@@ -65,14 +62,16 @@ class Clipboard {
         if (
           this._sheets.merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)
         ) {
-          const {
-            metadata
-          } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-            cell.simpleCellAddress
-          )
+          const cellId = cell.simpleCellAddress.toCellId()
+          const sheetName = this._spreadsheet.hyperformula.getSheetName(
+            cell.simpleCellAddress.sheet
+          )!
+          const mergedCell = this._spreadsheet.data._spreadsheetData.uiSheets[
+            sheetName
+          ].mergedCells[cellId]
 
-          bottomRightSimpleCellAddress.col += metadata?.width ?? 0
-          bottomRightSimpleCellAddress.row += metadata?.height ?? 0
+          bottomRightSimpleCellAddress.col += mergedCell?.width ?? 0
+          bottomRightSimpleCellAddress.row += mergedCell?.height ?? 0
         }
       })
     }

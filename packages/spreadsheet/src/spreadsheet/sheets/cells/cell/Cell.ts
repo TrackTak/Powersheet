@@ -1,6 +1,5 @@
 import { Group } from 'konva/lib/Group'
 import { Rect } from 'konva/lib/shapes/Rect'
-import { ICellMetadata } from '../../Data'
 import Sheets from '../../Sheets'
 import RangeSimpleCellAddress from './RangeSimpleCellAddress'
 import SimpleCellAddress from './SimpleCellAddress'
@@ -71,20 +70,13 @@ class Cell {
     if (!this._sheets.merger.getIsCellTopLeftMergedCell(this.simpleCellAddress))
       return
 
-    const { metadata } =
-      this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        this.simpleCellAddress
-      )
-
     this.isMerged = true
 
     let bottomRow = -Infinity
     let bottomCol = -Infinity
 
     for (const address of this._sheets.merger._iterateMergedCellWidthHeight(
-      this.simpleCellAddress,
-      metadata?.width,
-      metadata?.height
+      this.simpleCellAddress
     )) {
       bottomRow = Math.max(bottomRow, address.row)
       bottomCol = Math.max(bottomCol, address.col)

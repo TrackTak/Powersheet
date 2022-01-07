@@ -35,7 +35,7 @@ export interface IArgs {
 
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args)
-  console.log(event, ...args)
+  //console.log(event, ...args)
 }
 
 export const getHyperformulaInstance = (

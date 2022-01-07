@@ -1,8 +1,10 @@
 import { HyperFormula, UndoRedo } from '@tracktak/hyperformula'
 import {
+  MergeCellsCommand,
   SetColSizeCommand,
   SetFrozenRowColCommand,
   SetRowSizeCommand,
+  UnMergeCellsCommand,
   UnsetFrozenRowColCommand
 } from './Commands'
 import Operations from './Operations'
@@ -60,6 +62,30 @@ export class SetColSizeUndoEntry implements IUIBaseUndoRedoEntry {
   }
 }
 
+export class MergeCellsUndoEntry implements IUIBaseUndoRedoEntry {
+  constructor(public readonly command: MergeCellsCommand) {}
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    undoRedo.undoMergeCells(this)
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    undoRedo.redoMergeCells(this)
+  }
+}
+
+export class UnMergeCellsUndoEntry implements IUIBaseUndoRedoEntry {
+  constructor(public readonly command: UnMergeCellsCommand) {}
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    undoRedo.undoUnMergeCells(this)
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    undoRedo.redoUnMergeCells(this)
+  }
+}
+
 export class UIUndoRedo extends UndoRedo {
   constructor(
     hyperformula: HyperFormula,
@@ -95,6 +121,31 @@ export class UIUndoRedo extends UndoRedo {
     this.uiOperations.setFrozenRowCol(sheet, indexes)
   }
 
+  public undoSetRowSize(operation: SetRowSizeUndoEntry) {
+    const { sheet, index, oldRowSize } = operation.command
+
+    this.uiOperations.setRowSize(sheet, index, oldRowSize)
+  }
+
+  public undoSetColSize(operation: SetColSizeUndoEntry) {
+    const { sheet, index, oldColSize } = operation.command
+
+    this.uiOperations.setColSize(sheet, index, oldColSize)
+  }
+
+  public undoMergeCells(operation: MergeCellsUndoEntry) {
+    const { topLeftSimpleCellAddress, removedMergedCells } = operation.command
+
+    this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
+    this.uiOperations.restoreRemovedMergedCells(removedMergedCells)
+  }
+
+  public undoUnMergeCells(operation: UnMergeCellsUndoEntry) {
+    const { topLeftSimpleCellAddress, width, height } = operation.command
+
+    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height, false)
+  }
+
   public redoSetFrozenRowCol(operation: SetFrozenRowColUndoEntry) {
     const {
       command: { sheet, indexes }
@@ -111,18 +162,6 @@ export class UIUndoRedo extends UndoRedo {
     this.uiOperations.unsetFrozenRowCol(sheet)
   }
 
-  public undoSetRowSize(operation: SetRowSizeUndoEntry) {
-    const { sheet, index, oldRowSize } = operation.command
-
-    this.uiOperations.setRowSize(sheet, index, oldRowSize)
-  }
-
-  public undoSetColSize(operation: SetColSizeUndoEntry) {
-    const { sheet, index, oldColSize } = operation.command
-
-    this.uiOperations.setColSize(sheet, index, oldColSize)
-  }
-
   public redoSetRowSize(operation: SetRowSizeUndoEntry) {
     const { sheet, index, newRowSize } = operation.command
 
@@ -133,5 +172,17 @@ export class UIUndoRedo extends UndoRedo {
     const { sheet, index, newColSize } = operation.command
 
     this.uiOperations.setColSize(sheet, index, newColSize)
+  }
+
+  public redoMergeCells(operation: MergeCellsUndoEntry) {
+    const { topLeftSimpleCellAddress, width, height } = operation.command
+
+    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height, false)
+  }
+
+  public redoUnMergeCells(operation: UnMergeCellsUndoEntry) {
+    const { topLeftSimpleCellAddress } = operation.command
+
+    this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
   }
 }

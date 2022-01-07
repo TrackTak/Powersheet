@@ -29,8 +29,11 @@ export interface ICellStyles {
 export interface ICellMetadata extends ICellStyles {
   topLeftMergedCellRowOffset?: number
   topLeftMergedCellColOffset?: number
-  width?: number
-  height?: number
+}
+
+export interface IMergedCell {
+  width: number
+  height: number
 }
 
 export interface IUISheet {
@@ -38,6 +41,7 @@ export interface IUISheet {
   frozenCol?: number
   rowSizes: Record<number, number>
   colSizes: Record<number, number>
+  mergedCells: Record<CellId, IMergedCell>
 }
 
 export type UISheets = Record<string, IUISheet>
@@ -66,7 +70,8 @@ class Data {
     sheetNames.forEach(sheetName => {
       this._spreadsheetData.uiSheets[sheetName] = {
         rowSizes: {},
-        colSizes: {}
+        colSizes: {},
+        mergedCells: {}
       }
     })
   }

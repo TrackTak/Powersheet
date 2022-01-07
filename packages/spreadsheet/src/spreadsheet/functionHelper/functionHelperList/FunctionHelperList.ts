@@ -4,8 +4,8 @@ import {
   functionHelperListPrefix,
   updateFunctionList
 } from './functionHelperListHtmlElementHelpers'
-import { Dictionary, first } from 'lodash'
-import { IFunctionHelperData } from '../FunctionHelper'
+import { first } from 'lodash'
+import Spreadsheet from '../../Spreadsheet'
 
 class FunctionHelperList {
   functionListEl!: HTMLDivElement
@@ -13,16 +13,12 @@ class FunctionHelperList {
   drawerHeaderEl!: HTMLDivElement
   searchInput!: HTMLInputElement
 
-  constructor(
-    private functionMetadataByGroup: Dictionary<
-      [IFunctionHelperData, ...IFunctionHelperData[]]
-    >
-  ) {
+  constructor(private _spreadsheet: Spreadsheet) {
     const { functionListEl, drawerHeaderEl, drawerContentEl, searchInput } =
       createFunctionList(
         this._onSearch,
         this._handleItemClick,
-        functionMetadataByGroup
+        this._spreadsheet.functionMetadataByGroup
       )
     this.functionListEl = functionListEl
     this.drawerHeaderEl = drawerHeaderEl
@@ -35,7 +31,7 @@ class FunctionHelperList {
     updateFunctionList(
       this.drawerContentEl,
       this._handleItemClick,
-      this.functionMetadataByGroup
+      this._spreadsheet.functionMetadataByGroup
     )
     const functionEl = document.getElementById(functionName)
     if (functionEl) {
@@ -45,20 +41,12 @@ class FunctionHelperList {
     }
   }
 
-  setFunctionMetadata(
-    functionMetadataByGroup: Dictionary<
-      [IFunctionHelperData, ...IFunctionHelperData[]]
-    >
-  ) {
-    this.functionMetadataByGroup = functionMetadataByGroup
-  }
-
   private _onSearch = (e: Event) => {
     const searchText = (e.target as HTMLInputElement).value
     updateFunctionList(
       this.drawerContentEl,
       this._handleItemClick,
-      this.functionMetadataByGroup,
+      this._spreadsheet.functionMetadataByGroup,
       searchText
     )
   }

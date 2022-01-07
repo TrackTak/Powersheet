@@ -1,4 +1,4 @@
-import { isNil, merge } from 'lodash'
+import { Dictionary, groupBy, isNil, merge } from 'lodash'
 import { defaultOptions, IOptions } from './options'
 import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
@@ -51,7 +51,9 @@ class Spreadsheet {
   exporter?: Exporter
   hyperformula: HyperFormula
   functionMetadata: Record<string, IFunctionHelperData> = {}
-  blockedFunctionTypes: string[] = []
+  functionMetadataByGroup: Dictionary<
+    [IFunctionHelperData, ...IFunctionHelperData[]]
+  > = {}
   history: any
   bottomBar?: BottomBar
   isSaving = false
@@ -82,7 +84,7 @@ class Spreadsheet {
     if (!isNil(this.options.height)) {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
-    this.functionMetadata = { ...powersheetFormulaMetadataJSON }
+    this.setFunctionMetadata(powersheetFormulaMetadataJSON)
 
     this.toolbar?.initialize(this)
     this.formulaBar?.initialize(this)
@@ -190,12 +192,12 @@ class Spreadsheet {
 
   private setFunctionMetadata(
     functionMetadata: Record<string, IFunctionHelperData>,
-    blockedFunctionTypes?: string[]
+    blockedFunctionTypes: string[] = []
   ) {
     const filteredFunctionMetadata = Object.values(functionMetadata)
       .filter(
         functionMetadata =>
-          !blockedFunctionTypes ||
+          !blockedFunctionTypes?.length ||
           !blockedFunctionTypes?.includes(functionMetadata.type)
       )
       .reduce(
@@ -206,7 +208,17 @@ class Spreadsheet {
         {}
       )
     this.functionMetadata = filteredFunctionMetadata
-    this.functionHelper?.setFunctionMetadata(this.functionMetadata)
+    this.functionMetadataByGroup = groupBy(functionMetadata, 'type')
+    this.unregisterBlockedFunctions(blockedFunctionTypes)
+  }
+
+  private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
+    blockedFunctionTypes.forEach(functionType => {
+      const functions = this.functionMetadataByGroup[functionType]
+      functions.forEach(func => {
+        HyperFormula.unregisterFunction(func.header)
+      })
+    })
   }
 
   /**
@@ -365,12 +377,10 @@ class Spreadsheet {
   setCustomFunctionMetadata(
     customFunctionMetadata: Record<string, IFunctionHelperData>
   ) {
-    this.setFunctionMetadata(
-      (this.functionMetadata = {
-        ...customFunctionMetadata,
-        ...this.functionMetadata
-      })
-    )
+    this.setFunctionMetadata({
+      ...customFunctionMetadata,
+      ...this.functionMetadata
+    })
   }
 
   /**

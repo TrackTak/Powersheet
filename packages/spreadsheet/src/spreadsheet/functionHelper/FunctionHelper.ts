@@ -3,7 +3,6 @@ import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
 import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
 import FunctionHelperList from './functionHelperList/FunctionHelperList'
-import { groupBy } from 'lodash'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -49,11 +48,7 @@ class FunctionHelper {
    */
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
-    const functionMetadataByGroup = groupBy(
-      this._spreadsheet.functionMetadata,
-      'type'
-    )
-    this._functionHelperList = new FunctionHelperList(functionMetadataByGroup)
+    this._functionHelperList = new FunctionHelperList(spreadsheet)
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
@@ -91,11 +86,6 @@ class FunctionHelper {
   setDrawerContent() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
     this._spreadsheet.render()
-  }
-
-  setFunctionMetadata(functionMetadata: Record<string, IFunctionHelperData>) {
-    const functionMetadataByGroup = groupBy(functionMetadata, 'type')
-    this._functionHelperList.setFunctionMetadata(functionMetadataByGroup)
   }
 
   scrollToFunction(functionName: string) {

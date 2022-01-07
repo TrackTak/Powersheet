@@ -146,7 +146,8 @@ export const buildSpreadsheetWithEverything = (
   spreadsheet.sheets.sheetElContainer.appendChild(
     functionHelper.functionHelperEl
   )
-  spreadsheet.setFunctionMetadata(customFunctionMetadata)
+  spreadsheet.setFunctionTypeBlocklist(['Engineering'])
+  spreadsheet.setCustomFunctionMetadata(customFunctionMetadata)
   functionHelper.setDrawerContent()
   toolbar.setToolbarIcons(getToolbarElementIcons(toolbar))
 

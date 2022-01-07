@@ -51,6 +51,7 @@ class Spreadsheet {
   exporter?: Exporter
   hyperformula: HyperFormula
   functionMetadata: Record<string, IFunctionHelperData> = {}
+  blockedFunctionTypes: string[] = []
   history: any
   bottomBar?: BottomBar
   isSaving = false
@@ -185,6 +186,27 @@ class Spreadsheet {
         this.render()
       }
     }
+  }
+
+  private setFunctionMetadata(
+    functionMetadata: Record<string, IFunctionHelperData>,
+    blockedFunctionTypes?: string[]
+  ) {
+    const filteredFunctionMetadata = Object.values(functionMetadata)
+      .filter(
+        functionMetadata =>
+          !blockedFunctionTypes ||
+          !blockedFunctionTypes?.includes(functionMetadata.type)
+      )
+      .reduce(
+        (all, current) => ({
+          ...all,
+          [current.header]: current
+        }),
+        {}
+      )
+    this.functionMetadata = filteredFunctionMetadata
+    this.functionHelper?.setFunctionMetadata(this.functionMetadata)
   }
 
   /**
@@ -335,14 +357,29 @@ class Spreadsheet {
     }
   }
 
-  setFunctionMetadata(
+  /**
+   * Allows the setting of custom function metadata that will be displayed in the function helpers
+   *
+   * @param customFunctionMetadata - The custom metadata
+   */
+  setCustomFunctionMetadata(
     customFunctionMetadata: Record<string, IFunctionHelperData>
   ) {
-    this.functionMetadata = {
-      ...customFunctionMetadata,
-      ...this.functionMetadata
-    }
-    this.functionHelper?.setFunctionMetadata(this.functionMetadata)
+    this.setFunctionMetadata(
+      (this.functionMetadata = {
+        ...customFunctionMetadata,
+        ...this.functionMetadata
+      })
+    )
+  }
+
+  /**
+   * Sets the list of blocked function types so that the metadata will not appear in the function helpers
+   *
+   * @param blockedFunctionTypes - The array of function types e.g. Engineering, Array etc.
+   */
+  setFunctionTypeBlocklist(blockedFunctionTypes: string[]) {
+    this.setFunctionMetadata(this.functionMetadata, blockedFunctionTypes)
   }
 }
 

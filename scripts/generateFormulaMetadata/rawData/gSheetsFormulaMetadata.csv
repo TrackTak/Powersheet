@@ -1,4 +1,5 @@
 Array|ARRAY_CONSTRAIN|ARRAY_CONSTRAIN(input_range, num_rows, num_cols)|Constrains an array result to a specified size.
+Array|ARRAYFORMULA|ARRAYFORMULA(array_formula)|Enables the display of values returned from an array formula into multiple rows and/or columns and the use of non-array functions with arrays.
 Array|FLATTEN|FLATTEN(range1,[range2,..])|Flattens all the values from one or more ranges into a single column.
 Array|FREQUENCY|FREQUENCY(data, classes)|Calculates the frequency distribution of a one-column array into specified classes.
 Array|GROWTH|GROWTH(known_data_y, [known_data_x], [new_data_x], [b])|Given partial data about an exponential growth trend, fits an ideal exponential growth trend and/or predicts further values.
@@ -151,13 +152,6 @@ Financial|XNPV|XNPV(discount, cashflow_amounts, cashflow_dates)|Calculates the n
 Financial|YIELD|YIELD(settlement, maturity, rate, price, redemption, frequency, [day_count_convention])|Calculates the annual yield of a security paying periodic interest, such as a US Treasury Bond, based on price.
 Financial|YIELDDISC|YIELDDISC(settlement, maturity, price, redemption, [day_count_convention])| Calculates the annual yield of a discount (non-interest-bearing) security, based on price.
 Financial|YIELDMAT|YIELDMAT(settlement, maturity, issue, rate, price, [day_count_convention])|Calculates the annual yield of a security paying interest at maturity, based on price.
-Google|ARRAYFORMULA|ARRAYFORMULA(array_formula)|Enables the display of values returned from an array formula into multiple rows and/or columns and the use of non-array functions with arrays.
-Google|DETECTLANGUAGE|DETECTLANGUAGE(text_or_range)|Identifies the language used in text within the specified range.
-Google|GOOGLEFINANCE|GOOGLEFINANCE(ticker, [attribute], [start_date], [end_date|num_days], [interval])|Fetches current or historical securities information from Google Finance.
-Google|GOOGLETRANSLATE|GOOGLETRANSLATE(text, [source_language], [target_language])|Translates text from one language into another
-Google|IMAGE|IMAGE(url, [mode], [height], [width])|Inserts an image into a cell.
-Google|QUERY|QUERY(data, query, [headers])|Runs a Google Visualization API Query Language query across data.
-Google|SPARKLINE|SPARKLINE(data, [options])|Creates a miniature chart contained within a single cell.
 Info|ERROR.TYPE|ERROR.TYPE(reference)|Returns a number corresponding to the error value in a different cell.
 Info|ISBLANK|ISBLANK(value)|Checks whether the referenced cell is empty.
 Info|ISDATE|ISDATE(value)|Returns whether a value is a date. 

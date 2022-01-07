@@ -1,4 +1,4 @@
-import { isNil, merge } from 'lodash'
+import { Dictionary, groupBy, isNil, merge } from 'lodash'
 import { defaultOptions, IOptions } from './options'
 import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
@@ -18,7 +18,10 @@ import SimpleCellAddress, {
 } from './sheets/cells/cell/SimpleCellAddress'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
-import FunctionHelper from './functionHelper/FunctionHelper'
+import FunctionHelper, {
+  IFunctionHelperData
+} from './functionHelper/FunctionHelper'
+import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -47,6 +50,10 @@ class Spreadsheet {
   functionHelper?: FunctionHelper
   exporter?: Exporter
   hyperformula: HyperFormula
+  functionMetadata: Record<string, IFunctionHelperData> = {}
+  functionMetadataByGroup: Dictionary<
+    [IFunctionHelperData, ...IFunctionHelperData[]]
+  > = {}
   history: any
   bottomBar?: BottomBar
   isSaving = false
@@ -77,6 +84,7 @@ class Spreadsheet {
     if (!isNil(this.options.height)) {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
+    this.setFunctionMetadata(powersheetFormulaMetadataJSON)
 
     this.toolbar?.initialize(this)
     this.formulaBar?.initialize(this)
@@ -90,8 +98,8 @@ class Spreadsheet {
       const currentData: IHistoryData = {
         data: this.data._spreadsheetData,
         activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap: this.sheets.merger
-          .associatedMergedCellAddressMap
+        associatedMergedCellAddressMap:
+          this.sheets.merger.associatedMergedCellAddressMap
       }
 
       const parsedData: IHistoryData = JSON.parse(data)
@@ -182,6 +190,37 @@ class Spreadsheet {
     }
   }
 
+  private setFunctionMetadata(
+    functionMetadata: Record<string, IFunctionHelperData>,
+    blockedFunctionTypes: string[] = []
+  ) {
+    const filteredFunctionMetadata = Object.values(functionMetadata)
+      .filter(
+        functionMetadata =>
+          !blockedFunctionTypes?.length ||
+          !blockedFunctionTypes?.includes(functionMetadata.type)
+      )
+      .reduce(
+        (all, current) => ({
+          ...all,
+          [current.header]: current
+        }),
+        {}
+      )
+    this.functionMetadata = filteredFunctionMetadata
+    this.functionMetadataByGroup = groupBy(functionMetadata, 'type')
+    this.unregisterBlockedFunctions(blockedFunctionTypes)
+  }
+
+  private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
+    blockedFunctionTypes.forEach(functionType => {
+      const functions = this.functionMetadataByGroup[functionType]
+      functions.forEach(func => {
+        HyperFormula.unregisterFunction(func.header)
+      })
+    })
+  }
+
   /**
    * Unregister's event listeners and removes all DOM elements for
    * the Spreadsheet and all it's children
@@ -249,8 +288,8 @@ class Spreadsheet {
     const historyData: IHistoryData = {
       activeSheetId: this.sheets.activeSheetId,
       data: this.data._spreadsheetData,
-      associatedMergedCellAddressMap: this.sheets.merger
-        .associatedMergedCellAddressMap
+      associatedMergedCellAddressMap:
+        this.sheets.merger.associatedMergedCellAddressMap
     }
     const data = JSON.stringify(historyData)
 
@@ -328,6 +367,29 @@ class Spreadsheet {
         this.render()
       })
     }
+  }
+
+  /**
+   * Allows the setting of custom function metadata that will be displayed in the function helpers
+   *
+   * @param customFunctionMetadata - The custom metadata
+   */
+  setCustomFunctionMetadata(
+    customFunctionMetadata: Record<string, IFunctionHelperData>
+  ) {
+    this.setFunctionMetadata({
+      ...customFunctionMetadata,
+      ...this.functionMetadata
+    })
+  }
+
+  /**
+   * Sets the list of blocked function types so that the metadata will not appear in the function helpers
+   *
+   * @param blockedFunctionTypes - The array of function types e.g. Engineering, Array etc.
+   */
+  setFunctionTypeBlocklist(blockedFunctionTypes: string[]) {
+    this.setFunctionMetadata(this.functionMetadata, blockedFunctionTypes)
   }
 }
 

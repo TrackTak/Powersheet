@@ -24,7 +24,7 @@ import {
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
-import getFunctionHelperContent from './getFunctionHelperContent'
+import customFunctionMetadata from './mocks/customFunctionMetadata'
 
 export interface IArgs {
   data: ISpreadsheetData
@@ -146,8 +146,9 @@ export const buildSpreadsheetWithEverything = (
   spreadsheet.sheets.sheetElContainer.appendChild(
     functionHelper.functionHelperEl
   )
-
-  functionHelper.setDrawerContent(getFunctionHelperContent())
+  spreadsheet.setCustomFunctionMetadata(customFunctionMetadata)
+  spreadsheet.setFunctionTypeBlocklist(['Engineering'])
+  functionHelper.setDrawerContent()
   toolbar.setToolbarIcons(getToolbarElementIcons(toolbar))
 
   return spreadsheet

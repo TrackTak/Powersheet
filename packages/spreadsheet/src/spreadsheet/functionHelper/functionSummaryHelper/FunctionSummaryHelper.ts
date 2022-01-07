@@ -14,7 +14,6 @@ import {
   IParameterSyntaxElement
 } from './functionSummaryHtmlElementHelpers'
 import Spreadsheet from '../../Spreadsheet'
-import { functionMetadata } from '../functionMetadata'
 import { IFunctionHelperData } from '../FunctionHelper'
 import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
 import { IToken } from 'chevrotain'
@@ -55,7 +54,7 @@ class FunctionSummaryHelper {
    * @param inputParameters - The input parameters that have currently been typed by user
    */
   show(functionName: string) {
-    const metadata = functionMetadata[functionName]
+    const metadata = this._spreadsheet.functionMetadata[functionName]
     if (metadata) {
       this._update(metadata)
       this.helper.show()
@@ -108,9 +107,10 @@ class FunctionSummaryHelper {
     )
   }
 
-  private _clearHighlights = () =>  this.parameterSyntaxElements.forEach(({ element }) => {
-    element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
-  })
+  private _clearHighlights = () =>
+    this.parameterSyntaxElements.forEach(({ element }) => {
+      element.classList.remove(`${functionSummaryHelperPrefix}-highlight`)
+    })
 
   private _getFormulaText(text: string) {
     // @ts-ignore
@@ -190,8 +190,8 @@ class FunctionSummaryHelper {
     const { button: learnMoreButton } = createButton('Learn more')
     learnMoreButton.addEventListener('click', () => {
       this._spreadsheet.options.showFunctionHelper = true
-
       this._spreadsheet.render()
+      this._spreadsheet.functionHelper?.scrollToFunction(formulaMetadata.header)
     })
     this.functionSummaryHelperListContainerEl.appendChild(mainHeaderEl)
     this.functionSummaryHelperListContainerEl.appendChild(this.textWrapper)

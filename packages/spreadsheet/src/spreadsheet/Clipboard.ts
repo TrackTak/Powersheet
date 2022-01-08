@@ -70,8 +70,8 @@ class Clipboard {
             sheetName
           ].mergedCells[cellId]
 
-          bottomRightSimpleCellAddress.col += mergedCell?.width ?? 0
-          bottomRightSimpleCellAddress.row += mergedCell?.height ?? 0
+          bottomRightSimpleCellAddress.col += mergedCell.width - 1
+          bottomRightSimpleCellAddress.row += mergedCell.height - 1
         }
       })
     }

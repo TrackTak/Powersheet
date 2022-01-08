@@ -1,4 +1,4 @@
-import { isNil, merge, some } from 'lodash'
+import { isNil, merge } from 'lodash'
 import { defaultOptions, IOptions } from './options'
 import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
@@ -22,7 +22,7 @@ import {
   MoveCellsUndoEntry,
   PasteUndoEntry
 } from '@tracktak/hyperformula'
-import Data, { ISpreadsheetData } from './sheets/Data'
+import Data, { IMergedCell, ISpreadsheetData } from './sheets/Data'
 import SimpleCellAddress, {
   CellId
 } from './sheets/cells/cell/SimpleCellAddress'
@@ -128,7 +128,8 @@ class Spreadsheet {
     this.data._spreadsheetData.uiSheets[name] = {
       rowSizes: {},
       colSizes: {},
-      mergedCells: {}
+      mergedCells: {},
+      associatedMergedCells: {}
     }
 
     this.render()
@@ -192,19 +193,25 @@ class Spreadsheet {
     }
 
     if (operation instanceof MoveCellsUndoEntry) {
-      this.operations.moveMergedCells(
+      const removedMergedCells = this.operations.moveMergedCells(
         operation.sourceLeftCorner,
         operation.destinationLeftCorner,
         operation.width,
         operation.height
       )
+
+      // @ts-ignore
+      operation.removedMergedCells = removedMergedCells
     }
 
     if (operation instanceof PasteUndoEntry) {
-      this.operations.pasteMergedCells(
+      const removedMergedCells = this.operations.pasteMergedCells(
         operation.targetLeftCorner,
         operation.newContent
       )
+
+      // @ts-ignore
+      operation.removedMergedCells = removedMergedCells
     }
 
     if (operation instanceof RemoveRowsUndoEntry) {
@@ -293,6 +300,7 @@ class Spreadsheet {
 
     if (operation instanceof PasteUndoEntry) {
       this.restoreOldCellContents(operation.oldContent)
+      this.restoreRemovedMergedCells(operation.removedMergedCells)
     }
 
     if (operation instanceof MoveCellsUndoEntry) {
@@ -302,6 +310,7 @@ class Spreadsheet {
         operation.width,
         operation.height
       )
+      this.restoreRemovedMergedCells(operation.removedMergedCells)
     }
 
     if (operation instanceof RemoveRowsUndoEntry) {
@@ -460,6 +469,18 @@ class Spreadsheet {
     this.render()
   }
 
+  private restoreRemovedMergedCells(
+    removedMergedCells: Record<CellId, IMergedCell>
+  ) {
+    for (const key in removedMergedCells) {
+      const cellId = key as CellId
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+      const { width, height } = removedMergedCells[cellId]
+
+      this.operations.mergeCells(simpleCellAddress, width, height)
+    }
+  }
+
   private restoreOldCellContents(
     oldContent: [SimpleCellAddress, ClipboardCell][]
   ) {
@@ -470,7 +491,7 @@ class Spreadsheet {
         address.col
       )
 
-      this.operations.unMergeCells(simpleCellAddress, false)
+      this.operations.unMergeCells(simpleCellAddress)
     }
   }
 
@@ -626,6 +647,7 @@ class Spreadsheet {
 
     console.log(this.hyperformula._crudOperations.undoRedo.redoStack)
     console.log(this.hyperformula._crudOperations.undoRedo.undoStack)
+    console.log(this.data._spreadsheetData.uiSheets)
 
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {

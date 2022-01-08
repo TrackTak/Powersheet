@@ -1,7 +1,6 @@
 import SimpleCellAddress from './cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import Sheets from './Sheets'
-import { ICellMetadata } from './Data'
 
 class Merger {
   private _spreadsheet: Spreadsheet
@@ -41,23 +40,6 @@ class Merger {
     }
   }
 
-  getTopLeftMergedCellAddressFromOffsets(
-    simpleCellAddress: SimpleCellAddress,
-    topLeftMergedCellRowOffset: number,
-    topLeftMergedCellColOffset: number
-  ) {
-    const row = simpleCellAddress.row - topLeftMergedCellRowOffset
-    const col = simpleCellAddress.col - topLeftMergedCellColOffset
-
-    const newSimpleCellAddress = new SimpleCellAddress(
-      simpleCellAddress.sheet,
-      row,
-      col
-    )
-
-    return newSimpleCellAddress
-  }
-
   /**
    * @returns If the cell is part of the merged cell.
    */
@@ -76,16 +58,13 @@ class Merger {
    * @returns If the cell is part of the merged cell.
    */
   getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const cellId = simpleCellAddress.toCellId()
+    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+      simpleCellAddress.sheet
+    )!
 
-    return (
-      metadata?.topLeftMergedCellRowOffset !== undefined ||
-      metadata?.topLeftMergedCellColOffset !== undefined
-    )
+    return !!this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+      .associatedMergedCells[cellId]
   }
 }
 

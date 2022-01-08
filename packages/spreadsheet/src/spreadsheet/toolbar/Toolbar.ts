@@ -962,22 +962,14 @@ class Toolbar {
           const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
             selectedCells
           )
-          const mergedCellId = rangeSimpleCellAddress.topLeftSimpleCellAddress.toCellId()
-
           const width = rangeSimpleCellAddress.width()
           const height = rangeSimpleCellAddress.height()
-
-          const existingMergedCell = sheet.mergedCells[mergedCellId]
 
           const removedMergedCells = this._spreadsheet.operations.mergeCells(
             rangeSimpleCellAddress.topLeftSimpleCellAddress,
             width,
             height
           )
-
-          if (existingMergedCell) {
-            removedMergedCells[mergedCellId] = existingMergedCell
-          }
 
           const command = new MergeCellsCommand(
             rangeSimpleCellAddress.topLeftSimpleCellAddress,

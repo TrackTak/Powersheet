@@ -140,14 +140,14 @@ export class UIUndoRedo extends UndoRedo {
   public undoMergeCells(operation: MergeCellsUndoEntry) {
     const { topLeftSimpleCellAddress, removedMergedCells } = operation.command
 
-    this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
+    this.uiOperations.unMergeCells(topLeftSimpleCellAddress)
     this.restoreRemovedMergedCells(removedMergedCells)
   }
 
   public undoUnMergeCells(operation: UnMergeCellsUndoEntry) {
     const { topLeftSimpleCellAddress, width, height } = operation.command
 
-    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height, false)
+    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height)
   }
 
   public redoSetFrozenRowCol(operation: SetFrozenRowColUndoEntry) {
@@ -181,13 +181,13 @@ export class UIUndoRedo extends UndoRedo {
   public redoMergeCells(operation: MergeCellsUndoEntry) {
     const { topLeftSimpleCellAddress, width, height } = operation.command
 
-    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height, false)
+    this.uiOperations.mergeCells(topLeftSimpleCellAddress, width, height)
   }
 
   public redoUnMergeCells(operation: UnMergeCellsUndoEntry) {
     const { topLeftSimpleCellAddress } = operation.command
 
-    this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
+    this.uiOperations.unMergeCells(topLeftSimpleCellAddress)
   }
 
   private restoreRemovedMergedCells(
@@ -199,7 +199,7 @@ export class UIUndoRedo extends UndoRedo {
         const { width, height } = removedMergedCells[cellId]
         const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
 
-        this.uiOperations.mergeCells(simpleCellAddress, width, height, false)
+        this.uiOperations.mergeCells(simpleCellAddress, width, height)
       }
     }
   }

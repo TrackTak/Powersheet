@@ -644,17 +644,15 @@ class Sheets {
           ri,
           ci
         )
-        const {
-          metadata
-        } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-          simpleCellAddress
-        )
+        const sheetName = this.getActiveSheetName()
+        const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[
+          sheetName
+        ]
 
         if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
-          const mergedCellAddress = this.merger.getTopLeftMergedCellAddressFromOffsets(
-            simpleCellAddress,
-            metadata!.topLeftMergedCellRowOffset!,
-            metadata!.topLeftMergedCellColOffset!
+          const cellId = simpleCellAddress.toCellId()
+          const mergedCellAddress = SimpleCellAddress.cellIdToAddress(
+            sheet.associatedMergedCells[cellId]
           )
 
           let bottomRow = -Infinity

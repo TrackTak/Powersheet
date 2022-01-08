@@ -280,16 +280,11 @@ class Cells {
     // We always render frozenRowCol cells so they hide the cells beneath it
     if (!cell && !isOnFrozenRowCol) return
 
-    const { metadata } = cell ?? {}
+    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
 
     if (this._sheets.merger.getIsCellPartOfMerge(simpleCellAddress)) {
-      const mergedCellId = this._sheets.merger
-        .getTopLeftMergedCellAddressFromOffsets(
-          simpleCellAddress,
-          metadata!.topLeftMergedCellRowOffset!,
-          metadata!.topLeftMergedCellColOffset!
-        )
-        .toCellId()
+      const mergedCellId = sheet.associatedMergedCells[cellId]
+
       const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {

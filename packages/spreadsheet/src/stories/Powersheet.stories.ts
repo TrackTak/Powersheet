@@ -39,7 +39,8 @@ Default.args = {
       Default: {
         rowSizes: {},
         colSizes: {},
-        mergedCells: {}
+        mergedCells: {},
+        associatedMergedCells: {}
       }
     }
   }

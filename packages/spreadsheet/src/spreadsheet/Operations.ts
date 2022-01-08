@@ -3,7 +3,6 @@ import {
   HyperFormula,
   SimpleCellAddress as HFSimpleCellAddress
 } from '@tracktak/hyperformula'
-import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 // @ts-ignore
 import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
 import SimpleCellAddress, {
@@ -137,22 +136,28 @@ class Operations {
       }
 
       if (index <= simpleCellAddress.row) {
-        const newCellId = new SimpleCellAddress(
+        const newSimpleCellAddress = new SimpleCellAddress(
           sheetId,
           simpleCellAddress.row + amount,
           simpleCellAddress.col
-        ).toCellId()
+        )
+        const newCellId = newSimpleCellAddress.toCellId()
 
         sheet.mergedCells[newCellId] = sheet.mergedCells[cellId]
+
+        this.removeAssociatedMergedCells(simpleCellAddress)
+        this.setAssociatedMergedCells(newSimpleCellAddress)
 
         delete sheet.mergedCells[cellId]
 
         continue
       }
 
+      this.removeAssociatedMergedCells(simpleCellAddress)
+
       sheet.mergedCells[cellId].height += amount
 
-      this.setAssociatedMergedCells(simpleCellAddress, false)
+      this.setAssociatedMergedCells(simpleCellAddress)
     }
   }
 
@@ -178,22 +183,28 @@ class Operations {
       }
 
       if (index < simpleCellAddress.row) {
-        const newCellId = new SimpleCellAddress(
+        const newSimpleCellAddress = new SimpleCellAddress(
           sheetId,
           simpleCellAddress.row - amount,
           simpleCellAddress.col
-        ).toCellId()
+        )
+        const newCellId = newSimpleCellAddress.toCellId()
 
         sheet.mergedCells[newCellId] = sheet.mergedCells[cellId]
+
+        this.removeAssociatedMergedCells(simpleCellAddress)
+        this.setAssociatedMergedCells(newSimpleCellAddress)
 
         delete sheet.mergedCells[cellId]
 
         continue
       }
 
+      this.removeAssociatedMergedCells(simpleCellAddress)
+
       sheet.mergedCells[cellId].height -= amount
 
-      this.setAssociatedMergedCells(simpleCellAddress, false)
+      this.setAssociatedMergedCells(simpleCellAddress)
     }
   }
 
@@ -216,22 +227,28 @@ class Operations {
       }
 
       if (index <= simpleCellAddress.col) {
-        const newCellId = new SimpleCellAddress(
+        const newSimpleCellAddress = new SimpleCellAddress(
           sheetId,
           simpleCellAddress.row,
           simpleCellAddress.col + amount
-        ).toCellId()
+        )
+        const newCellId = newSimpleCellAddress.toCellId()
 
         sheet.mergedCells[newCellId] = sheet.mergedCells[cellId]
+
+        this.removeAssociatedMergedCells(simpleCellAddress)
+        this.setAssociatedMergedCells(newSimpleCellAddress)
 
         delete sheet.mergedCells[cellId]
 
         continue
       }
 
+      this.removeAssociatedMergedCells(simpleCellAddress)
+
       sheet.mergedCells[cellId].width += amount
 
-      this.setAssociatedMergedCells(simpleCellAddress, false)
+      this.setAssociatedMergedCells(simpleCellAddress)
     }
   }
 
@@ -254,60 +271,59 @@ class Operations {
       }
 
       if (index < simpleCellAddress.col) {
-        const newCellId = new SimpleCellAddress(
+        const newSimpleCellAddress = new SimpleCellAddress(
           sheetId,
           simpleCellAddress.row,
           simpleCellAddress.col - amount
-        ).toCellId()
+        )
+        const newCellId = newSimpleCellAddress.toCellId()
 
         sheet.mergedCells[newCellId] = sheet.mergedCells[cellId]
+
+        this.removeAssociatedMergedCells(simpleCellAddress)
+        this.setAssociatedMergedCells(newSimpleCellAddress)
 
         delete sheet.mergedCells[cellId]
 
         continue
       }
 
+      this.removeAssociatedMergedCells(simpleCellAddress)
+
       sheet.mergedCells[cellId].width -= amount
 
-      this.setAssociatedMergedCells(simpleCellAddress, false)
+      this.setAssociatedMergedCells(simpleCellAddress)
     }
   }
 
   public mergeCells(
     topLeftSimpleCellAddress: SimpleCellAddress,
     width: number,
-    height: number,
-    clearRedoStack = true
+    height: number
   ) {
     const { cellValue, metadata } =
       this.hyperformula.getCellSerialized<ICellMetadata>(
         topLeftSimpleCellAddress
       )
+
     const sheetName = this.hyperformula.getSheetName(
       topLeftSimpleCellAddress.sheet
     )!
     const mergedCellId = topLeftSimpleCellAddress.toCellId()
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
+    const removedMergedCells = this.unMergeExistingCells(
+      topLeftSimpleCellAddress,
+      width,
+      height
+    )
+
     sheet.mergedCells[mergedCellId] = {
       height,
       width
     }
 
-    const removedMergedCells: Record<CellId, IMergedCell> = {}
-
-    for (const simpleCellAddress of this.merger._iterateMergedCellWidthHeight(
-      topLeftSimpleCellAddress
-    )) {
-      const id = simpleCellAddress.toCellId()
-      const mergedCell = sheet.mergedCells[id]
-
-      if (mergedCell) {
-        removedMergedCells[id] = mergedCell
-
-        delete sheet.mergedCells[id]
-      }
-    }
+    this.setAssociatedMergedCells(topLeftSimpleCellAddress)
 
     this.hyperformula.suspendAddingUndoEntries()
 
@@ -328,17 +344,12 @@ class Operations {
 
     this.hyperformula.resumeAddingUndoEntries()
 
-    this.setAssociatedMergedCells(topLeftSimpleCellAddress, clearRedoStack)
-
     this.selector.selectedSimpleCellAddress = topLeftSimpleCellAddress
 
     return removedMergedCells
   }
 
-  public unMergeCells(
-    topLeftSimpleCellAddress: SimpleCellAddress,
-    clearRedoStack = true
-  ) {
+  public unMergeCells(topLeftSimpleCellAddress: SimpleCellAddress) {
     const cell = this.hyperformula.getCellSerialized<ICellMetadata>(
       topLeftSimpleCellAddress
     )
@@ -347,6 +358,8 @@ class Operations {
     )!
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
     const mergedCellId = topLeftSimpleCellAddress.toCellId()
+
+    this.removeAssociatedMergedCells(topLeftSimpleCellAddress)
 
     const { width, height, ...otherMetadata } = cell.metadata ?? {}
 
@@ -363,12 +376,6 @@ class Operations {
 
     this.hyperformula.resumeAddingUndoEntries()
 
-    this.removeAssociatedMergedCells(
-      topLeftSimpleCellAddress,
-      cell,
-      clearRedoStack
-    )
-
     delete sheet.mergedCells[mergedCellId]
   }
 
@@ -378,7 +385,7 @@ class Operations {
         const cellId = key as CellId
         const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
 
-        this.unMergeCells(simpleCellAddress, false)
+        this.unMergeCells(simpleCellAddress)
       }
     }
   }
@@ -389,25 +396,28 @@ class Operations {
     width: number,
     height: number
   ) {
-    const sheetName = this.hyperformula.getSheetName(targetLeftCorner.sheet)!
-    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
-
-    this.setMergedCellsAtTargetAddress(targetLeftCorner, width, height)
+    const removedCells = this.setMergedCellsAtTargetAddress(
+      targetLeftCorner,
+      width,
+      height
+    )
 
     for (let index = 0; index < width; index++) {
       const col = sourceLeftCorner.col + index
 
       for (let index = 0; index < height; index++) {
         const row = sourceLeftCorner.row + index
-        const cellId = new SimpleCellAddress(
+        const simpleCellAddress = new SimpleCellAddress(
           sourceLeftCorner.sheet,
           row,
           col
-        ).toCellId()
+        )
 
-        delete sheet.mergedCells[cellId]
+        this.unMergeCells(simpleCellAddress)
       }
     }
+
+    return removedCells
   }
 
   public pasteMergedCells(
@@ -417,7 +427,7 @@ class Operations {
     const height = newContent.length
     const width = newContent[0].length
 
-    this.setMergedCellsAtTargetAddress(targetLeftCorner, width, height)
+    return this.setMergedCellsAtTargetAddress(targetLeftCorner, width, height)
   }
 
   public setMergedCellsAtTargetAddress(
@@ -425,8 +435,7 @@ class Operations {
     width: number,
     height: number
   ) {
-    const sheetName = this.hyperformula.getSheetName(targetLeftCorner.sheet)!
-    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
+    let removedMergedCells: Record<CellId, IMergedCell> = {}
 
     for (let index = 0; index < width; index++) {
       const col = targetLeftCorner.col + index
@@ -438,73 +447,88 @@ class Operations {
           row,
           col
         )
-        const targetCellId = simpleCellAddress.toCellId()
         const { metadata } =
           this.hyperformula.getCellSerialized<ICellMetadata>(simpleCellAddress)
 
         if (metadata?.width !== undefined && metadata?.height !== undefined) {
-          sheet.mergedCells[targetCellId] = {
-            width: metadata?.width,
-            height: metadata?.height
+          removedMergedCells = {
+            ...this.mergeCells(
+              simpleCellAddress,
+              metadata.width,
+              metadata.height
+            )
           }
         }
       }
     }
+
+    return removedMergedCells
+  }
+
+  private unMergeExistingCells(
+    simpleCellAddress: SimpleCellAddress,
+    width: number,
+    height: number
+  ) {
+    const removedMergedCells: Record<CellId, IMergedCell> = {}
+    const sheetName = this.hyperformula.getSheetName(simpleCellAddress.sheet)!
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
+
+    for (let index = 0; index < width; index++) {
+      const col = simpleCellAddress.col + index
+
+      for (let index = 0; index < height; index++) {
+        const row = simpleCellAddress.row + index
+        const newSimpleCellAddress = new SimpleCellAddress(
+          simpleCellAddress.sheet,
+          row,
+          col
+        )
+
+        if (this.merger.getIsCellPartOfMerge(newSimpleCellAddress)) {
+          const associatedMergedCellId = newSimpleCellAddress.toCellId()
+          const mergedCellId =
+            sheet.associatedMergedCells[associatedMergedCellId]
+          const mergedCellAddress =
+            SimpleCellAddress.cellIdToAddress(mergedCellId)
+
+          removedMergedCells[mergedCellId] = sheet.mergedCells[mergedCellId]
+
+          this.unMergeCells(mergedCellAddress)
+        }
+      }
+    }
+    return removedMergedCells
   }
 
   private removeAssociatedMergedCells(
-    topLeftSimpleCellAddress: SimpleCellAddress,
-    { cellValue, metadata }: GenericDataRawCellContent<ICellMetadata>,
-    clearRedoStack = true
+    topLeftSimpleCellAddress: SimpleCellAddress
   ) {
-    this.hyperformula.suspendAddingUndoEntries()
+    const sheetName = this.hyperformula.getSheetName(
+      topLeftSimpleCellAddress.sheet
+    )!
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    this.hyperformula.batch(() => {
-      for (const address of this.merger._iterateMergedCellWidthHeight(
-        topLeftSimpleCellAddress
-      )) {
-        this.hyperformula.setCellContents<ICellMetadata>(
-          address,
-          {
-            cellValue,
-            metadata
-          },
-          clearRedoStack
-        )
-      }
-    })
+    for (const address of this.merger._iterateMergedCellWidthHeight(
+      topLeftSimpleCellAddress
+    )) {
+      const cellId = address.toCellId()
 
-    this.hyperformula.resumeAddingUndoEntries()
+      delete sheet.associatedMergedCells[cellId]
+    }
   }
 
-  private setAssociatedMergedCells(
-    simpleCellAddress: SimpleCellAddress,
-    clearRedoStack = true
-  ) {
-    this.hyperformula.suspendAddingUndoEntries()
+  private setAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
+    const sheetName = this.hyperformula.getSheetName(simpleCellAddress.sheet)!
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
 
-    this.hyperformula.batch(() => {
-      for (const address of this.merger._iterateMergedCellWidthHeight(
-        simpleCellAddress
-      )) {
-        const topLeftMergedCellRowOffset = address.row - simpleCellAddress.row
-        const topLeftMergedCellColOffset = address.col - simpleCellAddress.col
+    for (const address of this.merger._iterateMergedCellWidthHeight(
+      simpleCellAddress
+    )) {
+      const cellId = address.toCellId()
 
-        this.hyperformula.setCellContents<ICellMetadata>(
-          address,
-          {
-            cellValue: undefined,
-            metadata: {
-              topLeftMergedCellRowOffset,
-              topLeftMergedCellColOffset
-            }
-          },
-          clearRedoStack
-        )
-      }
-    })
-
-    this.hyperformula.resumeAddingUndoEntries()
+      sheet.associatedMergedCells[cellId] = simpleCellAddress.toCellId()
+    }
   }
 }
 

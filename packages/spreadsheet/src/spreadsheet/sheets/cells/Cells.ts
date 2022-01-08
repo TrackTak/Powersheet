@@ -286,8 +286,8 @@ class Cells {
       const mergedCellId = this._sheets.merger
         .getTopLeftMergedCellAddressFromOffsets(
           simpleCellAddress,
-          metadata?.topLeftMergedCellRowOffset,
-          metadata?.topLeftMergedCellColOffset
+          metadata!.topLeftMergedCellRowOffset!,
+          metadata!.topLeftMergedCellColOffset!
         )
         .toCellId()
       const mergedCell = this.cellsMap.get(mergedCellId)

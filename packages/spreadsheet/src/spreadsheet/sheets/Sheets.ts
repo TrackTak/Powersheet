@@ -653,8 +653,8 @@ class Sheets {
         if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
           const mergedCellAddress = this.merger.getTopLeftMergedCellAddressFromOffsets(
             simpleCellAddress,
-            metadata?.topLeftMergedCellRowOffset,
-            metadata?.topLeftMergedCellColOffset
+            metadata!.topLeftMergedCellRowOffset!,
+            metadata!.topLeftMergedCellColOffset!
           )
 
           let bottomRow = -Infinity

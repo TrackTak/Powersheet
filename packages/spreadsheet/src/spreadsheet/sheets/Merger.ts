@@ -1,5 +1,4 @@
 import SimpleCellAddress from './cells/cell/SimpleCellAddress'
-import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import Sheets from './Sheets'
 import { ICellMetadata } from './Data'
@@ -23,40 +22,30 @@ class Merger {
       simpleCellAddress.sheet
     )!
     const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-    const { width, height } = sheet.mergedCells[mergedCellId]
+    const { width, height } = sheet.mergedCells[mergedCellId] ?? {}
+
+    if (width === undefined || height === undefined) return
 
     for (let index = 0; index < width; index++) {
       const col = simpleCellAddress.col + index
 
       for (let index = 0; index < height; index++) {
         const row = simpleCellAddress.row + index
-        const address = {
-          sheet: simpleCellAddress.sheet,
-          row,
-          col
-        }
 
         if (row === simpleCellAddress.row && col === simpleCellAddress.col) {
           continue
         }
 
-        yield new SimpleCellAddress(address.sheet, address.row, address.col)
+        yield new SimpleCellAddress(simpleCellAddress.sheet, row, col)
       }
     }
   }
 
   getTopLeftMergedCellAddressFromOffsets(
     simpleCellAddress: SimpleCellAddress,
-    topLeftMergedCellRowOffset: number | undefined,
-    topLeftMergedCellColOffset: number | undefined
+    topLeftMergedCellRowOffset: number,
+    topLeftMergedCellColOffset: number
   ) {
-    if (
-      topLeftMergedCellRowOffset === undefined ||
-      topLeftMergedCellColOffset === undefined
-    ) {
-      throw new Error('offsets cannot be undefined')
-    }
-
     const row = simpleCellAddress.row - topLeftMergedCellRowOffset
     const col = simpleCellAddress.col - topLeftMergedCellColOffset
 
@@ -97,33 +86,6 @@ class Merger {
       metadata?.topLeftMergedCellRowOffset !== undefined ||
       metadata?.topLeftMergedCellColOffset !== undefined
     )
-  }
-
-  getAreMergedCellsOverlapping(
-    firstRangeSimpleCellAddress: RangeSimpleCellAddress,
-    secondRangeSimpleCellAddress: RangeSimpleCellAddress
-  ) {
-    const isFirstOverlappingSecond =
-      secondRangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
-        firstRangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
-      secondRangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
-        firstRangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
-      secondRangeSimpleCellAddress.bottomRightSimpleCellAddress.row <=
-        firstRangeSimpleCellAddress.bottomRightSimpleCellAddress.row &&
-      secondRangeSimpleCellAddress.bottomRightSimpleCellAddress.col <=
-        firstRangeSimpleCellAddress.bottomRightSimpleCellAddress.col
-
-    const isSecondOverlappingFirst =
-      firstRangeSimpleCellAddress.topLeftSimpleCellAddress.row >=
-        secondRangeSimpleCellAddress.topLeftSimpleCellAddress.row &&
-      firstRangeSimpleCellAddress.topLeftSimpleCellAddress.col >=
-        secondRangeSimpleCellAddress.topLeftSimpleCellAddress.col &&
-      firstRangeSimpleCellAddress.bottomRightSimpleCellAddress.row <=
-        secondRangeSimpleCellAddress.bottomRightSimpleCellAddress.row &&
-      firstRangeSimpleCellAddress.bottomRightSimpleCellAddress.col <=
-        secondRangeSimpleCellAddress.bottomRightSimpleCellAddress.col
-
-    return isFirstOverlappingSecond || isSecondOverlappingFirst
   }
 }
 

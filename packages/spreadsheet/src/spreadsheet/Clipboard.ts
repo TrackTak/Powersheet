@@ -70,8 +70,17 @@ class Clipboard {
             sheetName
           ].mergedCells[cellId]
 
-          bottomRightSimpleCellAddress.col += mergedCell.width - 1
-          bottomRightSimpleCellAddress.row += mergedCell.height - 1
+          const col = cell.simpleCellAddress.col + (mergedCell.width - 1)
+          const row = cell.simpleCellAddress.row + (mergedCell.height - 1)
+
+          bottomRightSimpleCellAddress.col = Math.max(
+            bottomRightSimpleCellAddress.col,
+            col
+          )
+          bottomRightSimpleCellAddress.row = Math.max(
+            bottomRightSimpleCellAddress.row,
+            row
+          )
         }
       })
     }

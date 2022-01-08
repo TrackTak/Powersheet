@@ -1,4 +1,4 @@
-import { isNil, merge } from 'lodash'
+import { isNil, merge, some } from 'lodash'
 import { defaultOptions, IOptions } from './options'
 import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
@@ -18,15 +18,21 @@ import {
   AddRowsUndoEntry,
   RemoveColumnsUndoEntry,
   AddColumnsUndoEntry,
-  BatchUndoEntry
+  BatchUndoEntry,
+  MoveCellsUndoEntry,
+  PasteUndoEntry
 } from '@tracktak/hyperformula'
 import Data, { ISpreadsheetData } from './sheets/Data'
-import { CellId } from './sheets/cells/cell/SimpleCellAddress'
+import SimpleCellAddress, {
+  CellId
+} from './sheets/cells/cell/SimpleCellAddress'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
+// @ts-ignore
+import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -185,6 +191,22 @@ class Spreadsheet {
       })
     }
 
+    if (operation instanceof MoveCellsUndoEntry) {
+      this.operations.moveMergedCells(
+        operation.sourceLeftCorner,
+        operation.destinationLeftCorner,
+        operation.width,
+        operation.height
+      )
+    }
+
+    if (operation instanceof PasteUndoEntry) {
+      this.operations.pasteMergedCells(
+        operation.targetLeftCorner,
+        operation.newContent
+      )
+    }
+
     if (operation instanceof RemoveRowsUndoEntry) {
       // @ts-ignore
       operation.frozenRow = frozenRow
@@ -269,6 +291,19 @@ class Spreadsheet {
       })
     }
 
+    if (operation instanceof PasteUndoEntry) {
+      this.restoreOldCellContents(operation.oldContent)
+    }
+
+    if (operation instanceof MoveCellsUndoEntry) {
+      this.operations.moveMergedCells(
+        operation.destinationLeftCorner,
+        operation.sourceLeftCorner,
+        operation.width,
+        operation.height
+      )
+    }
+
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.addFrozenRows(
         operation.command.sheet,
@@ -343,6 +378,22 @@ class Spreadsheet {
       })
     }
 
+    if (operation instanceof PasteUndoEntry) {
+      this.operations.pasteMergedCells(
+        operation.targetLeftCorner,
+        operation.newContent
+      )
+    }
+
+    if (operation instanceof MoveCellsUndoEntry) {
+      this.operations.moveMergedCells(
+        operation.sourceLeftCorner,
+        operation.destinationLeftCorner,
+        operation.width,
+        operation.height
+      )
+    }
+
     if (operation instanceof RemoveRowsUndoEntry) {
       this.operations.removeFrozenRows(
         operation.command.sheet,
@@ -407,6 +458,20 @@ class Spreadsheet {
       )
     }
     this.render()
+  }
+
+  private restoreOldCellContents(
+    oldContent: [SimpleCellAddress, ClipboardCell][]
+  ) {
+    for (const [address] of oldContent) {
+      const simpleCellAddress = new SimpleCellAddress(
+        address.sheet,
+        address.row,
+        address.col
+      )
+
+      this.operations.unMergeCells(simpleCellAddress, false)
+    }
   }
 
   private _updateSheetSizes() {

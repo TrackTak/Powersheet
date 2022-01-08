@@ -8,6 +8,10 @@ import {
   UnsetFrozenRowColCommand
 } from './Commands'
 import Operations from './Operations'
+import SimpleCellAddress, {
+  CellId
+} from './sheets/cells/cell/SimpleCellAddress'
+import { IMergedCell } from './sheets/Data'
 
 export interface IUIBaseUndoRedoEntry {
   doUndo(undoRedo: UIUndoRedo): void
@@ -137,7 +141,7 @@ export class UIUndoRedo extends UndoRedo {
     const { topLeftSimpleCellAddress, removedMergedCells } = operation.command
 
     this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
-    this.uiOperations.restoreRemovedMergedCells(removedMergedCells)
+    this.restoreRemovedMergedCells(removedMergedCells)
   }
 
   public undoUnMergeCells(operation: UnMergeCellsUndoEntry) {
@@ -184,5 +188,19 @@ export class UIUndoRedo extends UndoRedo {
     const { topLeftSimpleCellAddress } = operation.command
 
     this.uiOperations.unMergeCells(topLeftSimpleCellAddress, false)
+  }
+
+  private restoreRemovedMergedCells(
+    removedMergedCells: Record<CellId, IMergedCell>
+  ) {
+    if (removedMergedCells) {
+      for (const key in removedMergedCells) {
+        const cellId = key as CellId
+        const { width, height } = removedMergedCells[cellId]
+        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+
+        this.uiOperations.mergeCells(simpleCellAddress, width, height, false)
+      }
+    }
   }
 }

@@ -1,5 +1,11 @@
-import { ColumnRowIndex, HyperFormula } from '@tracktak/hyperformula'
+import {
+  ColumnRowIndex,
+  HyperFormula,
+  SimpleCellAddress as HFSimpleCellAddress
+} from '@tracktak/hyperformula'
 import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
+// @ts-ignore
+import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
 import SimpleCellAddress, {
   CellId
 } from './sheets/cells/cell/SimpleCellAddress'
@@ -273,6 +279,10 @@ class Operations {
     height: number,
     clearRedoStack = true
   ) {
+    const { cellValue, metadata } =
+      this.hyperformula.getCellSerialized<ICellMetadata>(
+        topLeftSimpleCellAddress
+      )
     const sheetName = this.hyperformula.getSheetName(
       topLeftSimpleCellAddress.sheet
     )!
@@ -299,7 +309,25 @@ class Operations {
       }
     }
 
-    // TODO: Add moveCells in spreadsheet undoEntry for merged cells
+    this.hyperformula.suspendAddingUndoEntries()
+
+    this.hyperformula.setCellContents<ICellMetadata>(
+      {
+        ...topLeftSimpleCellAddress
+      },
+      {
+        cellValue,
+        metadata: {
+          ...metadata,
+          height,
+          width
+        }
+      },
+      false
+    )
+
+    this.hyperformula.resumeAddingUndoEntries()
+
     this.setAssociatedMergedCells(topLeftSimpleCellAddress, clearRedoStack)
 
     this.selector.selectedSimpleCellAddress = topLeftSimpleCellAddress
@@ -320,6 +348,21 @@ class Operations {
     const sheet = this.data._spreadsheetData.uiSheets[sheetName]
     const mergedCellId = topLeftSimpleCellAddress.toCellId()
 
+    const { width, height, ...otherMetadata } = cell.metadata ?? {}
+
+    this.hyperformula.suspendAddingUndoEntries()
+
+    this.hyperformula.setCellContents<ICellMetadata>(
+      topLeftSimpleCellAddress,
+      {
+        cellValue: cell.cellValue,
+        metadata: otherMetadata
+      },
+      false
+    )
+
+    this.hyperformula.resumeAddingUndoEntries()
+
     this.removeAssociatedMergedCells(
       topLeftSimpleCellAddress,
       cell,
@@ -329,16 +372,82 @@ class Operations {
     delete sheet.mergedCells[mergedCellId]
   }
 
-  public restoreRemovedMergedCells(
-    removedMergedCells: Record<CellId, IMergedCell>
-  ) {
-    if (removedMergedCells) {
-      for (const key in removedMergedCells) {
+  public removeMergedCells(mergedCells: Record<CellId, IMergedCell>) {
+    if (mergedCells) {
+      for (const key in mergedCells) {
         const cellId = key as CellId
-        const { width, height } = removedMergedCells[cellId]
         const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
 
-        this.mergeCells(simpleCellAddress, width, height, false)
+        this.unMergeCells(simpleCellAddress, false)
+      }
+    }
+  }
+
+  public moveMergedCells(
+    sourceLeftCorner: HFSimpleCellAddress,
+    targetLeftCorner: HFSimpleCellAddress,
+    width: number,
+    height: number
+  ) {
+    const sheetName = this.hyperformula.getSheetName(targetLeftCorner.sheet)!
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
+
+    this.setMergedCellsAtTargetAddress(targetLeftCorner, width, height)
+
+    for (let index = 0; index < width; index++) {
+      const col = sourceLeftCorner.col + index
+
+      for (let index = 0; index < height; index++) {
+        const row = sourceLeftCorner.row + index
+        const cellId = new SimpleCellAddress(
+          sourceLeftCorner.sheet,
+          row,
+          col
+        ).toCellId()
+
+        delete sheet.mergedCells[cellId]
+      }
+    }
+  }
+
+  public pasteMergedCells(
+    targetLeftCorner: HFSimpleCellAddress,
+    newContent: ClipboardCell[][]
+  ) {
+    const height = newContent.length
+    const width = newContent[0].length
+
+    this.setMergedCellsAtTargetAddress(targetLeftCorner, width, height)
+  }
+
+  public setMergedCellsAtTargetAddress(
+    targetLeftCorner: HFSimpleCellAddress,
+    width: number,
+    height: number
+  ) {
+    const sheetName = this.hyperformula.getSheetName(targetLeftCorner.sheet)!
+    const sheet = this.data._spreadsheetData.uiSheets[sheetName]
+
+    for (let index = 0; index < width; index++) {
+      const col = targetLeftCorner.col + index
+
+      for (let index = 0; index < height; index++) {
+        const row = targetLeftCorner.row + index
+        const simpleCellAddress = new SimpleCellAddress(
+          targetLeftCorner.sheet,
+          row,
+          col
+        )
+        const targetCellId = simpleCellAddress.toCellId()
+        const { metadata } =
+          this.hyperformula.getCellSerialized<ICellMetadata>(simpleCellAddress)
+
+        if (metadata?.width !== undefined && metadata?.height !== undefined) {
+          sheet.mergedCells[targetCellId] = {
+            width: metadata?.width,
+            height: metadata?.height
+          }
+        }
       }
     }
   }

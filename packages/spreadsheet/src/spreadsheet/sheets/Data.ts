@@ -29,6 +29,8 @@ export interface ICellStyles {
 export interface ICellMetadata extends ICellStyles {
   topLeftMergedCellRowOffset?: number
   topLeftMergedCellColOffset?: number
+  width?: number
+  height?: number
 }
 
 export interface IMergedCell {

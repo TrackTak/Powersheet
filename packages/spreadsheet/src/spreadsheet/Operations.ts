@@ -299,19 +299,34 @@ class Operations {
   }
 
   public unMergeCells(topLeftSimpleCellAddress: SimpleCellAddress) {
+    const { cellValue, metadata } =
+      this.hyperformula.getCellSerialized<ICellMetadata>(
+        topLeftSimpleCellAddress
+      )
+
+    const { width, height, ...otherMetadata } = metadata ?? {}
+
+    this.hyperformula.suspendAddingUndoEntries()
+
+    this.hyperformula.batch(() => {
+      for (const address of this.merger._iterateMergedCellWidthHeight(
+        topLeftSimpleCellAddress
+      )) {
+        this.hyperformula.setCellContents(
+          address,
+          {
+            cellValue,
+            metadata: otherMetadata
+          },
+          false
+        )
+      }
+    })
+
+    this.hyperformula.resumeAddingUndoEntries()
+
     this.removeAssociatedMergedCells(topLeftSimpleCellAddress)
     this.deleteMergedCell(topLeftSimpleCellAddress)
-  }
-
-  public removeMergedCells(mergedCells: Record<CellId, IMergedCell>) {
-    if (mergedCells) {
-      for (const key in mergedCells) {
-        const cellId = key as CellId
-        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-
-        this.unMergeCells(simpleCellAddress)
-      }
-    }
   }
 
   public moveMergedCells(

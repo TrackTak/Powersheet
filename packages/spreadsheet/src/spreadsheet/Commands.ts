@@ -3,6 +3,8 @@ import SimpleCellAddress, {
   CellId
 } from './sheets/cells/cell/SimpleCellAddress'
 import { IMergedCell } from './sheets/Data'
+// @ts-ignore
+import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
 
 export class SetFrozenRowColCommand {
   constructor(
@@ -41,7 +43,8 @@ export class MergeCellsCommand {
     public readonly topLeftSimpleCellAddress: SimpleCellAddress,
     public readonly width: number,
     public readonly height: number,
-    public readonly removedMergedCells: Record<CellId, IMergedCell>
+    public readonly removedMergedCells: Record<CellId, IMergedCell>,
+    // public readonly oldContent: [SimpleCellAddress, ClipboardCell]
   ) {}
 }
 

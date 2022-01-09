@@ -8,85 +8,169 @@ import {
   UnsetFrozenRowColCommand
 } from './Commands'
 import Operations from './Operations'
-import SimpleCellAddress, {
-  CellId
-} from './sheets/cells/cell/SimpleCellAddress'
-import { IMergedCell } from './sheets/Data'
 
 export interface IUIBaseUndoRedoEntry {
   doUndo(undoRedo: UIUndoRedo): void
   doRedo(undoRedo: UIUndoRedo): void
 }
 
-export class SetFrozenRowColUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: SetFrozenRowColCommand) {}
+export class UIBaseUndoRedoEntry {
+  constructor(private hyperformula: HyperFormula) {}
 
-  public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoSetFrozenRowCol(this)
+  public undoOperation(operation: () => void) {
+    this.hyperformula.suspendAddingUndoEntries()
+    operation()
+    this.hyperformula.resumeAddingUndoEntries()
   }
 
-  public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoSetFrozenRowCol(this)
-  }
-}
-
-export class UnsetFrozenRowColUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: UnsetFrozenRowColCommand) {}
-
-  public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoUnsetFrozenRowCol(this)
-  }
-
-  public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoUnsetFrozenRowCol(this)
+  public redoOperation(operation: () => void) {
+    this.hyperformula.suspendAddingUndoEntries()
+    operation()
+    this.hyperformula.resumeAddingUndoEntries()
   }
 }
 
-export class SetRowSizeUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: SetRowSizeCommand) {}
+export class SetFrozenRowColUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: SetFrozenRowColCommand
+  ) {
+    super(hyperformula)
+  }
 
   public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoSetRowSize(this)
+    this.undoOperation(() => {
+      undoRedo.undoSetFrozenRowCol(this)
+    })
   }
 
   public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoSetRowSize(this)
+    this.redoOperation(() => {
+      undoRedo.redoSetFrozenRowCol(this)
+    })
   }
 }
 
-export class SetColSizeUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: SetColSizeCommand) {}
+export class UnsetFrozenRowColUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: UnsetFrozenRowColCommand
+  ) {
+    super(hyperformula)
+  }
 
   public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoSetColSize(this)
+    this.undoOperation(() => {
+      undoRedo.undoUnsetFrozenRowCol(this)
+    })
   }
 
   public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoSetColSize(this)
+    this.redoOperation(() => {
+      undoRedo.redoUnsetFrozenRowCol(this)
+    })
   }
 }
 
-export class MergeCellsUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: MergeCellsCommand) {}
+export class SetRowSizeUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: SetRowSizeCommand
+  ) {
+    super(hyperformula)
+  }
 
   public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoMergeCells(this)
+    this.undoOperation(() => {
+      undoRedo.undoSetRowSize(this)
+    })
   }
 
   public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoMergeCells(this)
+    this.redoOperation(() => {
+      undoRedo.redoSetRowSize(this)
+    })
   }
 }
 
-export class UnMergeCellsUndoEntry implements IUIBaseUndoRedoEntry {
-  constructor(public readonly command: UnMergeCellsCommand) {}
+export class SetColSizeUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: SetColSizeCommand
+  ) {
+    super(hyperformula)
+  }
 
   public doUndo(undoRedo: UIUndoRedo): void {
-    undoRedo.undoUnMergeCells(this)
+    this.undoOperation(() => {
+      undoRedo.undoSetColSize(this)
+    })
   }
 
   public doRedo(undoRedo: UIUndoRedo): void {
-    undoRedo.redoUnMergeCells(this)
+    this.redoOperation(() => {
+      undoRedo.redoSetColSize(this)
+    })
+  }
+}
+
+export class MergeCellsUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: MergeCellsCommand
+  ) {
+    super(hyperformula)
+  }
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    this.undoOperation(() => {
+      undoRedo.undoMergeCells(this)
+    })
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    this.redoOperation(() => {
+      undoRedo.redoMergeCells(this)
+    })
+  }
+}
+
+export class UnMergeCellsUndoEntry
+  extends UIBaseUndoRedoEntry
+  implements IUIBaseUndoRedoEntry
+{
+  constructor(
+    hyperformula: HyperFormula,
+    public readonly command: UnMergeCellsCommand
+  ) {
+    super(hyperformula)
+  }
+
+  public doUndo(undoRedo: UIUndoRedo): void {
+    this.undoOperation(() => {
+      undoRedo.undoUnMergeCells(this)
+    })
+  }
+
+  public doRedo(undoRedo: UIUndoRedo): void {
+    this.redoOperation(() => {
+      undoRedo.redoUnMergeCells(this)
+    })
   }
 }
 
@@ -141,7 +225,7 @@ export class UIUndoRedo extends UndoRedo {
     const { topLeftSimpleCellAddress, removedMergedCells } = operation.command
 
     this.uiOperations.unMergeCells(topLeftSimpleCellAddress)
-    this.restoreRemovedMergedCells(removedMergedCells)
+    this.uiOperations.restoreRemovedMergedCells(removedMergedCells)
   }
 
   public undoUnMergeCells(operation: UnMergeCellsUndoEntry) {
@@ -188,19 +272,5 @@ export class UIUndoRedo extends UndoRedo {
     const { topLeftSimpleCellAddress } = operation.command
 
     this.uiOperations.unMergeCells(topLeftSimpleCellAddress)
-  }
-
-  private restoreRemovedMergedCells(
-    removedMergedCells: Record<CellId, IMergedCell>
-  ) {
-    if (removedMergedCells) {
-      for (const key in removedMergedCells) {
-        const cellId = key as CellId
-        const { width, height } = removedMergedCells[cellId]
-        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-
-        this.uiOperations.mergeCells(simpleCellAddress, width, height)
-      }
-    }
   }
 }

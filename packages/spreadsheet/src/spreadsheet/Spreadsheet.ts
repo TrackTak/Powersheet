@@ -22,17 +22,13 @@ import {
   MoveCellsUndoEntry,
   PasteUndoEntry
 } from '@tracktak/hyperformula'
-import Data, { IMergedCell, ISpreadsheetData } from './sheets/Data'
-import SimpleCellAddress, {
-  CellId
-} from './sheets/cells/cell/SimpleCellAddress'
+import Data, { ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
-// @ts-ignore
-import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
+import { CellId } from './sheets/cells/cell/SimpleCellAddress'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -292,15 +288,11 @@ class Spreadsheet {
   }
 
   private onUndo = (operation: UndoEntry) => {
-    if (operation instanceof BatchUndoEntry) {
-      operation.operations.forEach(operation => {
-        this.onUndo(operation)
-      })
-    }
+    this.hyperformula.suspendAddingUndoEntries()
 
     if (operation instanceof PasteUndoEntry) {
-      this.restoreOldCellContents(operation.oldContent)
-      this.restoreRemovedMergedCells(operation.removedMergedCells)
+      this.operations.restoreOldCellContents(operation.oldContent)
+      this.operations.restoreRemovedMergedCells(operation.removedMergedCells)
     }
 
     if (operation instanceof MoveCellsUndoEntry) {
@@ -310,7 +302,7 @@ class Spreadsheet {
         operation.width,
         operation.height
       )
-      this.restoreRemovedMergedCells(operation.removedMergedCells)
+      this.operations.restoreRemovedMergedCells(operation.removedMergedCells)
     }
 
     if (operation instanceof RemoveRowsUndoEntry) {
@@ -377,15 +369,11 @@ class Spreadsheet {
       )
     }
 
-    this.render()
+    this.hyperformula.resumeAddingUndoEntries()
   }
 
   private onRedo = (operation: UndoEntry) => {
-    if (operation instanceof BatchUndoEntry) {
-      operation.operations.forEach(operation => {
-        this.onRedo(operation)
-      })
-    }
+    this.hyperformula.suspendAddingUndoEntries()
 
     if (operation instanceof PasteUndoEntry) {
       this.operations.pasteMergedCells(
@@ -466,33 +454,8 @@ class Spreadsheet {
         operation.mergedCells
       )
     }
-    this.render()
-  }
 
-  private restoreRemovedMergedCells(
-    removedMergedCells: Record<CellId, IMergedCell>
-  ) {
-    for (const key in removedMergedCells) {
-      const cellId = key as CellId
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
-      const { width, height } = removedMergedCells[cellId]
-
-      this.operations.mergeCells(simpleCellAddress, width, height)
-    }
-  }
-
-  private restoreOldCellContents(
-    oldContent: [SimpleCellAddress, ClipboardCell][]
-  ) {
-    for (const [address] of oldContent) {
-      const simpleCellAddress = new SimpleCellAddress(
-        address.sheet,
-        address.row,
-        address.col
-      )
-
-      this.operations.unMergeCells(simpleCellAddress)
-    }
+    this.hyperformula.resumeAddingUndoEntries()
   }
 
   private _updateSheetSizes() {

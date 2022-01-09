@@ -57,7 +57,6 @@ import {
   UnMergeCellsUndoEntry,
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
-import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -167,14 +166,16 @@ class Toolbar {
         cell.simpleCellAddress
       )
 
-      if (metadata?.borders?.indexOf(borderType) === -1) {
+      const borders = metadata?.borders ?? []
+
+      if (borders.indexOf(borderType) === -1) {
         this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
           cell.simpleCellAddress,
           {
             cellValue,
             metadata: {
               ...metadata,
-              borders: [...metadata?.borders, borderType]
+              borders: [...borders, borderType]
             }
           }
         )
@@ -781,30 +782,23 @@ class Toolbar {
     const sheetName = this._spreadsheet.sheets.getActiveSheetName()
     const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
     const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
-      const selectedCellAddressValues: [
-        SimpleCellAddress,
-        GenericDataRawCellContent<ICellMetadata>
-      ][] = selectedCells.map(cell => {
-        return [
-          cell.simpleCellAddress,
-          this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-            cell.simpleCellAddress
+      this._spreadsheet.hyperformula.batchUndoRedo(() => {
+        selectedCells.forEach(({ simpleCellAddress }) => {
+          const {
+            cellValue,
+            metadata
+          } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+            simpleCellAddress
           )
-        ]
-      })
 
-      this._spreadsheet.hyperformula.batch(() => {
-        selectedCellAddressValues.forEach(
-          ([simpleCellAddress, { cellValue, metadata }]) => {
-            this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-              cellValue,
-              metadata: {
-                ...metadata,
-                [key]: value
-              }
-            })
-          }
-        )
+          this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+            cellValue,
+            metadata: {
+              ...metadata,
+              [key]: value
+            }
+          })
+        })
       })
     }
 
@@ -953,10 +947,12 @@ class Toolbar {
             mergedCell.height
           )
 
-          this._spreadsheet.operations.unMergeCells(mergedCellAddress)
-          this._spreadsheet.uiUndoRedo.saveOperation(
-            new UnMergeCellsUndoEntry(command)
-          )
+          this._spreadsheet.hyperformula.batchUndoRedo(() => {
+            this._spreadsheet.operations.unMergeCells(mergedCellAddress)
+            this._spreadsheet.uiUndoRedo.saveOperation(
+              new UnMergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
+            )
+          })
         } else {
           const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
             selectedCells
@@ -964,22 +960,24 @@ class Toolbar {
           const width = rangeSimpleCellAddress.width()
           const height = rangeSimpleCellAddress.height()
 
-          const removedMergedCells = this._spreadsheet.operations.mergeCells(
-            rangeSimpleCellAddress.topLeftSimpleCellAddress,
-            width,
-            height
-          )
+          this._spreadsheet.hyperformula.batchUndoRedo(() => {
+            const removedMergedCells = this._spreadsheet.operations.mergeCells(
+              rangeSimpleCellAddress.topLeftSimpleCellAddress,
+              width,
+              height
+            )
 
-          const command = new MergeCellsCommand(
-            rangeSimpleCellAddress.topLeftSimpleCellAddress,
-            width,
-            height,
-            removedMergedCells
-          )
+            const command = new MergeCellsCommand(
+              rangeSimpleCellAddress.topLeftSimpleCellAddress,
+              width,
+              height,
+              removedMergedCells
+            )
 
-          this._spreadsheet.uiUndoRedo.saveOperation(
-            new MergeCellsUndoEntry(command)
-          )
+            this._spreadsheet.uiUndoRedo.saveOperation(
+              new MergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
+            )
+          })
         }
         this._spreadsheet.hyperformula.clearRedoStack()
 
@@ -995,7 +993,10 @@ class Toolbar {
 
           this._spreadsheet.operations.unsetFrozenRowCol(sheetId)
           this._spreadsheet.uiUndoRedo.saveOperation(
-            new UnsetFrozenRowColUndoEntry(command)
+            new UnsetFrozenRowColUndoEntry(
+              this._spreadsheet.hyperformula,
+              command
+            )
           )
         } else {
           const indexes: ColumnRowIndex = [row, col]
@@ -1003,7 +1004,10 @@ class Toolbar {
 
           this._spreadsheet.operations.setFrozenRowCol(sheetId, command.indexes)
           this._spreadsheet.uiUndoRedo.saveOperation(
-            new SetFrozenRowColUndoEntry(command)
+            new SetFrozenRowColUndoEntry(
+              this._spreadsheet.hyperformula,
+              command
+            )
           )
         }
 
@@ -1019,61 +1023,61 @@ class Toolbar {
         break
       }
       case 'borderBottom': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setBottomBorders(selectedCells)
         })
         break
       }
       case 'borderRight': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setRightBorders(selectedCells)
         })
         break
       }
       case 'borderTop': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setTopBorders(selectedCells)
         })
         break
       }
       case 'borderLeft': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setLeftBorders(selectedCells)
         })
         break
       }
       case 'borderVertical': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setVerticalBorders(selectedCells)
         })
         break
       }
       case 'borderHorizontal': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setHorizontalBorders(selectedCells)
         })
         break
       }
       case 'borderInside': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setInsideBorders(selectedCells)
         })
         break
       }
       case 'borderOutside': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setOutsideBorders(selectedCells)
         })
         break
       }
       case 'borderAll': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setAllBorders(selectedCells)
         })
         break
       }
       case 'borderNone': {
-        this._spreadsheet.pushToHistory(() => {
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._clearBorders(selectedCells.map(cell => cell.simpleCellAddress))
         })
         break

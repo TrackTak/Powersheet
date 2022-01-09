@@ -151,33 +151,37 @@ class RowCol {
   }
 
   delete(amount: number) {
-    if (this._isCol) {
-      this._spreadsheet.hyperformula.removeColumns(this._sheets.activeSheetId, [
-        this.index,
-        amount
-      ])
-    } else {
-      this._spreadsheet.hyperformula.removeRows(this._sheets.activeSheetId, [
-        this.index,
-        amount
-      ])
-    }
+    this._spreadsheet.hyperformula.batchUndoRedo(() => {
+      if (this._isCol) {
+        this._spreadsheet.hyperformula.removeColumns(
+          this._sheets.activeSheetId,
+          [this.index, amount]
+        )
+      } else {
+        this._spreadsheet.hyperformula.removeRows(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      }
+    })
 
     this._spreadsheet.render()
   }
 
   insert(amount: number) {
-    if (this._isCol) {
-      this._spreadsheet.hyperformula.addColumns(this._sheets.activeSheetId, [
-        this.index,
-        amount
-      ])
-    } else {
-      this._spreadsheet.hyperformula.addRows(this._sheets.activeSheetId, [
-        this.index,
-        amount
-      ])
-    }
+    this._spreadsheet.hyperformula.batchUndoRedo(() => {
+      if (this._isCol) {
+        this._spreadsheet.hyperformula.addColumns(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      } else {
+        this._spreadsheet.hyperformula.addRows(this._sheets.activeSheetId, [
+          this.index,
+          amount
+        ])
+      }
+    })
 
     this._spreadsheet.render()
   }

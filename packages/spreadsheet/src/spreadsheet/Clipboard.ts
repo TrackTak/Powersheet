@@ -166,10 +166,12 @@ class Clipboard {
       return
     }
 
-    this._spreadsheet.hyperformula.paste({
-      sheet: targetRange.topLeftSimpleCellAddress.sheet,
-      col: targetRange.topLeftSimpleCellAddress.col,
-      row: targetRange.topLeftSimpleCellAddress.row
+    this._spreadsheet.hyperformula.batchUndoRedo(() => {
+      this._spreadsheet.hyperformula.paste({
+        sheet: targetRange.topLeftSimpleCellAddress.sheet,
+        col: targetRange.topLeftSimpleCellAddress.col,
+        row: targetRange.topLeftSimpleCellAddress.row
+      })
     })
 
     // if (this.isCut) {

@@ -954,10 +954,10 @@ class Toolbar {
           )
 
           this._spreadsheet.operations.unMergeCells(mergedCellAddress)
-
           this._spreadsheet.uiUndoRedo.saveOperation(
             new UnMergeCellsUndoEntry(command)
           )
+          this._spreadsheet.hyperformula.clearRedoStack()
         } else if (!this.iconElementsMap.merge.button.disabled) {
           const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
             selectedCells
@@ -981,6 +981,7 @@ class Toolbar {
           this._spreadsheet.uiUndoRedo.saveOperation(
             new MergeCellsUndoEntry(command)
           )
+          this._spreadsheet.hyperformula.clearRedoStack()
         }
 
         break
@@ -1007,6 +1008,7 @@ class Toolbar {
           )
         }
 
+        this._spreadsheet.hyperformula.clearRedoStack()
         this._spreadsheet.persistData()
         this._spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0)
         this._spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0)

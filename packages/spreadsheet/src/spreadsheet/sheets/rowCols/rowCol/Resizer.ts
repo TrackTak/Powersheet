@@ -153,6 +153,7 @@ class Resizer {
         new SetColSizeUndoEntry(command)
       )
     }
+    this._spreadsheet.hyperformula.clearRedoStack()
 
     this._spreadsheet.persistData()
     this._spreadsheet.render()

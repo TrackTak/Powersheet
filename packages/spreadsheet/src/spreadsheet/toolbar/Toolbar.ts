@@ -957,8 +957,7 @@ class Toolbar {
           this._spreadsheet.uiUndoRedo.saveOperation(
             new UnMergeCellsUndoEntry(command)
           )
-          this._spreadsheet.hyperformula.clearRedoStack()
-        } else if (!this.iconElementsMap.merge.button.disabled) {
+        } else {
           const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
             selectedCells
           )
@@ -981,8 +980,8 @@ class Toolbar {
           this._spreadsheet.uiUndoRedo.saveOperation(
             new MergeCellsUndoEntry(command)
           )
-          this._spreadsheet.hyperformula.clearRedoStack()
         }
+        this._spreadsheet.hyperformula.clearRedoStack()
 
         break
       }

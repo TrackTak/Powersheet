@@ -2,10 +2,13 @@ import { SimpleCellRange as HFSimpleCellRange } from '@tracktak/hyperformula'
 // @ts-ignore
 import { isSimpleCellAddress } from '@tracktak/hyperformula/es/Cell'
 import { isEmpty } from 'lodash'
+import { MergeCellsCommand } from './Commands'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
+import { ICellMetadata } from './sheets/Data'
 import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
+import { MergeCellsUndoEntry } from './UIUndoRedo'
 
 class Clipboard {
   /**
@@ -24,10 +27,16 @@ class Clipboard {
 
     let clipboardText = ''
 
-    rangeData.forEach(rowData => {
-      rowData.forEach(value => {
-        clipboardText += value ?? ''
+    rangeData.forEach((rowData, rowIndex) => {
+      rowData.forEach((value, columnIndex) => {
+        clipboardText += value?.cellValue ?? ''
+        if (columnIndex !== rowData.length - 1) {
+          clipboardText += `\t`
+        }
       })
+      if (rowIndex !== rangeData.length - 1) {
+        clipboardText += '\n'
+      }
     })
 
     await navigator.clipboard.writeText(clipboardText)
@@ -66,9 +75,9 @@ class Clipboard {
           const sheetName = this._spreadsheet.hyperformula.getSheetName(
             cell.simpleCellAddress.sheet
           )!
-          const mergedCell = this._spreadsheet.data._spreadsheetData.uiSheets[
-            sheetName
-          ].mergedCells[cellId]
+          const mergedCell =
+            this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+              .mergedCells[cellId]
 
           const col = cell.simpleCellAddress.col + (mergedCell.width - 1)
           const row = cell.simpleCellAddress.row + (mergedCell.height - 1)
@@ -167,66 +176,68 @@ class Clipboard {
     }
 
     this._spreadsheet.hyperformula.batchUndoRedo(() => {
-      this._spreadsheet.hyperformula.paste({
-        sheet: targetRange.topLeftSimpleCellAddress.sheet,
-        col: targetRange.topLeftSimpleCellAddress.col,
-        row: targetRange.topLeftSimpleCellAddress.row
-      })
+      if (this.isCut) {
+        this._spreadsheet.hyperformula.paste({
+          sheet: targetRange.topLeftSimpleCellAddress.sheet,
+          col: targetRange.topLeftSimpleCellAddress.col,
+          row: targetRange.topLeftSimpleCellAddress.row
+        })
+      } else {
+        const rangeData =
+          this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
+            {
+              start: sourceRange.topLeftSimpleCellAddress,
+              end: sourceRange.bottomRightSimpleCellAddress
+            },
+            {
+              start: targetRange.topLeftSimpleCellAddress,
+              end: targetRange.bottomRightSimpleCellAddress
+            },
+            true
+          )
 
-      // if (!this.isCut) {
-      //   const rangeData = this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
-      //     {
-      //       start: sourceRange.topLeftSimpleCellAddress,
-      //       end: sourceRange.bottomRightSimpleCellAddress
-      //     },
-      //     {
-      //       start: targetRange.topLeftSimpleCellAddress,
-      //       end: targetRange.bottomRightSimpleCellAddress
-      //     },
-      //     true
-      //   )
+        rangeData.forEach((rowData, ri) => {
+          rowData.forEach((cell, ci) => {
+            let { row, col } = this.sourceRange!.topLeftSimpleCellAddress
 
-      //   rangeData.forEach((rowData, ri) => {
-      //     rowData.forEach((cell, ci) => {
-      //       let { row, col } = this.sourceRange!.topLeftSimpleCellAddress
+            row += ri % this.sourceRange!.height()
+            col += ci % this.sourceRange!.width()
 
-      //       row += ri % this.sourceRange!.height()
-      //       col += ci % this.sourceRange!.width()
+            const targetSimpleCellAddress = new SimpleCellAddress(
+              targetRange.topLeftSimpleCellAddress.sheet,
+              targetRange.topLeftSimpleCellAddress.row + ri,
+              targetRange.topLeftSimpleCellAddress.col + ci
+            )
 
-      //       const targetSimpleCellAddress = new SimpleCellAddress(
-      //         targetRange.topLeftSimpleCellAddress.sheet,
-      //         targetRange.topLeftSimpleCellAddress.row + ri,
-      //         targetRange.topLeftSimpleCellAddress.col + ci
-      //       )
+            this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+              targetSimpleCellAddress,
+              cell
+            )
 
-      //       this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
-      //         targetSimpleCellAddress,
-      //         cell
-      //       )
+            const { width, height } = cell.metadata ?? {}
 
-      //       const { width, height } = cell.metadata ?? {}
+            if (width !== undefined && height !== undefined) {
+              const removedMergedCells =
+                this._spreadsheet.operations.mergeCells(
+                  targetSimpleCellAddress,
+                  width,
+                  height
+                )
 
-      //       if (width !== undefined && height !== undefined) {
-      //         const removedMergedCells = this._spreadsheet.operations.mergeCells(
-      //           targetSimpleCellAddress,
-      //           width,
-      //           height
-      //         )
+              const command = new MergeCellsCommand(
+                targetSimpleCellAddress,
+                width,
+                height,
+                removedMergedCells
+              )
 
-      //         const command = new MergeCellsCommand(
-      //           targetSimpleCellAddress,
-      //           width,
-      //           height,
-      //           removedMergedCells
-      //         )
-
-      //         this._spreadsheet.uiUndoRedo.saveOperation(
-      //           new MergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
-      //         )
-      //       }
-      //     })
-      //   })
-      // }
+              this._spreadsheet.uiUndoRedo.saveOperation(
+                new MergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
+              )
+            }
+          })
+        })
+      }
     })
 
     this._spreadsheet.render()

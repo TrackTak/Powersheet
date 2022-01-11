@@ -39,6 +39,7 @@ import {
   BorderStyle,
   HorizontalTextAlign,
   ICellMetadata,
+  ISheetMetadata,
   TextWrap,
   VerticalTextAlign
 } from '../sheets/Data'
@@ -779,8 +780,9 @@ class Toolbar {
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const selectedCell = this._spreadsheet.sheets.selector.selectedCell
     const selectedCells = this._spreadsheet.sheets.selector.selectedCells
-    const sheetName = this._spreadsheet.sheets.getActiveSheetName()
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._spreadsheet.sheets.activeSheetId
+    )
     const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
       this._spreadsheet.hyperformula.batchUndoRedo(() => {
         selectedCells.forEach(({ simpleCellAddress }) => {
@@ -834,8 +836,8 @@ class Toolbar {
         break
       }
       case 'formula': {
-        this._spreadsheet.data._spreadsheetData.showFormulas = !this
-          ._spreadsheet.data._spreadsheetData.showFormulas
+        this._spreadsheet.spreadsheetData.showFormulas = !this._spreadsheet
+          .spreadsheetData.showFormulas
         break
       }
       case 'alignLeft': {
@@ -938,9 +940,7 @@ class Toolbar {
           const { sheet, row, col } = selectedCell!.simpleCellAddress
           const mergedCellAddress = new SimpleCellAddress(sheet, row, col)
           const mergedCellId = mergedCellAddress.toCellId()
-          const mergedCell = this._spreadsheet.data._spreadsheetData.uiSheets[
-            sheetName
-          ].mergedCells[mergedCellId]
+          const mergedCell = sheetMetadata.mergedCells[mergedCellId]
           const command = new UnMergeCellsCommand(
             mergedCellAddress,
             mergedCell.width,
@@ -984,14 +984,14 @@ class Toolbar {
         break
       }
       case 'freeze': {
-        const { sheet: sheetId, row, col } = selectedCell!.simpleCellAddress
+        const { sheet, row, col } = selectedCell!.simpleCellAddress
 
         if (this.iconElementsMap.freeze.active) {
-          const { frozenRow, frozenCol } = sheet
+          const { frozenRow, frozenCol } = sheetMetadata
           const indexes: ColumnRowIndex = [frozenRow!, frozenCol!]
-          const command = new UnsetFrozenRowColCommand(sheetId, indexes)
+          const command = new UnsetFrozenRowColCommand(sheet, indexes)
 
-          this._spreadsheet.operations.unsetFrozenRowCol(sheetId)
+          this._spreadsheet.operations.unsetFrozenRowCol(sheet)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new UnsetFrozenRowColUndoEntry(
               this._spreadsheet.hyperformula,
@@ -1000,9 +1000,9 @@ class Toolbar {
           )
         } else {
           const indexes: ColumnRowIndex = [row, col]
-          const command = new SetFrozenRowColCommand(sheetId, indexes)
+          const command = new SetFrozenRowColCommand(sheet, indexes)
 
-          this._spreadsheet.operations.setFrozenRowCol(sheetId, command.indexes)
+          this._spreadsheet.operations.setFrozenRowCol(sheet, command.indexes)
           this._spreadsheet.uiUndoRedo.saveOperation(
             new SetFrozenRowColUndoEntry(
               this._spreadsheet.hyperformula,
@@ -1133,7 +1133,7 @@ class Toolbar {
     )
     this._setActive(
       this.iconElementsMap.formula,
-      this._spreadsheet.data._spreadsheetData.showFormulas ?? false
+      this._spreadsheet.spreadsheetData.showFormulas ?? false
     )
     this._setActive(
       this.iconElementsMap.functionHelper,
@@ -1157,11 +1157,10 @@ class Toolbar {
   }
 
   isFreezeActive(sheetId: number) {
-    const sheetName = this._spreadsheet.hyperformula.getSheetName(sheetId)!
-    const {
-      frozenRow,
-      frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      sheetId
+    )
+    const { frozenRow, frozenCol } = sheetMetadata
 
     return frozenRow !== undefined || frozenCol !== undefined
   }

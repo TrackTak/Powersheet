@@ -31,12 +31,10 @@ export default {
 export const Default = Template.bind({})
 
 Default.args = {
-  data: {
-    sheets: {
-      Default: []
-    },
-    uiSheets: {
-      Default: {
+  sheets: {
+    Default: {
+      cells: [],
+      sheetMetadata: {
         rowSizes: {},
         colSizes: {},
         mergedCells: {},

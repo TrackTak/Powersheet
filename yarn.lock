@@ -4615,10 +4615,10 @@
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-2.0.0.tgz#f544a148d3ab35801c1f633a7441fd87c2e484bf"
   integrity sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==
 
-"@tracktak/hyperformula@^2.3.0-beta.2":
-  version "2.3.0-beta.2"
-  resolved "https://npm.pkg.github.com/download/@tracktak/hyperformula/2.3.0-beta.2/9c5be2dabb581f81b5e9ff6c53424d4924bb1948855fc2c6fd7fe2b87a715ceb#8325a7f461f97dfb0c3750b7a110364c1ade259d"
-  integrity sha512-yIAB4b74sdGK4i+fUK3D3aYW6QUHfOoSL15zficwMwiTZ63uMQY7Yw2ypzXXDWAos0QsOb7G+oToZiTPle2zfA==
+"@tracktak/hyperformula@^2.3.0-beta.3":
+  version "2.3.0-beta.3"
+  resolved "https://npm.pkg.github.com/download/@tracktak/hyperformula/2.3.0-beta.3/d7b27719624916a69644e7f3307f6072b9ab64f51ca808c017610191f73d4d38#a3a0c0891bc7e338f9462054673e3d28d6c8ab23"
+  integrity sha512-MMYG2ohqdgFTmkIILRKKm57DKTYNP1e98M2uau1qY4+bShJ0UYVxPPUcrIGMPi/WHs1+8U5KlArumGPRE04Wtg==
   dependencies:
     chevrotain "^6.5.0"
     core-js "^3.6.4"
@@ -17213,11 +17213,6 @@ uncss@^0.17.3:
     postcss "^7.0.17"
     postcss-selector-parser "6.0.2"
     request "^2.88.0"
-
-undo-redo-manager@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/undo-redo-manager/-/undo-redo-manager-1.0.0.tgz#845bd079b8324d816e6c2d903efc510a30e135c8"
-  integrity sha512-nMBzETo2VdM0Nw6Ygi2Dhv4S3eH/EsLv8CXjZ0Mw2tcgezND/veuRYYKNEoj5uJRpDnog2mWKk8KlsEi92v2Vw==
 
 unfetch@^4.2.0:
   version "4.2.0"

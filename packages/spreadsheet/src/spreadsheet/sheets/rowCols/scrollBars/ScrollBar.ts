@@ -6,6 +6,7 @@ import styles from './ScrollBar.module.scss'
 import Spreadsheet from '../../../Spreadsheet'
 import ViewportPosition from './ViewportPosition'
 import RowColAddress from '../../cells/cell/RowColAddress'
+import { ISheetMetadata } from '../../Data'
 
 export type ScrollBarType = 'horizontal' | 'vertical'
 
@@ -91,7 +92,9 @@ class ScrollBar {
   }
 
   private _getNewScrollAmount(start: number, end: number) {
-    const data = this._spreadsheet.data._spreadsheetData
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
     const defaultSize = this._spreadsheet.options[this._type].defaultSize
 
     let newScrollAmount = 0
@@ -100,7 +103,9 @@ class ScrollBar {
     for (let i = start; i < end; i++) {
       const rowCollAddress = new RowColAddress(this._sheets.activeSheetId, i)
       const size =
-        data[this._pluralType]?.[rowCollAddress.toSheetRowColId()]?.size
+        this._pluralType === 'rows'
+          ? sheetMetadata.rowSizes[rowCollAddress.rowCol]
+          : sheetMetadata.colSizes[rowCollAddress.rowCol]
 
       if (size) {
         totalCustomSizeDifferencs += size - defaultSize

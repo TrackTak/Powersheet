@@ -20,7 +20,6 @@ import {
   AlwaysSparse,
   ConfigParams,
   HyperFormula,
-  SerializedNamedExpression,
   Sheets
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
@@ -35,32 +34,18 @@ export interface IArgs {
 
 const eventLog = (event: string, ...args: any[]) => {
   action(event)(...args)
-  //console.log(event, ...args)
+  console.log(event, ...args)
 }
 
 export const getHyperformulaInstance = (
   sheets: Sheets,
   config?: Partial<ConfigParams>
 ) => {
-  const trueNamedExpression: SerializedNamedExpression = {
-    name: 'TRUE',
-    expression: '=TRUE()'
-  }
-
-  const falseNamedExpression: SerializedNamedExpression = {
-    name: 'FALSE',
-    expression: '=FALSE()'
-  }
-
-  const hyperformula = HyperFormula.buildFromSheets(
-    sheets,
-    {
-      ...config,
-      chooseAddressMappingPolicy: new AlwaysSparse(),
-      licenseKey: 'gpl-v3'
-    },
-    [trueNamedExpression, falseNamedExpression]
-  )[0]
+  const hyperformula = HyperFormula.buildFromSheets(sheets, {
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    licenseKey: 'gpl-v3'
+  })[0]
 
   return hyperformula
 }
@@ -161,6 +146,6 @@ export const buildSpreadsheetWithEverything = (
 export const Template: Story<IArgs> = args => {
   return buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance(args.data.sheets!)
+    getHyperformulaInstance(args.sheets!)
   ).spreadsheetEl
 }

@@ -1,6 +1,7 @@
 import SimpleCellAddress from './cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import Sheets from './Sheets'
+import { ISheetMetadata } from './Data'
 
 class Merger {
   private _spreadsheet: Spreadsheet
@@ -17,11 +18,11 @@ class Merger {
    */
   *_iterateMergedCellWidthHeight(simpleCellAddress: SimpleCellAddress) {
     const mergedCellId = simpleCellAddress.toCellId()
-    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
-    )!
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-    const { width, height } = sheet.mergedCells[mergedCellId] ?? {}
+    )
+
+    const { width, height } = sheetMetadata.mergedCells[mergedCellId] ?? {}
 
     if (width === undefined || height === undefined) return
 
@@ -45,11 +46,10 @@ class Merger {
    */
   getIsCellTopLeftMergedCell(simpleCellAddress: SimpleCellAddress) {
     const mergedCellId = simpleCellAddress.toCellId()
-    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
-    )!
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-    const mergedCell = sheet.mergedCells[mergedCellId]
+    )
+    const mergedCell = sheetMetadata.mergedCells[mergedCellId]
 
     return mergedCell !== undefined
   }
@@ -59,12 +59,11 @@ class Merger {
    */
   getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
     const cellId = simpleCellAddress.toCellId()
-    const sheetName = this._spreadsheet.hyperformula.getSheetName(
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
-    )!
+    )
 
-    return !!this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-      .associatedMergedCells[cellId]
+    return !!sheetMetadata.associatedMergedCells[cellId]
   }
 }
 

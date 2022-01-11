@@ -1,4 +1,3 @@
-import { Sheets } from '@tracktak/hyperformula'
 import { CellId } from './cells/cell/SimpleCellAddress'
 
 export type TextWrap = 'wrap'
@@ -31,12 +30,7 @@ export interface ICellMetadata extends ICellStyles {
   height?: number
 }
 
-export interface IMergedCell {
-  width: number
-  height: number
-}
-
-export interface IUISheet {
+export interface ISheetMetadata {
   frozenRow?: number
   frozenCol?: number
   rowSizes: Record<number, number>
@@ -45,38 +39,12 @@ export interface IUISheet {
   associatedMergedCells: Record<CellId, CellId>
 }
 
-export type UISheets = Record<string, IUISheet>
+export interface IMergedCell {
+  width: number
+  height: number
+}
 
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string
-  uiSheets: UISheets
-  sheets?: Sheets
   showFormulas?: boolean
 }
-
-class Data {
-  /**
-   * @internal
-   */
-  _spreadsheetData: ISpreadsheetData
-
-  /**
-   * @internal
-   */
-  constructor(sheetNames: string[]) {
-    this._spreadsheetData = {
-      uiSheets: {}
-    }
-
-    sheetNames.forEach(sheetName => {
-      this._spreadsheetData.uiSheets[sheetName] = {
-        rowSizes: {},
-        colSizes: {},
-        mergedCells: {},
-        associatedMergedCells: {}
-      }
-    })
-  }
-}
-
-export default Data

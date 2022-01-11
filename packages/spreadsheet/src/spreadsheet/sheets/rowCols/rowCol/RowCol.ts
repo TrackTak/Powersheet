@@ -9,6 +9,7 @@ import Sheets from '../../Sheets'
 import RowColAddress from '../../cells/cell/RowColAddress'
 import { centerRectTwoInRectOne, getColumnHeader } from '../../../utils'
 import { Util } from 'konva/lib/Util'
+import { ISheetMetadata } from '../../Data'
 
 class RowCol {
   headerRect: Rect
@@ -92,13 +93,10 @@ class RowCol {
 
     this.resizeLine[this._functions.axis](this._rowCols.getSize(this.index))
 
-    const sheetName = this._sheets.getActiveSheetName()
-
-    const {
-      frozenRow,
-      frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
+    const { frozenRow, frozenCol } = sheetMetadata
     const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
 
     this.gridLine[this._functions.axis](gridLineAxis)

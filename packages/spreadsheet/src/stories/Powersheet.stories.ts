@@ -78,19 +78,6 @@ MergedCells.args = {
               horizontalTextAlign: 'center'
             }
           }
-        ],
-        [
-          {
-            cellValue: undefined
-          },
-          {
-            cellValue: 'Merged Cell',
-            metadata: {
-              fontSize: 14,
-              bold: true,
-              horizontalTextAlign: 'center'
-            }
-          }
         ]
       ],
       sheetMetadata: {

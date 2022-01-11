@@ -281,12 +281,8 @@ class Cells {
     // We always render frozenRowCol cells so they hide the cells beneath it
     if (!cell && !isOnFrozenRowCol) return
 
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-      simpleCellAddress.sheet
-    )
-
     if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
-      const mergedCellId = sheetMetadata.associatedMergedCells[cellId]
+      const mergedCellId = this._merger.associatedMergedCellAddressMap[cellId]
       const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {

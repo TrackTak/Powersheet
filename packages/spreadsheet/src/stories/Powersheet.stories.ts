@@ -99,9 +99,6 @@ MergedCells.args = {
             width: 1,
             height: 2
           }
-        },
-        associatedMergedCells: {
-          '0_4_1': '0_3_1'
         }
       }
     }

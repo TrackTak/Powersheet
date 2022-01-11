@@ -36,7 +36,6 @@ export interface ISheetMetadata {
   rowSizes: Record<number, number>
   colSizes: Record<number, number>
   mergedCells: Record<CellId, IMergedCell>
-  associatedMergedCells: Record<CellId, CellId>
 }
 
 export interface IMergedCell {

@@ -24,7 +24,7 @@ import CellError from './cellError/CellError'
 import { DetailedCellError } from '@tracktak/hyperformula'
 import { Instance, Props } from 'tippy.js'
 import CellHighlighter from '../cellHighlighter/CellHighlighter'
-import { ICellMetadata, ISheetMetadata } from './Data'
+import { ICellMetadata } from './Data'
 
 export interface IDimensions {
   width: number
@@ -642,14 +642,11 @@ class Sheets {
           ri,
           ci
         )
-        const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-          this.activeSheetId
-        )
 
         if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
           const cellId = simpleCellAddress.toCellId()
           const mergedCellAddress = SimpleCellAddress.cellIdToAddress(
-            sheetMetadata.associatedMergedCells[cellId]
+            this._merger.associatedMergedCellAddressMap[cellId]
           )
 
           let bottomRow = -Infinity

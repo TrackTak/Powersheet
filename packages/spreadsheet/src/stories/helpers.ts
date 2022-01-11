@@ -2,7 +2,7 @@ import { Story } from '@storybook/html'
 import TouchEmulator from 'hammer-touchemulator'
 import { action } from '@storybook/addon-actions'
 import { throttle } from 'lodash'
-import { ISpreadsheetData } from '../spreadsheet/sheets/Data'
+import { ISheetMetadata, ISpreadsheetData } from '../spreadsheet/sheets/Data'
 import { IOptions } from '../spreadsheet/options'
 import { IStyles } from '../spreadsheet/styles'
 import { NestedPartial } from '../spreadsheet/types'
@@ -19,15 +19,17 @@ import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
 import {
   AlwaysSparse,
   ConfigParams,
-  HyperFormula,
-  Sheets
+  DataRawCellContent,
+  HyperFormula
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
 import getFunctionHelperContent from './getFunctionHelperContent'
+import type { GenericSheets } from '@tracktak/hyperformula/typings/Sheet'
 
 export interface IArgs {
-  data: ISpreadsheetData
+  sheets?: GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>
+  data?: ISpreadsheetData
   options?: NestedPartial<IOptions>
   styles?: NestedPartial<IStyles>
 }
@@ -38,7 +40,7 @@ const eventLog = (event: string, ...args: any[]) => {
 }
 
 export const getHyperformulaInstance = (
-  sheets: Sheets,
+  sheets: GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>,
   config?: Partial<ConfigParams>
 ) => {
   const hyperformula = HyperFormula.buildFromSheets(sheets, {
@@ -50,8 +52,20 @@ export const getHyperformulaInstance = (
   return hyperformula
 }
 
+export const getEmptyHyperformulaInstance = (
+  config?: Partial<ConfigParams>
+) => {
+  const hyperformula = HyperFormula.buildEmpty({
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    licenseKey: 'gpl-v3'
+  })[0]
+
+  return hyperformula
+}
+
 const getSpreadsheet = (
-  { options, styles, data }: IArgs,
+  { options, styles, data }: IArgs | undefined = {},
   params: ISpreadsheetConstructor
 ) => {
   TouchEmulator.stop()
@@ -60,7 +74,9 @@ const getSpreadsheet = (
     ...params
   })
 
-  spreadsheet.setData(data)
+  if (data) {
+    spreadsheet.setData(data)
+  }
 
   if (options) {
     spreadsheet.setOptions(options)
@@ -111,7 +127,7 @@ export const buildOnlySpreadsheet = (
 }
 
 export const buildSpreadsheetWithEverything = (
-  args: IArgs,
+  args: IArgs | undefined,
   hyperformula: HyperFormula,
   customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
 ) => {
@@ -146,6 +162,8 @@ export const buildSpreadsheetWithEverything = (
 export const Template: Story<IArgs> = args => {
   return buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance(args.sheets!)
+    args.sheets
+      ? getHyperformulaInstance(args.sheets)
+      : getEmptyHyperformulaInstance()
   ).spreadsheetEl
 }

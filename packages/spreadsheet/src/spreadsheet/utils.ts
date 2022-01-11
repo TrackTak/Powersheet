@@ -64,6 +64,15 @@ export const reverseVectorsIfStartBiggerThanEnd = (
   }
 }
 
+export const getDefaultSheetMetadata = () => {
+  return {
+    rowSizes: {},
+    colSizes: {},
+    mergedCells: {},
+    associatedMergedCells: {}
+  }
+}
+
 export const addressToCellId = ({
   sheet,
   row,

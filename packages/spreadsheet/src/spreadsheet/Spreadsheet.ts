@@ -4,14 +4,14 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { prefix } from './utils'
+import { getDefaultSheetMetadata, prefix } from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
 import { HyperFormula } from '@tracktak/hyperformula'
-import { ISpreadsheetData } from './sheets/Data'
+import { ISheetMetadata, ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
@@ -54,14 +54,15 @@ class Spreadsheet {
   constructor(params: ISpreadsheetConstructor) {
     this.options = defaultOptions
     this.styles = defaultStyles
-    this.spreadsheetData = {}
-
     this.toolbar = params.toolbar
     this.formulaBar = params.formulaBar
     this.bottomBar = params.bottomBar
     this.exporter = params.exporter
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
+    this.spreadsheetData = {}
+    this.initializeMetadata()
+
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
@@ -113,6 +114,34 @@ class Spreadsheet {
 
   private _onDOMContentLoaded = () => {
     this.sheets._updateSize()
+  }
+
+  private setMetadataForSheet(sheetName: string) {
+    const sheetId = this.hyperformula.getSheetId(sheetName)!
+    const partialSheetMetadata = this.hyperformula.getSheetMetadata<
+      Partial<ISheetMetadata>
+    >(sheetId)
+
+    const sheetMetadata = merge<ISheetMetadata, Partial<ISheetMetadata>>(
+      getDefaultSheetMetadata(),
+      partialSheetMetadata
+    )
+
+    this.hyperformula.setSheetMetadata<ISheetMetadata>(sheetId, sheetMetadata)
+  }
+
+  private initializeMetadata() {
+    const sheetNames = this.hyperformula.getSheetNames()
+
+    sheetNames.forEach(sheetName => {
+      this.setMetadataForSheet(sheetName)
+    })
+
+    if (sheetNames.length === 0) {
+      const sheetName = this.hyperformula.addSheet()
+
+      this.setMetadataForSheet(sheetName)
+    }
   }
 
   /**

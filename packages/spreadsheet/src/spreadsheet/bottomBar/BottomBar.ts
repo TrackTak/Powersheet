@@ -10,6 +10,7 @@ import tippy, { Instance, Props } from 'tippy.js'
 import { createIconButton, IIconElements } from '../htmlElementHelpers'
 import Spreadsheet from '../Spreadsheet'
 import { ISheetMetadata } from '../sheets/Data'
+import { getDefaultSheetMetadata } from '../utils'
 
 export interface ISheetTabElements {
   sheetTabContainer: HTMLDivElement
@@ -142,21 +143,9 @@ class BottomBar {
   }
 
   private _createNewSheetButtonOnClick = () => {
-    const sheetNames = this._spreadsheet.hyperformula.getSheetNames()
-    const maxSheetId = sheetNames.reduce(
-      (prev, curr) =>
-        Math.max(prev, this._spreadsheet.hyperformula.getSheetId(curr)!),
-      0
-    )
-
     this._spreadsheet.hyperformula.addSheet<ISheetMetadata>(
-      `Sheet${maxSheetId + 1}`,
-      {
-        rowSizes: {},
-        colSizes: {},
-        mergedCells: {},
-        associatedMergedCells: {}
-      }
+      undefined,
+      getDefaultSheetMetadata()
     )
   }
 

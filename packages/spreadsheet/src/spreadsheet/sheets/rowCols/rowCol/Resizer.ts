@@ -133,7 +133,7 @@ class Resizer {
       )
 
       this._spreadsheet.uiUndoRedo.saveOperation(
-        new SetRowSizeUndoEntry(command)
+        new SetRowSizeUndoEntry(this._spreadsheet.hyperformula, command)
       )
     } else {
       this._spreadsheet.operations.setColSize(
@@ -150,7 +150,7 @@ class Resizer {
       )
 
       this._spreadsheet.uiUndoRedo.saveOperation(
-        new SetColSizeUndoEntry(command)
+        new SetColSizeUndoEntry(this._spreadsheet.hyperformula, command)
       )
     }
     this._spreadsheet.hyperformula.clearRedoStack()

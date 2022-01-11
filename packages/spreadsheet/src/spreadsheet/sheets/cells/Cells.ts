@@ -9,6 +9,7 @@ import { Line } from 'konva/lib/shapes/Line'
 import { isNil } from 'lodash'
 import Cell from './cell/Cell'
 import { ICellMetadata, ISheetMetadata } from '../Data'
+import Merger from '../Merger'
 
 export interface IGroupedCells {
   main: Cell[]
@@ -21,7 +22,7 @@ class Cells {
   cellsMap: Map<CellId, StyleableCell>
   private _spreadsheet: Spreadsheet
 
-  constructor(private _sheets: Sheets) {
+  constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
     this.cellsMap = new Map()
   }
@@ -284,7 +285,7 @@ class Cells {
       simpleCellAddress.sheet
     )
 
-    if (this._sheets.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+    if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
       const mergedCellId = sheetMetadata.associatedMergedCells[cellId]
       const mergedCell = this.cellsMap.get(mergedCellId)
 

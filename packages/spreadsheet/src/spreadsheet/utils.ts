@@ -1,4 +1,6 @@
+import { SimpleCellAddress } from '@tracktak/hyperformula'
 import { IRect, Vector2d } from 'konva/lib/types'
+import { CellId } from './sheets/cells/cell/SimpleCellAddress'
 
 export const prefix = 'powersheet'
 
@@ -60,6 +62,14 @@ export const reverseVectorsIfStartBiggerThanEnd = (
     start: newStart,
     end: newEnd
   }
+}
+
+export const addressToCellId = ({
+  sheet,
+  row,
+  col
+}: SimpleCellAddress): CellId => {
+  return `${sheet}_${row}_${col}`
 }
 
 // Taken from: https://codereview.stackexchange.com/questions/16124/implement-numbering-scheme-like-a-b-c-aa-ab-aaa-similar-to-converting

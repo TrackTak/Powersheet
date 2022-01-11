@@ -6,6 +6,7 @@ import { MergeCellsCommand } from './Commands'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
 import { ICellMetadata, ISheetMetadata } from './sheets/Data'
+import Merger from './sheets/Merger'
 import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
 import { MergeCellsUndoEntry } from './UIUndoRedo'
@@ -18,7 +19,7 @@ class Clipboard {
   isCut = false
   private _spreadsheet: Spreadsheet
 
-  constructor(private _sheets: Sheets) {
+  constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
   }
 
@@ -62,9 +63,7 @@ class Clipboard {
 
     const setCellRangeForMerges = () => {
       selectedCells.forEach(cell => {
-        if (
-          this._sheets.merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)
-        ) {
+        if (this._merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)) {
           const cellId = cell.simpleCellAddress.toCellId()
           const {
             mergedCells

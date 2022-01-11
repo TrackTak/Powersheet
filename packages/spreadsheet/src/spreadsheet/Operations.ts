@@ -11,6 +11,7 @@ import SimpleCellAddress, {
 import { ICellMetadata, IMergedCell, ISheetMetadata } from './sheets/Data'
 import Merger from './sheets/Merger'
 import Selector from './sheets/Selector'
+import { addressToCellId } from './utils'
 
 class Operations {
   constructor(
@@ -545,7 +546,7 @@ class Operations {
     for (const address of this.merger._iterateMergedCellWidthHeight(
       topLeftSimpleCellAddress
     )) {
-      const cellId = address.toCellId()
+      const cellId = addressToCellId(address)
 
       delete sheetMetadata.associatedMergedCells[cellId]
     }
@@ -563,7 +564,7 @@ class Operations {
     for (const address of this.merger._iterateMergedCellWidthHeight(
       simpleCellAddress
     )) {
-      const cellId = address.toCellId()
+      const cellId = addressToCellId(address)
 
       sheetMetadata.associatedMergedCells[cellId] = simpleCellAddress.toCellId()
 

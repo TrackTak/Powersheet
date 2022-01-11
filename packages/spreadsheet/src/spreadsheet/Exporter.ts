@@ -13,6 +13,7 @@ import {
 // @ts-ignore
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
 import { ICellMetadata, ISheetMetadata } from './sheets/Data'
+import Merger from './sheets/Merger'
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions']
@@ -21,6 +22,7 @@ export interface ICustomRegisteredPluginDefinition {
 
 class Exporter {
   private _spreadsheet!: Spreadsheet
+  private _merger!: Merger
 
   /**
    *
@@ -67,7 +69,7 @@ class Exporter {
         const cell = rowData[col]
         const simpleCellAddress = new SimpleCellAddress(sheetId, row, col)
         const cellString = simpleCellAddress.addressToString()
-        const isMergedCell = this._spreadsheet.sheets.merger.getIsCellTopLeftMergedCell(
+        const isMergedCell = this._merger.getIsCellTopLeftMergedCell(
           simpleCellAddress
         )
 
@@ -263,8 +265,9 @@ class Exporter {
   /**
    * @param spreadsheet - The spreadsheet that this Exporter is connected to.
    */
-  initialize(spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet, merger: Merger) {
     this._spreadsheet = spreadsheet
+    this._merger = merger
   }
 
   async exportWorkbook() {

@@ -58,6 +58,7 @@ import {
   UnMergeCellsUndoEntry,
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
+import Merger from '../sheets/Merger'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -104,6 +105,7 @@ class Toolbar {
   tooltip!: DelegateInstance
   dropdown!: DelegateInstance
   private _spreadsheet!: Spreadsheet
+  private _merger!: Merger
 
   private _setFunction(functionName: string) {
     const selectedCells = this._spreadsheet.sheets.selector.selectedCells
@@ -415,10 +417,10 @@ class Toolbar {
     selectedCells: Cell[],
     selectedCell: SelectedCell
   ) {
-    const isCellPartOfMerge = this._spreadsheet.sheets.merger.getIsCellPartOfMerge(
+    const isCellPartOfMerge = this._merger.getIsCellPartOfMerge(
       selectedCell.simpleCellAddress
     )
-    const isTopLeftMergedCell = this._spreadsheet.sheets.merger.getIsCellTopLeftMergedCell(
+    const isTopLeftMergedCell = this._merger.getIsCellTopLeftMergedCell(
       selectedCell.simpleCellAddress
     )
     const isMerged =
@@ -546,8 +548,9 @@ class Toolbar {
   /**
    * @param spreadsheet - The spreadsheet that this Toolbar is connected to.
    */
-  initialize(spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet, merger: Merger) {
     this._spreadsheet = spreadsheet
+    this._merger = merger
     this.toolbarEl = document.createElement('div')
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix)
 

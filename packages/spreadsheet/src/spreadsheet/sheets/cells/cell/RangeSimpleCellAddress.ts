@@ -125,7 +125,7 @@ class RangeSimpleCellAddress {
     }
 
     const filterOutAssociatedMergedCells = (cell: C) => {
-      return !sheets.merger.getIsCellPartOfMerge(cell.simpleCellAddress)
+      return !sheets._merger.getIsCellPartOfMerge(cell.simpleCellAddress)
     }
 
     return cells.filter(filterOutAssociatedMergedCells)

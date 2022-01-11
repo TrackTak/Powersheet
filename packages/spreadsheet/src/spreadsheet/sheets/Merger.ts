@@ -1,24 +1,17 @@
-import SimpleCellAddress from './cells/cell/SimpleCellAddress'
-import Spreadsheet from '../Spreadsheet'
-import Sheets from './Sheets'
+import { HyperFormula, SimpleCellAddress } from '@tracktak/hyperformula'
 import { ISheetMetadata } from './Data'
+import { addressToCellId } from '../utils'
 
 class Merger {
-  private _spreadsheet: Spreadsheet
+  constructor(private _hyperformula: HyperFormula) {}
 
   /**
    * @internal
    */
-  constructor(private _sheets: Sheets) {
-    this._spreadsheet = this._sheets._spreadsheet
-  }
-
-  /**
-   * @internal
-   */
-  *_iterateMergedCellWidthHeight(simpleCellAddress: SimpleCellAddress) {
-    const mergedCellId = simpleCellAddress.toCellId()
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+  public *_iterateMergedCellWidthHeight(simpleCellAddress: SimpleCellAddress) {
+    const { sheet, row, col } = simpleCellAddress
+    const mergedCellId = addressToCellId(simpleCellAddress)
+    const sheetMetadata = this._hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
     )
 
@@ -27,16 +20,16 @@ class Merger {
     if (width === undefined || height === undefined) return
 
     for (let index = 0; index < width; index++) {
-      const col = simpleCellAddress.col + index
+      const newCol = col + index
 
       for (let index = 0; index < height; index++) {
-        const row = simpleCellAddress.row + index
+        const newRow = row + index
 
-        if (row === simpleCellAddress.row && col === simpleCellAddress.col) {
+        if (newRow === row && newCol === col) {
           continue
         }
 
-        yield new SimpleCellAddress(simpleCellAddress.sheet, row, col)
+        yield { sheet, row: newRow, col: newCol }
       }
     }
   }
@@ -44,9 +37,9 @@ class Merger {
   /**
    * @returns If the cell is part of the merged cell.
    */
-  getIsCellTopLeftMergedCell(simpleCellAddress: SimpleCellAddress) {
-    const mergedCellId = simpleCellAddress.toCellId()
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+  public getIsCellTopLeftMergedCell(simpleCellAddress: SimpleCellAddress) {
+    const mergedCellId = addressToCellId(simpleCellAddress)
+    const sheetMetadata = this._hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
     )
     const mergedCell = sheetMetadata.mergedCells[mergedCellId]
@@ -57,9 +50,9 @@ class Merger {
   /**
    * @returns If the cell is part of the merged cell.
    */
-  getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    const cellId = simpleCellAddress.toCellId()
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+  public getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
+    const cellId = addressToCellId(simpleCellAddress)
+    const sheetMetadata = this._hyperformula.getSheetMetadata<ISheetMetadata>(
       simpleCellAddress.sheet
     )
 

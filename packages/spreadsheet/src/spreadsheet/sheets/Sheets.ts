@@ -93,7 +93,6 @@ class Sheets {
   cols: RowCols
   rows: RowCols
   clipboard: Clipboard
-  merger: Merger
   selector: Selector
   cells: Cells
   sheetDimensions: IDimensions = {
@@ -142,7 +141,8 @@ class Sheets {
     /**
      * @internal
      */
-    public _spreadsheet: Spreadsheet
+    public _spreadsheet: Spreadsheet,
+    private _merger: Merger
   ) {
     this.sheetElContainer = document.createElement('div')
     this.sheetElContainer.classList.add(
@@ -228,9 +228,8 @@ class Sheets {
       }
     })
 
-    this.clipboard = new Clipboard(this)
-    this.merger = new Merger(this)
-    this.cells = new Cells(this)
+    this.clipboard = new Clipboard(this, this._merger)
+    this.cells = new Cells(this, this._merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.cellHighlighter = new CellHighlighter(this)
@@ -503,8 +502,7 @@ class Sheets {
 
     this.activeSheetId = sheetId
 
-    this.merger = new Merger(this)
-    this.cells = new Cells(this)
+    this.cells = new Cells(this, this._merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
@@ -648,7 +646,7 @@ class Sheets {
           this.activeSheetId
         )
 
-        if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+        if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
           const cellId = simpleCellAddress.toCellId()
           const mergedCellAddress = SimpleCellAddress.cellIdToAddress(
             sheetMetadata.associatedMergedCells[cellId]
@@ -657,7 +655,7 @@ class Sheets {
           let bottomRow = -Infinity
           let bottomCol = -Infinity
 
-          for (const address of this.merger._iterateMergedCellWidthHeight(
+          for (const address of this._merger._iterateMergedCellWidthHeight(
             mergedCellAddress
           )) {
             bottomRow = Math.max(bottomRow, address.row)

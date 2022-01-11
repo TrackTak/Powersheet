@@ -18,6 +18,8 @@ import FunctionHelper from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
 import HistoryManager from './HistoryManager'
+import UIHyperformula from './sheets/Merger'
+import Merger from './sheets/Merger'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -40,10 +42,12 @@ class Spreadsheet {
   spreadsheetData: ISpreadsheetData
   exporter?: Exporter
   hyperformula: HyperFormula
+  uiHyperformula: UIHyperformula
   historyManager: HistoryManager
   operations: Operations
   uiUndoRedo: UIUndoRedo
   bottomBar?: BottomBar
+  merger: Merger
   isSaving = false
   sheetSizesSet = false
 
@@ -73,16 +77,19 @@ class Spreadsheet {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
 
-    this.toolbar?.initialize(this)
+    this.merger = new Merger(this.hyperformula)
+
+    this.toolbar?.initialize(this, this.merger)
     this.formulaBar?.initialize(this)
-    this.exporter?.initialize(this)
+    this.exporter?.initialize(this, this.merger)
     this.bottomBar?.initialize(this)
     this.functionHelper?.initialize(this)
 
-    this.sheets = new Sheets(this)
+    this.uiHyperformula = new UIHyperformula(this.hyperformula)
+    this.sheets = new Sheets(this, this.merger)
     this.operations = new Operations(
       this.hyperformula,
-      this.sheets.merger,
+      this.merger,
       this.sheets.selector
     )
     this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
@@ -248,6 +255,8 @@ class Spreadsheet {
     this.toolbar?._render()
     this.functionHelper?._render()
     this.formulaBar?._render()
+
+    console.log(this.hyperformula.getAllSheetsSerialized())
 
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {

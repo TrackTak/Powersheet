@@ -1,4 +1,8 @@
-import { SimpleCellRange as HFSimpleCellRange } from '@tracktak/hyperformula'
+import {
+  CellData,
+  CellValue,
+  SimpleCellRange as HFSimpleCellRange
+} from '@tracktak/hyperformula'
 // @ts-ignore
 import { isSimpleCellAddress } from '@tracktak/hyperformula/es/Cell'
 import { isEmpty } from 'lodash'
@@ -10,6 +14,9 @@ import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
 import { MergeCellsUndoEntry } from './UIUndoRedo'
 
+const ROW_DELIMITER = '\r\n'
+const COLUMN_DELIMITER = '\t'
+
 class Clipboard {
   /**
    * The range of cells for the copy or the cut
@@ -17,6 +24,7 @@ class Clipboard {
   sourceRange: RangeSimpleCellAddress | null = null
   isCut = false
   private _spreadsheet: Spreadsheet
+  private _serialisedCopiedValues: string | undefined = undefined
 
   constructor(private _sheets: Sheets) {
     this._spreadsheet = this._sheets._spreadsheet
@@ -143,7 +151,9 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    this._spreadsheet.hyperformula.cut(source)
+    const cellValues = this._spreadsheet.hyperformula.cut(source)
+    this._serialisedCopiedValues = this._serialiseCopiedValues(cellValues)
+
     this.isCut = true
 
     await this._writeToClipboard(source)
@@ -162,16 +172,45 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    this._spreadsheet.hyperformula.copy(source)
+    const cellValues = this._spreadsheet.hyperformula.copy(source)
+    this._serialisedCopiedValues = this._serialiseCopiedValues(cellValues)
 
     await this._writeToClipboard(source)
   }
 
-  paste() {
-    const targetRange = this._getCellRangeForSelection(true)
-    const sourceRange = this.sourceRange
+  private _serialiseCopiedValues(cellValues: CellData<CellValue, any>[][]) {
+    return cellValues.reduce((result, row, rowIndex) => {
+      const columnStr = row.reduce((cols, curCol, colIndex) => {
+        cols += curCol.cellValue ?? ''
+        if (colIndex !== row.length - 1) {
+          cols += COLUMN_DELIMITER
+        }
+        return cols
+      }, '')
+      result += columnStr
+      if (rowIndex !== cellValues.length - 1) {
+        result += ROW_DELIMITER
+      }
+      return result
+    }, '')
+  }
 
-    if (!targetRange || !sourceRange) {
+  async paste() {
+    const systemClipboardValue = await navigator.clipboard.readText()
+    if (systemClipboardValue === this._serialisedCopiedValues) {
+      this._pasteHyperFormula()
+    } else {
+      this._pasteFromSystemClipboard(systemClipboardValue)
+    }
+
+    this._spreadsheet.render()
+  }
+
+  private _pasteHyperFormula() {
+    const sourceRange = this.sourceRange
+    const targetRange = this._getCellRangeForSelection(true)
+
+    if (!sourceRange || !targetRange) {
       return
     }
 
@@ -240,12 +279,39 @@ class Clipboard {
       }
     })
 
-    this._spreadsheet.render()
-
     if (this.isCut) {
       this.sourceRange = null
       this.isCut = false
     }
+  }
+
+  private _pasteFromSystemClipboard(clipboardValue: string) {
+    const selectedCells = this._sheets.selector.selectedCells
+    const firstSelectedCell = selectedCells![0]
+    const topLeftSimpleCellAddress = new SimpleCellAddress(
+      this._sheets.activeSheetId,
+      firstSelectedCell.simpleCellAddress.row,
+      firstSelectedCell.simpleCellAddress.col
+    )
+    const rowData = clipboardValue.split(ROW_DELIMITER)
+    this._spreadsheet.hyperformula.batchUndoRedo(() => {
+      rowData.forEach((row, rowIndex) => {
+        const columnData = row.split(COLUMN_DELIMITER)
+        columnData.forEach((column, columnIndex) => {
+          const targetAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            topLeftSimpleCellAddress.row + rowIndex,
+            topLeftSimpleCellAddress.col + columnIndex
+          )
+          this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+            targetAddress,
+            {
+              cellValue: column
+            }
+          )
+        })
+      })
+    })
   }
 }
 

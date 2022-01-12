@@ -379,12 +379,10 @@ class Sheets {
       this.cellEditor.showAndSetValue(selectedFirstcell)
     }
 
-    let {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
-      simpleCellAddress
-    )
+    let { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
+        simpleCellAddress
+      )
 
     const comment = metadata?.comment
 
@@ -463,17 +461,16 @@ class Sheets {
         break
       }
       case e.ctrlKey && 'v': {
-        this.clipboard.paste()
+        await this.clipboard.paste()
         break
       }
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const {
-            cellValue
-          } = this._spreadsheet.hyperformula.getCellSerialized(
-            selectedCell.simpleCellAddress
-          )
+          const { cellValue } =
+            this._spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
           if (cellValue) {
             this.cellEditor.clear()
@@ -570,9 +567,8 @@ class Sheets {
    * @internal
    */
   _getSizeFromCells(cells: Cell[]) {
-    const minMaxRangeSimpleCellAddress = this._getMinMaxRangeSimpleCellAddress(
-      cells
-    )
+    const minMaxRangeSimpleCellAddress =
+      this._getMinMaxRangeSimpleCellAddress(cells)
 
     let height = 0
     let width = 0
@@ -645,9 +641,8 @@ class Sheets {
           ci
         )
         const sheetName = this.getActiveSheetName()
-        const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[
-          sheetName
-        ]
+        const sheet =
+          this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
 
         if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
           const cellId = simpleCellAddress.toCellId()
@@ -719,29 +714,21 @@ class Sheets {
    * @internal
    */
   _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
-    const {
-      top,
-      left,
-      right,
-      bottom,
-      x,
-      y,
-      width,
-      height,
-      toJSON
-    } = this.sheetEl.getBoundingClientRect()
-    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
+    const { top, left, right, bottom, x, y, width, height, toJSON } =
+      this.sheetEl.getBoundingClientRect()
+    const selectedCellRect =
+      this.selector.selectedCell!._getClientRectWithoutStroke()
 
     const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
 
     let xPosition = left + selectedCellRect.x + selectedCellRect.width
     let yPosition = top + selectedCellRect.y
 
-    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
-      .width
+    const rowScrollBarWidth =
+      this.rows.scrollBar.scrollBarEl.getBoundingClientRect().width
 
-    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
-      .height
+    const colScrollBarHeight =
+      this.cols.scrollBar.scrollBarEl.getBoundingClientRect().height
 
     if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
       xPosition = left + selectedCellRect.x - tippyBox.offsetWidth

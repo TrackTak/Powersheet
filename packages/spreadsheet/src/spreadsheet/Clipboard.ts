@@ -41,11 +41,11 @@ class Clipboard {
       rowData.forEach((value, columnIndex) => {
         clipboardText += value?.cellValue ?? ''
         if (columnIndex !== rowData.length - 1) {
-          clipboardText += `\t`
+          clipboardText += COLUMN_DELIMITER
         }
       })
       if (rowIndex !== rangeData.length - 1) {
-        clipboardText += '\n'
+        clipboardText += ROW_DELIMITER
       }
     })
 

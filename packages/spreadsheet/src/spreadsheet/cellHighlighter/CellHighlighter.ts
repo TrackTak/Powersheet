@@ -104,6 +104,12 @@ class CellHighlighter {
    * @returns Information needed to highlight the relevant cells.
    */
   textToHighlightedCellReferenceToken(text: string) {
+    if (!this._sheets.cellEditor.currentCell) {
+      return []
+    }
+
+    const sheet = this._sheets.cellEditor.currentCell.simpleCellAddress.sheet
+
     const { goldenRatio } = this._spreadsheet.options.cellHighlight
 
     // @ts-ignore
@@ -153,8 +159,6 @@ class CellHighlighter {
         }
       }
     }
-
-    const sheet = this._sheets.cellEditor.currentCell!.simpleCellAddress.sheet
 
     this.destroyHighlightedArea()
 

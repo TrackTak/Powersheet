@@ -12,7 +12,8 @@ import {
 // TODO: Make dynamic async import when https://github.com/parcel-bundler/parcel/issues/7268 is fixed
 // @ts-ignore
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
-import { ICellMetadata } from './sheets/Data'
+import { ICellMetadata, ISheetMetadata } from './sheets/Data'
+import Merger from './sheets/Merger'
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions']
@@ -21,6 +22,7 @@ export interface ICustomRegisteredPluginDefinition {
 
 class Exporter {
   private _spreadsheet!: Spreadsheet
+  private _merger!: Merger
 
   /**
    *
@@ -55,18 +57,19 @@ class Exporter {
       new SimpleCellAddress(sheetId, 0, 0)
     )
 
-    const serializedCells = this._spreadsheet.hyperformula.getSheetSerialized<ICellMetadata>(
-      sheetId
-    )
+    const { cells } = this._spreadsheet.hyperformula.getSheetSerialized<
+      ISheetMetadata,
+      ICellMetadata
+    >(sheetId)
 
-    for (let row = 0; row < serializedCells.length; row++) {
-      const rowData = serializedCells[row]
+    for (let row = 0; row < cells.length; row++) {
+      const rowData = cells[row]
 
       for (let col = 0; col < rowData.length; col++) {
         const cell = rowData[col]
         const simpleCellAddress = new SimpleCellAddress(sheetId, row, col)
         const cellString = simpleCellAddress.addressToString()
-        const isMergedCell = this._spreadsheet.sheets.merger.getIsCellTopLeftMergedCell(
+        const isMergedCell = this._merger.getIsCellTopLeftMergedCell(
           simpleCellAddress
         )
 
@@ -262,8 +265,9 @@ class Exporter {
   /**
    * @param spreadsheet - The spreadsheet that this Exporter is connected to.
    */
-  initialize(spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet, merger: Merger) {
     this._spreadsheet = spreadsheet
+    this._merger = merger
   }
 
   async exportWorkbook() {
@@ -271,7 +275,7 @@ class Exporter {
 
     writeFile(
       workbook,
-      this._spreadsheet.data._spreadsheetData.exportSpreadsheetName ??
+      this._spreadsheet.spreadsheetData.exportSpreadsheetName ??
         this._spreadsheet.options.exportSpreadsheetName
     )
   }

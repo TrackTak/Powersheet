@@ -77,7 +77,6 @@ class CellEditor {
   currentPlaceholderEl: HTMLSpanElement | null = null
   previousCellReference: IPreviousCellReference | null = null
   isInCellSelectionMode = false
-  activeSheetId: number
   private _spreadsheet: Spreadsheet
 
   /**
@@ -85,7 +84,6 @@ class CellEditor {
    */
   constructor(private _sheets: Sheet) {
     this._spreadsheet = this._sheets._spreadsheet
-    this.activeSheetId = this._sheets.activeSheetId
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
@@ -319,7 +317,7 @@ class CellEditor {
    */
   _setActiveSheetId() {
     if (this.getIsHidden()) {
-      this.activeSheetId = this._sheets.activeSheetId
+      this._sheets.activeSheetId = this._sheets.activeSheetId
     }
   }
 
@@ -338,8 +336,10 @@ class CellEditor {
 
     let newCellReferenceText = cellReferenceText
 
-    if (this.activeSheetId !== this._sheets.activeSheetId) {
-      const sheetName = this._sheets.getActiveSheetName()
+    if (this._sheets.activeSheetId !== this._sheets.activeSheetId) {
+      const sheetName = this._spreadsheet.hyperformula.getSheetName(
+        this._sheets.activeSheetId
+      )
 
       newCellReferenceText = `'${sheetName}'!` + newCellReferenceText
     }

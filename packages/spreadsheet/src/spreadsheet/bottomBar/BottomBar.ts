@@ -9,6 +9,8 @@ import styles from './BottomBar.module.scss'
 import tippy, { Instance, Props } from 'tippy.js'
 import { createIconButton, IIconElements } from '../htmlElementHelpers'
 import Spreadsheet from '../Spreadsheet'
+import { ISheetMetadata } from '../sheets/Data'
+import { getDefaultSheetMetadata } from '../utils'
 
 export interface ISheetTabElements {
   sheetTabContainer: HTMLDivElement
@@ -141,17 +143,10 @@ class BottomBar {
   }
 
   private _createNewSheetButtonOnClick = () => {
-    const sheetsLength = this._spreadsheet.hyperformula.getSheetNames().length
-
-    const name = this._spreadsheet.hyperformula.addSheet(
-      `Sheet${sheetsLength + 1}`
+    this._spreadsheet.hyperformula.addSheet<ISheetMetadata>(
+      undefined,
+      getDefaultSheetMetadata()
     )
-
-    const sheetId = this._spreadsheet.hyperformula.getSheetId(name)!
-
-    this._spreadsheet.sheets.switchSheet(sheetId)
-
-    this._spreadsheet.sheets._updateSize()
   }
 
   /**

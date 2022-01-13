@@ -12,6 +12,7 @@ import { Rect } from 'konva/lib/shapes/Rect'
 import { Text } from 'konva/lib/shapes/Text'
 import { Group } from 'konva/lib/Group'
 import Sheets from '../Sheets'
+import { ISheetMetadata } from '../Data'
 
 export type RowColType = 'row' | 'col'
 export type RowColsType = 'rows' | 'cols'
@@ -170,12 +171,12 @@ class RowCols {
   }
 
   private *_getSizeForFrozenCell() {
-    const sheetName = this._sheets.getActiveSheetName()
-
     const {
       frozenRow,
       frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    } = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
 
     const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
 
@@ -256,12 +257,12 @@ class RowCols {
       visible: false
     })
 
-    const sheetName = this._sheets.getActiveSheetName()
-
     const {
       frozenRow,
       frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    } = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
 
     const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
 
@@ -326,13 +327,12 @@ class RowCols {
   }
 
   getAxis(index: number) {
-    const data = this._spreadsheet.data._spreadsheetData
-    const sheetName = this._sheets.getActiveSheetName()
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
     const defaultSize = this._spreadsheet.options[this._type].defaultSize
     const rowCols =
-      this._type === 'row'
-        ? data.uiSheets?.[sheetName].rowSizes
-        : data.uiSheets?.[sheetName].colSizes
+      this._type === 'row' ? sheetMetadata.rowSizes : sheetMetadata.colSizes
 
     let totalPreviousCustomSizeDifferences = 0
 
@@ -354,21 +354,22 @@ class RowCols {
   }
 
   getSize(index: number) {
-    const sheetName = this._sheets.getActiveSheetName()
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
     const size =
-      this._type === 'row' ? sheet.rowSizes[index] : sheet.colSizes[index]
+      this._type === 'row'
+        ? sheetMetadata.rowSizes[index]
+        : sheetMetadata.colSizes[index]
 
     return size ?? this._spreadsheet.options[this._type].defaultSize
   }
 
   getIsFrozen(index: number) {
-    const sheetName = this._sheets.getActiveSheetName()
-
-    const {
-      frozenRow,
-      frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
+    const { frozenRow, frozenCol } = sheetMetadata
 
     const frozenRowCol = this._type === 'row' ? frozenRow : frozenCol
 
@@ -417,9 +418,11 @@ class RowCols {
    * @internal
    */
   _getTotalSize() {
-    const sheetName = this._sheets.getActiveSheetName()
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-    const sizes = this._type === 'row' ? sheet.rowSizes : sheet.colSizes
+    const sheetMetadata = this._sheets._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
+    const sizes =
+      this._type === 'row' ? sheetMetadata.rowSizes : sheetMetadata.colSizes
 
     const totalSizeDifference = Object.keys(sizes).reduce(
       (currentSize, [key]) => {

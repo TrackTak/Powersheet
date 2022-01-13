@@ -13,6 +13,8 @@ import { ICellMetadata } from './sheets/Data'
 import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
 import { MergeCellsUndoEntry } from './UIUndoRedo'
+import { ISheetMetadata } from './sheets/Data'
+import Merger from './sheets/Merger'
 
 const ROW_DELIMITER = '\r\n'
 const COLUMN_DELIMITER = '\t'
@@ -26,7 +28,7 @@ class Clipboard {
   private _spreadsheet: Spreadsheet
   private _serialisedCopiedValues: string | undefined = undefined
 
-  constructor(private _sheets: Sheets) {
+  constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
   }
 
@@ -76,16 +78,14 @@ class Clipboard {
 
     const setCellRangeForMerges = () => {
       selectedCells.forEach(cell => {
-        if (
-          this._sheets.merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)
-        ) {
+        if (this._merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)) {
           const cellId = cell.simpleCellAddress.toCellId()
-          const sheetName = this._spreadsheet.hyperformula.getSheetName(
-            cell.simpleCellAddress.sheet
-          )!
-          const mergedCell =
-            this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-              .mergedCells[cellId]
+          const { mergedCells } =
+            this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+              cell.simpleCellAddress.sheet
+            )
+
+          const mergedCell = mergedCells[cellId]
 
           const col = cell.simpleCellAddress.col + (mergedCell.width - 1)
           const row = cell.simpleCellAddress.row + (mergedCell.height - 1)
@@ -222,60 +222,65 @@ class Clipboard {
           row: targetRange.topLeftSimpleCellAddress.row
         })
       } else {
-        const rangeData =
-          this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
-            {
-              start: sourceRange.topLeftSimpleCellAddress,
-              end: sourceRange.bottomRightSimpleCellAddress
-            },
-            {
-              start: targetRange.topLeftSimpleCellAddress,
-              end: targetRange.bottomRightSimpleCellAddress
-            },
-            true
-          )
-
-        rangeData.forEach((rowData, ri) => {
-          rowData.forEach((cell, ci) => {
-            let { row, col } = this.sourceRange!.topLeftSimpleCellAddress
-
-            row += ri % this.sourceRange!.height()
-            col += ci % this.sourceRange!.width()
-
-            const targetSimpleCellAddress = new SimpleCellAddress(
-              targetRange.topLeftSimpleCellAddress.sheet,
-              targetRange.topLeftSimpleCellAddress.row + ri,
-              targetRange.topLeftSimpleCellAddress.col + ci
+        if (!this.isCut) {
+          const rangeData =
+            this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
+              {
+                start: sourceRange.topLeftSimpleCellAddress,
+                end: sourceRange.bottomRightSimpleCellAddress
+              },
+              {
+                start: targetRange.topLeftSimpleCellAddress,
+                end: targetRange.bottomRightSimpleCellAddress
+              },
+              true
             )
 
-            this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
-              targetSimpleCellAddress,
-              cell
-            )
+          rangeData.forEach((rowData, ri) => {
+            rowData.forEach((cell, ci) => {
+              let { row, col } = this.sourceRange!.topLeftSimpleCellAddress
 
-            const { width, height } = cell.metadata ?? {}
+              row += ri % this.sourceRange!.height()
+              col += ci % this.sourceRange!.width()
 
-            if (width !== undefined && height !== undefined) {
-              const removedMergedCells =
-                this._spreadsheet.operations.mergeCells(
+              const targetSimpleCellAddress = new SimpleCellAddress(
+                targetRange.topLeftSimpleCellAddress.sheet,
+                targetRange.topLeftSimpleCellAddress.row + ri,
+                targetRange.topLeftSimpleCellAddress.col + ci
+              )
+
+              this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+                targetSimpleCellAddress,
+                cell
+              )
+
+              const { width, height } = cell.metadata ?? {}
+
+              if (width !== undefined && height !== undefined) {
+                const removedMergedCells =
+                  this._spreadsheet.operations.mergeCells(
+                    targetSimpleCellAddress,
+                    width,
+                    height
+                  )
+
+                const command = new MergeCellsCommand(
                   targetSimpleCellAddress,
                   width,
-                  height
+                  height,
+                  removedMergedCells
                 )
 
-              const command = new MergeCellsCommand(
-                targetSimpleCellAddress,
-                width,
-                height,
-                removedMergedCells
-              )
-
-              this._spreadsheet.uiUndoRedo.saveOperation(
-                new MergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
-              )
-            }
+                this._spreadsheet.uiUndoRedo.saveOperation(
+                  new MergeCellsUndoEntry(
+                    this._spreadsheet.hyperformula,
+                    command
+                  )
+                )
+              }
+            })
           })
-        })
+        }
       }
     })
 

@@ -1,4 +1,6 @@
+import { SimpleCellAddress } from '@tracktak/hyperformula'
 import { IRect, Vector2d } from 'konva/lib/types'
+import { CellId } from './sheets/cells/cell/SimpleCellAddress'
 
 export const prefix = 'powersheet'
 
@@ -59,6 +61,35 @@ export const reverseVectorsIfStartBiggerThanEnd = (
   return {
     start: newStart,
     end: newEnd
+  }
+}
+
+export const getDefaultSheetMetadata = () => {
+  return {
+    rowSizes: {},
+    colSizes: {},
+    mergedCells: {}
+  }
+}
+
+export const addressToCellId = ({
+  sheet,
+  row,
+  col
+}: SimpleCellAddress): CellId => {
+  return `${sheet}_${row}_${col}`
+}
+
+export const cellIdToAddress = (cellId: CellId): SimpleCellAddress => {
+  const sections = cellId.split('_')
+  const sheet = parseInt(sections[0], 10)
+  const row = parseInt(sections[1], 10)
+  const col = parseInt(sections[2], 10)
+
+  return {
+    sheet,
+    row,
+    col
   }
 }
 

@@ -93,7 +93,6 @@ class Sheets {
   cols: RowCols
   rows: RowCols
   clipboard: Clipboard
-  merger: Merger
   selector: Selector
   cells: Cells
   sheetDimensions: IDimensions = {
@@ -142,7 +141,8 @@ class Sheets {
     /**
      * @internal
      */
-    public _spreadsheet: Spreadsheet
+    public _spreadsheet: Spreadsheet,
+    private _merger: Merger
   ) {
     this.sheetElContainer = document.createElement('div')
     this.sheetElContainer.classList.add(
@@ -228,9 +228,8 @@ class Sheets {
       }
     })
 
-    this.clipboard = new Clipboard(this)
-    this.merger = new Merger(this)
-    this.cells = new Cells(this)
+    this.clipboard = new Clipboard(this, this._merger)
+    this.cells = new Cells(this, this._merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.cellHighlighter = new CellHighlighter(this)
@@ -500,8 +499,7 @@ class Sheets {
 
     this.activeSheetId = sheetId
 
-    this.merger = new Merger(this)
-    this.cells = new Cells(this)
+    this.cells = new Cells(this, this._merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
@@ -640,20 +638,17 @@ class Sheets {
           ri,
           ci
         )
-        const sheetName = this.getActiveSheetName()
-        const sheet =
-          this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
 
-        if (this.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+        if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
           const cellId = simpleCellAddress.toCellId()
           const mergedCellAddress = SimpleCellAddress.cellIdToAddress(
-            sheet.associatedMergedCells[cellId]
+            this._merger.associatedMergedCellAddressMap[cellId]
           )
 
           let bottomRow = -Infinity
           let bottomCol = -Infinity
 
-          for (const address of this.merger._iterateMergedCellWidthHeight(
+          for (const address of this._merger._iterateMergedCellWidthHeight(
             mergedCellAddress
           )) {
             bottomRow = Math.max(bottomRow, address.row)
@@ -685,14 +680,6 @@ class Sheets {
     }
 
     return rangeSimpleCellAddress
-  }
-
-  getActiveSheetName() {
-    const sheetName = this._spreadsheet.hyperformula.getSheetName(
-      this.activeSheetId
-    )!
-
-    return sheetName
   }
 
   /**

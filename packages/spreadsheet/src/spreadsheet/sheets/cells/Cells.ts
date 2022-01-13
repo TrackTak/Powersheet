@@ -8,7 +8,8 @@ import { Text } from 'konva/lib/shapes/Text'
 import { Line } from 'konva/lib/shapes/Line'
 import { isNil } from 'lodash'
 import Cell from './cell/Cell'
-import { ICellMetadata } from '../Data'
+import { ICellMetadata, ISheetMetadata } from '../Data'
+import Merger from '../Merger'
 
 export interface IGroupedCells {
   main: Cell[]
@@ -21,7 +22,7 @@ class Cells {
   cellsMap: Map<CellId, StyleableCell>
   private _spreadsheet: Spreadsheet
 
-  constructor(private _sheets: Sheets) {
+  constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
     this.cellsMap = new Map()
   }
@@ -196,12 +197,12 @@ class Cells {
    * @internal
    */
   _render() {
-    const sheetName = this._sheets.getActiveSheetName()
-
     const {
       frozenRow,
       frozenCol
-    } = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
+    } = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
 
     this._updateFrozenCells(frozenRow, frozenCol)
 
@@ -280,11 +281,8 @@ class Cells {
     // We always render frozenRowCol cells so they hide the cells beneath it
     if (!cell && !isOnFrozenRowCol) return
 
-    const sheet = this._spreadsheet.data._spreadsheetData.uiSheets[sheetName]
-
-    if (this._sheets.merger.getIsCellPartOfMerge(simpleCellAddress)) {
-      const mergedCellId = sheet.associatedMergedCells[cellId]
-
+    if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
+      const mergedCellId = this._merger.associatedMergedCellAddressMap[cellId]
       const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {

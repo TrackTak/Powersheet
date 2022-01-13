@@ -226,7 +226,7 @@ class StyleableCell extends Cell {
 
     let value: undefined | CellValue | RawCellContent = cellValue
 
-    if (this._sheets._spreadsheet.data._spreadsheetData.showFormulas) {
+    if (this._sheets._spreadsheet.spreadsheetData.showFormulas) {
       value = cellValueSerialized
     }
 
@@ -245,7 +245,7 @@ class StyleableCell extends Cell {
         textFormatPattern &&
         cellType !== CellValueType.STRING &&
         cellType !== CellValueType.BOOLEAN &&
-        !this._sheets._spreadsheet.data._spreadsheetData.showFormulas
+        !this._sheets._spreadsheet.spreadsheetData.showFormulas
       ) {
         try {
           text = format(textFormatPattern, Number(text))

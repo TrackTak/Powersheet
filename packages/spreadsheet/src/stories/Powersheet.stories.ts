@@ -4,9 +4,17 @@ import { Story, Meta } from '@storybook/html'
 import { currencySymbolMap } from 'currency-symbol-map'
 import TouchEmulator from 'hammer-touchemulator'
 import { merge } from 'lodash'
-import { ISpreadsheetData, ICellData } from '../spreadsheet/sheets/Data'
+import {
+  ICellMetadata,
+  ICellStyles,
+  ISheetMetadata
+} from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
-import { HyperFormula } from '@tracktak/hyperformula'
+import {
+  DataRawCellContent,
+  HyperFormula,
+  Sheets
+} from '@tracktak/hyperformula'
 import {
   getTTFinancialPlugin,
   finTranslations
@@ -17,12 +25,17 @@ import mockFinancialDataJSON from './mocks/mockFinancialData.json'
 import {
   buildOnlySpreadsheet,
   buildSpreadsheetWithEverything,
+  getEmptyHyperformulaInstance,
   getHyperformulaInstance,
   IArgs,
   Template
 } from './helpers'
+import type { GenericSheets } from '@tracktak/hyperformula/typings/Sheet'
+import type { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 
-const realExampleData = realExampleDataJSON as ISpreadsheetData
+const realExampleData = realExampleDataJSON as
+  | GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>
+  | undefined
 
 export default {
   title: 'Spreadsheet'
@@ -30,38 +43,15 @@ export default {
 
 export const Default = Template.bind({})
 
-Default.args = {
-  data: {
-    sheets: {
-      Default: []
-    },
-    uiSheets: {
-      Default: {
-        rowSizes: {},
-        colSizes: {},
-        mergedCells: {},
-        associatedMergedCells: {}
-      }
-    }
-  }
-}
-
 export const FrozenCells = Template.bind({})
 
 FrozenCells.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Frozen Cells',
-        frozenCell: 0
-      }
-    },
-    frozenCells: {
-      0: {
-        id: 0,
-        row: 2,
-        col: 2
+  sheets: {
+    'Frozen Cells': {
+      cells: [],
+      sheetMetadata: {
+        frozenRow: 2,
+        frozenCol: 2
       }
     }
   }
@@ -70,50 +60,32 @@ FrozenCells.args = {
 export const MergedCells = Template.bind({})
 
 MergedCells.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Merged Cells',
-        cells: {
-          '0_3_1': '0_3_1'
-        },
+  sheets: {
+    'Merged Cells': {
+      cells: [
+        [],
+        [],
+        [],
+        [
+          {
+            cellValue: undefined
+          },
+          {
+            cellValue: 'Merged Cell',
+            metadata: {
+              fontSize: 14,
+              bold: true,
+              horizontalTextAlign: 'center'
+            }
+          }
+        ]
+      ],
+      sheetMetadata: {
         mergedCells: {
-          '0_3_1': '0_3_1',
-          '0_7_1': '0_7_1'
-        }
-      }
-    },
-    cells: {
-      '0_3_1': {
-        value: 'Merged Cell',
-        fontSize: 14,
-        id: '0_3_1',
-        bold: true,
-        horizontalTextAlign: 'center'
-      }
-    },
-    mergedCells: {
-      '0_3_1': {
-        id: '0_3_1',
-        row: {
-          x: 3,
-          y: 5
-        },
-        col: {
-          x: 1,
-          y: 1
-        }
-      },
-      '0_7_1': {
-        id: '0_7_1',
-        row: {
-          x: 7,
-          y: 9
-        },
-        col: {
-          x: 1,
-          y: 20
+          '0_3_1': {
+            width: 1,
+            height: 2
+          }
         }
       }
     }
@@ -123,29 +95,17 @@ MergedCells.args = {
 export const DifferentSizeCells = Template.bind({})
 
 DifferentSizeCells.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Different Size Cells',
-        rows: { '0_0': '0_0', '0_2': '0_2' },
-        cols: { '0_0': '0_0' }
-      }
-    },
-    rows: {
-      '0_0': {
-        id: '0_0',
-        size: 50
-      },
-      '0_2': {
-        id: '0_2',
-        size: 100
-      }
-    },
-    cols: {
-      '0_0': {
-        id: '0_0',
-        size: 200
+  sheets: {
+    'Different Size Cells': {
+      cells: [],
+      sheetMetadata: {
+        rowSizes: {
+          0: 50,
+          2: 100
+        },
+        colSizes: {
+          0: 200
+        }
       }
     }
   }
@@ -154,7 +114,7 @@ DifferentSizeCells.args = {
 const MobileTemplate: Story<IArgs> = args => {
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance()
+    getEmptyHyperformulaInstance()
   )
 
   TouchEmulator.start()
@@ -163,17 +123,6 @@ const MobileTemplate: Story<IArgs> = args => {
 }
 
 export const Mobile = MobileTemplate.bind({})
-
-Mobile.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Mobile'
-      }
-    }
-  }
-}
 
 const MillionRowsTemplate: Story<IArgs> = args => {
   const newArgs = merge({}, args, {
@@ -186,7 +135,7 @@ const MillionRowsTemplate: Story<IArgs> = args => {
 
   return buildSpreadsheetWithEverything(
     newArgs,
-    getHyperformulaInstance({
+    getEmptyHyperformulaInstance({
       maxRows: newArgs.options.row.amount
     })
   ).spreadsheetEl
@@ -201,28 +150,12 @@ MillionRows.args = {
         width: 50
       }
     }
-  },
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'One Million Rows'
-      }
-    }
   }
 }
 
 export const CustomStyles = Template.bind({})
 
 CustomStyles.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'CustomStyles'
-      }
-    }
-  },
   styles: {
     row: {
       gridLine: {
@@ -239,35 +172,31 @@ CustomStyles.args = {
 export const CustomOptions = Template.bind({})
 
 CustomOptions.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Custom Options',
-        cells: {
-          '0_0_1': '0_0_1',
-          '0_1_1': '0_1_1',
-          '0_2_1': '0_2_1'
-        }
-      }
-    },
-    cells: {
-      '0_0_1': {
-        id: '0_0_1',
-        value: '20000000',
-        textFormatPattern: '$#,##0.##'
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        value: '20000000',
-        textFormatPattern: '#,###.##,,'
-      },
-      '0_2_1': {
-        id: '0_2_1',
-        value: '20000000',
-        textFormatPattern: '$#,###.##,,',
-        fontSize: 32
-      }
+  sheets: {
+    'Custom Options': {
+      cells: [
+        [
+          {
+            cellValue: '20000000',
+            metadata: {
+              textFormatPattern: '$#,##0.##'
+            }
+          },
+          {
+            cellValue: '20000000',
+            metadata: {
+              textFormatPattern: '#,###.##,,'
+            }
+          },
+          {
+            cellValue: '20000000',
+            metadata: {
+              textFormatPattern: '$#,###.##,,',
+              fontSize: 32
+            }
+          }
+        ]
+      ]
     }
   },
   options: {
@@ -281,33 +210,15 @@ CustomOptions.args = {
 }
 
 const OnlySpreadsheet: Story<IArgs> = args => {
-  return buildOnlySpreadsheet(args, getHyperformulaInstance()).spreadsheetEl
+  return buildOnlySpreadsheet(args, getEmptyHyperformulaInstance())
+    .spreadsheetEl
 }
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({})
 
-BareMinimumSpreadsheet.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'BareMinimumSpreadsheet'
-      }
-    }
-  }
-}
-
 export const CustomSizeSpreadsheet = Template.bind({})
 
 CustomSizeSpreadsheet.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'CustomSizeSpreadsheet'
-      }
-    }
-  },
   options: {
     ...defaultOptions,
     width: 500,
@@ -316,36 +227,14 @@ CustomSizeSpreadsheet.args = {
 }
 
 const MultipleSpreadsheetsTemplate: Story = () => {
-  const firstSpreadsheetArgs = {
-    data: {
-      sheets: {
-        0: {
-          id: 0,
-          sheetName: 'First Spreadsheet'
-        }
-      }
-    }
-  }
-
-  const secondSpreadsheetArgs = {
-    data: {
-      sheets: {
-        0: {
-          id: 0,
-          sheetName: 'Second Spreadsheet'
-        }
-      }
-    }
-  }
-
-  const hyperformula = getHyperformulaInstance()
+  const hyperformula = getEmptyHyperformulaInstance()
 
   const firstSpreadsheetEl = buildSpreadsheetWithEverything(
-    firstSpreadsheetArgs,
+    undefined,
     hyperformula
   )
   const secondSpreadsheetEl = buildSpreadsheetWithEverything(
-    secondSpreadsheetArgs,
+    undefined,
     hyperformula
   )
 
@@ -361,21 +250,10 @@ const MultipleSpreadsheetsTemplate: Story = () => {
 
 export const MultipleSpreadsheets = MultipleSpreadsheetsTemplate.bind({})
 
-MultipleSpreadsheets.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'MultipleSpreadsheets'
-      }
-    }
-  }
-}
-
 const AllCurrencySymbolsTemplate: Story<IArgs> = args => {
   return buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance({
+    getHyperformulaInstance(args.sheets!, {
       currencySymbol: Object.values(currencySymbolMap)
     })
   ).spreadsheetEl
@@ -391,40 +269,36 @@ AllCurrencySymbols.args = {
       gbpCurrency: '£#,##0.##'
     }
   },
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'All Currency Symbols',
-        cells: {
-          '0_1_0': '0_1_0',
-          '0_1_1': '0_1_1',
-          '0_3_3': '0_3_3',
-          '0_4_1': '0_4_1'
-        }
-      }
-    },
-    cells: {
-      '0_1_0': {
-        id: '0_1_0',
-        value: '$33334.33',
-        textFormatPattern: '$#,##0.##'
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        value: '₪22.2',
-        textFormatPattern: '₪#,##0.##'
-      },
-      '0_3_3': {
-        id: '0_3_3',
-        value: '£33.3',
-        textFormatPattern: '£#,##0.##'
-      },
-      '0_4_1': {
-        id: '0_4_1',
-        value: '=A2+B2+D4',
-        textFormatPattern: '#,##0.##'
-      }
+  sheets: {
+    'All Currency Symbols': {
+      cells: [
+        [
+          {
+            cellValue: '$33334.33',
+            metadata: {
+              textFormatPattern: '$#,##0.##'
+            }
+          },
+          {
+            cellValue: '₪22.2',
+            metadata: {
+              textFormatPattern: '₪#,##0.##'
+            }
+          },
+          {
+            cellValue: '£33.3',
+            metadata: {
+              textFormatPattern: '£#,##0.##'
+            }
+          },
+          {
+            cellValue: '=A1+B1+C1',
+            metadata: {
+              textFormatPattern: '#,##0.##'
+            }
+          }
+        ]
+      ]
     }
   }
 }
@@ -433,68 +307,68 @@ export const CellsData = Template.bind({})
 
 CellsData.args = {
   data: {
-    exportSpreadsheetName: 'Cells Datas.xlsx',
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Cells Data',
-        cells: {
-          '0_0_5': '0_0_5',
-          '0_1_0': '0_1_0',
-          '0_1_1': '0_1_1',
-          '0_3_3': '0_3_3',
-          '0_4_1': '0_4_1',
-          '0_4_4': '0_4_4',
-          '0_40_4': '0_40_4'
-        }
-      }
-    },
-    cells: {
-      '0_0_5': {
-        id: '0_0_5',
-        value: '=2/0'
-      },
-      '0_1_0': {
-        id: '0_1_0',
-        value: 'HI!',
-        horizontalTextAlign: 'right',
-        verticalTextAlign: 'bottom',
-        backgroundColor: 'red',
-        fontColor: '#ffeb3b'
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        comment: 'Powersheet is the best',
-        value:
-          'A very long piece of text that should wrap to the next line on the word.',
-        horizontalTextAlign: 'center',
-        verticalTextAlign: 'middle',
-        bold: true,
-        italic: true,
-        textWrap: 'wrap'
-      },
-      '0_3_3': {
-        id: '0_3_3',
-        borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
-        backgroundColor: 'yellow'
-      },
-      '0_4_1': {
-        id: '0_4_1',
-        value: 'Some value',
-        underline: true,
-        strikeThrough: true,
-        fontSize: 14,
-        borders: ['borderBottom']
-      },
-      '0_4_4': {
-        id: '0_4_4',
-        value: '0.05',
-        textFormatPattern: '0.00%'
-      },
-      '0_40_4': {
-        id: '0_40_4',
-        value: 'Cell Value'
-      }
+    exportSpreadsheetName: 'Cells Datas.xlsx'
+  },
+  sheets: {
+    'Cells Data': {
+      cells: [
+        [
+          {
+            cellValue: '=2/0'
+          },
+          {
+            cellValue: 'HI!',
+            metadata: {
+              horizontalTextAlign: 'right',
+              verticalTextAlign: 'bottom',
+              backgroundColor: 'red',
+              fontColor: '#ffeb3b'
+            }
+          },
+          {
+            cellValue:
+              'A very long piece of text that should wrap to the next line on the word.',
+            metadata: {
+              comment: 'Powersheet is the best',
+              horizontalTextAlign: 'center',
+              verticalTextAlign: 'middle',
+              bold: true,
+              italic: true,
+              textWrap: 'wrap'
+            }
+          },
+          {
+            cellValue: undefined,
+            metadata: {
+              borders: [
+                'borderBottom',
+                'borderRight',
+                'borderTop',
+                'borderLeft'
+              ],
+              backgroundColor: 'yellow'
+            }
+          },
+          {
+            cellValue: 'Some value',
+            metadata: {
+              underline: true,
+              strikeThrough: true,
+              fontSize: 14,
+              borders: ['borderBottom']
+            }
+          },
+          {
+            cellValue: '0.05',
+            metadata: {
+              textFormatPattern: '0.00%'
+            }
+          },
+          {
+            cellValue: 'Cell Value'
+          }
+        ]
+      ]
     }
   }
 }
@@ -502,60 +376,74 @@ CellsData.args = {
 export const Formulas = Template.bind({})
 
 Formulas.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Formulas',
-        cells: {
-          '0_0_1': '0_0_1',
-          '0_1_1': '0_1_1',
-          '0_2_1': '0_2_1',
-          '0_2_0': '0_2_0',
-          '0_4_0': '0_4_0',
-          '0_4_1': '0_4_1'
-        }
-      },
-      1: {
-        id: 1,
-        sheetName: 'Other',
-        cells: { '1_0_0': '1_0_0' }
-      }
+  sheets: {
+    Formulas: {
+      cells: [
+        [
+          {
+            cellValue: '5',
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          },
+          {
+            cellValue: '2',
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          },
+          {
+            cellValue: 'SUM',
+            metadata: {
+              comment: 'Powersheet is the best',
+              horizontalTextAlign: 'center',
+              verticalTextAlign: 'middle',
+              bold: true,
+              italic: true,
+              textWrap: 'wrap'
+            }
+          },
+          {
+            cellValue: '=SUM(A1, A2)',
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          },
+          {
+            cellValue: 'Cross Sheet Reference',
+            metadata: {
+              underline: true,
+              strikeThrough: true,
+              fontSize: 14,
+              borders: ['borderBottom']
+            }
+          },
+          {
+            cellValue: "='Other'!A1 * 30",
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          },
+          {
+            cellValue: '100',
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          }
+        ]
+      ]
     },
-    cells: {
-      '0_0_1': {
-        id: '0_0_1',
-        value: '5',
-        textFormatPattern: '#,##0.00'
-      },
-      '0_1_1': {
-        id: '0_1_1',
-        value: '2',
-        textFormatPattern: '#,##0.00'
-      },
-      '0_2_0': {
-        id: '0_2_0',
-        value: 'SUM'
-      },
-      '0_2_1': {
-        id: '0_2_1',
-        value: '=SUM(B1, B2)',
-        textFormatPattern: '#,##0.00'
-      },
-      '0_4_0': {
-        id: '0_4_0',
-        value: 'Cross Sheet Reference'
-      },
-      '0_4_1': {
-        id: '0_4_1',
-        value: "='Other'!A1 * 30",
-        textFormatPattern: '#,##0.00'
-      },
-      '1_0_0': {
-        id: '1_0_0',
-        value: '100',
-        textFormatPattern: '#,##0.00'
-      }
+    Other: {
+      cells: [
+        [
+          {
+            cellValue: '100',
+            metadata: {
+              textFormatPattern: '#,##0.00'
+            }
+          }
+        ]
+      ]
     }
   }
 }
@@ -567,7 +455,7 @@ const RealExampleTemplate: Story<IArgs> = args => {
 
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
-    getHyperformulaInstance(),
+    getHyperformulaInstance(args.sheets!),
     [
       {
         // @ts-ignore
@@ -593,7 +481,7 @@ const RealExampleTemplate: Story<IArgs> = args => {
 export const RealExample = RealExampleTemplate.bind({})
 
 RealExample.args = {
-  data: realExampleData,
+  sheets: realExampleData,
   options: {
     textPatternFormats: {
       currency: '$#,##0.##',
@@ -603,10 +491,10 @@ RealExample.args = {
   }
 }
 
-const SpreadsheetPerformanceTemplate: Story<IArgs> = args => {
-  const data = args.data
+const SpreadsheetPerformanceTemplate: Story<IArgs> = () => {
+  const cells: GenericDataRawCellContent<ICellMetadata>[][] = []
 
-  const cell: Partial<ICellData> = {
+  const cell: Partial<ICellStyles> = {
     comment: 'Performance of each cell',
     fontColor: 'white',
     fontSize: 13,
@@ -630,36 +518,33 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = args => {
   }
 
   for (let ri = 0; ri <= defaultOptions.row.amount; ri++) {
+    const row: GenericDataRawCellContent<ICellMetadata>[] = []
+
     for (let ci = 0; ci <= defaultOptions.col.amount; ci++) {
       const simpleCellAddress = new SimpleCellAddress(0, ri, ci)
-      const cellId = simpleCellAddress.toCellId()
 
-      data!.cells![cellId] = {
-        ...cell,
-        id: cellId,
-        value: simpleCellAddress.addressToString(),
-        backgroundColor: getRandomBackgroundColor()
-      }
+      row.push({
+        cellValue: simpleCellAddress.addressToString(),
+        metadata: {
+          ...cell,
+          backgroundColor: getRandomBackgroundColor()
+        }
+      })
+    }
 
-      data!.sheets![0]!.cells![cellId] = cellId
+    cells.push(row)
+  }
+
+  const sheets: Sheets = {
+    Performance: {
+      cells
     }
   }
 
-  return buildSpreadsheetWithEverything(args, getHyperformulaInstance())
-    .spreadsheetEl
+  return buildSpreadsheetWithEverything(
+    { sheets },
+    getHyperformulaInstance(sheets)
+  ).spreadsheetEl
 }
 
 export const SpreadsheetPerformance = SpreadsheetPerformanceTemplate.bind({})
-
-SpreadsheetPerformance.args = {
-  data: {
-    sheets: {
-      0: {
-        id: 0,
-        sheetName: 'Spreadsheet Performance',
-        cells: {}
-      }
-    },
-    cells: {}
-  }
-}

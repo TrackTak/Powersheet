@@ -4,31 +4,22 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { prefix } from './utils'
+import { getDefaultSheetMetadata, prefix } from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import {
-  UndoEntry,
-  HyperFormula,
-  RemoveRowsUndoEntry,
-  ExportedChange,
-  AddRowsUndoEntry,
-  RemoveColumnsUndoEntry,
-  AddColumnsUndoEntry,
-  BatchUndoEntry,
-  MoveCellsUndoEntry,
-  PasteUndoEntry
-} from '@tracktak/hyperformula'
-import Data, { ISpreadsheetData } from './sheets/Data'
+import { HyperFormula } from '@tracktak/hyperformula'
+import { ISheetMetadata, ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
 import FunctionHelper from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
-import { CellId } from './sheets/cells/cell/SimpleCellAddress'
+import HistoryManager from './HistoryManager'
+import UIHyperformula from './sheets/Merger'
+import Merger from './sheets/Merger'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -39,48 +30,44 @@ export interface ISpreadsheetConstructor {
   functionHelper?: FunctionHelper
 }
 
-export interface IHistoryData {
-  activeSheetId: number
-  associatedMergedCellAddressMap: Record<CellId, CellId>
-  data: ISpreadsheetData
-}
-
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement
   sheets: Sheets
   styles: IStyles
   eventEmitter: PowersheetEmitter
   options: IOptions
-  data: Data
   toolbar?: Toolbar
   formulaBar?: FormulaBar
   functionHelper?: FunctionHelper
+  spreadsheetData: ISpreadsheetData
   exporter?: Exporter
   hyperformula: HyperFormula
+  uiHyperformula: UIHyperformula
+  historyManager: HistoryManager
   operations: Operations
   uiUndoRedo: UIUndoRedo
-  history: any
   bottomBar?: BottomBar
+  merger: Merger
   isSaving = false
   sheetSizesSet = false
 
   constructor(params: ISpreadsheetConstructor) {
     this.options = defaultOptions
     this.styles = defaultStyles
-
     this.toolbar = params.toolbar
     this.formulaBar = params.formulaBar
     this.bottomBar = params.bottomBar
     this.exporter = params.exporter
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
+    this.spreadsheetData = {}
+    this.initializeMetadata()
+
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
       styles.spreadsheet
     )
-
-    this.data = new Data(this.hyperformula.getSheetNames())
     this.eventEmitter = new PowersheetEmitter()
 
     if (!isNil(this.options.width)) {
@@ -91,20 +78,27 @@ class Spreadsheet {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
 
-    this.toolbar?.initialize(this)
+    this.merger = new Merger(this.hyperformula)
+
+    this.toolbar?.initialize(this, this.merger)
     this.formulaBar?.initialize(this)
-    this.exporter?.initialize(this)
+    this.exporter?.initialize(this, this.merger)
     this.bottomBar?.initialize(this)
     this.functionHelper?.initialize(this)
 
-    this.sheets = new Sheets(this)
+    this.uiHyperformula = new UIHyperformula(this.hyperformula)
+    this.sheets = new Sheets(this, this.merger)
     this.operations = new Operations(
       this.hyperformula,
-      this.data,
-      this.sheets.merger,
+      this.merger,
       this.sheets.selector
     )
     this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
+    this.historyManager = new HistoryManager(
+      this.hyperformula,
+      this.operations,
+      this.sheets
+    )
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
@@ -112,358 +106,42 @@ class Spreadsheet {
     })
 
     this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
-    this.hyperformula.on('sheetAdded', this.onSheetAdded)
-    this.hyperformula.on('sheetRemoved', this.onSheetRemoved)
-    this.hyperformula.on('sheetRenamed', this.onSheetRenamed)
-    this.hyperformula.on('addUndoEntry', this.onAddUndoEntry)
-    this.hyperformula.on('undo', this.onUndo)
-    this.hyperformula.on('redo', this.onRedo)
-  }
-
-  private onSheetAdded = (name: string) => {
-    this.data._spreadsheetData.uiSheets[name] = {
-      rowSizes: {},
-      colSizes: {},
-      mergedCells: {},
-      associatedMergedCells: {}
-    }
-
-    this.render()
-  }
-
-  private onSheetRemoved = (
-    name: string,
-    _: ExportedChange[],
-    previousSheetNames: string[]
-  ) => {
-    const sheetId = this.hyperformula.getSheetId(name)!
-
-    if (this.sheets.activeSheetId === sheetId) {
-      const currentIndex = previousSheetNames.indexOf(name)
-
-      if (currentIndex === 0) {
-        const sheetId = this.hyperformula.getSheetId(previousSheetNames[1])!
-
-        this.sheets.switchSheet(sheetId)
-      } else {
-        const sheetId = this.hyperformula.getSheetId(
-          previousSheetNames[currentIndex - 1]
-        )!
-
-        this.sheets.switchSheet(sheetId)
-      }
-    }
-
-    delete this.data._spreadsheetData.uiSheets[name]
-
-    this.render()
-  }
-
-  private onSheetRenamed = (oldDisplayName: string, newDisplayName: string) => {
-    this.data._spreadsheetData.uiSheets[
-      newDisplayName
-    ] = this.data._spreadsheetData.uiSheets[oldDisplayName]
-
-    delete this.data._spreadsheetData.uiSheets[oldDisplayName]
-
-    this.render()
   }
 
   private onAsyncValuesUpdated = () => {
     this.render()
   }
 
-  private onAddUndoEntry = (operation: UndoEntry) => {
-    const sheetName = this.sheets.getActiveSheetName()
-
-    const {
-      mergedCells,
-      frozenRow,
-      frozenCol
-    } = this.data._spreadsheetData.uiSheets[sheetName]
-
-    if (operation instanceof BatchUndoEntry) {
-      operation.operations.forEach(operation => {
-        this.onAddUndoEntry(operation)
-      })
-    }
-
-    if (operation instanceof MoveCellsUndoEntry) {
-      const removedMergedCells = this.operations.moveMergedCells(
-        operation.sourceLeftCorner,
-        operation.destinationLeftCorner,
-        operation.width,
-        operation.height
-      )
-
-      // @ts-ignore
-      operation.removedMergedCells = removedMergedCells
-    }
-
-    if (operation instanceof PasteUndoEntry) {
-      const removedMergedCells = this.operations.pasteMergedCells(
-        operation.targetLeftCorner,
-        operation.newContent
-      )
-
-      // @ts-ignore
-      operation.removedMergedCells = removedMergedCells
-    }
-
-    if (operation instanceof RemoveRowsUndoEntry) {
-      // @ts-ignore
-      operation.frozenRow = frozenRow
-      // @ts-ignore
-      operation.mergedCells = mergedCells
-
-      this.operations.removeFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        frozenRow
-      )
-
-      this.operations.removeMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        mergedCells
-      )
-    }
-
-    if (operation instanceof AddRowsUndoEntry) {
-      // @ts-ignore
-      operation.frozenRow = frozenRow
-      // @ts-ignore
-      operation.mergedCells = mergedCells
-
-      this.operations.addFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        frozenRow
-      )
-
-      this.operations.addMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        mergedCells
-      )
-    }
-
-    if (operation instanceof RemoveColumnsUndoEntry) {
-      // @ts-ignore
-      operation.frozenCol = frozenCol
-      // @ts-ignore
-      operation.mergedCells = mergedCells
-
-      this.operations.removeFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        frozenCol
-      )
-
-      this.operations.removeMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        mergedCells
-      )
-    }
-
-    if (operation instanceof AddColumnsUndoEntry) {
-      // @ts-ignore
-      operation.frozenCol = frozenCol
-      // @ts-ignore
-      operation.mergedCells = mergedCells
-
-      this.operations.addFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        frozenCol
-      )
-
-      this.operations.addMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        mergedCells
-      )
-    }
-  }
-
-  private onUndo = (operation: UndoEntry) => {
-    this.hyperformula.suspendAddingUndoEntries()
-
-    if (operation instanceof PasteUndoEntry) {
-      this.operations.restoreOldCellContents(operation.oldContent)
-      this.operations.restoreRemovedMergedCells(operation.removedMergedCells)
-    }
-
-    if (operation instanceof MoveCellsUndoEntry) {
-      this.operations.moveMergedCells(
-        operation.destinationLeftCorner,
-        operation.sourceLeftCorner,
-        operation.width,
-        operation.height
-      )
-      this.operations.restoreRemovedMergedCells(operation.removedMergedCells)
-    }
-
-    if (operation instanceof RemoveRowsUndoEntry) {
-      this.operations.addFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenRow
-      )
-
-      this.operations.addMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof AddRowsUndoEntry) {
-      this.operations.removeFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenRow
-      )
-
-      this.operations.removeMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof RemoveColumnsUndoEntry) {
-      this.operations.addFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenCol
-      )
-
-      this.operations.addMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof AddColumnsUndoEntry) {
-      this.operations.removeFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenCol
-      )
-
-      this.operations.removeMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    this.hyperformula.resumeAddingUndoEntries()
-  }
-
-  private onRedo = (operation: UndoEntry) => {
-    this.hyperformula.suspendAddingUndoEntries()
-
-    if (operation instanceof PasteUndoEntry) {
-      this.operations.pasteMergedCells(
-        operation.targetLeftCorner,
-        operation.newContent
-      )
-    }
-
-    if (operation instanceof MoveCellsUndoEntry) {
-      this.operations.moveMergedCells(
-        operation.sourceLeftCorner,
-        operation.destinationLeftCorner,
-        operation.width,
-        operation.height
-      )
-    }
-
-    if (operation instanceof RemoveRowsUndoEntry) {
-      this.operations.removeFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenRow
-      )
-
-      this.operations.removeMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof AddRowsUndoEntry) {
-      this.operations.addFrozenRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenRow
-      )
-
-      this.operations.addMergedCellRows(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof RemoveColumnsUndoEntry) {
-      this.operations.removeFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenCol
-      )
-
-      this.operations.removeMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    if (operation instanceof AddColumnsUndoEntry) {
-      this.operations.addFrozenCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.frozenCol
-      )
-
-      this.operations.addMergedCellCols(
-        operation.command.sheet,
-        operation.command.indexes[0],
-        // @ts-ignore
-        operation.mergedCells
-      )
-    }
-
-    this.hyperformula.resumeAddingUndoEntries()
-  }
-
-  private _updateSheetSizes() {
+  private _onDOMContentLoaded = () => {
     this.sheets._updateSize()
   }
 
-  private _onDOMContentLoaded = () => {
-    this._updateSheetSizes()
+  private setMetadataForSheet(sheetName: string) {
+    const sheetId = this.hyperformula.getSheetId(sheetName)!
+    const partialSheetMetadata = this.hyperformula.getSheetMetadata<
+      Partial<ISheetMetadata>
+    >(sheetId)
+
+    const sheetMetadata = merge<ISheetMetadata, Partial<ISheetMetadata>>(
+      getDefaultSheetMetadata(),
+      partialSheetMetadata
+    )
+
+    this.hyperformula.setSheetMetadata<ISheetMetadata>(sheetId, sheetMetadata)
+  }
+
+  private initializeMetadata() {
+    const sheetNames = this.hyperformula.getSheetNames()
+
+    sheetNames.forEach(sheetName => {
+      this.setMetadataForSheet(sheetName)
+    })
+
+    if (sheetNames.length === 0) {
+      const sheetName = this.hyperformula.addSheet()
+
+      this.setMetadataForSheet(sheetName)
+    }
   }
 
   /**
@@ -477,12 +155,6 @@ class Spreadsheet {
     window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
 
     this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
-    this.hyperformula.off('sheetAdded', this.onSheetAdded)
-    this.hyperformula.off('sheetRemoved', this.onSheetRemoved)
-    this.hyperformula.off('sheetRenamed', this.onSheetRenamed)
-    this.hyperformula.off('addUndoEntry', this.onAddUndoEntry)
-    this.hyperformula.off('undo', this.onUndo)
-    this.hyperformula.off('redo', this.onRedo)
 
     this.spreadsheetEl.remove()
 
@@ -491,6 +163,7 @@ class Spreadsheet {
     this.bottomBar?.destroy()
     this.functionHelper?._destroy()
     this.sheets._destroy()
+    this.historyManager._destroy()
 
     if (destroyHyperformula) {
       this.hyperformula.destroy()
@@ -503,13 +176,13 @@ class Spreadsheet {
    * @param data - The persisted data that sets the spreadsheet.
    */
   setData(data: ISpreadsheetData) {
-    this.data._spreadsheetData = {
+    this.spreadsheetData = {
       ...data
     }
 
     if (document.readyState !== 'loading' && !this.sheetSizesSet) {
       this.sheetSizesSet = true
-      this._updateSheetSizes()
+      this.sheets._updateSize()
     } else {
       this.render()
     }
@@ -564,7 +237,11 @@ class Spreadsheet {
 
     this.isSaving = true
 
-    this.eventEmitter.emit('persistData', this.data._spreadsheetData, done)
+    this.eventEmitter.emit(
+      'persistData',
+      this.hyperformula.getAllSheetsSerialized(),
+      done
+    )
   }
 
   /**
@@ -608,9 +285,7 @@ class Spreadsheet {
     this.functionHelper?._render()
     this.formulaBar?._render()
 
-    console.log(this.hyperformula._crudOperations.undoRedo.redoStack)
-    console.log(this.hyperformula._crudOperations.undoRedo.undoStack)
-    console.log(this.data._spreadsheetData.uiSheets)
+    console.log(this.hyperformula.getAllSheetsSerialized())
 
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {

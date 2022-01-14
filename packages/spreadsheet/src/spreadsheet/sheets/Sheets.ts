@@ -378,6 +378,10 @@ class Sheets {
       this.cellEditor.showAndSetValue(selectedFirstcell)
     }
 
+    this._spreadsheet.formulaBar?.updateValue(
+      selectedFirstcell.simpleCellAddress
+    )
+
     let { cellValue, metadata } =
       this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
         simpleCellAddress

@@ -195,11 +195,8 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const {
-      sheet,
-      row,
-      col
-    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+    const { sheet, row, col } =
+      this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -303,9 +300,8 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const { cellValue } = this._spreadsheet.hyperformula.getCellSerialized(
-      simpleCellAddress
-    )
+    const { cellValue } =
+      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
     this.setContentEditable(cellValue?.toString() ?? null)
 
@@ -395,12 +391,10 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let value = this.currentCellText ? this.currentCellText : null
 
@@ -510,24 +504,26 @@ class CellEditor {
 
     this.currentCellText = text
 
-    const isFormula = this.currentCellText?.startsWith('=')
-    if (isFormula) {
-      this.cellEditorEl.classList.add(styles.formulaInput)
-      this._spreadsheet.formulaBar?.editableContent.classList.add(
-        styles.formulaInput
+    if (text) {
+      const isFormula = this.currentCellText?.startsWith('=')
+      if (isFormula) {
+        this.cellEditorEl.classList.add(styles.formulaInput)
+        this._spreadsheet.formulaBar?.editableContent.classList.add(
+          styles.formulaInput
+        )
+      }
+      const tokenParts = this._sheets.cellHighlighter.getStyledTokens(
+        this.currentCellText ?? ''
       )
+
+      tokenParts.forEach(part => {
+        this.cellEditorEl.appendChild(part)
+
+        this._spreadsheet.formulaBar?.editableContent.appendChild(
+          part.cloneNode(true)
+        )
+      })
     }
-    const tokenParts = this._sheets.cellHighlighter.getStyledTokens(
-      this.currentCellText ?? ''
-    )
-
-    tokenParts.forEach(part => {
-      this.cellEditorEl.appendChild(part)
-
-      this._spreadsheet.formulaBar?.editableContent.appendChild(
-        part.cloneNode(true)
-      )
-    })
 
     this._spreadsheet.eventEmitter.emit(
       'cellEditorChange',

@@ -204,6 +204,7 @@ class Clipboard {
       this._pasteFromSystemClipboard(systemClipboardValue)
     }
 
+    this._spreadsheet.persistData()
     this._spreadsheet.render()
   }
 

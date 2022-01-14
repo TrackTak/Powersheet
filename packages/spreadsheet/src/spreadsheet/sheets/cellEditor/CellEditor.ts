@@ -417,6 +417,7 @@ class CellEditor {
         cellValue: value,
         metadata
       })
+      this._spreadsheet.persistData()
     }
   }
 
@@ -499,9 +500,6 @@ class CellEditor {
   }
 
   /**
-   * Parses the string to find any cell references
-   * and highlights them.
-   *
    * @param text The text to set in the CellEditor
    */
   setContentEditable(text: string | null) {

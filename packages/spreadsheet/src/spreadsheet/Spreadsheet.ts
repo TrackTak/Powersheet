@@ -246,21 +246,6 @@ class Spreadsheet {
   }
 
   /**
-   * This adds to the stack for the undo/redo functionality.
-   * `persistData()` is automatically called at the end of this method.
-   *
-   * @param callback - A function that you want to be called after the history is pushed
-   * onto the stack.
-   */
-  pushToHistory(callback?: () => void) {
-    if (callback) {
-      callback()
-    }
-
-    this.persistData()
-  }
-
-  /**
    * Provides a way for developers to save the `_spreadsheetData` to their database.
    * This function should be called after an action by the user or a custom function.
    */
@@ -282,8 +267,7 @@ class Spreadsheet {
   }
 
   /**
-   * Reverts the state of the spreadsheet to the previously pushed `_spreadsheetData`
-   * that was done in `pushToHistory()` if an undo exists in the stack.
+   * Reverts the state of the spreadsheet to the previously pushed data
    */
   undo() {
     if (!this.hyperformula.isThereSomethingToUndo()) return
@@ -295,8 +279,7 @@ class Spreadsheet {
   }
 
   /**
-   * Forwards the state of the spreadsheet to the previously undone `_spreadsheetData`
-   * that was done in `undo()` if an redo exists in the stack.
+   * Forwards the state of the spreadsheet to the previously undone data
    */
   redo() {
     if (!this.hyperformula.isThereSomethingToRedo()) return

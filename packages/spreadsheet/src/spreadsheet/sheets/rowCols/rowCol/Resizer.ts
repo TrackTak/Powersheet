@@ -68,8 +68,6 @@ class Resizer {
   }
 
   private _resizeLineDragStart = (e: KonvaEventObject<DragEvent>) => {
-    this._spreadsheet.pushToHistory()
-
     this._spreadsheet.eventEmitter.emit(
       this._rowCols._isCol ? 'resizeColStart' : 'resizeRowStart',
       e

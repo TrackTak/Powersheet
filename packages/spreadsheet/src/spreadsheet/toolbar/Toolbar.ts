@@ -799,6 +799,7 @@ class Toolbar {
           })
         })
       })
+      this._spreadsheet.persistData()
     }
 
     const deleteStyle = (key: keyof ICellMetadata) => {
@@ -833,6 +834,7 @@ class Toolbar {
       case 'formula': {
         this._spreadsheet.spreadsheetData.showFormulas = !this._spreadsheet
           .spreadsheetData.showFormulas
+        this._spreadsheet.persistData()
         break
       }
       case 'alignLeft': {
@@ -974,7 +976,9 @@ class Toolbar {
             )
           })
         }
+
         this._spreadsheet.hyperformula.clearRedoStack()
+        this._spreadsheet.persistData()
 
         break
       }
@@ -1007,9 +1011,9 @@ class Toolbar {
         }
 
         this._spreadsheet.hyperformula.clearRedoStack()
-        this._spreadsheet.persistData()
         this._spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0)
         this._spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0)
+        this._spreadsheet.persistData()
 
         break
       }
@@ -1021,60 +1025,70 @@ class Toolbar {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setBottomBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderRight': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setRightBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderTop': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setTopBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderLeft': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setLeftBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderVertical': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setVerticalBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderHorizontal': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setHorizontalBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderInside': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setInsideBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderOutside': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setOutsideBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderAll': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._setAllBorders(selectedCells)
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'borderNone': {
         this._spreadsheet.hyperformula.batchUndoRedo(() => {
           this._clearBorders(selectedCells.map(cell => cell.simpleCellAddress))
         })
+        this._spreadsheet.persistData()
         break
       }
       case 'undo': {

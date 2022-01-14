@@ -439,6 +439,7 @@ class Sheets {
             })
           })
         })
+        this._spreadsheet.persistData()
         break
       }
       case e.ctrlKey && 'z': {

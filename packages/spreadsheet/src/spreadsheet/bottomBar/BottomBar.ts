@@ -106,6 +106,8 @@ class BottomBar {
       sheetTabDropdown.hide()
 
       this._spreadsheet.hyperformula.removeSheet(sheetId)
+      this._spreadsheet.render()
+      this._spreadsheet.persistData()
     })
 
     renameSheetButton.addEventListener('click', () => {
@@ -122,6 +124,8 @@ class BottomBar {
         sheetId,
         nameContainer.textContent!
       )
+      this._spreadsheet.render()
+      this._spreadsheet.persistData()
     })
 
     nameContainer.textContent = sheetName
@@ -147,6 +151,9 @@ class BottomBar {
       undefined,
       getDefaultSheetMetadata()
     )
+    this._spreadsheet.persistData()
+    this._spreadsheet.render()
+
   }
 
   /**

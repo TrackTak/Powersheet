@@ -8,8 +8,9 @@ import {
 import styles from './BottomBar.module.scss'
 import tippy, { Instance, Props } from 'tippy.js'
 import { createIconButton, IIconElements } from '../htmlElementHelpers'
-import { SheetId } from '../sheets/Sheets'
 import Spreadsheet from '../Spreadsheet'
+import { ISheetMetadata } from '../sheets/Data'
+import { getDefaultSheetMetadata } from '../utils'
 
 export interface ISheetTabElements {
   sheetTabContainer: HTMLDivElement
@@ -28,10 +29,10 @@ class BottomBar {
   sheetSelectionDropdownContent!: HTMLDivElement
   createNewSheetButtonElements!: IIconElements
   tabContainer!: HTMLDivElement
-  sheetTabElementsMap!: Map<SheetId, ISheetTabElements>
+  sheetTabElementsMap!: Map<number, ISheetTabElements>
   private _spreadsheet!: Spreadsheet
 
-  private _setSheetTabElements(sheetId: SheetId) {
+  private _setSheetTabElements(sheetId: number) {
     const { sheetTabContainer, sheetTab, nameContainer } = createSheetTab()
     const sheetSelectionDropdownButton = createSheetSelectionDropdownButton()
     const isActive = sheetId === this._spreadsheet.sheets.activeSheetId
@@ -42,9 +43,13 @@ class BottomBar {
       sheetTab.classList.remove('active')
     }
 
-    sheetSelectionDropdownButton.textContent = this._spreadsheet.data._spreadsheetData.sheets![
-      sheetId
-    ].sheetName!
+    const sheetName = this._spreadsheet.hyperformula.getSheetName(sheetId)
+
+    if (sheetName === undefined) {
+      throw new Error('sheetName should not be undefined')
+    }
+
+    sheetSelectionDropdownButton.textContent = sheetName
 
     const switchSheet = () => {
       this._spreadsheet.sheets.switchSheet(sheetId)
@@ -61,7 +66,8 @@ class BottomBar {
       renameSheetButton
     } = createSheetTabDropdownContent()
 
-    deleteSheetButton.disabled = this._spreadsheet.sheets.sheetIds.length === 1
+    deleteSheetButton.disabled =
+      this._spreadsheet.hyperformula.getSheetNames().length === 1
 
     const sheetTabDropdown = tippy(sheetTab, {
       placement: 'top',
@@ -99,7 +105,7 @@ class BottomBar {
     deleteSheetButton.addEventListener('click', () => {
       sheetTabDropdown.hide()
 
-      this._spreadsheet.sheets.deleteSheet(sheetId)
+      this._spreadsheet.hyperformula.removeSheet(sheetId)
     })
 
     renameSheetButton.addEventListener('click', () => {
@@ -112,12 +118,13 @@ class BottomBar {
       nameContainer.contentEditable = 'false'
       nameContainer.blur()
 
-      this._spreadsheet.sheets.renameSheet(sheetId, nameContainer.textContent!)
+      this._spreadsheet.hyperformula.renameSheet(
+        sheetId,
+        nameContainer.textContent!
+      )
     })
 
-    nameContainer.textContent = this._spreadsheet.data._spreadsheetData.sheets![
-      sheetId
-    ].sheetName!
+    nameContainer.textContent = sheetName
 
     this.tabContainer.appendChild(sheetTabContainer)
     this.sheetSelectionDropdownContent.appendChild(sheetSelectionDropdownButton)
@@ -136,17 +143,10 @@ class BottomBar {
   }
 
   private _createNewSheetButtonOnClick = () => {
-    const sheetName = this._spreadsheet.sheets.getSheetName()
-    const id = this._spreadsheet.sheets.sheetIds.length
-
-    this._spreadsheet.sheets.createNewSheet({
-      id,
-      sheetName
-    })
-
-    this._spreadsheet.sheets.switchSheet(id)
-
-    this._spreadsheet.sheets._updateSize()
+    this._spreadsheet.hyperformula.addSheet<ISheetMetadata>(
+      undefined,
+      getDefaultSheetMetadata()
+    )
   }
 
   /**
@@ -219,7 +219,11 @@ class BottomBar {
     this.tabContainer.innerHTML = ''
     this.sheetSelectionDropdownContent.innerHTML = ''
 
-    this._spreadsheet.sheets.sheetIds.forEach(sheetId => {
+    const sheetNames = this._spreadsheet.hyperformula.getSheetNames()
+
+    sheetNames.forEach(name => {
+      const sheetId = this._spreadsheet.hyperformula.getSheetId(name)!
+
       this._setSheetTabElements(sheetId)
     })
   }

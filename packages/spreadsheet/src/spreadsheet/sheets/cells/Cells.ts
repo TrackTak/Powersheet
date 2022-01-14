@@ -7,32 +7,24 @@ import { Group } from 'konva/lib/Group'
 import { Text } from 'konva/lib/shapes/Text'
 import { Line } from 'konva/lib/shapes/Line'
 import { isNil } from 'lodash'
-import RowColAddress from './cell/RowColAddress'
+import Cell from './cell/Cell'
+import { ICellMetadata, ISheetMetadata } from '../Data'
+import Merger from '../Merger'
+
+export interface IGroupedCells {
+  main: Cell[]
+  xSticky: Cell[]
+  ySticky: Cell[]
+  xySticky: Cell[]
+}
 
 class Cells {
   cellsMap: Map<CellId, StyleableCell>
   private _spreadsheet: Spreadsheet
 
-  constructor(private _sheets: Sheets) {
+  constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
     this.cellsMap = new Map()
-  }
-
-  private _getHasCellData(simpleCellAddress: SimpleCellAddress) {
-    const cellId = simpleCellAddress.toCellId()
-    const cell = this._spreadsheet.data._spreadsheetData.cells?.[cellId]
-    // Need to check hyperformula value too because some
-    // functions spill values into adjacent cells
-    const cellSerializedValueExists = !isNil(
-      this._spreadsheet.hyperformula.getCellValue(simpleCellAddress)
-    )
-    const hasCellData = !!(
-      cell ||
-      cellSerializedValueExists ||
-      this._spreadsheet.data.getIsCellAMergedCell(simpleCellAddress)
-    )
-
-    return hasCellData
   }
 
   private _updateFrozenCells(frozenRow?: number, frozenCol?: number) {
@@ -205,12 +197,12 @@ class Cells {
    * @internal
    */
   _render() {
-    const frozenCells =
-      this._spreadsheet.data._spreadsheetData.frozenCells?.[
-        this._sheets.activeSheetId
-      ]
-    const frozenRow = frozenCells?.row
-    const frozenCol = frozenCells?.col
+    const {
+      frozenRow,
+      frozenCol
+    } = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._sheets.activeSheetId
+    )
 
     this._updateFrozenCells(frozenRow, frozenCol)
 
@@ -246,27 +238,27 @@ class Cells {
 
     this.cellsMap.set(cellId, styleableCell)
 
-    if (
-      !this._spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
-    ) {
-      const height = this._sheets.rows.getSize(simpleCellAddress.row)
-      const cellHeight = Math.max(
-        styleableCell.rect.height(),
-        styleableCell.text.height()
-      )
+    // if (
+    //   !this._spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
+    // ) {
+    //   const height = this._sheets.rows.getSize(simpleCellAddress.row)
+    //   const cellHeight = Math.max(
+    //     styleableCell.rect.height(),
+    //     styleableCell.text.height()
+    //   )
 
-      if (cellHeight > height) {
-        this._spreadsheet.data.setRowCol(
-          'rows',
-          new RowColAddress(this._sheets.activeSheetId, simpleCellAddress.row),
-          {
-            size: cellHeight
-          }
-        )
+    //   if (cellHeight > height) {
+    //     this._spreadsheet.data.setRowCol(
+    //       'rows',
+    //       new RowColAddress(this._sheets.activeSheetId, simpleCellAddress.row),
+    //       {
+    //         size: cellHeight
+    //       }
+    //     )
 
-        this._spreadsheet.render()
-      }
-    }
+    //     this._spreadsheet.render()
+    //   }
+    // }
   }
 
   /**
@@ -274,8 +266,6 @@ class Cells {
    */
   _updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
     const cellId = simpleCellAddress.toCellId()
-    const mergedCellId =
-      this._spreadsheet.sheets.merger.associatedMergedCellAddressMap[cellId]
 
     const sheetName =
       this._spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''
@@ -284,7 +274,15 @@ class Cells {
       return
     }
 
-    if (mergedCellId) {
+    const cell = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
+
+    // We always render frozenRowCol cells so they hide the cells beneath it
+    if (!cell && !isOnFrozenRowCol) return
+
+    if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
+      const mergedCellId = this._merger.associatedMergedCellAddressMap[cellId]
       const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {
@@ -293,14 +291,31 @@ class Cells {
       return
     }
 
-    // We always render frozenRowCol cells so they hide the cells beneath it
-    if (!this._getHasCellData(simpleCellAddress) && !isOnFrozenRowCol) return
-
     const cellExists = this.cellsMap.has(cellId)
 
     if (!cellExists) {
       this._setStyleableCell(simpleCellAddress)
     }
+  }
+
+  /**
+   * @internal
+   */
+  _getGroupedCellsByStickyGroup(cells: Cell[]) {
+    const groupedCells: IGroupedCells = {
+      main: [],
+      xSticky: [],
+      ySticky: [],
+      xySticky: []
+    }
+
+    cells.forEach(cell => {
+      const stickyGroup = cell.getStickyGroupCellBelongsTo()
+
+      groupedCells![stickyGroup].push(cell)
+    })
+
+    return groupedCells
   }
 }
 

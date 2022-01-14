@@ -37,6 +37,10 @@ class Cell {
       this.group.add(this.rect)
     }
     this.rect.setAttrs(this._sheets.cells._getDefaultCellRectAttrs())
+    this.update()
+  }
+
+  update() {
     this._updatePosition()
     this._updateSize()
     this._setIsMergedCell()
@@ -63,25 +67,33 @@ class Cell {
   }
 
   private _setIsMergedCell() {
-    this._sheets.merger._setAssociatedMergedCellIds(this.simpleCellAddress)
-
-    const cellId = this.simpleCellAddress.toCellId()
-    const mergedCellId = this._sheets.merger.associatedMergedCellAddressMap[
-      cellId
-    ]
-
-    if (!mergedCellId) return
+    if (
+      !this._sheets._merger.getIsCellTopLeftMergedCell(this.simpleCellAddress)
+    )
+      return
 
     this.isMerged = true
 
-    const mergedCell = this._sheets._spreadsheet.data._spreadsheetData
-      .mergedCells![mergedCellId]
+    let bottomRow = -Infinity
+    let bottomCol = -Infinity
 
-    const rangeSimpleCellAddress = RangeSimpleCellAddress.mergedCellToAddress(
-      mergedCell
+    for (const address of this._sheets._merger._iterateMergedCellWidthHeight(
+      this.simpleCellAddress
+    )) {
+      bottomRow = Math.max(bottomRow, address.row)
+      bottomCol = Math.max(bottomCol, address.col)
+    }
+
+    this._setRangeCellAddress(
+      new RangeSimpleCellAddress(
+        this.simpleCellAddress,
+        new SimpleCellAddress(
+          this.simpleCellAddress.sheet,
+          bottomRow,
+          bottomCol
+        )
+      )
     )
-
-    this._setRangeCellAddress(rangeSimpleCellAddress)
   }
 
   protected _setRangeCellAddress(

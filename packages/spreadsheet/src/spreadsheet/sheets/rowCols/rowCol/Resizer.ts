@@ -4,7 +4,8 @@ import { Rect } from 'konva/lib/shapes/Rect'
 import Sheets from '../../Sheets'
 import Spreadsheet from '../../../Spreadsheet'
 import RowCols from '../RowCols'
-import SheetRowColAddress from '../../cells/cell/RowColAddress'
+import { SetColSizeCommand, SetRowSizeCommand } from '../../../Commands'
+import { SetColSizeUndoEntry, SetRowSizeUndoEntry } from '../../../UIUndoRedo'
 
 class Resizer {
   resizeMarker: Rect
@@ -112,16 +113,47 @@ class Resizer {
       e.target.getPosition()[this._rowCols._functions.axis] -
       this._getPosition()
 
+    const oldSize = this._rowCols.getSize(this.currentIndex)
+
     this.hideResizeMarker()
     this.hideGuideLine()
 
-    this._spreadsheet.data.setRowCol(
-      this._rowCols._pluralType,
-      new SheetRowColAddress(this._sheets.activeSheetId, this.currentIndex),
-      {
-        size: newSize
-      }
-    )
+    if (this._rowCols._type === 'row') {
+      this._spreadsheet.operations.setRowSize(
+        this._sheets.activeSheetId,
+        this.currentIndex,
+        newSize
+      )
+
+      const command = new SetRowSizeCommand(
+        this._sheets.activeSheetId,
+        this.currentIndex,
+        oldSize,
+        newSize
+      )
+
+      this._spreadsheet.uiUndoRedo.saveOperation(
+        new SetRowSizeUndoEntry(this._spreadsheet.hyperformula, command)
+      )
+    } else {
+      this._spreadsheet.operations.setColSize(
+        this._sheets.activeSheetId,
+        this.currentIndex,
+        newSize
+      )
+
+      const command = new SetColSizeCommand(
+        this._sheets.activeSheetId,
+        this.currentIndex,
+        oldSize,
+        newSize
+      )
+
+      this._spreadsheet.uiUndoRedo.saveOperation(
+        new SetColSizeUndoEntry(this._spreadsheet.hyperformula, command)
+      )
+    }
+    this._spreadsheet.hyperformula.clearRedoStack()
 
     this._spreadsheet.persistData()
     this._spreadsheet.render()

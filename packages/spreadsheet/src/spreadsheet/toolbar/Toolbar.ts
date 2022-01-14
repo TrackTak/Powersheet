@@ -38,14 +38,27 @@ import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import {
   BorderStyle,
   HorizontalTextAlign,
-  ICellData,
+  ICellMetadata,
+  ISheetMetadata,
   TextWrap,
   VerticalTextAlign
 } from '../sheets/Data'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 import SelectedCell from '../sheets/cells/cell/SelectedCell'
-import { SheetId } from '../sheets/Sheets'
-import { HyperFormula } from '@tracktak/hyperformula'
+import { ColumnRowIndex, HyperFormula } from '@tracktak/hyperformula'
+import {
+  MergeCellsCommand,
+  SetFrozenRowColCommand,
+  UnMergeCellsCommand,
+  UnsetFrozenRowColCommand
+} from '../Commands'
+import {
+  MergeCellsUndoEntry,
+  SetFrozenRowColUndoEntry,
+  UnMergeCellsUndoEntry,
+  UnsetFrozenRowColUndoEntry
+} from '../UIUndoRedo'
+import Merger from '../sheets/Merger'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -92,11 +105,14 @@ class Toolbar {
   tooltip!: DelegateInstance
   dropdown!: DelegateInstance
   private _spreadsheet!: Spreadsheet
+  private _merger!: Merger
 
   private _setFunction(functionName: string) {
-    if (this._spreadsheet.sheets.selector.selectedCells.length > 1) {
+    const selectedCells = this._spreadsheet.sheets.selector.selectedCells
+
+    if (selectedCells.length > 1) {
       const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
-        this._spreadsheet.sheets.selector.selectedCells
+        selectedCells
       )
 
       const cell = new Cell(
@@ -146,14 +162,24 @@ class Toolbar {
     )
 
     borderCells.forEach(cell => {
-      const cellId = cell.simpleCellAddress.toCellId()
-      const borders =
-        this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.borders ?? []
+      const {
+        metadata
+      } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        cell.simpleCellAddress
+      )
+
+      const borders = metadata?.borders ?? []
 
       if (borders.indexOf(borderType) === -1) {
-        this._spreadsheet.data.setCell(cell.simpleCellAddress, {
-          borders: [...borders, borderType]
-        })
+        this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+          cell.simpleCellAddress,
+          {
+            metadata: {
+              ...metadata,
+              borders: [...borders, borderType]
+            }
+          }
+        )
       }
     })
   }
@@ -244,9 +270,20 @@ class Toolbar {
 
   private _clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
     simpleCellAddresses.forEach(simpleCellAddress => {
-      const cellId = simpleCellAddress.toCellId()
+      const {
+        metadata
+      } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
-      delete this._spreadsheet.data._spreadsheetData.cells?.[cellId].borders
+      delete metadata?.borders
+
+      this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+        simpleCellAddress,
+        {
+          metadata
+        }
+      )
     })
   }
 
@@ -355,13 +392,16 @@ class Toolbar {
   ) {
     let fill
 
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const cell = this._spreadsheet.data._spreadsheetData.cells?.[cellId]
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
 
     if (colorPickerIconName === 'backgroundColor') {
-      fill = cell?.backgroundColor ?? ''
+      fill = metadata?.backgroundColor ?? ''
     } else {
-      fill = cell?.fontColor ?? this._spreadsheet.styles.cell.text.fill!
+      fill = metadata?.fontColor ?? this._spreadsheet.styles.cell.text.fill!
     }
 
     this.colorPickerElementsMap[
@@ -373,10 +413,14 @@ class Toolbar {
     selectedCells: Cell[],
     selectedCell: SelectedCell
   ) {
+    const isCellPartOfMerge = this._merger.getIsCellPartOfMerge(
+      selectedCell.simpleCellAddress
+    )
+    const isTopLeftMergedCell = this._merger.getIsCellTopLeftMergedCell(
+      selectedCell.simpleCellAddress
+    )
     const isMerged =
-      this._spreadsheet.sheets.merger.getIsCellPartOfMerge(
-        selectedCell.simpleCellAddress
-      ) && selectedCells.length === 1
+      (isCellPartOfMerge || isTopLeftMergedCell) && selectedCells.length === 1
 
     if (isMerged) {
       this.iconElementsMap.merge.button.disabled = false
@@ -396,13 +440,14 @@ class Toolbar {
   }
 
   private _setActiveHorizontalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const horizontalTextAlign = this._spreadsheet.data._spreadsheetData.cells?.[
-      cellId
-    ]?.horizontalTextAlign
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
     const icon = this.iconElementsMap.horizontalTextAlign.icon
 
-    switch (horizontalTextAlign) {
+    switch (metadata?.horizontalTextAlign) {
       case 'center':
         icon.dataset.activeIcon = 'center'
         break
@@ -416,13 +461,15 @@ class Toolbar {
   }
 
   private _setActiveVerticalIcon(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const verticalTextAlign = this._spreadsheet.data._spreadsheetData.cells?.[
-      cellId
-    ]?.verticalTextAlign
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
+
     const icon = this.iconElementsMap.verticalTextAlign.icon
 
-    switch (verticalTextAlign) {
+    switch (metadata?.verticalTextAlign) {
       case 'top':
         icon.dataset.activeIcon = 'top'
         break
@@ -436,27 +483,30 @@ class Toolbar {
   }
 
   private _setActiveFontSize(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const fontSize = this._spreadsheet.data._spreadsheetData.cells?.[cellId]
-      ?.fontSize
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
 
     this.buttonElementsMap.fontSize.text.textContent = (
-      fontSize ?? this._spreadsheet.styles.cell.text.fontSize!
+      metadata?.fontSize ?? this._spreadsheet.styles.cell.text.fontSize!
     ).toString()
   }
 
   private _setActiveTextFormat(selectedCell: SelectedCell) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const textFormatPattern = this._spreadsheet.data._spreadsheetData.cells?.[
-      cellId
-    ]?.textFormatPattern
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
 
     let textFormat = 'plainText'
 
     Object.keys(this._spreadsheet.options.textPatternFormats).forEach(key => {
       const value = this._spreadsheet.options.textPatternFormats[key]
 
-      if (textFormatPattern === value) {
+      if (metadata?.textFormatPattern === value) {
         textFormat = key
       }
     })
@@ -466,9 +516,15 @@ class Toolbar {
     )
   }
 
-  private _setActiveHistoryIcons(history: any) {
-    this._setDisabled(this.iconElementsMap.undo, !history.canUndo)
-    this._setDisabled(this.iconElementsMap.redo, !history.canRedo)
+  private _setActiveHistoryIcons() {
+    this._setDisabled(
+      this.iconElementsMap.undo,
+      !this._spreadsheet.hyperformula.isThereSomethingToUndo()
+    )
+    this._setDisabled(
+      this.iconElementsMap.redo,
+      !this._spreadsheet.hyperformula.isThereSomethingToRedo()
+    )
   }
 
   private _setActive(actionElements: IActionElements, active: boolean) {
@@ -488,8 +544,9 @@ class Toolbar {
   /**
    * @param spreadsheet - The spreadsheet that this Toolbar is connected to.
    */
-  initialize(spreadsheet: Spreadsheet) {
+  initialize(spreadsheet: Spreadsheet, merger: Merger) {
     this._spreadsheet = spreadsheet
+    this._merger = merger
     this.toolbarEl = document.createElement('div')
     this.toolbarEl.classList.add(styles.toolbar, toolbarPrefix)
 
@@ -720,23 +777,46 @@ class Toolbar {
    * the element as to what value this should be.
    */
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
-    const setStyle = <T>(key: keyof ICellData, value: T) => {
-      this._spreadsheet.pushToHistory(() => {
-        this._spreadsheet.sheets.selector.selectedCells.forEach(cell => {
-          this._spreadsheet.data.setCell(cell.simpleCellAddress, {
-            [key]: value
+    const selectedCell = this._spreadsheet.sheets.selector.selectedCell
+    const selectedCells = this._spreadsheet.sheets.selector.selectedCells
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      this._spreadsheet.sheets.activeSheetId
+    )
+    const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
+      this._spreadsheet.hyperformula.batchUndoRedo(() => {
+        selectedCells.forEach(({ simpleCellAddress }) => {
+          const {
+            metadata
+          } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+            simpleCellAddress
+          )
+
+          this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+            metadata: {
+              ...metadata,
+              [key]: value
+            }
           })
         })
       })
     }
 
-    const deleteStyle = (key: keyof ICellData) => {
-      this._spreadsheet.pushToHistory(() => {
-        this._spreadsheet.sheets.selector.selectedCells.forEach(cell => {
-          const cellId = cell.simpleCellAddress.toCellId()
+    const deleteStyle = (key: keyof ICellMetadata) => {
+      selectedCells.forEach(cell => {
+        const {
+          metadata
+        } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+          cell.simpleCellAddress
+        )
 
-          delete this._spreadsheet.data._spreadsheetData.cells?.[cellId][key]
-        })
+        delete metadata![key]
+
+        this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+          cell.simpleCellAddress,
+          {
+            metadata
+          }
+        )
       })
     }
 
@@ -751,10 +831,8 @@ class Toolbar {
         break
       }
       case 'formula': {
-        this._spreadsheet.pushToHistory(() => {
-          this._spreadsheet.data._spreadsheetData.showFormulas = !this
-            ._spreadsheet.data._spreadsheetData.showFormulas
-        })
+        this._spreadsheet.spreadsheetData.showFormulas = !this._spreadsheet
+          .spreadsheetData.showFormulas
         break
       }
       case 'alignLeft': {
@@ -851,31 +929,85 @@ class Toolbar {
         break
       }
       case 'merge': {
+        if (!selectedCells.length) return
+
         if (this.iconElementsMap.merge.active) {
-          this._spreadsheet.sheets.merger.unMergeSelectedCells()
-        } else if (!this.iconElementsMap.merge.button.disabled) {
-          this._spreadsheet.sheets.merger.mergeSelectedCells()
+          const { sheet, row, col } = selectedCell!.simpleCellAddress
+          const mergedCellAddress = new SimpleCellAddress(sheet, row, col)
+          const mergedCellId = mergedCellAddress.toCellId()
+          const mergedCell = sheetMetadata.mergedCells[mergedCellId]
+          const command = new UnMergeCellsCommand(
+            mergedCellAddress,
+            mergedCell.width,
+            mergedCell.height
+          )
+
+          this._spreadsheet.hyperformula.batchUndoRedo(() => {
+            this._spreadsheet.operations.unMergeCells(mergedCellAddress)
+            this._spreadsheet.uiUndoRedo.saveOperation(
+              new UnMergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
+            )
+          })
+        } else {
+          const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
+            selectedCells
+          )
+          const width = rangeSimpleCellAddress.width()
+          const height = rangeSimpleCellAddress.height()
+
+          this._spreadsheet.hyperformula.batchUndoRedo(() => {
+            const removedMergedCells = this._spreadsheet.operations.mergeCells(
+              rangeSimpleCellAddress.topLeftSimpleCellAddress,
+              width,
+              height
+            )
+
+            const command = new MergeCellsCommand(
+              rangeSimpleCellAddress.topLeftSimpleCellAddress,
+              width,
+              height,
+              removedMergedCells
+            )
+
+            this._spreadsheet.uiUndoRedo.saveOperation(
+              new MergeCellsUndoEntry(this._spreadsheet.hyperformula, command)
+            )
+          })
         }
+        this._spreadsheet.hyperformula.clearRedoStack()
 
         break
       }
       case 'freeze': {
-        this._spreadsheet.pushToHistory(() => {
-          if (this.iconElementsMap.freeze.active) {
-            this._spreadsheet.data.deleteFrozenCell(
-              this._spreadsheet.sheets.activeSheetId
+        const { sheet, row, col } = selectedCell!.simpleCellAddress
+
+        if (this.iconElementsMap.freeze.active) {
+          const { frozenRow, frozenCol } = sheetMetadata
+          const indexes: ColumnRowIndex = [frozenRow!, frozenCol!]
+          const command = new UnsetFrozenRowColCommand(sheet, indexes)
+
+          this._spreadsheet.operations.unsetFrozenRowCol(sheet)
+          this._spreadsheet.uiUndoRedo.saveOperation(
+            new UnsetFrozenRowColUndoEntry(
+              this._spreadsheet.hyperformula,
+              command
             )
-          } else {
-            const simpleCellAddress = this._spreadsheet.sheets.selector
-              .selectedCell!.simpleCellAddress
+          )
+        } else {
+          const indexes: ColumnRowIndex = [row, col]
+          const command = new SetFrozenRowColCommand(sheet, indexes)
 
-            this._spreadsheet.data.setFrozenCell(simpleCellAddress.sheet, {
-              row: simpleCellAddress.row,
-              col: simpleCellAddress.col
-            })
-          }
-        })
+          this._spreadsheet.operations.setFrozenRowCol(sheet, command.indexes)
+          this._spreadsheet.uiUndoRedo.saveOperation(
+            new SetFrozenRowColUndoEntry(
+              this._spreadsheet.hyperformula,
+              command
+            )
+          )
+        }
 
+        this._spreadsheet.hyperformula.clearRedoStack()
+        this._spreadsheet.persistData()
         this._spreadsheet.sheets.cols.scrollBar.scrollBarEl.scrollTo(0, 0)
         this._spreadsheet.sheets.rows.scrollBar.scrollBarEl.scrollTo(0, 0)
 
@@ -886,76 +1018,62 @@ class Toolbar {
         break
       }
       case 'borderBottom': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setBottomBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setBottomBorders(selectedCells)
         })
         break
       }
       case 'borderRight': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setRightBorders(this._spreadsheet.sheets.selector.selectedCells)
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setRightBorders(selectedCells)
         })
         break
       }
       case 'borderTop': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setTopBorders(this._spreadsheet.sheets.selector.selectedCells)
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setTopBorders(selectedCells)
         })
         break
       }
       case 'borderLeft': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setLeftBorders(this._spreadsheet.sheets.selector.selectedCells)
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setLeftBorders(selectedCells)
         })
         break
       }
       case 'borderVertical': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setVerticalBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setVerticalBorders(selectedCells)
         })
         break
       }
       case 'borderHorizontal': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setHorizontalBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setHorizontalBorders(selectedCells)
         })
         break
       }
       case 'borderInside': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setInsideBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setInsideBorders(selectedCells)
         })
         break
       }
       case 'borderOutside': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setOutsideBorders(
-            this._spreadsheet.sheets.selector.selectedCells
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setOutsideBorders(selectedCells)
         })
         break
       }
       case 'borderAll': {
-        this._spreadsheet.pushToHistory(() => {
-          this._setAllBorders(this._spreadsheet.sheets.selector.selectedCells)
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._setAllBorders(selectedCells)
         })
         break
       }
       case 'borderNone': {
-        this._spreadsheet.pushToHistory(() => {
-          this._clearBorders(
-            this._spreadsheet.sheets.selector.selectedCells.map(
-              cell => cell.simpleCellAddress
-            )
-          )
+        this._spreadsheet.hyperformula.batchUndoRedo(() => {
+          this._clearBorders(selectedCells.map(cell => cell.simpleCellAddress))
         })
         break
       }
@@ -1010,7 +1128,7 @@ class Toolbar {
     )
     this._setActive(
       this.iconElementsMap.formula,
-      this._spreadsheet.data._spreadsheetData.showFormulas ?? false
+      this._spreadsheet.spreadsheetData.showFormulas ?? false
     )
     this._setActive(
       this.iconElementsMap.functionHelper,
@@ -1021,7 +1139,7 @@ class Toolbar {
     this._setActiveFontSize(selectedCell)
     this._setActiveTextFormat(selectedCell)
     this._setActiveMergedCells(selectedCells, selectedCell)
-    this._setActiveHistoryIcons(this._spreadsheet.history)
+    this._setActiveHistoryIcons()
     this._setActiveSaveState()
   }
 
@@ -1033,13 +1151,23 @@ class Toolbar {
     this.tooltip.destroy()
   }
 
-  isFreezeActive(sheetId: SheetId) {
-    return !!this._spreadsheet.data._spreadsheetData.frozenCells?.[sheetId]
+  isFreezeActive(sheetId: number) {
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      sheetId
+    )
+    const { frozenRow, frozenCol } = sheetMetadata
+
+    return frozenRow !== undefined || frozenCol !== undefined
   }
 
-  isActive(selectedCell: SelectedCell, key: keyof ICellData) {
-    const cellId = selectedCell.simpleCellAddress.toCellId()
-    const style = this._spreadsheet.data._spreadsheetData.cells?.[cellId]?.[key]
+  isActive(selectedCell: SelectedCell, key: keyof ICellMetadata) {
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      selectedCell.simpleCellAddress
+    )
+
+    const style = metadata?.[key]
 
     return !!style
   }

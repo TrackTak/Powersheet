@@ -1,4 +1,3 @@
-import CellHighlighter from '../cellHighlighter/CellHighlighter'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import { prefix, saveCaretPosition } from '../utils'
@@ -12,7 +11,6 @@ class FormulaBar {
   editorArea!: HTMLDivElement
   editableContentContainer!: HTMLDivElement
   editableContent!: HTMLDivElement
-  cellHighlighter!: CellHighlighter
   private _spreadsheet!: Spreadsheet
 
   private _onInput = (e: Event) => {
@@ -30,13 +28,11 @@ class FormulaBar {
 
     restoreCaretPosition()
 
-    this._spreadsheet.sheets.cellEditor._createPlaceholderIfNeeded(
+    this._spreadsheet.sheets.cellEditor._addPlaceholderIfNeeded(
       this.editableContent,
       this._spreadsheet.sheets.cellEditor.cellEditorEl
     )
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
@@ -60,16 +56,12 @@ class FormulaBar {
 
   private _onKeyUp = (e: KeyboardEvent) => {
     e.stopPropagation()
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   private _onMouseUp = (e: MouseEvent) => {
     e.stopPropagation()
-    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights(
-      this.editableContent
-    )
+    this._spreadsheet.sheets.cellEditor._updateFunctionSummaryHelperHighlights()
   }
 
   /**
@@ -77,7 +69,6 @@ class FormulaBar {
    */
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
-    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
 
     this.formulaBarEl = document.createElement('div')
     this.formulaBarEl.classList.add(styles.formulaBar, formulaBarPrefix)
@@ -141,12 +132,13 @@ class FormulaBar {
         ''
 
       if (this._spreadsheet.hyperformula.doesSheetExist(sheetName)) {
-        const serializedValue =
+        const { cellValue } =
           this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
-        const tokenParts = this.cellHighlighter.getStyledTokens(
-          serializedValue?.toString() ?? ''
-        )
+        const tokenParts =
+          this._spreadsheet.sheets.cellHighlighter.getStyledTokens(
+            cellValue?.toString() ?? ''
+          )
 
         if (tokenParts.length) {
           spanElements = tokenParts
@@ -164,7 +156,6 @@ class FormulaBar {
    */
   destroy() {
     this.formulaBarEl.remove()
-    this.cellHighlighter.destroy()
     this.editableContent.removeEventListener('input', this._onInput)
     this.editableContent.removeEventListener('keydown', this._onKeyDown)
     this.editableContent.removeEventListener('keyup', this._onKeyUp)

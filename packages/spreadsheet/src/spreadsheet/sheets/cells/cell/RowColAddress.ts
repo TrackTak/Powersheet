@@ -1,7 +1,6 @@
 import { RowColId } from '../../rowCols/RowCols'
-import { SheetId } from '../../Sheets'
 
-export type SheetRowColId = `${SheetId}_${RowColId}`
+export type SheetRowColId = `${number}_${RowColId}`
 
 /**
  * @internal

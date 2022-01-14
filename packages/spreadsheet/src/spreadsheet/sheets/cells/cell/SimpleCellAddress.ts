@@ -1,4 +1,6 @@
 import { getColumnHeader } from '../../../utils'
+import Sheets from '../../Sheets'
+import Cell from './Cell'
 
 export type CellId = `${number}_${number}_${number}`
 
@@ -26,6 +28,20 @@ class SimpleCellAddress {
 
   toCellId(): CellId {
     return `${this.sheet}_${this.row}_${this.col}`
+  }
+
+  getCellFromAddress<C extends Cell>(
+    sheets: Sheets,
+    getCell: (simpleCellAddress: SimpleCellAddress) => C
+  ) {
+    const simpleCellAddress = new SimpleCellAddress(
+      sheets.activeSheetId,
+      this.row,
+      this.col
+    )
+    const cell = getCell(simpleCellAddress)
+
+    return cell
   }
 }
 

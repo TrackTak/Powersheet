@@ -13,9 +13,8 @@ import {
 } from '../../utils'
 import { HyperFormula } from '@tracktak/hyperformula'
 import { isPercent } from 'numfmt'
-import { ICellData } from '../Data'
+import { ICellMetadata } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
-import CellHighlighter from '../../cellHighlighter/CellHighlighter'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
 
@@ -24,7 +23,17 @@ export interface ICurrentScroll {
   col: number
 }
 
-export const PLACEHOLDER_WHITELIST = [
+export interface IPreviousCellReference {
+  caretPosition: number
+  cellReferenceText: string
+}
+
+export interface IMoveSelectCellParam {
+  rowsToMove?: number
+  colsToMove?: number
+}
+
+const commonPlaceholderWhitelist = [
   'WhiteSpace',
   'PlusOp',
   'MinusOp',
@@ -39,7 +48,6 @@ export const PLACEHOLDER_WHITELIST = [
   'GreaterThanOp',
   'LessThanOp',
   'LParen',
-  'RParen',
   'ArrayLParen',
   'ArrayRParen',
   'OffsetProcedureName',
@@ -51,26 +59,31 @@ export const PLACEHOLDER_WHITELIST = [
   'ArrayColSep'
 ]
 
+export const precedingPlaceholderWhitelist = [...commonPlaceholderWhitelist]
+export const subsequentPlaceholderWhitelist = [
+  ...commonPlaceholderWhitelist,
+  'RParen'
+]
+
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
   cellEditorEl: HTMLDivElement
   cellTooltip: DelegateInstance
   formulaHelper?: FormulaHelper
   functionSummaryHelper: FunctionSummaryHelper
-  cellHighlighter: CellHighlighter
   currentCell: Cell | null = null
   currentScroll: ICurrentScroll | null = null
   currentCellText: string | null = null
   currentPlaceholderEl: HTMLSpanElement | null = null
+  previousCellReference: IPreviousCellReference | null = null
+  isInCellSelectionMode = false
   private _spreadsheet: Spreadsheet
 
   /**
    * @internal
    */
-  constructor(private _sheet: Sheet) {
-    this._spreadsheet = this._sheet._spreadsheet
-
-    this.cellHighlighter = new CellHighlighter(this._spreadsheet)
+  constructor(private _sheets: Sheet) {
+    this._spreadsheet = this._sheets._spreadsheet
 
     this.cellEditorEl = document.createElement('div')
     this.cellEditorEl.contentEditable = 'true'
@@ -97,7 +110,7 @@ class CellEditor {
       theme: 'cell',
       offset: [0, 5]
     })
-    this._sheet.sheetEl.appendChild(this.cellEditorContainerEl)
+    this._sheets.sheetEl.appendChild(this.cellEditorContainerEl)
 
     this.cellEditorContainerEl.style.display = 'none'
 
@@ -140,6 +153,8 @@ class CellEditor {
       ? this._nodesToText(nodes)
       : target.textContent
 
+    this._removePlaceholderIfNeeded()
+
     const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
 
     this.setContentEditable(textContent ?? null)
@@ -162,7 +177,7 @@ class CellEditor {
         this.formulaHelper?.show(functionName)
         this.functionSummaryHelper.hide()
       }
-      this._createPlaceholderIfNeeded(
+      this._addPlaceholderIfNeeded(
         this.cellEditorEl,
         this._spreadsheet.formulaBar?.editableContent
       )
@@ -176,8 +191,37 @@ class CellEditor {
     }
   }
 
+  private moveSelectedCell({
+    rowsToMove = 0,
+    colsToMove = 0
+  }: IMoveSelectCellParam) {
+    const {
+      sheet,
+      row,
+      col
+    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+
+    const simpleCellAddress = new SimpleCellAddress(
+      sheet,
+      row + rowsToMove,
+      col + colsToMove
+    )
+
+    this._sheets.selector.selectCellFromSimpleCellAddress(simpleCellAddress)
+  }
+
   private _onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation()
+
+    const moveSelectedCellIfInSelectionMode = (
+      moveSelection: IMoveSelectCellParam
+    ) => {
+      if (this._sheets.cellEditor.isInCellSelectionMode) {
+        e.preventDefault()
+
+        this.moveSelectedCell(moveSelection)
+      }
+    }
 
     switch (e.key) {
       case 'Escape': {
@@ -186,6 +230,22 @@ class CellEditor {
       }
       case 'Enter': {
         this.hideAndSave()
+        break
+      }
+      case 'ArrowRight': {
+        moveSelectedCellIfInSelectionMode({ colsToMove: 1 })
+        break
+      }
+      case 'ArrowLeft': {
+        moveSelectedCellIfInSelectionMode({ colsToMove: -1 })
+        break
+      }
+      case 'ArrowUp': {
+        moveSelectedCellIfInSelectionMode({ rowsToMove: -1 })
+        break
+      }
+      case 'ArrowDown': {
+        moveSelectedCellIfInSelectionMode({ rowsToMove: 1 })
         break
       }
     }
@@ -213,10 +273,14 @@ class CellEditor {
     this.functionSummaryHelper.updateParameterHighlights(textContent ?? '')
   }
 
+  private _getCaretPosition() {
+    return getCaretPosition(this.cellEditorEl)
+  }
+
   private _removePlaceholderIfNeeded = () => {
     if (this.currentCellText === null) return
 
-    const currentCaretPosition = getCaretPosition(this.cellEditorEl)
+    const currentCaretPosition = this._getCaretPosition()
 
     if (this.currentPlaceholderEl) {
       const childrenNodes = this.currentPlaceholderEl.parentNode?.children ?? []
@@ -227,6 +291,8 @@ class CellEditor {
       if (placeholderIndex !== currentCaretPosition) {
         this.currentPlaceholderEl.remove()
         this.currentPlaceholderEl = null
+        this._sheets.cellEditor.isInCellSelectionMode = false
+        this.previousCellReference = null
       }
     }
   }
@@ -237,13 +303,90 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const serializedValue = this._spreadsheet.hyperformula.getCellSerialized(
+    const { cellValue } = this._spreadsheet.hyperformula.getCellSerialized(
       simpleCellAddress
     )
 
-    this.setContentEditable(serializedValue?.toString() ?? null)
+    this.setContentEditable(cellValue?.toString() ?? null)
 
     this.cellEditorEl.focus()
+  }
+
+  /**
+   * @internal
+   */
+  _setActiveSheetId() {
+    if (this.getIsHidden()) {
+      this._sheets.activeSheetId = this._sheets.activeSheetId
+    }
+  }
+
+  /**
+   * Replaces text at the current caret position in the contentEditable
+   */
+  replaceCellReferenceTextAtCaretPosition(cellReferenceText: string) {
+    const currentCellText = this.currentCellText ?? ''
+    const caretPosition = this._getCaretPosition()
+
+    const currentCaretPosition = this.previousCellReference
+      ? this.previousCellReference.caretPosition
+      : caretPosition
+
+    let parts = []
+
+    let newCellReferenceText = cellReferenceText
+
+    if (this._sheets.activeSheetId !== this._sheets.activeSheetId) {
+      const sheetName = this._spreadsheet.hyperformula.getSheetName(
+        this._sheets.activeSheetId
+      )
+
+      newCellReferenceText = `'${sheetName}'!` + newCellReferenceText
+    }
+
+    if (this.previousCellReference) {
+      parts = [
+        currentCellText.slice(0, currentCaretPosition),
+        currentCellText.slice(
+          currentCaretPosition +
+            this.previousCellReference!.cellReferenceText.length
+        )
+      ]
+    } else {
+      parts = [
+        currentCellText.slice(0, currentCaretPosition),
+        currentCellText.slice(currentCaretPosition)
+      ]
+    }
+
+    const newText = parts[0] + newCellReferenceText + parts[1]
+
+    this.previousCellReference = {
+      cellReferenceText: newCellReferenceText,
+      caretPosition: currentCaretPosition
+    }
+
+    this.setContentEditable(newText)
+
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(newText).tokens as IToken[]
+
+    const nodeIndex = tokens.findIndex(
+      token =>
+        token.endOffset ===
+        currentCaretPosition + newCellReferenceText.length - 1
+    )!
+
+    const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
+
+    // For some reason we need it in 2 places here for single cell selections
+    // otherwise it intermittently does not set the caret
+    setCaretToEndOfElement(node)
+
+    setTimeout(() => {
+      setCaretToEndOfElement(node)
+    }, 0)
   }
 
   /**
@@ -252,43 +395,41 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const cell = this._spreadsheet.data._spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]
-    const cellValue =
-      this._spreadsheet.hyperformula
-        .getCellSerialized(simpleCellAddress)
-        ?.toString() ?? undefined
+    const {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
-    this._spreadsheet.pushToHistory(() => {
-      const value = this.currentCellText ? this.currentCellText : undefined
+    let value = this.currentCellText ? this.currentCellText : null
 
-      if (cellValue !== value) {
-        const newCell: Omit<ICellData, 'id'> = {
-          value
+    if (cellValue !== value) {
+      if (isPercent(value)) {
+        if (!isPercent(metadata?.textFormatPattern)) {
+          metadata!.textFormatPattern = '0.00%'
         }
-
-        if (isPercent(value)) {
-          if (!isPercent(cell?.textFormatPattern)) {
-            newCell.textFormatPattern = '0.00%'
-          }
-        } else if (!isPercent(value) && isPercent(cell?.textFormatPattern)) {
-          newCell.value += '%'
-        }
-
-        this._spreadsheet.data.setCell(simpleCellAddress, newCell)
+      } else if (!isPercent(value) && isPercent(metadata?.textFormatPattern)) {
+        value += '%'
       }
-    })
+
+      this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+        cellValue: value,
+        metadata
+      })
+    }
   }
 
   /**
    *
    * @internal
    */
-  _createPlaceholderIfNeeded = (
+  _addPlaceholderIfNeeded = (
     currentEditor: HTMLDivElement,
     secondaryEditor?: HTMLDivElement
   ) => {
+    this._removePlaceholderIfNeeded()
+
     const currentCaretPosition = getCaretPosition(currentEditor)
     const precedingTokenPosition = currentCaretPosition - 1
 
@@ -296,23 +437,31 @@ class CellEditor {
 
     // @ts-ignore
     const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const { tokens } = lexer.tokenizeFormula(this.currentCellText)
+    const tokens = lexer.tokenizeFormula(this.currentCellText)
+      .tokens as IToken[]
     // Have to use token positions & indexes due to some tokens
     // taking up multiple characters such as ranges
     const precedingToken = tokens.find(
-      (token: IToken) => token.endOffset === precedingTokenPosition
+      token => token.endOffset === precedingTokenPosition
+    )
+    const subsequentToken = tokens.find(
+      token => token.startOffset === currentCaretPosition
     )
 
     if (!precedingToken) return
 
-    const shouldAddPlaceholder = PLACEHOLDER_WHITELIST.includes(
+    const isValidPrecedingToken = precedingPlaceholderWhitelist.includes(
       precedingToken.tokenType.name
     )
+    const isValidSubsequentToken = subsequentToken
+      ? subsequentPlaceholderWhitelist.includes(subsequentToken.tokenType.name)
+      : true
 
-    if (shouldAddPlaceholder) {
+    if (isValidPrecedingToken && isValidSubsequentToken) {
       this.currentPlaceholderEl = document.createElement('span')
 
       this.currentPlaceholderEl.classList.add(styles.placeholder)
+      this._sheets.cellEditor.isInCellSelectionMode = true
 
       const childIndex = tokens.indexOf(precedingToken)
 
@@ -332,7 +481,6 @@ class CellEditor {
    */
   _destroy() {
     this.cellTooltip.destroy()
-    this.cellHighlighter.destroy()
     this.cellEditorContainerEl.remove()
     this.cellEditorEl.removeEventListener('input', this._onInput)
     this.cellEditorEl.removeEventListener('keydown', this._onKeyDown)
@@ -362,19 +510,16 @@ class CellEditor {
 
     this.currentCellText = text
 
-    const {
-      cellReferenceParts
-    } = this.cellHighlighter.getHighlightedCellReferenceSections(
-      this.currentCellText ?? ''
-    )
-    const isFormula = text?.startsWith('=')
+    const isFormula = this.currentCellText?.startsWith('=')
     if (isFormula) {
       this.cellEditorEl.classList.add(styles.formulaInput)
       this._spreadsheet.formulaBar?.editableContent.classList.add(
         styles.formulaInput
       )
     }
-    const tokenParts = this.cellHighlighter.getStyledTokens(text ?? '')
+    const tokenParts = this._sheets.cellHighlighter.getStyledTokens(
+      this.currentCellText ?? ''
+    )
 
     tokenParts.forEach(part => {
       this.cellEditorEl.appendChild(part)
@@ -383,9 +528,11 @@ class CellEditor {
         part.cloneNode(true)
       )
     })
-    this.cellHighlighter.setHighlightedCells(cellReferenceParts)
 
-    this._spreadsheet.eventEmitter.emit('cellEditorChange', text)
+    this._spreadsheet.eventEmitter.emit(
+      'cellEditorChange',
+      this.currentCellText
+    )
   }
 
   /**
@@ -409,8 +556,8 @@ class CellEditor {
   show(cell: Cell) {
     this.currentCell = cell
     this.currentScroll = {
-      row: this._sheet.rows.scrollBar._scroll,
-      col: this._sheet.cols.scrollBar._scroll
+      row: this._sheets.rows.scrollBar._scroll,
+      col: this._sheets.cols.scrollBar._scroll
     }
 
     this.clear()
@@ -425,7 +572,7 @@ class CellEditor {
   clear() {
     this.currentCellText = null
     this.cellEditorEl.textContent = null
-    this.cellHighlighter.destroyHighlightedCells()
+    this._sheets.cellHighlighter.destroyHighlightedArea()
   }
 
   /**
@@ -444,6 +591,8 @@ class CellEditor {
   hide() {
     this.clear()
 
+    this._sheets.cellEditor.isInCellSelectionMode = false
+    this.previousCellReference = null
     this.currentCell = null
     this.currentScroll = null
     this.cellTooltip.hide()
@@ -451,7 +600,7 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none'
 
     this.cellEditorEl.blur()
-    this._sheet.sheetEl.focus()
+    this._sheets.sheetEl.focus()
 
     this._spreadsheet.render()
   }

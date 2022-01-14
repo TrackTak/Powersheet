@@ -4,23 +4,22 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { prefix } from './utils'
+import { getDefaultSheetMetadata, prefix } from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
-import Manager from 'undo-redo-manager'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
 import { HyperFormula } from '@tracktak/hyperformula'
-import Data, { ISpreadsheetData } from './sheets/Data'
-import SimpleCellAddress, {
-  CellId
-} from './sheets/cells/cell/SimpleCellAddress'
+import { ISheetMetadata, ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
-import FunctionHelper, {
-  IFunctionHelperData
-} from './functionHelper/FunctionHelper'
+import FunctionHelper, { IFunctionHelperData } from './functionHelper/FunctionHelper'
+import Operations from './Operations'
+import { UIUndoRedo } from './UIUndoRedo'
+import HistoryManager from './HistoryManager'
+import UIHyperformula from './sheets/Merger'
+import Merger from './sheets/Merger'
 import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
 
 export interface ISpreadsheetConstructor {
@@ -32,50 +31,49 @@ export interface ISpreadsheetConstructor {
   functionHelper?: FunctionHelper
 }
 
-export interface IHistoryData {
-  activeSheetId: number
-  associatedMergedCellAddressMap: Record<CellId, CellId>
-  data: ISpreadsheetData
-}
-
 class Spreadsheet {
   spreadsheetEl: HTMLDivElement
   sheets: Sheets
   styles: IStyles
   eventEmitter: PowersheetEmitter
   options: IOptions
-  data: Data
   toolbar?: Toolbar
   formulaBar?: FormulaBar
   functionHelper?: FunctionHelper
+  spreadsheetData: ISpreadsheetData
   exporter?: Exporter
   hyperformula: HyperFormula
+  uiHyperformula: UIHyperformula
+  historyManager: HistoryManager
+  operations: Operations
+  uiUndoRedo: UIUndoRedo
   functionMetadata: Record<string, IFunctionHelperData> = {}
   functionMetadataByGroup: Dictionary<
     [IFunctionHelperData, ...IFunctionHelperData[]]
   > = {}
-  history: any
   bottomBar?: BottomBar
+  merger: Merger
   isSaving = false
-  isInitialized = false
+  sheetSizesSet = false
 
   constructor(params: ISpreadsheetConstructor) {
-    this.data = new Data(this)
     this.options = defaultOptions
     this.styles = defaultStyles
-    this.eventEmitter = new PowersheetEmitter()
-
     this.toolbar = params.toolbar
     this.formulaBar = params.formulaBar
     this.bottomBar = params.bottomBar
     this.exporter = params.exporter
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
+    this.spreadsheetData = {}
+    this.initializeMetadata()
+
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
       `${prefix}-spreadsheet`,
       styles.spreadsheet
     )
+    this.eventEmitter = new PowersheetEmitter()
 
     if (!isNil(this.options.width)) {
       this.spreadsheetEl.style.width = `${this.options.width}px`
@@ -86,45 +84,27 @@ class Spreadsheet {
     }
     this.setFunctionMetadata(powersheetFormulaMetadataJSON)
 
-    this.toolbar?.initialize(this)
+    this.merger = new Merger(this.hyperformula)
+
+    this.toolbar?.initialize(this, this.merger)
     this.formulaBar?.initialize(this)
-    this.exporter?.initialize(this)
+    this.exporter?.initialize(this, this.merger)
     this.bottomBar?.initialize(this)
     this.functionHelper?.initialize(this)
 
-    // TODO: Change to command pattern later so we don't
-    // need to store huge JSON objects: https://stackoverflow.com/questions/49755/design-pattern-for-undo-engine
-    this.history = new Manager((data: string) => {
-      const currentData: IHistoryData = {
-        data: this.data._spreadsheetData,
-        activeSheetId: this.sheets.activeSheetId,
-        associatedMergedCellAddressMap:
-          this.sheets.merger.associatedMergedCellAddressMap
-      }
-
-      const parsedData: IHistoryData = JSON.parse(data)
-
-      this.data._spreadsheetData = parsedData.data
-      this.sheets.activeSheetId = parsedData.activeSheetId
-      this.sheets.merger.associatedMergedCellAddressMap =
-        parsedData.associatedMergedCellAddressMap
-
-      this.hyperformula.batch(() => {
-        const sheetName = this.hyperformula.getSheetName(
-          this.sheets.activeSheetId
-        )!
-
-        const sheetId = this.hyperformula.getSheetId(sheetName)!
-
-        this.hyperformula.clearSheet(sheetId)
-        this._setCells()
-      })
-
-      return JSON.stringify(currentData)
-    }, this.options.undoRedoLimit)
-    this.sheets = new Sheets(this)
-
-    this.data.setSheet(0)
+    this.uiHyperformula = new UIHyperformula(this.hyperformula)
+    this.sheets = new Sheets(this, this.merger)
+    this.operations = new Operations(
+      this.hyperformula,
+      this.merger,
+      this.sheets.selector
+    )
+    this.uiUndoRedo = new UIUndoRedo(this.hyperformula, this.operations)
+    this.historyManager = new HistoryManager(
+      this.hyperformula,
+      this.operations,
+      this.sheets
+    )
 
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
@@ -138,55 +118,35 @@ class Spreadsheet {
     this.render()
   }
 
-  private _setCells() {
-    for (const key in this.data._spreadsheetData.cells) {
-      const cellId = key as CellId
-      const cell = this.data._spreadsheetData.cells?.[cellId]
-
-      this.hyperformula.setCellContents(
-        SimpleCellAddress.cellIdToAddress(cellId),
-        cell?.value
-      )
-    }
-  }
-
-  private _updateSheetSizes() {
+  private _onDOMContentLoaded = () => {
     this.sheets._updateSize()
   }
 
-  private _onDOMContentLoaded = () => {
-    this._updateSheetSizes()
+  private setMetadataForSheet(sheetName: string) {
+    const sheetId = this.hyperformula.getSheetId(sheetName)!
+    const partialSheetMetadata = this.hyperformula.getSheetMetadata<
+      Partial<ISheetMetadata>
+    >(sheetId)
+
+    const sheetMetadata = merge<ISheetMetadata, Partial<ISheetMetadata>>(
+      getDefaultSheetMetadata(),
+      partialSheetMetadata
+    )
+
+    this.hyperformula.setSheetMetadata<ISheetMetadata>(sheetId, sheetMetadata)
   }
 
-  /**
-   * Creates the spreadsheets sheets from the data and sets
-   * hyperformula cells if powersheet has not been initialized yet.
-   * This must be called after `setData()`
-   */
-  private initialize() {
-    if (!this.isInitialized) {
-      this.isInitialized = true
+  private initializeMetadata() {
+    const sheetNames = this.hyperformula.getSheetNames()
 
-      for (const key in this.data._spreadsheetData.sheets) {
-        const sheetId = parseInt(key, 10)
-        const sheet = this.data._spreadsheetData.sheets[sheetId]
+    sheetNames.forEach(sheetName => {
+      this.setMetadataForSheet(sheetName)
+    })
 
-        this.sheets.createNewSheet(sheet)
-      }
+    if (sheetNames.length === 0) {
+      const sheetName = this.hyperformula.addSheet()
 
-      if (this.data._spreadsheetData.sheets) {
-        this.hyperformula.batch(() => {
-          this._setCells()
-        })
-      }
-
-      this.isSaving = false
-
-      if (document.readyState !== 'loading') {
-        this._updateSheetSizes()
-      } else {
-        this.render()
-      }
+      this.setMetadataForSheet(sheetName)
     }
   }
 
@@ -230,6 +190,7 @@ class Spreadsheet {
    */
   destroy(destroyHyperformula = true) {
     window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
+
     this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
 
     this.spreadsheetEl.remove()
@@ -239,6 +200,7 @@ class Spreadsheet {
     this.bottomBar?.destroy()
     this.functionHelper?._destroy()
     this.sheets._destroy()
+    this.historyManager._destroy()
 
     if (destroyHyperformula) {
       this.hyperformula.destroy()
@@ -251,10 +213,16 @@ class Spreadsheet {
    * @param data - The persisted data that sets the spreadsheet.
    */
   setData(data: ISpreadsheetData) {
-    this.data._spreadsheetData = data
+    this.spreadsheetData = {
+      ...data
+    }
 
-    this.initialize()
-    this.render()
+    if (document.readyState !== 'loading' && !this.sheetSizesSet) {
+      this.sheetSizesSet = true
+      this.sheets._updateSize()
+    } else {
+      this.render()
+    }
   }
 
   /**
@@ -285,18 +253,6 @@ class Spreadsheet {
    * onto the stack.
    */
   pushToHistory(callback?: () => void) {
-    const historyData: IHistoryData = {
-      activeSheetId: this.sheets.activeSheetId,
-      data: this.data._spreadsheetData,
-      associatedMergedCellAddressMap:
-        this.sheets.merger.associatedMergedCellAddressMap
-    }
-    const data = JSON.stringify(historyData)
-
-    this.history.push(data)
-
-    this.eventEmitter.emit('historyPush', data)
-
     if (callback) {
       callback()
     }
@@ -318,7 +274,11 @@ class Spreadsheet {
 
     this.isSaving = true
 
-    this.eventEmitter.emit('persistData', this.data._spreadsheetData, done)
+    this.eventEmitter.emit(
+      'persistData',
+      this.hyperformula.getAllSheetsSerialized(),
+      done
+    )
   }
 
   /**
@@ -326,9 +286,9 @@ class Spreadsheet {
    * that was done in `pushToHistory()` if an undo exists in the stack.
    */
   undo() {
-    if (!this.history.canUndo) return
+    if (!this.hyperformula.isThereSomethingToUndo()) return
 
-    this.history.undo()
+    this.hyperformula.undo()[0]
 
     this.render()
     this.persistData()
@@ -339,9 +299,9 @@ class Spreadsheet {
    * that was done in `undo()` if an redo exists in the stack.
    */
   redo() {
-    if (!this.history.canRedo) return
+    if (!this.hyperformula.isThereSomethingToRedo()) return
 
-    this.history.redo()
+    this.hyperformula.redo()[0]
 
     this.render()
     this.persistData()

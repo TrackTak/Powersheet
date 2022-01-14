@@ -15,7 +15,7 @@ import {
 } from './functionSummaryHtmlElementHelpers'
 import Spreadsheet from '../../Spreadsheet'
 import { IFunctionHelperData } from '../FunctionHelper'
-import { PLACEHOLDER_WHITELIST } from '../../sheets/cellEditor/CellEditor'
+import { subsequentPlaceholderWhitelist } from '../../sheets/cellEditor/CellEditor'
 import { IToken } from 'chevrotain'
 import { last } from 'lodash'
 import { getCaretPosition } from '../../utils'
@@ -140,7 +140,7 @@ class FunctionSummaryHelper {
     currentCaretPosition: number
   ) {
     const eligibleTokensToHighlight = tokens.filter(token =>
-      PLACEHOLDER_WHITELIST.every(ch => !token.tokenType.name.includes(ch))
+      subsequentPlaceholderWhitelist.every(ch => !token.tokenType.name.includes(ch))
     )
     const tokenBeforeInfiniteParameterPosition =
       eligibleTokensToHighlight[this.parameterSyntaxElements.length - 1]

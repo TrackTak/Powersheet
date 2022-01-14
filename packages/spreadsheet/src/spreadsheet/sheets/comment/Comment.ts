@@ -9,6 +9,7 @@ import {
 } from './commentHtmlHelpers'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import Spreadsheet from '../../Spreadsheet'
+import { ICellMetadata } from '../Data'
 
 class Comment {
   textarea: HTMLTextAreaElement
@@ -64,14 +65,24 @@ class Comment {
   }
 
   private _successButtonOnClick = () => {
-    this._spreadsheet.pushToHistory(() => {
-      const simpleCellAddress = this._sheets.selector.selectedCell!
-        .simpleCellAddress
+    const simpleCellAddress = this._sheets.selector.selectedCell!
+      .simpleCellAddress
 
-      this._spreadsheet.data.setCell(simpleCellAddress, {
-        comment: this.textarea.value
-      })
-    })
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
+
+    this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+      simpleCellAddress,
+      {
+        metadata: {
+          ...metadata,
+          comment: this.textarea.value
+        }
+      }
+    )
 
     this._spreadsheet.render()
     this.hide()
@@ -97,12 +108,14 @@ class Comment {
     this.container.unmount()
     this.container.show()
 
-    const comment = this._spreadsheet.data._spreadsheetData.cells?.[
-      simpleCellAddress.toCellId()
-    ]?.comment
+    const {
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
-    if (comment) {
-      this.textarea.value = comment
+    if (metadata?.comment) {
+      this.textarea.value = metadata.comment
     }
   }
 }

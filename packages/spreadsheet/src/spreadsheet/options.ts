@@ -29,13 +29,11 @@ export interface IOptions {
   col: IRowColOptions
   exportSpreadsheetName: string
   touchScrollSpeed: number
-  undoRedoLimit: number
   cellHighlight: ICellHighlight
   showFunctionHelper: boolean
 }
 
 export const defaultOptions: IOptions = {
-  undoRedoLimit: 20,
   row: {
     amount: 1000,
     minSize: 25,

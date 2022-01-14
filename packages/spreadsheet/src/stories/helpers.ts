@@ -2,7 +2,7 @@ import { Story } from '@storybook/html'
 import TouchEmulator from 'hammer-touchemulator'
 import { action } from '@storybook/addon-actions'
 import { throttle } from 'lodash'
-import { ISpreadsheetData } from '../spreadsheet/sheets/Data'
+import { ICellMetadata, ISheetMetadata, ISpreadsheetData } from '../spreadsheet/sheets/Data'
 import { IOptions } from '../spreadsheet/options'
 import { IStyles } from '../spreadsheet/styles'
 import { NestedPartial } from '../spreadsheet/types'
@@ -19,15 +19,16 @@ import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
 import {
   AlwaysSparse,
   ConfigParams,
-  HyperFormula,
-  SerializedNamedExpression
+  HyperFormula
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
+import type { InputSheets } from '@tracktak/hyperformula/typings/Sheet'
 import customFunctionMetadata from './mocks/customFunctionMetadata'
 
 export interface IArgs {
-  data: ISpreadsheetData
+  sheets?: InputSheets<ICellMetadata, Partial<ISheetMetadata>>
+  data?: ISpreadsheetData
   options?: NestedPartial<IOptions>
   styles?: NestedPartial<IStyles>
 }
@@ -37,31 +38,33 @@ const eventLog = (event: string, ...args: any[]) => {
   console.log(event, ...args)
 }
 
-export const getHyperformulaInstance = (config?: Partial<ConfigParams>) => {
-  const trueNamedExpression: SerializedNamedExpression = {
-    name: 'TRUE',
-    expression: '=TRUE()'
-  }
+export const getHyperformulaInstance = (
+  sheets: InputSheets<ICellMetadata, Partial<ISheetMetadata>>,
+  config?: Partial<ConfigParams>
+) => {
+  const hyperformula = HyperFormula.buildFromSheets(sheets, {
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    licenseKey: 'gpl-v3'
+  })[0]
 
-  const falseNamedExpression: SerializedNamedExpression = {
-    name: 'FALSE',
-    expression: '=FALSE()'
-  }
+  return hyperformula
+}
 
-  return HyperFormula.buildEmpty(
-    {
-      ...config,
-      chooseAddressMappingPolicy: new AlwaysSparse(),
-      // We use our own undo/redo instead
-      undoLimit: 0,
-      licenseKey: 'gpl-v3'
-    },
-    [trueNamedExpression, falseNamedExpression]
-  )[0]
+export const getEmptyHyperformulaInstance = (
+  config?: Partial<ConfigParams>
+) => {
+  const hyperformula = HyperFormula.buildEmpty({
+    ...config,
+    chooseAddressMappingPolicy: new AlwaysSparse(),
+    licenseKey: 'gpl-v3'
+  })[0]
+
+  return hyperformula
 }
 
 const getSpreadsheet = (
-  { options, styles, data }: IArgs,
+  { options, styles, data }: IArgs | undefined = {},
   params: ISpreadsheetConstructor
 ) => {
   TouchEmulator.stop()
@@ -70,7 +73,9 @@ const getSpreadsheet = (
     ...params
   })
 
-  spreadsheet.setData(data)
+  if (data) {
+    spreadsheet.setData(data)
+  }
 
   if (options) {
     spreadsheet.setOptions(options)
@@ -121,7 +126,7 @@ export const buildOnlySpreadsheet = (
 }
 
 export const buildSpreadsheetWithEverything = (
-  args: IArgs,
+  args: IArgs | undefined,
   hyperformula: HyperFormula,
   customRegisteredPluginDefinitions: ICustomRegisteredPluginDefinition[] = []
 ) => {
@@ -155,6 +160,10 @@ export const buildSpreadsheetWithEverything = (
 }
 
 export const Template: Story<IArgs> = args => {
-  return buildSpreadsheetWithEverything(args, getHyperformulaInstance())
-    .spreadsheetEl
+  return buildSpreadsheetWithEverything(
+    args,
+    args.sheets
+      ? getHyperformulaInstance(args.sheets)
+      : getEmptyHyperformulaInstance()
+  ).spreadsheetEl
 }

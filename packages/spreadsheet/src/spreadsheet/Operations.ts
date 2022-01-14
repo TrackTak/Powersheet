@@ -309,6 +309,11 @@ class Operations {
     return removedMergedCells
   }
 
+  public removeMergedCells(topLeftSimpleCellAddress: SimpleCellAddress) {
+    this._merger.removeAssociatedMergedCells(topLeftSimpleCellAddress)
+    this.deleteMergedCell(topLeftSimpleCellAddress)
+  }
+
   public unMergeCells(topLeftSimpleCellAddress: SimpleCellAddress) {
     const { cellValue, metadata } =
       this._hyperformula.getCellSerialized<ICellMetadata>(
@@ -334,8 +339,7 @@ class Operations {
       this._hyperformula.setCellContents(address, cellContent, false)
     }
 
-    this._merger.removeAssociatedMergedCells(topLeftSimpleCellAddress)
-    this.deleteMergedCell(topLeftSimpleCellAddress)
+    this.removeMergedCells(topLeftSimpleCellAddress)
   }
 
   public moveMergedCells(
@@ -362,7 +366,7 @@ class Operations {
           col
         )
 
-        this.unMergeCells(simpleCellAddress)
+        this.removeMergedCells(simpleCellAddress)
       }
     }
 
@@ -421,8 +425,8 @@ class Operations {
           this._merger.associatedMergedCellAddressMap[targetCellId]
 
         if (
-          mergedCell.width !== undefined &&
-          mergedCell.height !== undefined &&
+          mergedCell?.width !== undefined &&
+          mergedCell?.height !== undefined &&
           !recentlyMergedCellIds[targetMergedCellId]
         ) {
           recentlyMergedCellIds[targetCellId] = targetCellId
@@ -451,20 +455,6 @@ class Operations {
 
         this.mergeCells(simpleCellAddress, width, height)
       }
-    }
-  }
-
-  public restoreOldCellContents(
-    oldContent: [SimpleCellAddress, ClipboardCell][]
-  ) {
-    for (const [address] of oldContent) {
-      const simpleCellAddress = new SimpleCellAddress(
-        address.sheet,
-        address.row,
-        address.col
-      )
-
-      this.unMergeCells(simpleCellAddress)
     }
   }
 
@@ -547,7 +537,7 @@ class Operations {
           removedMergedCells[mergedCellId] =
             sheetMetadata.mergedCells[mergedCellId]
 
-          this.unMergeCells(newSimpleCellAddress)
+          this.removeMergedCells(newSimpleCellAddress)
         }
 
         if (this._merger.getIsCellPartOfMerge(newSimpleCellAddress)) {
@@ -560,7 +550,7 @@ class Operations {
           removedMergedCells[mergedCellId] =
             sheetMetadata.mergedCells[mergedCellId]
 
-          this.unMergeCells(mergedCellAddress)
+          this.removeMergedCells(mergedCellAddress)
         }
       }
     }

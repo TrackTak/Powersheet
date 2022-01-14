@@ -2,7 +2,7 @@
   "ARRAYFORMULA": {
     "header": "ARRAYFORMULA",
     "headerDescription": "Enables array arithmetic inside.",
-    "type": "Google",
+    "type": "Array",
     "parameters": ["array_formula"],
     "codeSyntaxUsage": [
       "ARRAYFORMULA(SUM(IF(A1:A10>5, A1:A10, 0)))",

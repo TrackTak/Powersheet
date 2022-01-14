@@ -1,4 +1,4 @@
-import { isNil, merge } from 'lodash'
+import { Dictionary, groupBy, isNil, merge } from 'lodash'
 import { defaultOptions, IOptions } from './options'
 import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
@@ -14,12 +14,13 @@ import { HyperFormula } from '@tracktak/hyperformula'
 import { ISheetMetadata, ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
-import FunctionHelper from './functionHelper/FunctionHelper'
+import FunctionHelper, { IFunctionHelperData } from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
 import HistoryManager from './HistoryManager'
 import UIHyperformula from './sheets/Merger'
 import Merger from './sheets/Merger'
+import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -46,6 +47,10 @@ class Spreadsheet {
   historyManager: HistoryManager
   operations: Operations
   uiUndoRedo: UIUndoRedo
+  functionMetadata: Record<string, IFunctionHelperData> = {}
+  functionMetadataByGroup: Dictionary<
+    [IFunctionHelperData, ...IFunctionHelperData[]]
+  > = {}
   bottomBar?: BottomBar
   merger: Merger
   isSaving = false
@@ -77,6 +82,7 @@ class Spreadsheet {
     if (!isNil(this.options.height)) {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
+    this.setFunctionMetadata(powersheetFormulaMetadataJSON)
 
     this.merger = new Merger(this.hyperformula)
 
@@ -142,6 +148,37 @@ class Spreadsheet {
 
       this.setMetadataForSheet(sheetName)
     }
+  }
+
+  private setFunctionMetadata(
+    functionMetadata: Record<string, IFunctionHelperData>,
+    blockedFunctionTypes: string[] = []
+  ) {
+    const filteredFunctionMetadata = Object.values(functionMetadata)
+      .filter(
+        functionMetadata =>
+          !blockedFunctionTypes?.length ||
+          !blockedFunctionTypes?.includes(functionMetadata.type)
+      )
+      .reduce(
+        (all, current) => ({
+          ...all,
+          [current.header]: current
+        }),
+        {}
+      )
+    this.functionMetadata = filteredFunctionMetadata
+    this.functionMetadataByGroup = groupBy(functionMetadata, 'type')
+    this.unregisterBlockedFunctions(blockedFunctionTypes)
+  }
+
+  private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
+    blockedFunctionTypes.forEach(functionType => {
+      const functions = this.functionMetadataByGroup[functionType]
+      functions.forEach(func => {
+        HyperFormula.unregisterFunction(func.header)
+      })
+    })
   }
 
   /**
@@ -290,6 +327,29 @@ class Spreadsheet {
         this.render()
       })
     }
+  }
+
+  /**
+   * Allows the setting of custom function metadata that will be displayed in the function helpers
+   *
+   * @param customFunctionMetadata - The custom metadata
+   */
+  setCustomFunctionMetadata(
+    customFunctionMetadata: Record<string, IFunctionHelperData>
+  ) {
+    this.setFunctionMetadata({
+      ...customFunctionMetadata,
+      ...this.functionMetadata
+    })
+  }
+
+  /**
+   * Sets the list of blocked function types so that the metadata will not appear in the function helpers
+   *
+   * @param blockedFunctionTypes - The array of function types e.g. Engineering, Array etc.
+   */
+  setFunctionTypeBlocklist(blockedFunctionTypes: string[]) {
+    this.setFunctionMetadata(this.functionMetadata, blockedFunctionTypes)
   }
 }
 

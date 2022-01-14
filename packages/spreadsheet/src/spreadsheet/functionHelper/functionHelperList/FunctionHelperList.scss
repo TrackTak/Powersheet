@@ -1,0 +1,80 @@
+@use '../../variables';
+@use '../../styles.scss';
+
+.powersheet-function-helper-list {
+  &-wrapper {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &-drawer-content {
+    overflow-y: scroll;
+    position: relative;
+    scroll-behavior: smooth;
+  }
+
+  &-search-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    outline: none;
+    &:focus {
+      border-color: #6240c8;
+    }
+  }
+
+  &-section {
+    margin: 0 40px;
+    margin-top: 10px;
+  }
+
+  &-function-item-wrapper {
+    @include styles.button;
+  }
+
+  &-function-item-content,
+  &-function-item-header {
+    margin: 0 40px;
+    padding: 12px 0;
+    display: flex;
+    justify-content: space-evenly;
+    flex-direction: column;
+    position: relative;
+  }
+
+  &-description {
+    margin-top: 0;
+  }
+
+  &-function-item-content {
+    display: none;
+    overflow-y: auto;
+  }
+
+  &-expanded {
+    display: block;
+    padding-top: 0;
+    .powersheet-function-helper-list-function-item-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  &-function-item-parameter {
+    @include styles.textDescription;
+    max-width: 300px;
+    overflow-wrap: break-word;
+  }
+
+  &-function-item-icon {
+    height: 15px;
+    width: 15px;
+    display: block;
+    background-image: url(../functionSummaryHelper/chevron-down.svg);
+    position: absolute;
+    right: -25px;
+  }
+}

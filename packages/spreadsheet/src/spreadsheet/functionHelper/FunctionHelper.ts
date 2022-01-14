@@ -2,6 +2,7 @@ import { Spreadsheet } from '../..'
 import './FunctionHelper.scss'
 import { MDCDrawer } from '@material/drawer'
 import { functionHelperPrefix } from './functionHelperHtmlElementHelpers'
+import FunctionHelperList from './functionHelperList/FunctionHelperList'
 
 interface ICodeSyntaxElement {
   syntaxName: string
@@ -24,6 +25,7 @@ export interface IFunctionHelperData {
   codeSyntaxUsage: string[]
   codeSyntaxElements: ICodeSyntaxCode[]
   attributes: IAttribute[]
+  type: string
 }
 
 /**
@@ -33,19 +35,20 @@ export interface IFunctionHelperData {
  */
 class FunctionHelper {
   functionHelperEl!: HTMLDivElement
-  drawerContentEl!: HTMLDivElement
   drawer?: MDCDrawer
   closeIcon!: HTMLSpanElement
   closeButton!: HTMLButtonElement
   headerEl!: HTMLHeadElement
   textWrapper!: HTMLDivElement
   private _spreadsheet!: Spreadsheet
+  private _functionHelperList!: FunctionHelperList
 
   /**
    * @param spreadsheet - The spreadsheet that this FunctionHelper is connected to.
    */
   initialize(spreadsheet: Spreadsheet) {
     this._spreadsheet = spreadsheet
+    this._functionHelperList = new FunctionHelperList(spreadsheet)
 
     this.functionHelperEl = document.createElement('div')
     this.functionHelperEl.classList.add(
@@ -53,18 +56,6 @@ class FunctionHelper {
       'mdc-drawer',
       'mdc-drawer--dismissible'
     )
-
-    this.drawerContentEl = document.createElement('div')
-    this.drawerContentEl.classList.add(
-      `${functionHelperPrefix}-drawer-content`,
-      'mdc-drawer__content'
-    )
-
-    this.drawerContentEl.dir = 'ltr'
-
-    this.functionHelperEl.appendChild(this.drawerContentEl)
-
-    this.functionHelperEl.dir = 'rtl'
 
     this.closeIcon = document.createElement('span')
     this.closeIcon.classList.add(`${functionHelperPrefix}-close-icon`)
@@ -77,9 +68,10 @@ class FunctionHelper {
 
       this._spreadsheet.render()
     })
-
-    this.drawerContentEl.appendChild(this.closeButton)
+    this.functionHelperEl.appendChild(this.closeButton)
     this.closeButton.append(this.closeIcon)
+    this.functionHelperEl.dir = 'rtl'
+    this.functionHelperEl.appendChild(this._functionHelperList.functionListEl)
 
     this.textWrapper = document.createElement('div')
     this.textWrapper.classList.add(`${functionHelperPrefix}-text-wrapper`)
@@ -89,13 +81,15 @@ class FunctionHelper {
    * Attaches the drawer to the DOM. This must be called
    * after the spreadsheet has been attached to the DOM
    * or material-components will throw errors.
+   *
    */
-  setDrawerContent(contentEl: HTMLElement) {
-    this.drawerContentEl.appendChild(contentEl)
-
+  setDrawerContent() {
     this.drawer = MDCDrawer.attachTo(this.functionHelperEl)
-
     this._spreadsheet.render()
+  }
+
+  scrollToFunction(functionName: string) {
+    this._functionHelperList.scrollToFunction(functionName)
   }
 
   /**

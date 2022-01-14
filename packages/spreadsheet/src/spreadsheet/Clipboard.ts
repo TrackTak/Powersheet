@@ -1,15 +1,23 @@
-import { SimpleCellRange as HFSimpleCellRange } from '@tracktak/hyperformula'
+import {
+  CellData,
+  CellValue,
+  SimpleCellRange as HFSimpleCellRange
+} from '@tracktak/hyperformula'
 // @ts-ignore
 import { isSimpleCellAddress } from '@tracktak/hyperformula/es/Cell'
 import { isEmpty } from 'lodash'
 import { MergeCellsCommand } from './Commands'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
-import { ICellMetadata, ISheetMetadata } from './sheets/Data'
-import Merger from './sheets/Merger'
+import { ICellMetadata } from './sheets/Data'
 import Sheets from './sheets/Sheets'
 import Spreadsheet from './Spreadsheet'
 import { MergeCellsUndoEntry } from './UIUndoRedo'
+import { ISheetMetadata } from './sheets/Data'
+import Merger from './sheets/Merger'
+
+const ROW_DELIMITER = '\r\n'
+const COLUMN_DELIMITER = '\t'
 
 class Clipboard {
   /**
@@ -18,6 +26,7 @@ class Clipboard {
   sourceRange: RangeSimpleCellAddress | null = null
   isCut = false
   private _spreadsheet: Spreadsheet
+  private _serializedCopiedValues: string | undefined = undefined
 
   constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
@@ -28,10 +37,16 @@ class Clipboard {
 
     let clipboardText = ''
 
-    rangeData.forEach(rowData => {
-      rowData.forEach(value => {
-        clipboardText += value ?? ''
+    rangeData.forEach((rowData, rowIndex) => {
+      rowData.forEach((value, columnIndex) => {
+        clipboardText += value?.cellValue ?? ''
+        if (columnIndex !== rowData.length - 1) {
+          clipboardText += COLUMN_DELIMITER
+        }
       })
+      if (rowIndex !== rangeData.length - 1) {
+        clipboardText += ROW_DELIMITER
+      }
     })
 
     await navigator.clipboard.writeText(clipboardText)
@@ -137,7 +152,9 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    this._spreadsheet.hyperformula.cut(source)
+    const cellValues = this._spreadsheet.hyperformula.cut(source)
+    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
+
     this.isCut = true
 
     await this._writeToClipboard(source)
@@ -156,16 +173,45 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    this._spreadsheet.hyperformula.copy(source)
+    const cellValues = this._spreadsheet.hyperformula.copy(source)
+    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
 
     await this._writeToClipboard(source)
   }
 
-  paste() {
-    const targetRange = this._getCellRangeForSelection(true)
-    const sourceRange = this.sourceRange
+  private _serializeCopiedValues(cellValues: CellData<CellValue, any>[][]) {
+    return cellValues.reduce((result, row, rowIndex) => {
+      const columnStr = row.reduce((cols, curCol, colIndex) => {
+        cols += curCol.cellValue ?? ''
+        if (colIndex !== row.length - 1) {
+          cols += COLUMN_DELIMITER
+        }
+        return cols
+      }, '')
+      result += columnStr
+      if (rowIndex !== cellValues.length - 1) {
+        result += ROW_DELIMITER
+      }
+      return result
+    }, '')
+  }
 
-    if (!targetRange || !sourceRange) {
+  async paste() {
+    const systemClipboardValue = await navigator.clipboard.readText()
+    if (systemClipboardValue === this._serializedCopiedValues) {
+      this._pasteHyperFormula()
+    } else {
+      this._pasteFromSystemClipboard(systemClipboardValue)
+    }
+
+    this._spreadsheet.render()
+  }
+
+  private _pasteHyperFormula() {
+    const sourceRange = this.sourceRange
+    const targetRange = this._getCellRangeForSelection(true)
+
+    if (!sourceRange || !targetRange) {
       return
     }
 
@@ -226,25 +272,27 @@ class Clipboard {
               if (mergedCell) {
                 const { width, height } = mergedCell
 
-                const removedMergedCells = this._spreadsheet.operations.mergeCells(
-                  targetSimpleCellAddress,
-                  width,
-                  height
-                )
-
-                const command = new MergeCellsCommand(
-                  targetSimpleCellAddress,
-                  width,
-                  height,
-                  removedMergedCells
-                )
-
-                this._spreadsheet.uiUndoRedo.saveOperation(
-                  new MergeCellsUndoEntry(
-                    this._spreadsheet.hyperformula,
-                    command
+                if (width !== undefined && height !== undefined) {
+                  const removedMergedCells = this._spreadsheet.operations.mergeCells(
+                    targetSimpleCellAddress,
+                    width,
+                    height
                   )
-                )
+
+                  const command = new MergeCellsCommand(
+                    targetSimpleCellAddress,
+                    width,
+                    height,
+                    removedMergedCells
+                  )
+
+                  this._spreadsheet.uiUndoRedo.saveOperation(
+                    new MergeCellsUndoEntry(
+                      this._spreadsheet.hyperformula,
+                      command
+                    )
+                  )
+                }
               }
             })
           })
@@ -252,196 +300,39 @@ class Clipboard {
       }
     })
 
-    // if (this.isCut) {
-    //   const sourceCellAddresses = sourceRange.getArrayOfAddresses()
-
-    //   sourceCellAddresses.forEach(simplesCellAddresses => {
-    //     simplesCellAddresses.forEach(address => {
-    //       this._spreadsheet.data.deleteCell(
-    //         address,
-    //         false,
-    //         true
-    //       )
-    //     })
-    //   })
-    // }
-
-    // const targetCellAddresses = targetRange.getArrayOfAddresses()
-
-    // targetCellAddresses.forEach(simplesCellAddresses => {
-    //   simplesCellAddresses.forEach(address => {
-    //     const hfSimpleCellAddress = {
-    //       sheet: address.sheet,
-    //       col: address.col,
-    //       row: address.row
-    //     }
-    //     const {
-    //       cellValue,
-    //       metadata
-    //     } = this._spreadsheet.hyperformula.getCellSerialized(
-    //       hfSimpleCellAddress
-    //     ) as {
-    //       cellValue: RawCellContent
-    //       metadata?: CellMetadata
-    //     }
-
-    //     this._spreadsheet.data.setCell(
-    //       address,
-    //       {
-    //         ...metadata,
-    //         value: cellValue
-    //       },
-    //       false
-    //     )
-    //   })
-    // })
-
-    // const rangeData = this._spreadsheet.hyperformula.getFillRangeData(
-    //   {
-    //     start: sourceRange.topLeftSimpleCellAddress,
-    //     end: sourceRange.bottomRightSimpleCellAddress
-    //   },
-    //   {
-    //     start: targetRange.topLeftSimpleCellAddress,
-    //     end: targetRange.bottomRightSimpleCellAddress
-    //   },
-    //   true
-    // )
-
-    if (this.isCut) {
-      // const allCellDependents: (
-      //   | HFSimpleCellRange
-      //   | HFSimpleCellAddress
-      // )[][] = []
-      // We must update spreadsheet data to keep in sync with hf values
-      // TODO: Find a better way of keeping our data in sync with hyperformula values
-      // such as an event from hyperformula
-      // for (const ri of sourceRange.iterateFromTopToBottom('row')) {
-      //   const rowDependents: (HFSimpleCellRange | HFSimpleCellAddress)[] = []
-      //   for (const ci of sourceRange.iterateFromTopToBottom('col')) {
-      //     const cellDependents = this._spreadsheet.hyperformula.getCellDependents(
-      //       {
-      //         sheet: sourceRange.topLeftSimpleCellAddress.sheet,
-      //         col: ci,
-      //         row: ri
-      //       }
-      //     )
-      //     rowDependents.push(...cellDependents)
-      //   }
-      //   allCellDependents.push(rowDependents)
-      // }
-      // Because the source data changes then the formulas
-      // can also change so we must paste to update dependent formulas
-      // allCellDependents.forEach(rowData => {
-      //   rowData.forEach(value => {
-      //     if (isSimpleCellAddress(value)) {
-      //       const hfSimpleCelladdress = value as HFSimpleCellAddress
-      //       const simpleCellAddress = new SimpleCellAddress(
-      //         hfSimpleCelladdress.sheet,
-      //         hfSimpleCelladdress.row,
-      //         hfSimpleCelladdress.col
-      //       )
-      //       const cellId = simpleCellAddress.toCellId()
-      //       const cellSerializedValue = getCellDataValue(this._spreadsheet.hyperformula.getCellSerialized(
-      //         hfSimpleCelladdress
-      //       ))
-      //       const cell = this._spreadsheet.data._spreadsheetData.cells?.[
-      //         cellId
-      //       ]
-      //       if (cell?.value !== cellSerializedValue) {
-      //         this._spreadsheet.data.setCell(
-      //           simpleCellAddress,
-      //           {
-      //             value: cellSerializedValue
-      //           },
-      //         )
-      //       }
-      //     }
-      //   })
-      // })
-    }
-
-    // We must split out the logic for setting/deleting the cells
-    // because otherwise it will affect the next loop iteration
-    // const cachedCells: IClipboardCachedCells[] = []
-
-    // rangeData.forEach((rowData, ri) => {
-    //   rowData.forEach((_, ci) => {
-    //     let { row, col } = this.sourceRange!.topLeftSimpleCellAddress
-
-    //     row += ri % this.sourceRange!.height()
-    //     col += ci % this.sourceRange!.width()
-
-    //     const soureSimpleCellAddress = new SimpleCellAddress(
-    //       this.sourceRange!.topLeftSimpleCellAddress.sheet,
-    //       row,
-    //       col
-    //     )
-
-    //     const targetSimpleCellAddress = new SimpleCellAddress(
-    //       targetRange.topLeftSimpleCellAddress.sheet,
-    //       targetRange.topLeftSimpleCellAddress.row + ri,
-    //       targetRange.topLeftSimpleCellAddress.col + ci
-    //     )
-
-    //     const sourceCellId = soureSimpleCellAddress.toCellId()
-    //     const data = this._spreadsheet.data._spreadsheetData
-    //     const cell = data.cells?.[sourceCellId]
-    //     const mergedCell = data.mergedCells?.[sourceCellId]
-
-    //     cachedCells.push({
-    //       targetSimpleCellAddress,
-    //       cell,
-    //       mergedCell
-    //     })
-
-    //     if (this.isCut) {
-    //       this._spreadsheet.data.deleteCell(soureSimpleCellAddress)
-    //     }
-    //   })
-    // })
-
-    // cachedCells.forEach(({ targetSimpleCellAddress, cell, mergedCell }) => {
-    //   if (rangeData.length !== 1 || rangeData[0]?.length !== 1) {
-    //     this._spreadsheet.data.deleteMergedCell(targetSimpleCellAddress)
-    //   }
-
-    //   this._spreadsheet.data.deleteCell(targetSimpleCellAddress, true, false)
-
-    //   if (mergedCell) {
-    //     const newMergedCell = {
-    //       ...mergedCell,
-    //       row: {
-    //         x: targetSimpleCellAddress.row,
-    //         y:
-    //           targetSimpleCellAddress.row +
-    //           (mergedCell.row.y - mergedCell.row.x)
-    //       },
-    //       col: {
-    //         x: targetSimpleCellAddress.col,
-    //         y:
-    //           targetSimpleCellAddress.col +
-    //           (mergedCell.col.y - mergedCell.col.x)
-    //       }
-    //     }
-
-    //     this._spreadsheet.data.setMergedCell(
-    //       targetSimpleCellAddress,
-    //       newMergedCell
-    //     )
-    //   }
-
-    //   if (cell) {
-    //     this._spreadsheet.data.setCell(targetSimpleCellAddress, cell)
-    //   }
-    // })
-
-    this._spreadsheet.render()
-
     if (this.isCut) {
       this.sourceRange = null
       this.isCut = false
     }
+  }
+
+  private _pasteFromSystemClipboard(clipboardValue: string) {
+    const selectedCells = this._sheets.selector.selectedCells
+    const firstSelectedCell = selectedCells![0]
+    const topLeftSimpleCellAddress = new SimpleCellAddress(
+      this._sheets.activeSheetId,
+      firstSelectedCell.simpleCellAddress.row,
+      firstSelectedCell.simpleCellAddress.col
+    )
+    const rowData = clipboardValue.split(ROW_DELIMITER)
+    this._spreadsheet.hyperformula.batch(() => {
+      rowData.forEach((row, rowIndex) => {
+        const columnData = row.split(COLUMN_DELIMITER)
+        columnData.forEach((column, columnIndex) => {
+          const targetAddress = new SimpleCellAddress(
+            this._sheets.activeSheetId,
+            topLeftSimpleCellAddress.row + rowIndex,
+            topLeftSimpleCellAddress.col + columnIndex
+          )
+          this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+            targetAddress,
+            {
+              cellValue: column
+            }
+          )
+        })
+      })
+    })
   }
 }
 

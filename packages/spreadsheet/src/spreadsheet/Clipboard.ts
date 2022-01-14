@@ -26,7 +26,7 @@ class Clipboard {
   sourceRange: RangeSimpleCellAddress | null = null
   isCut = false
   private _spreadsheet: Spreadsheet
-  private _serialisedCopiedValues: string | undefined = undefined
+  private _serializedCopiedValues: string | undefined = undefined
 
   constructor(private _sheets: Sheets, private _merger: Merger) {
     this._spreadsheet = this._sheets._spreadsheet
@@ -153,7 +153,7 @@ class Clipboard {
     }
 
     const cellValues = this._spreadsheet.hyperformula.cut(source)
-    this._serialisedCopiedValues = this._serialiseCopiedValues(cellValues)
+    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
 
     this.isCut = true
 
@@ -174,12 +174,12 @@ class Clipboard {
     }
 
     const cellValues = this._spreadsheet.hyperformula.copy(source)
-    this._serialisedCopiedValues = this._serialiseCopiedValues(cellValues)
+    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
 
     await this._writeToClipboard(source)
   }
 
-  private _serialiseCopiedValues(cellValues: CellData<CellValue, any>[][]) {
+  private _serializeCopiedValues(cellValues: CellData<CellValue, any>[][]) {
     return cellValues.reduce((result, row, rowIndex) => {
       const columnStr = row.reduce((cols, curCol, colIndex) => {
         cols += curCol.cellValue ?? ''
@@ -198,7 +198,7 @@ class Clipboard {
 
   async paste() {
     const systemClipboardValue = await navigator.clipboard.readText()
-    if (systemClipboardValue === this._serialisedCopiedValues) {
+    if (systemClipboardValue === this._serializedCopiedValues) {
       this._pasteHyperFormula()
     } else {
       this._pasteFromSystemClipboard(systemClipboardValue)
@@ -315,7 +315,7 @@ class Clipboard {
       firstSelectedCell.simpleCellAddress.col
     )
     const rowData = clipboardValue.split(ROW_DELIMITER)
-    this._spreadsheet.hyperformula.batchUndoRedo(() => {
+    this._spreadsheet.hyperformula.batch(() => {
       rowData.forEach((row, rowIndex) => {
         const columnData = row.split(COLUMN_DELIMITER)
         columnData.forEach((column, columnIndex) => {

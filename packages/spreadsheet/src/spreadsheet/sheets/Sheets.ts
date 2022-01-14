@@ -437,7 +437,7 @@ class Sheets {
             const simpleCellAddress = cell.simpleCellAddress
 
             this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-              cellValue: undefined
+              cellValue: null
             })
           })
         })

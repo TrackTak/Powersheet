@@ -286,6 +286,8 @@ class Spreadsheet {
     this.formulaBar?._render()
 
     console.log(this.hyperformula.getAllSheetsSerialized())
+    console.log("undo", this.hyperformula._crudOperations.undoRedo.undoStack)
+    console.log("redo", this.hyperformula._crudOperations.undoRedo.redoStack)
 
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {

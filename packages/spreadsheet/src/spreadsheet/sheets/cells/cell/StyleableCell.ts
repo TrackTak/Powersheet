@@ -317,10 +317,14 @@ class StyleableCell extends Cell {
     this._setRightBorder(borders)
     this._setBottomBorder(borders)
 
-    const cellType =
-      this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
+    let cellType
+
+    // TODO: Add logic to not throw in hyperformula if a cell is missing
+    try {
+      cellType = this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
         this.simpleCellAddress
       )
+    } catch (error) {}
 
     this._setCellErrorMarker(CellValueDetailedType.ERROR === cellType)
 

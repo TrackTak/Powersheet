@@ -163,7 +163,6 @@ class Toolbar {
 
     borderCells.forEach(cell => {
       const {
-        cellValue,
         metadata
       } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
         cell.simpleCellAddress
@@ -175,7 +174,6 @@ class Toolbar {
         this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
           cell.simpleCellAddress,
           {
-            cellValue,
             metadata: {
               ...metadata,
               borders: [...borders, borderType]
@@ -273,7 +271,6 @@ class Toolbar {
   private _clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
     simpleCellAddresses.forEach(simpleCellAddress => {
       const {
-        cellValue,
         metadata
       } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
         simpleCellAddress
@@ -284,7 +281,6 @@ class Toolbar {
       this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
         simpleCellAddress,
         {
-          cellValue,
           metadata
         }
       )
@@ -790,14 +786,12 @@ class Toolbar {
       this._spreadsheet.hyperformula.batchUndoRedo(() => {
         selectedCells.forEach(({ simpleCellAddress }) => {
           const {
-            cellValue,
             metadata
           } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
             simpleCellAddress
           )
 
           this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-            cellValue,
             metadata: {
               ...metadata,
               [key]: value
@@ -810,7 +804,6 @@ class Toolbar {
     const deleteStyle = (key: keyof ICellMetadata) => {
       selectedCells.forEach(cell => {
         const {
-          cellValue,
           metadata
         } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
           cell.simpleCellAddress
@@ -821,7 +814,6 @@ class Toolbar {
         this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
           cell.simpleCellAddress,
           {
-            cellValue,
             metadata
           }
         )

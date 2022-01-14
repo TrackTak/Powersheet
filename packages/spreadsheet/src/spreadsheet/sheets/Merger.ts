@@ -1,5 +1,5 @@
 import { HyperFormula, SimpleCellAddress } from '@tracktak/hyperformula'
-import { ICellMetadata, ISheetMetadata } from './Data'
+import { ISheetMetadata } from './Data'
 import { addressToCellId, cellIdToAddress } from '../utils'
 import { CellId } from './cells/cell/SimpleCellAddress'
 
@@ -56,13 +56,6 @@ class Merger {
   }
 
   public setAssociatedMergedCells(simpleCellAddress: SimpleCellAddress) {
-    const {
-      cellValue,
-      metadata
-    } = this._hyperformula.getCellSerialized<ICellMetadata>(simpleCellAddress)
-
-    const { width: _, height: __, ...otherMetadata } = metadata ?? {}
-
     for (const address of this._iterateMergedCellWidthHeight(
       simpleCellAddress
     )) {
@@ -70,15 +63,6 @@ class Merger {
 
       this.associatedMergedCellAddressMap[cellId] = addressToCellId(
         simpleCellAddress
-      )
-
-      this._hyperformula.setCellContents(
-        address,
-        {
-          cellValue,
-          metadata: otherMetadata
-        },
-        false
       )
     }
   }

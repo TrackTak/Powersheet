@@ -2,7 +2,7 @@ import { Story } from '@storybook/html'
 import TouchEmulator from 'hammer-touchemulator'
 import { action } from '@storybook/addon-actions'
 import { throttle } from 'lodash'
-import { ISheetMetadata, ISpreadsheetData } from '../spreadsheet/sheets/Data'
+import { ICellMetadata, ISheetMetadata, ISpreadsheetData } from '../spreadsheet/sheets/Data'
 import { IOptions } from '../spreadsheet/options'
 import { IStyles } from '../spreadsheet/styles'
 import { NestedPartial } from '../spreadsheet/types'
@@ -19,16 +19,15 @@ import { PowersheetEvents } from '../spreadsheet/PowersheetEmitter'
 import {
   AlwaysSparse,
   ConfigParams,
-  DataRawCellContent,
   HyperFormula
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
 import getFunctionHelperContent from './getFunctionHelperContent'
-import type { GenericSheets } from '@tracktak/hyperformula/typings/Sheet'
+import type { InputSheets } from '@tracktak/hyperformula/typings/Sheet'
 
 export interface IArgs {
-  sheets?: GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>
+  sheets?: InputSheets<ICellMetadata, Partial<ISheetMetadata>>
   data?: ISpreadsheetData
   options?: NestedPartial<IOptions>
   styles?: NestedPartial<IStyles>
@@ -40,7 +39,7 @@ const eventLog = (event: string, ...args: any[]) => {
 }
 
 export const getHyperformulaInstance = (
-  sheets: GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>,
+  sheets: InputSheets<ICellMetadata, Partial<ISheetMetadata>>,
   config?: Partial<ConfigParams>
 ) => {
   const hyperformula = HyperFormula.buildFromSheets(sheets, {

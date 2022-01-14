@@ -285,8 +285,6 @@ class Spreadsheet {
     this.functionHelper?._render()
     this.formulaBar?._render()
 
-    console.log(this.hyperformula.getAllSheetsSerialized())
-
     if (recalculateHyperformula) {
       this.hyperformula.rebuildAndRecalculate().then(() => {
         this.render()

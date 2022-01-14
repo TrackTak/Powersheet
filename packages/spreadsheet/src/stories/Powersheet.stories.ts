@@ -10,11 +10,7 @@ import {
   ISheetMetadata
 } from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
-import {
-  DataRawCellContent,
-  HyperFormula,
-  Sheets
-} from '@tracktak/hyperformula'
+import { HyperFormula, Sheets } from '@tracktak/hyperformula'
 import {
   getTTFinancialPlugin,
   finTranslations
@@ -30,12 +26,13 @@ import {
   IArgs,
   Template
 } from './helpers'
-import type { GenericSheets } from '@tracktak/hyperformula/typings/Sheet'
+import type { InputSheets } from '@tracktak/hyperformula/typings/Sheet'
 import type { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 
-const realExampleData = realExampleDataJSON as
-  | GenericSheets<DataRawCellContent, Partial<ISheetMetadata>>
-  | undefined
+const realExampleSheets = realExampleDataJSON as InputSheets<
+  ICellMetadata,
+  Partial<ISheetMetadata>
+>
 
 export default {
   title: 'Spreadsheet'
@@ -67,9 +64,7 @@ MergedCells.args = {
         [],
         [],
         [
-          {
-            cellValue: undefined
-          },
+          ,
           {
             cellValue: 'Merged Cell',
             metadata: {
@@ -449,7 +444,7 @@ Formulas.args = {
 }
 
 const RealExampleTemplate: Story<IArgs> = args => {
-  let FinancialPlugin = getTTFinancialPlugin()
+  let FinancialPlugin = getTTFinancialPlugin(mockFinancialDataJSON)
 
   HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations)
 
@@ -465,23 +460,13 @@ const RealExampleTemplate: Story<IArgs> = args => {
     ]
   )
 
-  // Simulate API call
-  setTimeout(() => {
-    FinancialPlugin = getTTFinancialPlugin(mockFinancialDataJSON)
-
-    HyperFormula.unregisterFunctionPlugin(FinancialPlugin)
-    HyperFormula.registerFunctionPlugin(FinancialPlugin, finTranslations)
-
-    spreadsheet?.render(true)
-  }, 2000)
-
   return spreadsheet.spreadsheetEl
 }
 
 export const RealExample = RealExampleTemplate.bind({})
 
 RealExample.args = {
-  sheets: realExampleData,
+  sheets: realExampleSheets,
   options: {
     textPatternFormats: {
       currency: '$#,##0.##',

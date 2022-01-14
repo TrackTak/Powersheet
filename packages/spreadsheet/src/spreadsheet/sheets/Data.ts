@@ -25,10 +25,7 @@ export interface ICellStyles {
   verticalTextAlign?: VerticalTextAlign
 }
 
-export interface ICellMetadata extends ICellStyles {
-  width?: number
-  height?: number
-}
+export type ICellMetadata = ICellStyles
 
 export interface ISheetMetadata {
   frozenRow?: number

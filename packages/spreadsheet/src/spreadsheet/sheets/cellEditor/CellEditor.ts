@@ -402,7 +402,7 @@ class CellEditor {
       simpleCellAddress
     )
 
-    let value = this.currentCellText ? this.currentCellText : undefined
+    let value = this.currentCellText ? this.currentCellText : null
 
     if (cellValue !== value) {
       if (isPercent(value)) {

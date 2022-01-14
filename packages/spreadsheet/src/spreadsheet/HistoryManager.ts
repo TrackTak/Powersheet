@@ -7,7 +7,6 @@ import {
   AddColumnsUndoEntry,
   BatchUndoEntry,
   MoveCellsUndoEntry,
-  PasteUndoEntry,
   AddSheetUndoEntry,
   RemoveSheetUndoEntry
 } from '@tracktak/hyperformula'
@@ -64,16 +63,6 @@ class HistoryManager {
         operation.destinationLeftCorner,
         operation.width,
         operation.height
-      )
-
-      // @ts-ignore
-      operation.removedMergedCells = removedMergedCells
-    }
-
-    if (operation instanceof PasteUndoEntry) {
-      const removedMergedCells = this.operations.pasteMergedCells(
-        operation.targetLeftCorner,
-        operation.newContent
       )
 
       // @ts-ignore
@@ -159,13 +148,6 @@ class HistoryManager {
 
   private onUndo = (operation: UndoEntry) => {
     this.hyperformula.suspendAddingUndoEntries()
-
-    if (operation instanceof PasteUndoEntry) {
-      // @ts-ignore
-      this.operations.restoreOldCellContents(operation.oldContent)
-      // @ts-ignore
-      this.operations.restoreRemovedMergedCells(operation.removedMergedCells)
-    }
 
     if (operation instanceof AddSheetUndoEntry) {
       const newSheetId = this.operations.removeSheet(
@@ -263,13 +245,6 @@ class HistoryManager {
 
   private onRedo = (operation: UndoEntry) => {
     this.hyperformula.suspendAddingUndoEntries()
-
-    if (operation instanceof PasteUndoEntry) {
-      this.operations.pasteMergedCells(
-        operation.targetLeftCorner,
-        operation.newContent
-      )
-    }
 
     if (operation instanceof AddSheetUndoEntry) {
       this.sheets.switchSheet(operation.sheetId)

@@ -225,7 +225,10 @@ export class UIUndoRedo extends UndoRedo {
     const { topLeftSimpleCellAddress, removedMergedCells } = operation.command
 
     this.uiOperations.removeMergedCells(topLeftSimpleCellAddress)
-    this.uiOperations.restoreRemovedMergedCells(removedMergedCells)
+    this.uiOperations.restoreRemovedMergedCells(
+      topLeftSimpleCellAddress.sheet,
+      removedMergedCells
+    )
   }
 
   public undoUnMergeCells(operation: UnMergeCellsUndoEntry) {

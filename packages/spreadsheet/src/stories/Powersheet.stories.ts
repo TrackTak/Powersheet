@@ -1,4 +1,6 @@
-import SimpleCellAddress from '../spreadsheet/sheets/cells/cell/SimpleCellAddress'
+import SimpleCellAddress, {
+  CellId
+} from '../spreadsheet/sheets/cells/cell/SimpleCellAddress'
 import { Story, Meta } from '@storybook/html'
 // @ts-ignore
 import { currencySymbolMap } from 'currency-symbol-map'
@@ -7,10 +9,10 @@ import { merge } from 'lodash'
 import {
   ICellMetadata,
   ICellStyles,
-  ISheetMetadata
+  SerializedSheets
 } from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
-import { HyperFormula, Sheets } from '@tracktak/hyperformula'
+import { HyperFormula } from '@tracktak/hyperformula'
 import {
   getTTFinancialPlugin,
   finTranslations
@@ -26,13 +28,10 @@ import {
   IArgs,
   Template
 } from './helpers'
-import type { InputSheets } from '@tracktak/hyperformula/typings/Sheet'
 import type { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
+import { addressToCellId } from '../spreadsheet/utils'
 
-const realExampleSheets = realExampleDataJSON as InputSheets<
-  ICellMetadata,
-  Partial<ISheetMetadata>
->
+const realExampleSheets = realExampleDataJSON as SerializedSheets
 
 export default {
   title: 'Spreadsheet'
@@ -45,7 +44,6 @@ export const FrozenCells = Template.bind({})
 FrozenCells.args = {
   sheets: {
     'Frozen Cells': {
-      cells: [],
       sheetMetadata: {
         frozenRow: 2,
         frozenCol: 2
@@ -59,25 +57,19 @@ export const MergedCells = Template.bind({})
 MergedCells.args = {
   sheets: {
     'Merged Cells': {
-      cells: [
-        [],
-        [],
-        [],
-        [
-          ,
-          {
-            cellValue: 'Merged Cell',
-            metadata: {
-              fontSize: 14,
-              bold: true,
-              horizontalTextAlign: 'center'
-            }
+      cells: {
+        '3_1': {
+          cellValue: 'Merged Cell',
+          metadata: {
+            fontSize: 14,
+            bold: true,
+            horizontalTextAlign: 'center'
           }
-        ]
-      ],
+        }
+      },
       sheetMetadata: {
         mergedCells: {
-          '0_3_1': {
+          '3_1': {
             width: 1,
             height: 2
           }
@@ -92,7 +84,6 @@ export const DifferentSizeCells = Template.bind({})
 DifferentSizeCells.args = {
   sheets: {
     'Different Size Cells': {
-      cells: [],
       sheetMetadata: {
         rowSizes: {
           0: 50,
@@ -169,29 +160,27 @@ export const CustomOptions = Template.bind({})
 CustomOptions.args = {
   sheets: {
     'Custom Options': {
-      cells: [
-        [
-          {
-            cellValue: '20000000',
-            metadata: {
-              textFormatPattern: '$#,##0.##'
-            }
-          },
-          {
-            cellValue: '20000000',
-            metadata: {
-              textFormatPattern: '#,###.##,,'
-            }
-          },
-          {
-            cellValue: '20000000',
-            metadata: {
-              textFormatPattern: '$#,###.##,,',
-              fontSize: 32
-            }
+      cells: {
+        '0_1': {
+          cellValue: '20000000',
+          metadata: {
+            textFormatPattern: '$#,##0.##'
           }
-        ]
-      ]
+        },
+        '1_1': {
+          cellValue: '20000000',
+          metadata: {
+            textFormatPattern: '#,###.##,,'
+          }
+        },
+        '2_1': {
+          cellValue: '20000000',
+          metadata: {
+            textFormatPattern: '$#,###.##,,',
+            fontSize: 32
+          }
+        }
+      }
     }
   },
   options: {
@@ -266,34 +255,32 @@ AllCurrencySymbols.args = {
   },
   sheets: {
     'All Currency Symbols': {
-      cells: [
-        [
-          {
-            cellValue: '$33334.33',
-            metadata: {
-              textFormatPattern: '$#,##0.##'
-            }
-          },
-          {
-            cellValue: '₪22.2',
-            metadata: {
-              textFormatPattern: '₪#,##0.##'
-            }
-          },
-          {
-            cellValue: '£33.3',
-            metadata: {
-              textFormatPattern: '£#,##0.##'
-            }
-          },
-          {
-            cellValue: '=A1+B1+C1',
-            metadata: {
-              textFormatPattern: '#,##0.##'
-            }
+      cells: {
+        '1_0': {
+          cellValue: '$33334.33',
+          metadata: {
+            textFormatPattern: '$#,##0.##'
           }
-        ]
-      ]
+        },
+        '1_1': {
+          cellValue: '₪22.2',
+          metadata: {
+            textFormatPattern: '₪#,##0.##'
+          }
+        },
+        '3_3': {
+          cellValue: '£33.3',
+          metadata: {
+            textFormatPattern: '£#,##0.##'
+          }
+        },
+        '4_1': {
+          cellValue: '=A2+B2+D4',
+          metadata: {
+            textFormatPattern: '#,##0.##'
+          }
+        }
+      }
     }
   }
 }
@@ -306,64 +293,57 @@ CellsData.args = {
   },
   sheets: {
     'Cells Data': {
-      cells: [
-        [
-          {
-            cellValue: '=2/0'
-          },
-          {
-            cellValue: 'HI!',
-            metadata: {
-              horizontalTextAlign: 'right',
-              verticalTextAlign: 'bottom',
-              backgroundColor: 'red',
-              fontColor: '#ffeb3b'
-            }
-          },
-          {
-            cellValue:
-              'A very long piece of text that should wrap to the next line on the word.',
-            metadata: {
-              comment: 'Powersheet is the best',
-              horizontalTextAlign: 'center',
-              verticalTextAlign: 'middle',
-              bold: true,
-              italic: true,
-              textWrap: 'wrap'
-            }
-          },
-          {
-            cellValue: undefined,
-            metadata: {
-              borders: [
-                'borderBottom',
-                'borderRight',
-                'borderTop',
-                'borderLeft'
-              ],
-              backgroundColor: 'yellow'
-            }
-          },
-          {
-            cellValue: 'Some value',
-            metadata: {
-              underline: true,
-              strikeThrough: true,
-              fontSize: 14,
-              borders: ['borderBottom']
-            }
-          },
-          {
-            cellValue: '0.05',
-            metadata: {
-              textFormatPattern: '0.00%'
-            }
-          },
-          {
-            cellValue: 'Cell Value'
+      cells: {
+        '0_5': {
+          cellValue: '=2/0'
+        },
+        '1_0': {
+          cellValue: 'HI!',
+          metadata: {
+            horizontalTextAlign: 'right',
+            verticalTextAlign: 'bottom',
+            backgroundColor: 'red',
+            fontColor: '#ffeb3b'
           }
-        ]
-      ]
+        },
+        '1_1': {
+          cellValue:
+            'A very long piece of text that should wrap to the next line on the word.',
+          metadata: {
+            comment: 'Powersheet is the best',
+            horizontalTextAlign: 'center',
+            verticalTextAlign: 'middle',
+            bold: true,
+            italic: true,
+            textWrap: 'wrap'
+          }
+        },
+        '3_3': {
+          cellValue: undefined,
+          metadata: {
+            borders: ['borderBottom', 'borderRight', 'borderTop', 'borderLeft'],
+            backgroundColor: 'yellow'
+          }
+        },
+        '4_1': {
+          cellValue: 'Some value',
+          metadata: {
+            underline: true,
+            strikeThrough: true,
+            fontSize: 14,
+            borders: ['borderBottom']
+          }
+        },
+        '4_4': {
+          cellValue: '0.05',
+          metadata: {
+            textFormatPattern: '0.00%'
+          }
+        },
+        '40_4': {
+          cellValue: 'Cell Value'
+        }
+      }
     }
   }
 }
@@ -373,72 +353,62 @@ export const Formulas = Template.bind({})
 Formulas.args = {
   sheets: {
     Formulas: {
-      cells: [
-        [
-          {
-            cellValue: '5',
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
-          },
-          {
-            cellValue: '2',
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
-          },
-          {
-            cellValue: 'SUM',
-            metadata: {
-              comment: 'Powersheet is the best',
-              horizontalTextAlign: 'center',
-              verticalTextAlign: 'middle',
-              bold: true,
-              italic: true,
-              textWrap: 'wrap'
-            }
-          },
-          {
-            cellValue: '=SUM(A1, A2)',
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
-          },
-          {
-            cellValue: 'Cross Sheet Reference',
-            metadata: {
-              underline: true,
-              strikeThrough: true,
-              fontSize: 14,
-              borders: ['borderBottom']
-            }
-          },
-          {
-            cellValue: "='Other'!A1 * 30",
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
-          },
-          {
-            cellValue: '100',
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
+      cells: {
+        '0_1': {
+          cellValue: '5',
+          metadata: {
+            textFormatPattern: '#,##0.00'
           }
-        ]
-      ]
+        },
+        '1_1': {
+          cellValue: '2',
+          metadata: {
+            textFormatPattern: '#,##0.00'
+          }
+        },
+        '2_0': {
+          cellValue: 'SUM',
+          metadata: {
+            comment: 'Powersheet is the best',
+            horizontalTextAlign: 'center',
+            verticalTextAlign: 'middle',
+            bold: true,
+            italic: true,
+            textWrap: 'wrap'
+          }
+        },
+        '2_1': {
+          cellValue: '=SUM(B1, B2)',
+          metadata: {
+            textFormatPattern: '#,##0.00'
+          }
+        },
+        '4_0': {
+          cellValue: 'Cross Sheet Reference',
+          metadata: {
+            underline: true,
+            strikeThrough: true,
+            fontSize: 14,
+            borders: ['borderBottom']
+          }
+        },
+        '4_1': {
+          cellValue: "='Other'!A1 * 30",
+          metadata: {
+            textFormatPattern: '#,##0.00'
+          }
+        }
+      }
     },
     Other: {
-      cells: [
-        [
-          {
-            cellValue: '100',
-            metadata: {
-              textFormatPattern: '#,##0.00'
-            }
+      cells: {
+        '0_0': {
+          cellValue: '100',
+          metadata: {
+            textFormatPattern: '#,##0.00'
           }
-        ]
-      ]
+        }
+      }
     }
   }
 }
@@ -460,6 +430,9 @@ const RealExampleTemplate: Story<IArgs> = args => {
     ]
   )
 
+  spreadsheet.hyperformula.addNamedExpression('TRUE', '=TRUE()')
+  spreadsheet.hyperformula.addNamedExpression('FALSE', '=FALSE()')
+
   return spreadsheet.spreadsheetEl
 }
 
@@ -477,7 +450,7 @@ RealExample.args = {
 }
 
 const SpreadsheetPerformanceTemplate: Story<IArgs> = () => {
-  const cells: GenericDataRawCellContent<ICellMetadata>[][] = []
+  const cells: Record<CellId, GenericDataRawCellContent<ICellMetadata>> = {}
 
   const cell: Partial<ICellStyles> = {
     comment: 'Performance of each cell',
@@ -503,24 +476,21 @@ const SpreadsheetPerformanceTemplate: Story<IArgs> = () => {
   }
 
   for (let ri = 0; ri <= defaultOptions.row.amount; ri++) {
-    const row: GenericDataRawCellContent<ICellMetadata>[] = []
-
     for (let ci = 0; ci <= defaultOptions.col.amount; ci++) {
       const simpleCellAddress = new SimpleCellAddress(0, ri, ci)
+      const cellId = addressToCellId(simpleCellAddress)
 
-      row.push({
+      cells![cellId] = {
         cellValue: simpleCellAddress.addressToString(),
         metadata: {
           ...cell,
           backgroundColor: getRandomBackgroundColor()
         }
-      })
+      }
     }
-
-    cells.push(row)
   }
 
-  const sheets: Sheets = {
+  const sheets: SerializedSheets = {
     Performance: {
       cells
     }

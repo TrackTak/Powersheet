@@ -8,7 +8,12 @@ import CellEditor from './cellEditor/CellEditor'
 import RightClickMenu from './rightClickMenu/RightClickMenu'
 import { Stage } from 'konva/lib/Stage'
 import Spreadsheet from '../Spreadsheet'
-import { prefix, reverseVectorsIfStartBiggerThanEnd } from '../utils'
+import {
+  addressToSheetCellId,
+  prefix,
+  reverseVectorsIfStartBiggerThanEnd,
+  sheetCellIdToAddress
+} from '../utils'
 import styles from './Sheets.module.scss'
 import { KonvaEventObject } from 'konva/lib/Node'
 import Comment from './comment/Comment'
@@ -17,7 +22,6 @@ import SimpleCellAddress from './cells/cell/SimpleCellAddress'
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress'
 import Cell from './cells/cell/Cell'
 import Cells from './cells/Cells'
-import Merger from './Merger'
 import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
@@ -141,8 +145,7 @@ class Sheets {
     /**
      * @internal
      */
-    public _spreadsheet: Spreadsheet,
-    private _merger: Merger
+    public _spreadsheet: Spreadsheet
   ) {
     this.sheetElContainer = document.createElement('div')
     this.sheetElContainer.classList.add(
@@ -228,8 +231,8 @@ class Sheets {
       }
     })
 
-    this.clipboard = new Clipboard(this, this._merger)
-    this.cells = new Cells(this, this._merger)
+    this.clipboard = new Clipboard(this, this._spreadsheet.merger)
+    this.cells = new Cells(this, this._spreadsheet.merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.cellHighlighter = new CellHighlighter(this)
@@ -382,10 +385,12 @@ class Sheets {
       selectedFirstcell.simpleCellAddress
     )
 
-    let { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
-        simpleCellAddress
-      )
+    let {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
+      simpleCellAddress
+    )
 
     const comment = metadata?.comment
 
@@ -471,10 +476,11 @@ class Sheets {
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const { cellValue } =
-            this._spreadsheet.hyperformula.getCellSerialized(
-              selectedCell.simpleCellAddress
-            )
+          const {
+            cellValue
+          } = this._spreadsheet.hyperformula.getCellSerialized(
+            selectedCell.simpleCellAddress
+          )
 
           if (cellValue) {
             this.cellEditor.clear()
@@ -504,7 +510,7 @@ class Sheets {
 
     this.activeSheetId = sheetId
 
-    this.cells = new Cells(this, this._merger)
+    this.cells = new Cells(this, this._spreadsheet.merger)
     this.cols = new RowCols('col', this)
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
@@ -570,8 +576,9 @@ class Sheets {
    * @internal
    */
   _getSizeFromCells(cells: Cell[]) {
-    const minMaxRangeSimpleCellAddress =
-      this._getMinMaxRangeSimpleCellAddress(cells)
+    const minMaxRangeSimpleCellAddress = this._getMinMaxRangeSimpleCellAddress(
+      cells
+    )
 
     let height = 0
     let width = 0
@@ -644,23 +651,27 @@ class Sheets {
           ci
         )
 
-        if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
-          const cellId = simpleCellAddress.toCellId()
-          const mergedCellAddress = SimpleCellAddress.cellIdToAddress(
-            this._merger.associatedMergedCellAddressMap[cellId]
+        if (this._spreadsheet.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+          const sheetCellId = addressToSheetCellId(simpleCellAddress)
+          const mergedCellAddress = sheetCellIdToAddress(
+            this._spreadsheet.merger.associatedMergedCellAddressMap[sheetCellId]
           )
 
           let bottomRow = -Infinity
           let bottomCol = -Infinity
 
-          for (const address of this._merger._iterateMergedCellWidthHeight(
+          for (const address of this._spreadsheet.merger._iterateMergedCellWidthHeight(
             mergedCellAddress
           )) {
             bottomRow = Math.max(bottomRow, address.row)
             bottomCol = Math.max(bottomCol, address.col)
           }
           const existingRangeSimpleCellAddress = new RangeSimpleCellAddress(
-            mergedCellAddress,
+            new SimpleCellAddress(
+              mergedCellAddress.sheet,
+              mergedCellAddress.row,
+              mergedCellAddress.col
+            ),
             new SimpleCellAddress(simpleCellAddress.sheet, bottomRow, bottomCol)
           )
 
@@ -706,21 +717,29 @@ class Sheets {
    * @internal
    */
   _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
-    const { top, left, right, bottom, x, y, width, height, toJSON } =
-      this.sheetEl.getBoundingClientRect()
-    const selectedCellRect =
-      this.selector.selectedCell!._getClientRectWithoutStroke()
+    const {
+      top,
+      left,
+      right,
+      bottom,
+      x,
+      y,
+      width,
+      height,
+      toJSON
+    } = this.sheetEl.getBoundingClientRect()
+    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
 
     const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
 
     let xPosition = left + selectedCellRect.x + selectedCellRect.width
     let yPosition = top + selectedCellRect.y
 
-    const rowScrollBarWidth =
-      this.rows.scrollBar.scrollBarEl.getBoundingClientRect().width
+    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
+      .width
 
-    const colScrollBarHeight =
-      this.cols.scrollBar.scrollBarEl.getBoundingClientRect().height
+    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
+      .height
 
     if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
       xPosition = left + selectedCellRect.x - tippyBox.offsetWidth

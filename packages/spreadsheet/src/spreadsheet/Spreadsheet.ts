@@ -4,23 +4,28 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { getDefaultSheetMetadata, prefix } from './utils'
+import {
+  getDefaultSheetMetadata,
+  mapFromSheetsToSerializedSheets,
+  prefix
+} from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
 import { HyperFormula } from '@tracktak/hyperformula'
-import { ISheetMetadata, ISpreadsheetData } from './sheets/Data'
+import { ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
-import FunctionHelper, { IFunctionHelperData } from './functionHelper/FunctionHelper'
+import FunctionHelper, {
+  IFunctionHelperData
+} from './functionHelper/FunctionHelper'
 import Operations from './Operations'
 import { UIUndoRedo } from './UIUndoRedo'
 import HistoryManager from './HistoryManager'
-import UIHyperformula from './sheets/Merger'
-import Merger from './sheets/Merger'
 import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
+import Merger from './sheets/Merger'
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -43,8 +48,8 @@ class Spreadsheet {
   spreadsheetData: ISpreadsheetData
   exporter?: Exporter
   hyperformula: HyperFormula
-  uiHyperformula: UIHyperformula
   historyManager: HistoryManager
+  merger: Merger
   operations: Operations
   uiUndoRedo: UIUndoRedo
   functionMetadata: Record<string, IFunctionHelperData> = {}
@@ -52,7 +57,6 @@ class Spreadsheet {
     [IFunctionHelperData, ...IFunctionHelperData[]]
   > = {}
   bottomBar?: BottomBar
-  merger: Merger
   isSaving = false
   sheetSizesSet = false
 
@@ -66,7 +70,12 @@ class Spreadsheet {
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
     this.spreadsheetData = {}
-    this.initializeMetadata()
+
+    const sheetNames = this.hyperformula.getSheetNames()
+
+    if (sheetNames.length === 0) {
+      this.hyperformula.addSheet(undefined, getDefaultSheetMetadata())
+    }
 
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
@@ -86,14 +95,14 @@ class Spreadsheet {
 
     this.merger = new Merger(this.hyperformula)
 
+    this.sheets = new Sheets(this)
+
     this.toolbar?.initialize(this, this.merger)
     this.formulaBar?.initialize(this)
     this.exporter?.initialize(this, this.merger)
     this.bottomBar?.initialize(this)
     this.functionHelper?.initialize(this)
 
-    this.uiHyperformula = new UIHyperformula(this.hyperformula)
-    this.sheets = new Sheets(this, this.merger)
     this.operations = new Operations(
       this.hyperformula,
       this.merger,
@@ -120,34 +129,6 @@ class Spreadsheet {
 
   private _onDOMContentLoaded = () => {
     this.sheets._updateSize()
-  }
-
-  private setMetadataForSheet(sheetName: string) {
-    const sheetId = this.hyperformula.getSheetId(sheetName)!
-    const partialSheetMetadata = this.hyperformula.getSheetMetadata<
-      Partial<ISheetMetadata>
-    >(sheetId)
-
-    const sheetMetadata = merge<ISheetMetadata, Partial<ISheetMetadata>>(
-      getDefaultSheetMetadata(),
-      partialSheetMetadata
-    )
-
-    this.hyperformula.setSheetMetadata<ISheetMetadata>(sheetId, sheetMetadata)
-  }
-
-  private initializeMetadata() {
-    const sheetNames = this.hyperformula.getSheetNames()
-
-    sheetNames.forEach(sheetName => {
-      this.setMetadataForSheet(sheetName)
-    })
-
-    if (sheetNames.length === 0) {
-      const sheetName = this.hyperformula.addSheet()
-
-      this.setMetadataForSheet(sheetName)
-    }
   }
 
   private setFunctionMetadata(
@@ -208,8 +189,6 @@ class Spreadsheet {
   }
 
   /**
-   * Must be called before `initialize()`.
-   *
    * @param data - The persisted data that sets the spreadsheet.
    */
   setData(data: ISpreadsheetData) {
@@ -259,11 +238,11 @@ class Spreadsheet {
 
     this.isSaving = true
 
-    this.eventEmitter.emit(
-      'persistData',
-      this.hyperformula.getAllSheetsSerialized(),
-      done
+    const serializedSheets = mapFromSheetsToSerializedSheets(
+      this.hyperformula.getAllSheetsSerialized()
     )
+
+    this.eventEmitter.emit('persistData', serializedSheets, done)
   }
 
   /**

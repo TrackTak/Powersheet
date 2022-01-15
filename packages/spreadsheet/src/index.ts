@@ -2,7 +2,6 @@ import type { IOptions } from './spreadsheet/options'
 import type { IStyles } from './spreadsheet/styles'
 import type { IIconElements } from './spreadsheet/htmlElementHelpers'
 import type { ISheetTabElements } from './spreadsheet/bottomBar/BottomBar'
-import type { ICellReferencePart } from './spreadsheet/cellHighlighter/CellHighlighter'
 import type { ICurrentScroll } from './spreadsheet/sheets/cellEditor/CellEditor'
 import { defaultOptions } from './spreadsheet/options'
 import { defaultStyles } from './spreadsheet/styles'
@@ -19,7 +18,6 @@ export {
   IStyles,
   IIconElements,
   ISheetTabElements,
-  ICellReferencePart,
   ICurrentScroll,
   functionHelperPrefix,
   defaultOptions,

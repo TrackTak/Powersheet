@@ -2,7 +2,6 @@ import { Story } from '@storybook/html'
 import TouchEmulator from 'hammer-touchemulator'
 import { action } from '@storybook/addon-actions'
 import { throttle } from 'lodash'
-import { ICellMetadata, ISheetMetadata, ISpreadsheetData } from '../spreadsheet/sheets/Data'
 import { IOptions } from '../spreadsheet/options'
 import { IStyles } from '../spreadsheet/styles'
 import { NestedPartial } from '../spreadsheet/types'
@@ -23,11 +22,12 @@ import {
 } from '@tracktak/hyperformula'
 import { ICustomRegisteredPluginDefinition } from '../spreadsheet/Exporter'
 import getToolbarElementIcons from './getToolbarActionGroups'
-import type { InputSheets } from '@tracktak/hyperformula/typings/Sheet'
 import customFunctionMetadata from './mocks/customFunctionMetadata'
+import { SerializedSheets, ISpreadsheetData } from '../spreadsheet/sheets/Data'
+import { mapFromSerializedSheetsToSheets } from '../spreadsheet/utils'
 
 export interface IArgs {
-  sheets?: InputSheets<ICellMetadata, Partial<ISheetMetadata>>
+  sheets?: SerializedSheets
   data?: ISpreadsheetData
   options?: NestedPartial<IOptions>
   styles?: NestedPartial<IStyles>
@@ -39,14 +39,17 @@ const eventLog = (event: string, ...args: any[]) => {
 }
 
 export const getHyperformulaInstance = (
-  sheets: InputSheets<ICellMetadata, Partial<ISheetMetadata>>,
+  sheets: SerializedSheets,
   config?: Partial<ConfigParams>
 ) => {
-  const hyperformula = HyperFormula.buildFromSheets(sheets, {
-    ...config,
-    chooseAddressMappingPolicy: new AlwaysSparse(),
-    licenseKey: 'gpl-v3'
-  })[0]
+  const hyperformula = HyperFormula.buildFromSheets(
+    mapFromSerializedSheetsToSheets(sheets),
+    {
+      ...config,
+      chooseAddressMappingPolicy: new AlwaysSparse(),
+      licenseKey: 'gpl-v3'
+    }
+  )[0]
 
   return hyperformula
 }

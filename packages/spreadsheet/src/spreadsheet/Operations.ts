@@ -8,11 +8,17 @@ import { ClipboardCell } from '@tracktak/hyperformula/es/ClipboardOperations'
 import { InputCell } from '@tracktak/hyperformula/typings/CellContentParser'
 import { CellMetadata } from '@tracktak/hyperformula/typings/interpreter/InterpreterValue'
 import SimpleCellAddress, {
-  CellId
+  CellId,
+  SheetCellId
 } from './sheets/cells/cell/SimpleCellAddress'
 import { ICellMetadata, IMergedCell, ISheetMetadata } from './sheets/Data'
 import Merger from './sheets/Merger'
 import Selector from './sheets/Selector'
+import {
+  addressToCellId,
+  addressToSheetCellId,
+  sheetCellIdToAddress
+} from './utils'
 
 class Operations {
   constructor(
@@ -128,7 +134,10 @@ class Operations {
       b.localeCompare(a, undefined, { numeric: true })
     )) {
       const cellId = key as CellId
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+        sheetId,
+        cellId
+      )
       const { width, height } = sheetMetadata.mergedCells[cellId]
 
       if (
@@ -172,7 +181,10 @@ class Operations {
       a.localeCompare(b, undefined, { numeric: true })
     )) {
       const cellId = key as CellId
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+        sheetId,
+        cellId
+      )
       const { width, height } = sheetMetadata.mergedCells[cellId]
 
       if (
@@ -216,7 +228,10 @@ class Operations {
       b.localeCompare(a, undefined, { numeric: true })
     )) {
       const cellId = key as CellId
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+        sheetId,
+        cellId
+      )
       const { width, height } = sheetMetadata.mergedCells[cellId]
 
       if (
@@ -259,7 +274,10 @@ class Operations {
       a.localeCompare(b, undefined, { numeric: true })
     )) {
       const cellId = key as CellId
-      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+      const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+        sheetId,
+        cellId
+      )
       const { width, height } = sheetMetadata.mergedCells[cellId]
 
       if (
@@ -408,7 +426,7 @@ class Operations {
     )
     const mergedCell = sheetMetadata.mergedCells[mergedCellId]
 
-    const recentlyMergedCellIds: Record<CellId, CellId> = {}
+    const recentlyMergedCellIds: Record<SheetCellId, SheetCellId> = {}
 
     for (let index = 0; index < width; index++) {
       const col = targetLeftCorner.col + index
@@ -420,7 +438,7 @@ class Operations {
           row,
           col
         )
-        const targetCellId = targetSimpleCellAddress.toCellId()
+        const targetCellId = addressToSheetCellId(targetSimpleCellAddress)
         const targetMergedCellId =
           this._merger.associatedMergedCellAddressMap[targetCellId]
 
@@ -445,13 +463,17 @@ class Operations {
   }
 
   public restoreRemovedMergedCells(
+    sheetId: number,
     removedMergedCells: Record<CellId, IMergedCell>
   ) {
     if (removedMergedCells) {
       for (const key in removedMergedCells) {
         const cellId = key as CellId
         const { width, height } = removedMergedCells[cellId]
-        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(cellId)
+        const simpleCellAddress = SimpleCellAddress.cellIdToAddress(
+          sheetId,
+          cellId
+        )
 
         this.mergeCells(simpleCellAddress, width, height)
       }
@@ -541,16 +563,23 @@ class Operations {
         }
 
         if (this._merger.getIsCellPartOfMerge(newSimpleCellAddress)) {
-          const associatedMergedCellId = newSimpleCellAddress.toCellId()
-          const mergedCellId =
+          const associatedMergedCellId =
+            addressToSheetCellId(newSimpleCellAddress)
+          const mergedCellAddress = sheetCellIdToAddress(
             this._merger.associatedMergedCellAddressMap[associatedMergedCellId]
-          const mergedCellAddress =
-            SimpleCellAddress.cellIdToAddress(mergedCellId)
+          )
+          const mergedCellId = addressToCellId(mergedCellAddress)
 
           removedMergedCells[mergedCellId] =
             sheetMetadata.mergedCells[mergedCellId]
 
-          this.removeMergedCells(mergedCellAddress)
+          this.removeMergedCells(
+            new SimpleCellAddress(
+              mergedCellAddress.sheet,
+              mergedCellAddress.row,
+              mergedCellAddress.col
+            )
+          )
         }
       }
     }

@@ -1,3 +1,4 @@
+import { GenericDataRawCellContent } from '@tracktak/hyperformula/typings/CellContentParser'
 import { CellId } from './cells/cell/SimpleCellAddress'
 
 export type TextWrap = 'wrap'
@@ -44,3 +45,10 @@ export interface ISpreadsheetData {
   exportSpreadsheetName?: string
   showFormulas?: boolean
 }
+
+export interface IInputSheetData {
+  cells?: Record<CellId, GenericDataRawCellContent<ICellMetadata>>
+  sheetMetadata?: Partial<ISheetMetadata>
+}
+
+export type SerializedSheets = Record<string, IInputSheetData>

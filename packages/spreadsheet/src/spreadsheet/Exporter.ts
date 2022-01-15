@@ -14,6 +14,7 @@ import {
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
 import { ICellMetadata, ISheetMetadata } from './sheets/Data'
 import Merger from './sheets/Merger'
+import RowColAddress, { SheetRowColId } from './sheets/cells/cell/RowColAddress'
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions']
@@ -57,6 +58,10 @@ class Exporter {
       new SimpleCellAddress(sheetId, 0, 0)
     )
 
+    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+      sheetId
+    )
+
     const { cells } = this._spreadsheet.hyperformula.getSheetSerialized<
       ISheetMetadata,
       ICellMetadata
@@ -67,7 +72,11 @@ class Exporter {
 
       for (let col = 0; col < rowData.length; col++) {
         const cell = rowData[col]
+
+        if (!cell) continue
+
         const simpleCellAddress = new SimpleCellAddress(sheetId, row, col)
+        const cellId = simpleCellAddress.toCellId()
         const cellString = simpleCellAddress.addressToString()
         const isMergedCell = this._merger.getIsCellTopLeftMergedCell(
           simpleCellAddress
@@ -211,6 +220,8 @@ class Exporter {
         worksheet[cellString].t = type
 
         if (isMergedCell) {
+          const { width, height } = sheetMetadata.mergedCells[cellId]
+
           if (!worksheet['!merges']) {
             worksheet['!merges'] = []
           }
@@ -221,8 +232,8 @@ class Exporter {
               c: simpleCellAddress.col
             },
             e: {
-              r: simpleCellAddress.row + cell.metadata!.height!,
-              c: simpleCellAddress.col + cell.metadata!.width!
+              r: simpleCellAddress.row + height,
+              c: simpleCellAddress.col + width
             }
           })
         }
@@ -236,25 +247,25 @@ class Exporter {
     const colInfos: ColInfo[] = []
     const rowInfos: RowInfo[] = []
 
-    // Object.keys(colIds).forEach(key => {
-    //   const sheetColId = key as SheetRowColId
-    //   const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
-    //   const col = this._spreadsheet.data._spreadsheetData.cols![sheetColId]
+    Object.keys(sheetMetadata.colSizes).forEach(key => {
+      const sheetColId = key as SheetRowColId
+      const address = RowColAddress.sheetRowColIdToAddress(sheetColId)
+      const size = sheetMetadata.colSizes[address.rowCol]
 
-    //   colInfos[address.rowCol] = {
-    //     wpx: col.size
-    //   }
-    // })
+      colInfos[address.rowCol] = {
+        wpx: size
+      }
+    })
 
-    // Object.keys(rowIds).forEach(key => {
-    //   const sheetRowId = key as SheetRowColId
-    //   const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
-    //   const row = this._spreadsheet.data._spreadsheetData.rows![sheetRowId]
+    Object.keys(sheetMetadata.rowSizes).forEach(key => {
+      const sheetRowId = key as SheetRowColId
+      const address = RowColAddress.sheetRowColIdToAddress(sheetRowId)
+      const size = sheetMetadata.rowSizes[address.rowCol]
 
-    //   rowInfos[address.rowCol] = {
-    //     hpx: row.size
-    //   }
-    // })
+      rowInfos[address.rowCol] = {
+        hpx: size
+      }
+    })
 
     worksheet['!cols'] = colInfos
     worksheet['!rows'] = rowInfos

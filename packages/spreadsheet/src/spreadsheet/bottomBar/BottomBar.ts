@@ -147,13 +147,14 @@ class BottomBar {
   }
 
   private _createNewSheetButtonOnClick = () => {
-    this._spreadsheet.hyperformula.addSheet<ISheetMetadata>(
+    const sheetName = this._spreadsheet.hyperformula.addSheet<ISheetMetadata>(
       undefined,
       getDefaultSheetMetadata()
     )
-    this._spreadsheet.persistData()
-    this._spreadsheet.render()
+    const sheetId = this._spreadsheet.hyperformula.getSheetId(sheetName)!
 
+    this._spreadsheet.persistData()
+    this._spreadsheet.sheets.switchSheet(sheetId)
   }
 
   /**

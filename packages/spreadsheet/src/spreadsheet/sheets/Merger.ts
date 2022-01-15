@@ -1,13 +1,17 @@
 import { HyperFormula, SimpleCellAddress } from '@tracktak/hyperformula'
 import { ISheetMetadata } from './Data'
-import { addressToCellId, cellIdToAddress } from '../utils'
-import { CellId } from './cells/cell/SimpleCellAddress'
+import {
+  addressToCellId,
+  addressToSheetCellId,
+  cellIdToAddress
+} from '../utils'
+import { CellId, SheetCellId } from './cells/cell/SimpleCellAddress'
 
 class Merger {
   /**
    * The cells that make up a merged cell.
    */
-  associatedMergedCellAddressMap: Record<CellId, CellId> = {}
+  associatedMergedCellAddressMap: Record<SheetCellId, SheetCellId> = {}
 
   constructor(private _hyperformula: HyperFormula) {
     const sheetNames = this._hyperformula.getSheetNames()
@@ -21,7 +25,10 @@ class Merger {
       for (const key in sheetMetadata.mergedCells) {
         const cellId = key as CellId
 
-        this.setAssociatedMergedCells(cellIdToAddress(cellId))
+        this.setAssociatedMergedCells({
+          sheet: sheetId,
+          ...cellIdToAddress(cellId)
+        })
       }
     })
   }
@@ -59,9 +66,9 @@ class Merger {
     for (const address of this._iterateMergedCellWidthHeight(
       simpleCellAddress
     )) {
-      const cellId = addressToCellId(address)
+      const sheetCellId = addressToSheetCellId(address)
 
-      this.associatedMergedCellAddressMap[cellId] = addressToCellId(
+      this.associatedMergedCellAddressMap[sheetCellId] = addressToSheetCellId(
         simpleCellAddress
       )
     }
@@ -73,9 +80,9 @@ class Merger {
     for (const address of this._iterateMergedCellWidthHeight(
       topLeftSimpleCellAddress
     )) {
-      const cellId = addressToCellId(address)
+      const sheetCellId = addressToSheetCellId(address)
 
-      delete this.associatedMergedCellAddressMap[cellId]
+      delete this.associatedMergedCellAddressMap[sheetCellId]
     }
   }
 
@@ -95,10 +102,10 @@ class Merger {
   /**
    * @returns If the cell is part of the merged cell.
    */
-  public getIsCellPartOfMerge(simpleCellAddress: SimpleCellAddress) {
-    const cellId = addressToCellId(simpleCellAddress)
+  public getIsCellPartOfMerge(address: SimpleCellAddress) {
+    const sheetCellId = addressToSheetCellId(address)
 
-    return !!this.associatedMergedCellAddressMap[cellId]
+    return !!this.associatedMergedCellAddressMap[sheetCellId]
   }
 }
 

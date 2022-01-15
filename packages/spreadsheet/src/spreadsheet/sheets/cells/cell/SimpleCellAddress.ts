@@ -2,19 +2,18 @@ import { getColumnHeader } from '../../../utils'
 import Sheets from '../../Sheets'
 import Cell from './Cell'
 
-export type CellId = `${number}_${number}_${number}`
-
+export type CellId = `${number}_${number}`
+export type SheetCellId = `${number}_${number}_${number}`
 /**
  * @internal
  */
 class SimpleCellAddress {
   constructor(public sheet: number, public row: number, public col: number) {}
 
-  static cellIdToAddress(cellId: CellId) {
+  static cellIdToAddress(sheet: number, cellId: CellId) {
     const sections = cellId.split('_')
-    const sheet = parseInt(sections[0], 10)
-    const row = parseInt(sections[1], 10)
-    const col = parseInt(sections[2], 10)
+    const row = parseInt(sections[0], 10)
+    const col = parseInt(sections[1], 10)
 
     return new SimpleCellAddress(sheet, row, col)
   }
@@ -27,7 +26,7 @@ class SimpleCellAddress {
   }
 
   toCellId(): CellId {
-    return `${this.sheet}_${this.row}_${this.col}`
+    return `${this.row}_${this.col}`
   }
 
   getCellFromAddress<C extends Cell>(

@@ -1,5 +1,5 @@
 import Spreadsheet from '../../Spreadsheet'
-import SimpleCellAddress, { CellId } from './cell/SimpleCellAddress'
+import SimpleCellAddress, { SheetCellId } from './cell/SimpleCellAddress'
 import StyleableCell from './cell/StyleableCell'
 import Sheets from '../Sheets'
 import { Rect } from 'konva/lib/shapes/Rect'
@@ -10,6 +10,7 @@ import { isNil } from 'lodash'
 import Cell from './cell/Cell'
 import { ICellMetadata, ISheetMetadata } from '../Data'
 import Merger from '../Merger'
+import { addressToSheetCellId, sheetCellIdToAddress } from '../../utils'
 
 export interface IGroupedCells {
   main: Cell[]
@@ -19,7 +20,7 @@ export interface IGroupedCells {
 }
 
 class Cells {
-  cellsMap: Map<CellId, StyleableCell>
+  cellsMap: Map<SheetCellId, StyleableCell>
   private _spreadsheet: Spreadsheet
 
   constructor(private _sheets: Sheets, private _merger: Merger) {
@@ -234,9 +235,9 @@ class Cells {
       borderGroup
     )
 
-    const cellId = simpleCellAddress.toCellId()
+    const sheetCellId = addressToSheetCellId(simpleCellAddress)
 
-    this.cellsMap.set(cellId, styleableCell)
+    this.cellsMap.set(sheetCellId, styleableCell)
 
     // if (
     //   !this._spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
@@ -265,7 +266,7 @@ class Cells {
    * @internal
    */
   _updateCell(simpleCellAddress: SimpleCellAddress, isOnFrozenRowCol = false) {
-    const cellId = simpleCellAddress.toCellId()
+    const sheetCellId = addressToSheetCellId(simpleCellAddress)
 
     const sheetName =
       this._spreadsheet.hyperformula.getSheetName(simpleCellAddress.sheet) ?? ''
@@ -282,16 +283,25 @@ class Cells {
     if (!cell && !isOnFrozenRowCol) return
 
     if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
-      const mergedCellId = this._merger.associatedMergedCellAddressMap[cellId]
+      const mergedCellId = this._merger.associatedMergedCellAddressMap[
+        sheetCellId
+      ]
+      const mergedCellAddress = sheetCellIdToAddress(mergedCellId)
       const mergedCell = this.cellsMap.get(mergedCellId)
 
       if (!mergedCell) {
-        this._setStyleableCell(SimpleCellAddress.cellIdToAddress(mergedCellId))
+        this._setStyleableCell(
+          new SimpleCellAddress(
+            mergedCellAddress.sheet,
+            mergedCellAddress.row,
+            mergedCellAddress.col
+          )
+        )
       }
       return
     }
 
-    const cellExists = this.cellsMap.has(cellId)
+    const cellExists = this.cellsMap.has(sheetCellId)
 
     if (!cellExists) {
       this._setStyleableCell(simpleCellAddress)

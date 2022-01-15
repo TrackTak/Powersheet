@@ -68,7 +68,9 @@ class Cell {
 
   private _setIsMergedCell() {
     if (
-      !this._sheets._merger.getIsCellTopLeftMergedCell(this.simpleCellAddress)
+      !this._sheets._spreadsheet.merger.getIsCellTopLeftMergedCell(
+        this.simpleCellAddress
+      )
     )
       return
 
@@ -77,7 +79,7 @@ class Cell {
     let bottomRow = -Infinity
     let bottomCol = -Infinity
 
-    for (const address of this._sheets._merger._iterateMergedCellWidthHeight(
+    for (const address of this._sheets._spreadsheet.merger._iterateMergedCellWidthHeight(
       this.simpleCellAddress
     )) {
       bottomRow = Math.max(bottomRow, address.row)

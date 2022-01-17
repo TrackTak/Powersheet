@@ -4,11 +4,7 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import {
-  getDefaultSheetMetadata,
-  mapFromSheetsToSerializedSheets,
-  prefix
-} from './utils'
+import { mapFromSheetsToSerializedSheets, prefix } from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
@@ -58,7 +54,6 @@ class Spreadsheet {
   > = {}
   bottomBar?: BottomBar
   isSaving = false
-  sheetSizesSet = false
 
   constructor(params: ISpreadsheetConstructor) {
     this.options = defaultOptions
@@ -70,12 +65,6 @@ class Spreadsheet {
     this.functionHelper = params.functionHelper
     this.hyperformula = params.hyperformula
     this.spreadsheetData = {}
-
-    const sheetNames = this.hyperformula.getSheetNames()
-
-    if (sheetNames.length === 0) {
-      this.hyperformula.addSheet(undefined, getDefaultSheetMetadata())
-    }
 
     this.spreadsheetEl = document.createElement('div')
     this.spreadsheetEl.classList.add(
@@ -94,7 +83,6 @@ class Spreadsheet {
     this.setFunctionMetadata(powersheetFormulaMetadataJSON)
 
     this.merger = new Merger(this.hyperformula)
-
     this.sheets = new Sheets(this)
 
     this.toolbar?.initialize(this, this.merger)
@@ -128,7 +116,7 @@ class Spreadsheet {
   }
 
   private _onDOMContentLoaded = () => {
-    this.sheets._updateSize()
+    this.updateSize()
   }
 
   private setFunctionMetadata(
@@ -196,12 +184,7 @@ class Spreadsheet {
       ...data
     }
 
-    if (document.readyState !== 'loading' && !this.sheetSizesSet) {
-      this.sheetSizesSet = true
-      this.sheets._updateSize()
-    } else {
-      this.render()
-    }
+    this.render()
   }
 
   /**
@@ -242,7 +225,14 @@ class Spreadsheet {
       this.hyperformula.getAllSheetsSerialized()
     )
 
-    this.eventEmitter.emit('persistData', serializedSheets, done)
+    this.eventEmitter.emit(
+      'persistData',
+      {
+        data: this.spreadsheetData,
+        sheets: serializedSheets
+      },
+      done
+    )
   }
 
   /**
@@ -278,17 +268,22 @@ class Spreadsheet {
    * `rebuildAndRecalculate()` method which updates all the formulas again.
    */
   render(recalculateHyperformula = false) {
+    if (recalculateHyperformula) {
+      this.hyperformula.rebuildAndRecalculate().then(() => {
+        this.render()
+      })
+      return
+    }
+
     this.sheets._render()
     this.bottomBar?._render()
     this.toolbar?._render()
     this.functionHelper?._render()
     this.formulaBar?._render()
+  }
 
-    if (recalculateHyperformula) {
-      this.hyperformula.rebuildAndRecalculate().then(() => {
-        this.render()
-      })
-    }
+  updateSize() {
+    this.sheets._updateSize()
   }
 
   /**

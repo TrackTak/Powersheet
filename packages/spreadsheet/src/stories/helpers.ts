@@ -39,9 +39,16 @@ const eventLog = (event: string, ...args: any[]) => {
 }
 
 export const getHyperformulaInstance = (
-  sheets: SerializedSheets,
+  sheets?: SerializedSheets,
   config?: Partial<ConfigParams>
 ) => {
+  if (!sheets) {
+    sheets = {
+      'Default': {
+      }
+    }
+  }
+
   const hyperformula = HyperFormula.buildFromSheets(
     mapFromSerializedSheetsToSheets(sheets),
     {
@@ -50,18 +57,6 @@ export const getHyperformulaInstance = (
       licenseKey: 'gpl-v3'
     }
   )[0]
-
-  return hyperformula
-}
-
-export const getEmptyHyperformulaInstance = (
-  config?: Partial<ConfigParams>
-) => {
-  const hyperformula = HyperFormula.buildEmpty({
-    ...config,
-    chooseAddressMappingPolicy: new AlwaysSparse(),
-    licenseKey: 'gpl-v3'
-  })[0]
 
   return hyperformula
 }
@@ -165,8 +160,6 @@ export const buildSpreadsheetWithEverything = (
 export const Template: Story<IArgs> = args => {
   return buildSpreadsheetWithEverything(
     args,
-    args.sheets
-      ? getHyperformulaInstance(args.sheets)
-      : getEmptyHyperformulaInstance()
+    getHyperformulaInstance(args.sheets)
   ).spreadsheetEl
 }

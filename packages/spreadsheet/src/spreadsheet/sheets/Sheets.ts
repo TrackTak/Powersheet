@@ -443,9 +443,12 @@ class Sheets {
           this.selector.selectedCells.forEach(cell => {
             const simpleCellAddress = cell.simpleCellAddress
 
-            this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-              cellValue: null
-            })
+            this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+              simpleCellAddress,
+              {
+                cellValue: null
+              }
+            )
           })
         })
         this._spreadsheet.persistData()

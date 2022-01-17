@@ -59,6 +59,7 @@ import {
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
 import Merger from '../sheets/Merger'
+import { isPercent } from 'numfmt'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -791,12 +792,43 @@ class Toolbar {
             simpleCellAddress
           )
 
-          this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-            metadata: {
-              ...metadata,
-              [key]: value
+          let cellValue: number | string | undefined
+
+          if (key === 'textFormatPattern') {
+            const cellValueDetailedType = this._spreadsheet.hyperformula.getCellValueDetailedType(
+              simpleCellAddress
+            )
+
+            if (
+              cellValueDetailedType === 'NUMBER_PERCENT' &&
+              !isPercent(value)
+            ) {
+              cellValue = this._spreadsheet.hyperformula.getCellValue(
+                simpleCellAddress
+              ).cellValue as number
+            } else if (
+              (cellValueDetailedType === 'NUMBER_RAW' ||
+                cellValueDetailedType === 'NUMBER_CURRENCY') &&
+              isPercent(value)
+            ) {
+              cellValue =
+                (this._spreadsheet.hyperformula.getCellValue(simpleCellAddress)
+                  .cellValue as number) *
+                  100 +
+                '%'
             }
-          })
+          }
+
+          this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
+            simpleCellAddress,
+            {
+              cellValue,
+              metadata: {
+                ...metadata,
+                [key]: value
+              }
+            }
+          )
         })
       })
       this._spreadsheet.persistData()

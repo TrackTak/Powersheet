@@ -85,3 +85,4 @@ tsconfig.tsbuildinfo
 dist
 out*
 .parcel-cache
+storybook-static

@@ -12,11 +12,11 @@ import {
   setCaretToEndOfElement
 } from '../../utils'
 import { HyperFormula } from '@tracktak/hyperformula'
-import { isPercent } from 'numfmt'
 import { ICellMetadata } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
+import { isPercent } from 'numfmt'
 
 export interface ICurrentScroll {
   row: number
@@ -195,8 +195,11 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const { sheet, row, col } =
-      this._sheets.selector.selectedCell?.simpleCellAddress!
+    const {
+      sheet,
+      row,
+      col
+    } = this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -300,8 +303,9 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const { cellValue } =
-      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
+    const { cellValue } = this._spreadsheet.hyperformula.getCellSerialized(
+      simpleCellAddress
+    )
 
     this.setContentEditable(cellValue?.toString() ?? null)
 
@@ -391,25 +395,34 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      )
+    const {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
     let value = this.currentCellText ? this.currentCellText : null
+    const newMetadata = metadata ?? {}
 
     if (cellValue !== value) {
-      if (isPercent(value)) {
-        if (!isPercent(metadata?.textFormatPattern)) {
-          metadata!.textFormatPattern = '0.00%'
-        }
-      } else if (!isPercent(value) && isPercent(metadata?.textFormatPattern)) {
+      // Must format here because hyperformula types will be set from them
+      // and textFormatPattern will be changed based on it
+      if (
+        !isPercent(value) &&
+        isPercent(newMetadata.textFormatPattern) &&
+        !value?.startsWith('=')
+      ) {
         value += '%'
+      }
+
+      if (isPercent(value) && !isPercent(newMetadata.textFormatPattern)) {
+        newMetadata.textFormatPattern = '0.00%'
       }
 
       this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
         cellValue: value,
-        metadata
+        metadata: newMetadata
       })
       this._spreadsheet.persistData()
     }

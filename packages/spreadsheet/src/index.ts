@@ -12,6 +12,10 @@ import { functionHelperPrefix } from './spreadsheet/functionHelper/functionHelpe
 import FormulaBar from './spreadsheet/formulaBar/FormulaBar'
 import Exporter from './spreadsheet/Exporter'
 import BottomBar from './spreadsheet/bottomBar/BottomBar'
+import {
+  mapFromSerializedSheetsToSheets,
+  mapFromSheetsToSerializedSheets
+} from './spreadsheet/utils'
 
 export {
   IOptions,
@@ -27,5 +31,7 @@ export {
   FormulaBar,
   Exporter,
   BottomBar,
-  FunctionHelper
+  FunctionHelper,
+  mapFromSerializedSheetsToSheets,
+  mapFromSheetsToSerializedSheets
 }

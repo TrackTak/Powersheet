@@ -46,6 +46,11 @@ export interface ISpreadsheetData {
   showFormulas?: boolean
 }
 
+export interface IPersistedData extends ISpreadsheetData {
+  data: ISpreadsheetData
+  sheets?: SerializedSheets
+}
+
 export interface IInputSheetData {
   cells?: Record<CellId, GenericDataRawCellContent<ICellMetadata>>
   sheetMetadata?: Partial<ISheetMetadata>

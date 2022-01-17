@@ -23,7 +23,6 @@ import mockFinancialDataJSON from './mocks/mockFinancialData.json'
 import {
   buildOnlySpreadsheet,
   buildSpreadsheetWithEverything,
-  getEmptyHyperformulaInstance,
   getHyperformulaInstance,
   IArgs,
   Template
@@ -100,7 +99,7 @@ DifferentSizeCells.args = {
 const MobileTemplate: Story<IArgs> = args => {
   const spreadsheet = buildSpreadsheetWithEverything(
     args,
-    getEmptyHyperformulaInstance()
+    getHyperformulaInstance()
   )
 
   TouchEmulator.start()
@@ -121,7 +120,7 @@ const MillionRowsTemplate: Story<IArgs> = args => {
 
   return buildSpreadsheetWithEverything(
     newArgs,
-    getEmptyHyperformulaInstance({
+    getHyperformulaInstance(undefined, {
       maxRows: newArgs.options.row.amount
     })
   ).spreadsheetEl
@@ -162,7 +161,7 @@ CustomOptions.args = {
     'Custom Options': {
       cells: {
         '0_1': {
-          cellValue: '20000000',
+          cellValue: '200',
           metadata: {
             textFormatPattern: '$#,##0.##'
           }
@@ -194,8 +193,7 @@ CustomOptions.args = {
 }
 
 const OnlySpreadsheet: Story<IArgs> = args => {
-  return buildOnlySpreadsheet(args, getEmptyHyperformulaInstance())
-    .spreadsheetEl
+  return buildOnlySpreadsheet(args, getHyperformulaInstance()).spreadsheetEl
 }
 
 export const BareMinimumSpreadsheet = OnlySpreadsheet.bind({})
@@ -211,7 +209,7 @@ CustomSizeSpreadsheet.args = {
 }
 
 const MultipleSpreadsheetsTemplate: Story = () => {
-  const hyperformula = getEmptyHyperformulaInstance()
+  const hyperformula = getHyperformulaInstance()
 
   const firstSpreadsheetEl = buildSpreadsheetWithEverything(
     undefined,

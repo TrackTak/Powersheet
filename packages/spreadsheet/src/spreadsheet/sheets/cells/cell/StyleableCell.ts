@@ -3,7 +3,7 @@ import { Text } from 'konva/lib/shapes/Text'
 import Sheets from '../../Sheets'
 import FontStyle from './FontStyle'
 import TextDecoration from './TextDecoration'
-import { format } from 'numfmt'
+import { format, isPercent } from 'numfmt'
 import Cell from './Cell'
 import SimpleCellAddress from './SimpleCellAddress'
 import {
@@ -218,52 +218,68 @@ class StyleableCell extends Cell {
     }
   }
 
+  private _formatTextOnPattern(text: string, textFormatPattern: string) {
+    let newText = text
+
+    try {
+      newText = format(textFormatPattern, Number(newText))
+    } catch (e) {
+      newText = e as string
+    }
+
+    try {
+      newText = format(textFormatPattern, newText)
+    } catch (e) {
+      newText = e as string
+    }
+
+    return newText
+  }
+
   private _setCellTextValue(cellValueSerialized: undefined | RawCellContent, textFormatPattern: undefined | string) {
     const { cellValue }  =
       this._sheets._spreadsheet.hyperformula.getCellValue(
         this.simpleCellAddress
       )
+    const width = this.rect.width()
 
     let value: undefined | CellValue | RawCellContent = cellValue
 
     if (this._sheets._spreadsheet.spreadsheetData.showFormulas) {
-      value = cellValueSerialized
+      this.text.width(width)
+      this.text.show()
+      this.text.text(cellValueSerialized ?? '')
+
+      return
     }
 
     if (!isNil(value)) {
-      const width = this.rect.width()
-
       let text = value
 
-      const cellType = this._sheets._spreadsheet.hyperformula.getCellValueType(
+      const detailedCellType = this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
         this.simpleCellAddress
       )
 
-      if (cellType === CellValueType.ERROR) {
-        value = (value as DetailedCellError).value
-      } else if (
-        textFormatPattern &&
-        cellType !== CellValueType.STRING &&
-        cellType !== CellValueType.BOOLEAN &&
-        !this._sheets._spreadsheet.spreadsheetData.showFormulas
-      ) {
-        try {
-          text = format(textFormatPattern, Number(text))
-        } catch (e) {
-          text = e as string
-        }
-
-        try {
-          text = format(textFormatPattern, text)
-        } catch (e) {
-          text = e as string
-        }
-      }
-
-      this.text.text(text.toString())
       // Only set the width for text wrapping to work
       this.text.width(width)
       this.text.show()
+
+      if (detailedCellType === CellValueType.ERROR) {
+        text = (value as DetailedCellError).value
+
+        this.text.text(text)
+
+        return
+      }
+
+      if (
+        textFormatPattern &&
+        detailedCellType !== CellValueType.STRING &&
+        detailedCellType !== CellValueType.BOOLEAN
+      ) {
+        text = this._formatTextOnPattern(text, textFormatPattern)
+      }
+      this.text.text(text)
     } else {
       this.text.hide()
     }

@@ -123,29 +123,19 @@ class Spreadsheet {
     functionMetadata: Record<string, IFunctionHelperData>,
     blockedFunctionTypes: string[] = []
   ) {
-    const filteredFunctionMetadata = Object.values(functionMetadata)
-      .filter(
-        functionMetadata =>
-          !blockedFunctionTypes?.length ||
-          !blockedFunctionTypes?.includes(functionMetadata.type)
-      )
-      .reduce(
-        (all, current) => ({
-          ...all,
-          [current.header]: current
-        }),
-        {}
-      )
-    this.functionMetadata = filteredFunctionMetadata
+    this.functionMetadata = functionMetadata
     this.functionMetadataByGroup = groupBy(functionMetadata, 'type')
     this.unregisterBlockedFunctions(blockedFunctionTypes)
+    this.functionHelper?._update()
   }
 
   private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
     blockedFunctionTypes.forEach(functionType => {
       const functions = this.functionMetadataByGroup[functionType]
-      functions.forEach(func => {
+      delete this.functionMetadataByGroup[functionType]
+      functions.forEach((func: IFunctionHelperData) => {
         HyperFormula.unregisterFunction(func.header)
+        delete this.functionMetadata[func.header]
       })
     })
   }

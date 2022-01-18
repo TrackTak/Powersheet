@@ -41,6 +41,17 @@ class FunctionHelperList {
     }
   }
 
+  /**
+   * @internal
+   */
+  _update() {
+    updateFunctionList(
+      this.drawerContentEl,
+      this._handleItemClick,
+      this._spreadsheet.functionMetadataByGroup
+    )
+  }
+
   private _onSearch = (e: Event) => {
     const searchText = (e.target as HTMLInputElement).value
     updateFunctionList(

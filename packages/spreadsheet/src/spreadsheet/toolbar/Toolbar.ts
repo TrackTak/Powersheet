@@ -851,6 +851,8 @@ class Toolbar {
           }
         )
       })
+
+      this._spreadsheet.persistData()
     }
 
     switch (name) {

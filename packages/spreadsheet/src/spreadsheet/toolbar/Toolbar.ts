@@ -794,7 +794,14 @@ class Toolbar {
 
           let cellValue: number | string | undefined
 
-          if (key === 'textFormatPattern') {
+          const isCellPartOfArray = this._spreadsheet.hyperformula.isCellPartOfArray(
+            simpleCellAddress
+          )
+
+          // Cells that are part of an array cannot have their cell
+          // values changed otherwise they will cause SPILL errors.
+          // They should always be correctly formatted too.
+          if (key === 'textFormatPattern' && !isCellPartOfArray) {
             const cellValueDetailedType = this._spreadsheet.hyperformula.getCellValueDetailedType(
               simpleCellAddress
             )

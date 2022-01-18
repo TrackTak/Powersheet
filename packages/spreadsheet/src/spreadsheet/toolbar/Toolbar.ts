@@ -842,7 +842,9 @@ class Toolbar {
           cell.simpleCellAddress
         )
 
-        delete metadata![key]
+        if (metadata) {
+          delete metadata[key]
+        }
 
         this._spreadsheet.hyperformula.setCellContents<ICellMetadata>(
           cell.simpleCellAddress,

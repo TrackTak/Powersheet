@@ -5,6 +5,7 @@ import {
   createFormulaList,
   createWrapperContent
 } from './formulaHtmlElementHelpers'
+import { HyperFormula } from '@tracktak/hyperformula'
 
 type FormulaHelperClickHandler = (item: string) => void
 
@@ -17,10 +18,7 @@ class FormulaHelper {
   /**
    * @internal
    */
-  constructor(
-    private _formulas: string[],
-    private _onItemClick: FormulaHelperClickHandler
-  ) {
+  constructor(private _onItemClick: FormulaHelperClickHandler) {
     const { formulaHelperListContainerEl, formulaHelperEl } =
       createWrapperContent()
     this.formulaHelperListContainerEl = formulaHelperListContainerEl
@@ -60,7 +58,8 @@ class FormulaHelper {
    * @param text - Filters for formulas that start with this text string
    */
   show(text?: string) {
-    const formulas = this._formulas.filter(
+    const hfFormulas = HyperFormula.getRegisteredFunctionNames('enGB')
+    const formulas = hfFormulas.filter(
       formula => !text || formula.startsWith(text)
     )
     if (isEmpty(formulas)) {

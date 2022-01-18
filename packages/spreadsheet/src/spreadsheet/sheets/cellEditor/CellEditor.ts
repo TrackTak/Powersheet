@@ -11,7 +11,6 @@ import {
   saveCaretPosition,
   setCaretToEndOfElement
 } from '../../utils'
-import { HyperFormula } from '@tracktak/hyperformula'
 import { ICellMetadata } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
@@ -114,10 +113,7 @@ class CellEditor {
 
     this.cellEditorContainerEl.style.display = 'none'
 
-    this.formulaHelper = new FormulaHelper(
-      HyperFormula.getRegisteredFunctionNames('enGB'),
-      this._onItemClick
-    )
+    this.formulaHelper = new FormulaHelper(this._onItemClick)
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
     this.functionSummaryHelper = new FunctionSummaryHelper(this._spreadsheet)
     this.cellEditorContainerEl.appendChild(
@@ -195,11 +191,8 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const {
-      sheet,
-      row,
-      col
-    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+    const { sheet, row, col } =
+      this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -303,9 +296,8 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const { cellValue } = this._spreadsheet.hyperformula.getCellSerialized(
-      simpleCellAddress
-    )
+    const { cellValue } =
+      this._spreadsheet.hyperformula.getCellSerialized(simpleCellAddress)
 
     this.setContentEditable(cellValue?.toString() ?? null)
 
@@ -395,12 +387,10 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let value = this.currentCellText ? this.currentCellText : null
     const newMetadata = metadata ?? {}

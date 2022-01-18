@@ -10,7 +10,7 @@ import {
 
 const customFunctionMetadata = {
   FIN: {
-    header: 'FINANCIAL - FIN',
+    header: 'FIN',
     headerDescription:
       'Fetches current or historical securities information from Tracktak Finance.',
     codeSyntaxUsage: [

@@ -95,6 +95,13 @@ class FunctionHelper {
   /**
    * @internal
    */
+  _update() {
+    this._functionHelperList?._update()
+  }
+
+  /**
+   * @internal
+   */
   _render() {
     if (this.drawer) {
       this.drawer.open = this._spreadsheet.options.showFunctionHelper

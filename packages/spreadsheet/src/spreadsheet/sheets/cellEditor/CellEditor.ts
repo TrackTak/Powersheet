@@ -132,7 +132,7 @@ class CellEditor {
   }
 
   private _onItemClick = (suggestion: string) => {
-    const value = `=${suggestion}()`
+    const value = `=${suggestion}(`
 
     this.setContentEditable(value)
 
@@ -140,6 +140,9 @@ class CellEditor {
     this.formulaHelper?.hide()
 
     setCaretToEndOfElement(this.cellEditorEl)
+
+    this.functionSummaryHelper.show(suggestion)
+    this._updateFunctionSummaryHelperHighlights()
   }
 
   private _onInput = (e: Event) => {
@@ -570,6 +573,7 @@ class CellEditor {
     this.currentCellText = null
     this.cellEditorEl.textContent = null
     this._sheets.cellHighlighter.destroyHighlightedArea()
+    this.functionSummaryHelper.hide()
   }
 
   /**

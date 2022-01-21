@@ -16,7 +16,6 @@ import {
 import {
   CellValue,
   CellValueDetailedType,
-  CellValueType,
   DetailedCellError,
   RawCellContent
 } from '@tracktak/hyperformula'
@@ -248,7 +247,7 @@ class StyleableCell extends Cell {
     if (this._sheets._spreadsheet.spreadsheetData.showFormulas) {
       this.text.width(width)
       this.text.show()
-      this.text.text(cellValueSerialized ?? '')
+      this.text.text(cellValueSerialized?.toString() ?? '')
 
       return
     }
@@ -264,7 +263,7 @@ class StyleableCell extends Cell {
       this.text.width(width)
       this.text.show()
 
-      if (detailedCellType === CellValueType.ERROR) {
+      if (detailedCellType === CellValueDetailedType.ERROR) {
         text = (value as DetailedCellError).value
 
         this.text.text(text)
@@ -274,12 +273,26 @@ class StyleableCell extends Cell {
 
       if (
         textFormatPattern &&
-        detailedCellType !== CellValueType.STRING &&
-        detailedCellType !== CellValueType.BOOLEAN
+        detailedCellType !== CellValueDetailedType.STRING &&
+        detailedCellType !== CellValueDetailedType.BOOLEAN
       ) {
-        text = this._formatTextOnPattern(text, textFormatPattern)
+        text = this._formatTextOnPattern(text.toString(), textFormatPattern)
       }
-      this.text.text(text)
+
+      if (detailedCellType === CellValueDetailedType.NUMBER_PERCENT && !isPercent(text)) {
+        text = ((text as number) * 100).toFixed(2) + "%"
+      }
+
+      if (detailedCellType === CellValueDetailedType.NUMBER_CURRENCY && !isPercent(textFormatPattern)) {
+        const currencySymbol = this._sheets._spreadsheet.hyperformula.getCellValueFormat(this.simpleCellAddress)!
+        const currencySymbols = this._sheets._spreadsheet.hyperformula.getConfig().currencySymbol
+
+        if (currencySymbols.every(symbol => textFormatPattern?.charAt(0) !== symbol)) {
+          text = currencySymbol + text
+        }
+      }
+
+      this.text.text(text.toString())
     } else {
       this.text.hide()
     }

@@ -3,7 +3,7 @@ import {
   ErrorType,
   FunctionPlugin,
   InvalidArgumentsError,
-  SimpleRangeValue,
+  SimpleRangeValue
 } from '@tracktak/hyperformula'
 // @ts-ignore
 import { ArraySize } from '@tracktak/hyperformula/es/ArraySize'

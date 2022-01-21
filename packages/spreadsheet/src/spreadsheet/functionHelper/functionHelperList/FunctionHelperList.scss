@@ -44,6 +44,7 @@
     justify-content: space-evenly;
     flex-direction: column;
     position: relative;
+    overflow-wrap: break-word;
   }
 
   &-description {
@@ -61,6 +62,10 @@
     .powersheet-function-helper-list-function-item-icon {
       transform: rotate(180deg);
     }
+  }
+
+  &-function-item-name {
+    overflow-wrap: break-word;
   }
 
   &-function-item-parameter {

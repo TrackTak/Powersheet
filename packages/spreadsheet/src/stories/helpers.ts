@@ -44,8 +44,7 @@ export const getHyperformulaInstance = (
 ) => {
   if (!sheets) {
     sheets = {
-      'Default': {
-      }
+      Default: {}
     }
   }
 

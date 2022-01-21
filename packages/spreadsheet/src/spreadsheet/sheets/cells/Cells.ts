@@ -198,12 +198,10 @@ class Cells {
    * @internal
    */
   _render() {
-    const {
-      frozenRow,
-      frozenCol
-    } = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-      this._sheets.activeSheetId
-    )
+    const { frozenRow, frozenCol } =
+      this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+        this._sheets.activeSheetId
+      )
 
     this._updateFrozenCells(frozenRow, frozenCol)
 
@@ -239,27 +237,25 @@ class Cells {
 
     this.cellsMap.set(sheetCellId, styleableCell)
 
-    // if (
-    //   !this._spreadsheet.sheets.merger.getIsCellPartOfMerge(simpleCellAddress)
-    // ) {
-    //   const height = this._sheets.rows.getSize(simpleCellAddress.row)
-    //   const cellHeight = Math.max(
-    //     styleableCell.rect.height(),
-    //     styleableCell.text.height()
-    //   )
+    if (!this._spreadsheet.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+      const { metadata } =
+        this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+          simpleCellAddress
+        )
+      const currentRowHeight = this._sheets.rows.getSize(simpleCellAddress.row)
+      const cellTextHeight = styleableCell.text.height()
+      const isTextWrapped = metadata?.textWrap === 'wrap'
 
-    //   if (cellHeight > height) {
-    //     this._spreadsheet.data.setRowCol(
-    //       'rows',
-    //       new RowColAddress(this._sheets.activeSheetId, simpleCellAddress.row),
-    //       {
-    //         size: cellHeight
-    //       }
-    //     )
+      if (isTextWrapped && cellTextHeight > currentRowHeight) {
+        this._spreadsheet.operations.setRowSize(
+          this._sheets.activeSheetId,
+          simpleCellAddress.row,
+          cellTextHeight
+        )
 
-    //     this._spreadsheet.render()
-    //   }
-    // }
+        this._spreadsheet.render()
+      }
+    }
   }
 
   /**
@@ -275,17 +271,17 @@ class Cells {
       return
     }
 
-    const cell = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const cell =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     // We always render frozenRowCol cells so they hide the cells beneath it
     if (!cell && !isOnFrozenRowCol) return
 
     if (this._merger.getIsCellPartOfMerge(simpleCellAddress)) {
-      const mergedCellId = this._merger.associatedMergedCellAddressMap[
-        sheetCellId
-      ]
+      const mergedCellId =
+        this._merger.associatedMergedCellAddressMap[sheetCellId]
       const mergedCellAddress = sheetCellIdToAddress(mergedCellId)
       const mergedCell = this.cellsMap.get(mergedCellId)
 

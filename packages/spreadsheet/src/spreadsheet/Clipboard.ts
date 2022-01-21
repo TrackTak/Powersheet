@@ -33,23 +33,12 @@ class Clipboard {
   }
 
   private async _writeToClipboard(source: HFSimpleCellRange) {
-    const rangeData = this._spreadsheet.hyperformula.getRangeSerialized(source)
+    const dataToCopy = this._serializeCopiedValues(
+      this._spreadsheet.hyperformula.getRangeValues(source)
+    )
+    this._serializedCopiedValues = dataToCopy
 
-    let clipboardText = ''
-
-    rangeData.forEach((rowData, rowIndex) => {
-      rowData.forEach((value, columnIndex) => {
-        clipboardText += value?.cellValue ?? ''
-        if (columnIndex !== rowData.length - 1) {
-          clipboardText += COLUMN_DELIMITER
-        }
-      })
-      if (rowIndex !== rangeData.length - 1) {
-        clipboardText += ROW_DELIMITER
-      }
-    })
-
-    await navigator.clipboard.writeText(clipboardText)
+    await navigator.clipboard.writeText(dataToCopy)
   }
 
   private _getCellRangeForSelection(
@@ -80,11 +69,10 @@ class Clipboard {
       selectedCells.forEach(cell => {
         if (this._merger.getIsCellTopLeftMergedCell(cell.simpleCellAddress)) {
           const cellId = cell.simpleCellAddress.toCellId()
-          const {
-            mergedCells
-          } = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-            cell.simpleCellAddress.sheet
-          )
+          const { mergedCells } =
+            this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+              cell.simpleCellAddress.sheet
+            )
 
           const mergedCell = mergedCells[cellId]
 
@@ -152,12 +140,9 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    const cellValues = this._spreadsheet.hyperformula.cut(source)
-    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
-
-    this.isCut = true
-
+    this._spreadsheet.hyperformula.cut(source)
     await this._writeToClipboard(source)
+    this.isCut = true
   }
 
   async copy() {
@@ -173,8 +158,7 @@ class Clipboard {
       end: cellRange.bottomRightSimpleCellAddress
     }
 
-    const cellValues = this._spreadsheet.hyperformula.copy(source)
-    this._serializedCopiedValues = this._serializeCopiedValues(cellValues)
+    this._spreadsheet.hyperformula.copy(source)
 
     await this._writeToClipboard(source)
   }
@@ -225,17 +209,18 @@ class Clipboard {
         })
       } else {
         if (!this.isCut) {
-          const rangeData = this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
-            {
-              start: sourceRange.topLeftSimpleCellAddress,
-              end: sourceRange.bottomRightSimpleCellAddress
-            },
-            {
-              start: targetRange.topLeftSimpleCellAddress,
-              end: targetRange.bottomRightSimpleCellAddress
-            },
-            true
-          )
+          const rangeData =
+            this._spreadsheet.hyperformula.getFillRangeData<ICellMetadata>(
+              {
+                start: sourceRange.topLeftSimpleCellAddress,
+                end: sourceRange.bottomRightSimpleCellAddress
+              },
+              {
+                start: targetRange.topLeftSimpleCellAddress,
+                end: targetRange.bottomRightSimpleCellAddress
+              },
+              true
+            )
 
           rangeData.forEach((rowData, ri) => {
             rowData.forEach((cell, ci) => {
@@ -264,9 +249,10 @@ class Clipboard {
               )
 
               const mergedCellId = sourceSimpleCellAddress.toCellId()
-              const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-                sourceSimpleCellAddress.sheet
-              )
+              const sheetMetadata =
+                this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+                  sourceSimpleCellAddress.sheet
+                )
 
               const mergedCell = sheetMetadata.mergedCells[mergedCellId]
 
@@ -274,11 +260,12 @@ class Clipboard {
                 const { width, height } = mergedCell
 
                 if (width !== undefined && height !== undefined) {
-                  const removedMergedCells = this._spreadsheet.operations.mergeCells(
-                    targetSimpleCellAddress,
-                    width,
-                    height
-                  )
+                  const removedMergedCells =
+                    this._spreadsheet.operations.mergeCells(
+                      targetSimpleCellAddress,
+                      width,
+                      height
+                    )
 
                   const command = new MergeCellsCommand(
                     targetSimpleCellAddress,

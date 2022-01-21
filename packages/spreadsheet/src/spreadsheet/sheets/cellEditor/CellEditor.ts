@@ -17,6 +17,7 @@ import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/Fu
 import { IToken } from 'chevrotain'
 import { isPercent } from 'numfmt'
 import { RawCellContent } from '@tracktak/hyperformula'
+import { defaultOptions } from '../../options'
 
 export interface ICurrentScroll {
   row: number
@@ -416,30 +417,32 @@ class CellEditor {
 
     const newMetadata = metadata ?? {}
 
-    if (cellValue !== value) {
-      if (value !== null) {
-        if (
-          Number.isFinite(parseFloat(value)) &&
-          isPercent(newMetadata.textFormatPattern)
-        ) {
-          value = parseFloat((parseFloat(value) / 100).toFixed(2))
-        } else if (isPercent(value)) {
-          // We don't want hyperformula formatting it as a percentage if
-          // the user typed in a percent because it will divide by 100 internally
-          value = parseFloat((parseFloat(value.slice(0, -1)) / 100).toFixed(2))
-
-          if (!isPercent(newMetadata.textFormatPattern)) {
-            newMetadata.textFormatPattern = '0.00%'
-          }
-        }
-      }
-
-      this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
-        cellValue: value,
-        metadata: newMetadata
-      })
-      this._spreadsheet.persistData()
+    if (cellValue === value) {
+      return
     }
+
+    if (
+      value !== null &&
+      Number.isFinite(parseFloat(value)) &&
+      isPercent(newMetadata.textFormatPattern)
+    ) {
+      value = parseFloat((parseFloat(value) / 100).toFixed(2))
+    } else if (value !== null && isPercent(value)) {
+      // We don't want hyperformula formatting it as a percentage if
+      // the user typed in a percent because it will divide by 100 internally
+      value = parseFloat((parseFloat(value.slice(0, -1)) / 100).toFixed(2))
+
+      if (!isPercent(newMetadata.textFormatPattern)) {
+        newMetadata.textFormatPattern =
+          defaultOptions.textPatternFormats.percent
+      }
+    }
+
+    this._spreadsheet.hyperformula.setCellContents(simpleCellAddress, {
+      cellValue: value,
+      metadata: newMetadata
+    })
+    this._spreadsheet.persistData()
   }
 
   /**

@@ -1,4 +1,4 @@
-import { DelegateInstance, delegate } from 'tippy.js'
+import tippy, { DelegateInstance, delegate } from 'tippy.js'
 import './FunctionSummaryHelper.scss'
 import {
   createCodeText,
@@ -19,6 +19,7 @@ import { subsequentPlaceholderWhitelist } from '../../sheets/cellEditor/CellEdit
 import { IToken } from 'chevrotain'
 import { last } from 'lodash'
 import { getCaretPosition } from '../../utils'
+import Sheets from '../../sheets/Sheets'
 
 class FunctionSummaryHelper {
   functionSummaryHelperEl: HTMLDivElement
@@ -32,18 +33,20 @@ class FunctionSummaryHelper {
   /**
    * @internal
    */
-  constructor(private _spreadsheet: Spreadsheet) {
+  constructor(private _spreadsheet: Spreadsheet, private _sheets: Sheets) {
     const { functionSummaryHelperContainerEl, functionSummaryHelperEl } =
       createWrapperContent()
     this.functionSummaryHelperListContainerEl = functionSummaryHelperContainerEl
     this.functionSummaryHelperEl = functionSummaryHelperEl
-    this.helper = delegate(functionSummaryHelperEl, {
-      target: `${functionSummaryHelperPrefix}`,
-      arrow: false,
-      placement: 'bottom',
-      theme: 'formula-helper',
+    this.helper = tippy(functionSummaryHelperEl, {
+      placement: 'top-start',
+      offset: [0, 0],
       interactive: true,
-      hideOnClick: false
+      arrow: false,
+      theme: 'formula-helper',
+      hideOnClick: false,
+      getReferenceClientRect: () =>
+        this._sheets._getTippyCellReferenceClientRect(this.helper, true)
     })
     this.parameterSyntaxElements = []
   }
@@ -140,7 +143,9 @@ class FunctionSummaryHelper {
     currentCaretPosition: number
   ) {
     const eligibleTokensToHighlight = tokens.filter(token =>
-      subsequentPlaceholderWhitelist.every(ch => !token.tokenType.name.includes(ch))
+      subsequentPlaceholderWhitelist.every(
+        ch => !token.tokenType.name.includes(ch)
+      )
     )
     const tokenBeforeInfiniteParameterPosition =
       eligibleTokensToHighlight[this.parameterSyntaxElements.length - 1]

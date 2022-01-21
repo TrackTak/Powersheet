@@ -1,11 +1,11 @@
-import { DelegateInstance, delegate } from 'tippy.js'
-import styles from './FormulaHelper.module.scss'
+import tippy, { DelegateInstance } from 'tippy.js'
 import isEmpty from 'lodash/isEmpty'
 import {
   createFormulaList,
   createWrapperContent
 } from './formulaHtmlElementHelpers'
 import { HyperFormula } from '@tracktak/hyperformula'
+import Sheets from '../sheets/Sheets'
 
 type FormulaHelperClickHandler = (item: string) => void
 
@@ -18,17 +18,24 @@ class FormulaHelper {
   /**
    * @internal
    */
-  constructor(private _onItemClick: FormulaHelperClickHandler) {
+  constructor(
+    private _onItemClick: FormulaHelperClickHandler,
+    private _sheets: Sheets
+  ) {
     const { formulaHelperListContainerEl, formulaHelperEl } =
       createWrapperContent()
     this.formulaHelperListContainerEl = formulaHelperListContainerEl
     this.formulaHelperEl = formulaHelperEl
-    this.helper = delegate(formulaHelperEl, {
-      target: styles.formulaHelper,
+    this.helper = tippy(formulaHelperEl, {
+      placement: 'top-start',
+      offset: [0, 0],
+      interactive: true,
       arrow: false,
-      placement: 'bottom',
       theme: 'formula-helper',
-      interactive: true
+      trigger: 'manual',
+      showOnCreate: false,
+      getReferenceClientRect: () =>
+        this._sheets._getTippyCellReferenceClientRect(this.helper, true)
     })
   }
 

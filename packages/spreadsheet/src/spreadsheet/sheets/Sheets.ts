@@ -385,12 +385,10 @@ class Sheets {
       selectedFirstcell.simpleCellAddress
     )
 
-    let {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
-      simpleCellAddress
-    )
+    let { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
+        simpleCellAddress
+      )
 
     const comment = metadata?.comment
 
@@ -479,11 +477,10 @@ class Sheets {
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const {
-            cellValue
-          } = this._spreadsheet.hyperformula.getCellSerialized(
-            selectedCell.simpleCellAddress
-          )
+          const { cellValue } =
+            this._spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
           if (cellValue) {
             this.cellEditor.clear()
@@ -579,9 +576,8 @@ class Sheets {
    * @internal
    */
   _getSizeFromCells(cells: Cell[]) {
-    const minMaxRangeSimpleCellAddress = this._getMinMaxRangeSimpleCellAddress(
-      cells
-    )
+    const minMaxRangeSimpleCellAddress =
+      this._getMinMaxRangeSimpleCellAddress(cells)
 
     let height = 0
     let width = 0
@@ -719,37 +715,47 @@ class Sheets {
   /**
    * @internal
    */
-  _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
-    const {
-      top,
-      left,
-      right,
-      bottom,
-      x,
-      y,
-      width,
-      height,
-      toJSON
-    } = this.sheetEl.getBoundingClientRect()
-    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
+  _getTippyCellReferenceClientRect(
+    tippyContainer: Instance<Props>,
+    yAxisStickied?: boolean
+  ) {
+    const { top, left, right, bottom, x, y, width, height, toJSON } =
+      this.sheetEl.getBoundingClientRect()
+    const selectedCellRect =
+      this.selector.selectedCell!._getClientRectWithoutStroke()
 
     const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
+    const rowScrollBarWidth =
+      this.rows.scrollBar.scrollBarEl.getBoundingClientRect().width
 
-    let xPosition = left + selectedCellRect.x + selectedCellRect.width
-    let yPosition = top + selectedCellRect.y
+    const colScrollBarHeight =
+      this.cols.scrollBar.scrollBarEl.getBoundingClientRect().height
 
-    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
-      .width
+    let xPosition
+    let yPosition
 
-    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
-      .height
+    if (yAxisStickied) {
+      xPosition = left + selectedCellRect.x
+      yPosition =
+        top +
+        selectedCellRect.y +
+        selectedCellRect.height +
+        tippyBox.offsetHeight
 
-    if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
-      xPosition = left + selectedCellRect.x - tippyBox.offsetWidth
-    }
+      if (yPosition - selectedCellRect.height > height) {
+        yPosition = top + selectedCellRect.y
+      }
+    } else {
+      xPosition = left + selectedCellRect.x + selectedCellRect.width
+      yPosition = top + selectedCellRect.y
 
-    if (yPosition + tippyBox.offsetHeight + colScrollBarHeight > height) {
-      yPosition = top + selectedCellRect.y - tippyBox.offsetHeight
+      if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
+        xPosition = left + selectedCellRect.x - tippyBox.offsetWidth
+      }
+
+      if (yPosition + tippyBox.offsetHeight + colScrollBarHeight > height) {
+        yPosition = top + selectedCellRect.y - tippyBox.offsetHeight
+      }
     }
 
     return {

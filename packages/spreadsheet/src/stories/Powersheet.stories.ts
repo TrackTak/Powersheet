@@ -246,10 +246,14 @@ export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({})
 AllCurrencySymbols.args = {
   options: {
     textPatternFormats: {
-      dynamicCurrency: `=['All Currency Symbols'!B6]#,##0.##`,
       usCurrency: '$#,##0.##',
       israeliCurrency: '₪#,##0.##',
       gbpCurrency: '£#,##0.##'
+    }
+  },
+  data: {
+    textPatternFormats: {
+      dynamicCurrency: `=['All Currency Symbols'!B6]#,##0.##`
     }
   },
   sheets: {

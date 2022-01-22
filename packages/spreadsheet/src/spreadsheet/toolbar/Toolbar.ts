@@ -291,7 +291,7 @@ class Toolbar {
     const {
       dropdownContent: textFormatDropdownContent,
       textFormats
-    } = createTextFormatContent(this._spreadsheet.options.textPatternFormats)
+    } = createTextFormatContent(this._spreadsheet._getTextFormatPatterns())
 
     this.dropdownMap.textFormatPattern = textFormatDropdownContent
 
@@ -503,8 +503,10 @@ class Toolbar {
 
     let textFormat = 'plainText'
 
-    Object.keys(this._spreadsheet.options.textPatternFormats).forEach(key => {
-      const value = this._spreadsheet.options.textPatternFormats[key]
+    const textFormatPatterns = this._spreadsheet._getTextFormatPatterns()
+
+    Object.keys(textFormatPatterns).forEach(key => {
+      const value = textFormatPatterns[key]
 
       if (metadata?.textFormatPattern === value) {
         textFormat = key
@@ -888,7 +890,7 @@ class Toolbar {
 
         setStyle<string>(
           'textFormatPattern',
-          this._spreadsheet.options.textPatternFormats[format]
+          this._spreadsheet._getTextFormatPatterns()[format]
         )
         break
       }

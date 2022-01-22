@@ -141,6 +141,17 @@ class Spreadsheet {
   }
 
   /**
+   *
+   * @internal
+   */
+  _getTextFormatPatterns() {
+    return {
+      ...this.options.textPatternFormats,
+      ...this.spreadsheetData.textPatternFormats
+    }
+  }
+
+  /**
    * Unregister's event listeners and removes all DOM elements for
    * the Spreadsheet and all it's children
    *

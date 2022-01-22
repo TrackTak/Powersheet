@@ -141,7 +141,7 @@ $iconSize: 18px;
     left: -5 * $iconSize;
     top: -1 * $iconSize;
   }
-  &.functions {
+  &.functionHelper {
     left: -6 * $iconSize;
     top: -1 * $iconSize;
   }
@@ -256,10 +256,6 @@ $iconSize: 18px;
   }
   &.autosave {
     left: -9 * $iconSize;
-    top: -3 * $iconSize;
-  }
-  &.functionHelper {
-    left: -10 * $iconSize;
     top: -3 * $iconSize;
   }
 }

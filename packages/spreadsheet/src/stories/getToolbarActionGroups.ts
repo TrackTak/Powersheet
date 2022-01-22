@@ -41,7 +41,6 @@ const getToolbarElementIcons = (toolbar: Toolbar): IToolbarActionGroups[] => {
     {
       elements: [
         toolbar.iconElementsMap.freeze.buttonContainer,
-        toolbar.iconElementsMap.functions.buttonContainer,
         toolbar.iconElementsMap.formula.buttonContainer
       ]
     },

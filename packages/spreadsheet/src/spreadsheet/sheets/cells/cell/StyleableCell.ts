@@ -17,10 +17,18 @@ import {
   CellValue,
   CellValueDetailedType,
   DetailedCellError,
+  lexerConfig,
   RawCellContent
 } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
+import { IToken } from 'chevrotain'
+
+export interface ITextFormatPatternCellReference {
+  startOffset: number
+  endOffset: number
+  cellValue: string
+}
 
 /**
  * @internal
@@ -235,6 +243,55 @@ class StyleableCell extends Cell {
     return newText
   }
 
+  private _parseDynamicTextFormatPattern(textFormatPattern: string) {
+    if (textFormatPattern.charAt(0) !== "=") {
+      return textFormatPattern
+    }
+
+    // @ts-ignore
+    const lexer = this._sheets._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(textFormatPattern).tokens as IToken[]
+    const cellReferenceValues: ITextFormatPatternCellReference[] = []
+
+    tokens.forEach((token) => {
+      if (token.tokenType.name === lexerConfig.CellReference.name) {
+        const address = this._sheets._spreadsheet.hyperformula.simpleCellAddressFromString(token.image, this._sheets.activeSheetId)
+
+        if (address) {
+          const cellValue = this._sheets._spreadsheet.hyperformula.getCellValue(address)
+
+          if (cellValue && !Array.isArray(cellValue) && !(cellValue instanceof DetailedCellError) && token.endOffset) {
+            // -1 & +1 offset to remove square braces
+            cellReferenceValues.push({
+              cellValue: cellValue.cellValue as string,
+              startOffset: token.startOffset - 1,
+              endOffset: token.endOffset + 1
+            })
+          }
+        }
+      }
+    })
+
+    const initialCharsLength = textFormatPattern.length
+    let offsetDifference = 0
+
+    cellReferenceValues.forEach(({ cellValue, startOffset, endOffset }) => {
+      const chars = textFormatPattern.split("")
+      const start = startOffset + offsetDifference
+      const deleteCount = endOffset + offsetDifference - start + 1
+
+      chars.splice(start, deleteCount, cellValue)
+
+      offsetDifference += chars.length - initialCharsLength
+
+      textFormatPattern = chars.join("")
+    })
+
+    textFormatPattern = textFormatPattern.slice(1)
+
+    return textFormatPattern
+  }
+
   private _setCellTextValue(cellValueSerialized: undefined | RawCellContent, textFormatPattern: undefined | string) {
     const { cellValue }  =
       this._sheets._spreadsheet.hyperformula.getCellValue(
@@ -276,6 +333,8 @@ class StyleableCell extends Cell {
         detailedCellType !== CellValueDetailedType.STRING &&
         detailedCellType !== CellValueDetailedType.BOOLEAN
       ) {
+        textFormatPattern = this._parseDynamicTextFormatPattern(textFormatPattern)
+
         text = this._formatTextOnPattern(text.toString(), textFormatPattern)
       }
 

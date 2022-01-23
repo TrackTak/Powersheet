@@ -7,6 +7,7 @@ import Spreadsheet from '../../Spreadsheet'
 import Cell from '../cells/cell/Cell'
 import {
   getCaretPosition,
+  isStringAFormula,
   prefix,
   saveCaretPosition,
   setCaretToEndOfElement
@@ -162,7 +163,7 @@ class CellEditor {
 
     restoreCaretPosition()
 
-    const isFormulaInput = textContent?.startsWith('=')
+    const isFormulaInput = isStringAFormula(textContent)
 
     if (isFormulaInput) {
       let functionName = textContent?.slice(1) ?? ''
@@ -536,7 +537,8 @@ class CellEditor {
     this.currentCellText = text
 
     if (text) {
-      const isFormula = this.currentCellText?.startsWith('=')
+      const isFormula = isStringAFormula(this.currentCellText)
+
       if (isFormula) {
         this.cellEditorEl.classList.add(styles.formulaInput)
         this._spreadsheet.formulaBar?.editableContent.classList.add(

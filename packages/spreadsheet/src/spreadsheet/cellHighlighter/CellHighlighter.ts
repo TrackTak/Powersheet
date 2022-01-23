@@ -4,7 +4,7 @@ import {
   RangeSeparator
   // @ts-ignore
 } from '@tracktak/hyperformula/es/parser/LexerConfig'
-import { prefix } from '../utils'
+import { isStringAFormula, prefix } from '../utils'
 import SimpleCellAddress from '../sheets/cells/cell/SimpleCellAddress'
 import Spreadsheet from '../Spreadsheet'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
@@ -275,7 +275,7 @@ class CellHighlighter {
   }
 
   getStyledTokens(text: string) {
-    const isFormula = text?.startsWith('=')
+    const isFormula = isStringAFormula(text)
 
     if (!isFormula) {
       const span = document.createElement('span')

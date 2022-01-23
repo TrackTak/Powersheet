@@ -28,17 +28,12 @@ button.fontSizeButton {
   font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
 }
 
-.functions {
-  max-height: 400px;
-}
-
 .autosaveText {
   margin-left: 7px;
 }
 
 .textFormats,
 .fontSizes,
-.functions,
 .borders {
   flex-direction: column;
 }

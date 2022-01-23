@@ -8,7 +8,6 @@ import {
   createColorBar,
   createColorPickerContent,
   createFontSizeContent,
-  createFunctionDropdownContent,
   createHorizontalTextAlignContent,
   createTextFormatContent,
   createVerticalTextAlignContent,
@@ -45,7 +44,7 @@ import {
 } from '../sheets/Data'
 import RangeSimpleCellAddress from '../sheets/cells/cell/RangeSimpleCellAddress'
 import SelectedCell from '../sheets/cells/cell/SelectedCell'
-import { ColumnRowIndex, HyperFormula } from '@tracktak/hyperformula'
+import { ColumnRowIndex } from '@tracktak/hyperformula'
 import {
   MergeCellsCommand,
   SetFrozenRowColCommand,
@@ -106,45 +105,6 @@ class Toolbar {
   dropdown!: DelegateInstance
   private _spreadsheet!: Spreadsheet
   private _merger!: Merger
-
-  private _setFunction(functionName: string) {
-    const selectedCells = this._spreadsheet.sheets.selector.selectedCells
-
-    if (selectedCells.length > 1) {
-      const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
-        selectedCells
-      )
-
-      const cell = new Cell(
-        this._spreadsheet.sheets,
-        new SimpleCellAddress(
-          this._spreadsheet.sheets.activeSheetId,
-          rangeSimpleCellAddress.bottomRightSimpleCellAddress.row + 1,
-          rangeSimpleCellAddress.topLeftSimpleCellAddress.col
-        )
-      )
-
-      const topLeftString = rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
-      const bottomRightString = rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
-
-      const viewportVector = this._spreadsheet.sheets._getViewportVector()
-
-      cell.group.x(cell.group.x() + viewportVector.x)
-      cell.group.y(cell.group.y() + viewportVector.y)
-
-      this._spreadsheet.sheets.cellEditor.show(cell)
-      this._spreadsheet.sheets.cellEditor.setContentEditable(
-        `=${functionName}(${topLeftString}:${bottomRightString})`
-      )
-    } else {
-      const selectedCell = this._spreadsheet.sheets.selector.selectedCell!
-
-      this._spreadsheet.sheets.cellEditor.show(selectedCell)
-      this._spreadsheet.sheets.cellEditor.setContentEditable(
-        `=${functionName}()`
-      )
-    }
-  }
 
   private _setBorderStyles(
     cells: Cell[],
@@ -659,25 +619,6 @@ class Toolbar {
           })
           break
         }
-        case 'functions': {
-          const {
-            dropdownContent,
-            registeredFunctionButtons
-          } = createFunctionDropdownContent(
-            HyperFormula.getRegisteredFunctionNames('enGB').sort((a, b) =>
-              a.localeCompare(b)
-            )
-          )
-
-          this._setDropdownIconButton(name, true)
-
-          this.dropdownMap.functions = dropdownContent
-
-          this.functionElements = {
-            registeredFunctionButtons
-          }
-          break
-        }
         default: {
           const iconElements = createIconButton(name, toolbarPrefix)
           const tooltip = createTooltip(name, toolbarPrefix)
@@ -745,16 +686,6 @@ class Toolbar {
         this.iconElementsMap[name].button.addEventListener('click', () => {
           this.setValue(name)
         })
-      }
-    })
-
-    this.dropdownMap.functions?.addEventListener('click', (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-
-      if (target?.matches('button')) {
-        const functionName = target.dataset.function
-
-        this.setValue('functions', functionName)
       }
     })
   }
@@ -834,10 +765,6 @@ class Toolbar {
     }
 
     switch (name) {
-      case 'functions': {
-        this._setFunction(value)
-        break
-      }
       case 'functionHelper': {
         this._spreadsheet.options.showFunctionHelper = !this._spreadsheet
           .options.showFunctionHelper

@@ -68,7 +68,6 @@ export const toggleIconNames = <const>[
   'horizontalTextAlign',
   'verticalTextAlign',
   'textWrap',
-  'functions',
   'freeze',
   'ellipsis',
   'borders',
@@ -276,27 +275,4 @@ export const createFontSizeContent = (fontSizes: number[]) => {
   })
 
   return { dropdownContent, fontSizes: fontSizeMap }
-}
-
-export const createFunctionDropdownContent = (
-  registeredFunctionNames: string[]
-) => {
-  const dropdownContent = createDropdownContent(toolbarPrefix, styles.functions)
-
-  const registeredFunctionButtons = registeredFunctionNames.map(
-    functionName => {
-      const button = document.createElement('button')
-
-      button.classList.add(styles.functionNameButton)
-
-      button.textContent = functionName
-      button.dataset.function = functionName
-
-      dropdownContent.appendChild(button)
-
-      return button
-    }
-  )
-
-  return { dropdownContent, registeredFunctionButtons }
 }

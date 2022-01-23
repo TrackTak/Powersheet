@@ -46,7 +46,7 @@ export const defaultOptions: IOptions = {
   },
   textPatternFormats: {
     automatic: '',
-    number: '#,##0.00',
+    number: '#,##0.##',
     percent: '0.00%'
   },
   cellHighlight: {

@@ -25,6 +25,9 @@ export const dataKeysComparer = (x: string, y: string) => {
   }).compare(x, y)
 }
 
+export const isStringAFormula = (str: string | null | undefined) =>
+  str?.startsWith('=')
+
 export const centerRectTwoInRectOne = (rectOne: IRect, rectTwo: IRect) => {
   const rectOneMidPoint = {
     x: rectOne.width / 2,

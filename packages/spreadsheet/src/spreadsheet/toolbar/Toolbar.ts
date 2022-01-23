@@ -501,7 +501,7 @@ class Toolbar {
       selectedCell.simpleCellAddress
     )
 
-    let textFormat = 'plainText'
+    let textFormat = 'automatic'
 
     const textFormatPatterns = this._spreadsheet._getTextFormatPatterns()
 

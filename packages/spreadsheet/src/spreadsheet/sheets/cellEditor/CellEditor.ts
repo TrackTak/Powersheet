@@ -67,6 +67,9 @@ export const subsequentPlaceholderWhitelist = [
   'RParen'
 ]
 
+const NON_BREAKING_SPACE = '\u00a0'
+const NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE, 'g')
+
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
   cellEditorEl: HTMLDivElement
@@ -197,11 +200,8 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const {
-      sheet,
-      row,
-      col
-    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+    const { sheet, row, col } =
+      this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -305,12 +305,10 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let newValue = cellValue?.toString()
 
@@ -410,14 +408,13 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
-    let value: RawCellContent = this.currentCellText ?? null
+    let value: RawCellContent =
+      this.currentCellText?.replace(NON_BREAKING_SPACE_REGEX, ' ') ?? null
 
     const newMetadata = metadata ?? {}
 

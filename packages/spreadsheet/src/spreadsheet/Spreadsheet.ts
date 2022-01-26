@@ -146,7 +146,7 @@ class Spreadsheet {
 
   private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
     blockedFunctionTypes.forEach(functionType => {
-      const functions = this.functionMetadataByGroup[functionType]
+      const functions = this.functionMetadataByGroup[functionType] ?? []
       delete this.functionMetadataByGroup[functionType]
       functions.forEach((func: IFunctionHelperData) => {
         HyperFormula.unregisterFunction(func.header)

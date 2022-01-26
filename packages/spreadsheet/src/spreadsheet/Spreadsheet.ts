@@ -4,7 +4,11 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { mapFromSheetsToSerializedSheets, prefix } from './utils'
+import {
+  isStringAFormula,
+  mapFromSheetsToSerializedSheets,
+  prefix
+} from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
@@ -152,7 +156,7 @@ class Spreadsheet {
   }
 
   public parseDynamicPattern(pattern: string) {
-    if (pattern.charAt(0) !== '=') {
+    if (!isStringAFormula(pattern)) {
       return pattern
     }
 

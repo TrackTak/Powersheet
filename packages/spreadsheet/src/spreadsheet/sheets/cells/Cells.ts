@@ -237,7 +237,10 @@ class Cells {
 
     this.cellsMap.set(sheetCellId, styleableCell)
 
-    if (!this._spreadsheet.merger.getIsCellPartOfMerge(simpleCellAddress)) {
+    if (
+      !this._spreadsheet.merger.getIsCellTopLeftMergedCell(simpleCellAddress) &&
+      !this._spreadsheet.merger.getIsCellPartOfMerge(simpleCellAddress)
+    ) {
       const { metadata } =
         this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
           simpleCellAddress

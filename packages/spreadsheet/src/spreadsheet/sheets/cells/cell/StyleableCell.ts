@@ -276,6 +276,8 @@ class StyleableCell extends Cell {
         detailedCellType !== CellValueDetailedType.STRING &&
         detailedCellType !== CellValueDetailedType.BOOLEAN
       ) {
+        textFormatPattern = this._sheets._spreadsheet.parseDynamicPattern(textFormatPattern)
+
         text = this._formatTextOnPattern(text.toString(), textFormatPattern)
       }
 
@@ -283,13 +285,12 @@ class StyleableCell extends Cell {
         text = ((text as number) * 100).toFixed(2) + "%"
       }
 
-      if (detailedCellType === CellValueDetailedType.NUMBER_CURRENCY && !isPercent(textFormatPattern)) {
+      if (detailedCellType === CellValueDetailedType.NUMBER_CURRENCY && !textFormatPattern) {
         const currencySymbol = this._sheets._spreadsheet.hyperformula.getCellValueFormat(this.simpleCellAddress)!
-        const currencySymbols = this._sheets._spreadsheet.hyperformula.getConfig().currencySymbol
 
-        if (currencySymbols.every(symbol => textFormatPattern?.charAt(0) !== symbol)) {
-          text = currencySymbol + text
-        }
+        text = this._formatTextOnPattern(text.toString(), this._sheets._spreadsheet.options.textPatternFormats.number)
+
+        text = currencySymbol + text
       }
 
       this.text.text(text.toString())

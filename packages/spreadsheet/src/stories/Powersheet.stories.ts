@@ -246,9 +246,14 @@ export const AllCurrencySymbols = AllCurrencySymbolsTemplate.bind({})
 AllCurrencySymbols.args = {
   options: {
     textPatternFormats: {
-      usCurrency: '$#,##0.##',
-      israeliCurrency: '₪#,##0.##',
-      gbpCurrency: '£#,##0.##'
+      usCurrency: '$#,##0.00',
+      israeliCurrency: '₪#,##0.00',
+      gbpCurrency: '£#,##0.00'
+    }
+  },
+  data: {
+    textPatternFormats: {
+      dynamicCurrency: `=['All Currency Symbols'!B6]#,##0.00`
     }
   },
   sheets: {
@@ -257,26 +262,29 @@ AllCurrencySymbols.args = {
         '1_0': {
           cellValue: '$33334.33',
           metadata: {
-            textFormatPattern: '$#,##0.##'
+            textFormatPattern: '$#,##0.00'
           }
         },
         '1_1': {
           cellValue: '₪22.2',
           metadata: {
-            textFormatPattern: '₪#,##0.##'
+            textFormatPattern: '₪#,##0.00'
           }
         },
         '3_3': {
           cellValue: '£33.3',
           metadata: {
-            textFormatPattern: '£#,##0.##'
+            textFormatPattern: '£#,##0.00'
           }
         },
         '4_1': {
           cellValue: '=A2+B2+D4',
           metadata: {
-            textFormatPattern: '#,##0.##'
+            textFormatPattern: '#,##0.00'
           }
+        },
+        '5_1': {
+          cellValue: '$'
         }
       }
     }

@@ -4,13 +4,21 @@ import Sheets from './sheets/Sheets'
 import { defaultStyles, IStyles } from './styles'
 import Toolbar from './toolbar/Toolbar'
 import FormulaBar from './formulaBar/FormulaBar'
-import { mapFromSheetsToSerializedSheets, prefix } from './utils'
+import {
+  isStringAFormula,
+  mapFromSheetsToSerializedSheets,
+  prefix
+} from './utils'
 import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
 import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
-import { HyperFormula } from '@tracktak/hyperformula'
+import {
+  HyperFormula,
+  lexerConfig,
+  DetailedCellError
+} from '@tracktak/hyperformula'
 import { ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
@@ -22,6 +30,13 @@ import { UIUndoRedo } from './UIUndoRedo'
 import HistoryManager from './HistoryManager'
 import powersheetFormulaMetadataJSON from './functionHelper/powersheetFormulaMetadata.json'
 import Merger from './sheets/Merger'
+import { IToken } from 'chevrotain'
+
+export interface IPatternCellReference {
+  startOffset: number
+  endOffset: number
+  cellValue: string
+}
 
 export interface ISpreadsheetConstructor {
   hyperformula: HyperFormula
@@ -131,13 +146,81 @@ class Spreadsheet {
 
   private unregisterBlockedFunctions(blockedFunctionTypes: string[]) {
     blockedFunctionTypes.forEach(functionType => {
-      const functions = this.functionMetadataByGroup[functionType]
+      const functions = this.functionMetadataByGroup[functionType] ?? []
       delete this.functionMetadataByGroup[functionType]
       functions.forEach((func: IFunctionHelperData) => {
         HyperFormula.unregisterFunction(func.header)
         delete this.functionMetadata[func.header]
       })
     })
+  }
+
+  public parseDynamicPattern(pattern: string) {
+    if (!isStringAFormula(pattern)) {
+      return pattern
+    }
+
+    // @ts-ignore
+    const lexer = this.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(pattern).tokens as IToken[]
+    const cellReferenceValues: IPatternCellReference[] = []
+
+    tokens.forEach(token => {
+      if (token.tokenType.name === lexerConfig.CellReference.name) {
+        const address = this.hyperformula.simpleCellAddressFromString(
+          token.image,
+          this.sheets.activeSheetId
+        )
+
+        if (address) {
+          const cellValue = this.hyperformula.getCellValue(address)
+
+          if (
+            cellValue &&
+            !Array.isArray(cellValue) &&
+            !(cellValue instanceof DetailedCellError) &&
+            token.endOffset
+          ) {
+            // -1 & +1 offset to remove square braces
+            cellReferenceValues.push({
+              cellValue: cellValue.cellValue as string,
+              startOffset: token.startOffset - 1,
+              endOffset: token.endOffset + 1
+            })
+          }
+        }
+      }
+    })
+
+    const initialCharsLength = pattern.length
+    let offsetDifference = 0
+
+    cellReferenceValues.forEach(({ cellValue, startOffset, endOffset }) => {
+      const chars = pattern.split('')
+      const start = startOffset + offsetDifference
+      const deleteCount = endOffset + offsetDifference - start + 1
+
+      chars.splice(start, deleteCount, cellValue)
+
+      offsetDifference += chars.length - initialCharsLength
+
+      pattern = chars.join('')
+    })
+
+    pattern = pattern.slice(1)
+
+    return pattern
+  }
+
+  /**
+   *
+   * @internal
+   */
+  _getTextFormatPatterns() {
+    return {
+      ...this.options.textPatternFormats,
+      ...this.spreadsheetData.textPatternFormats
+    }
   }
 
   /**

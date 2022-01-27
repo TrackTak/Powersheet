@@ -7,6 +7,7 @@ import Spreadsheet from '../../Spreadsheet'
 import Cell from '../cells/cell/Cell'
 import {
   getCaretPosition,
+  isStringAFormula,
   prefix,
   saveCaretPosition,
   setCaretToEndOfElement
@@ -65,6 +66,9 @@ export const subsequentPlaceholderWhitelist = [
   ...commonPlaceholderWhitelist,
   'RParen'
 ]
+
+const NON_BREAKING_SPACE = '\u00a0'
+const NON_BREAKING_SPACE_REGEX = new RegExp(NON_BREAKING_SPACE, 'g')
 
 class CellEditor {
   cellEditorContainerEl: HTMLDivElement
@@ -165,7 +169,7 @@ class CellEditor {
 
     restoreCaretPosition()
 
-    const isFormulaInput = textContent?.startsWith('=')
+    const isFormulaInput = isStringAFormula(textContent)
 
     if (isFormulaInput) {
       let functionName = textContent?.slice(1) ?? ''
@@ -199,11 +203,8 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const {
-      sheet,
-      row,
-      col
-    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+    const { sheet, row, col } =
+      this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -307,12 +308,10 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let newValue = cellValue?.toString()
 
@@ -412,14 +411,13 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
-    let value: RawCellContent = this.currentCellText ?? null
+    let value: RawCellContent =
+      this.currentCellText?.replace(NON_BREAKING_SPACE_REGEX, ' ') ?? null
 
     const newMetadata = metadata ?? {}
 
@@ -539,7 +537,8 @@ class CellEditor {
     this.currentCellText = text
 
     if (text) {
-      const isFormula = this.currentCellText?.startsWith('=')
+      const isFormula = isStringAFormula(this.currentCellText)
+
       if (isFormula) {
         this.cellEditorEl.classList.add(styles.formulaInput)
         this._spreadsheet.formulaBar?.editableContent.classList.add(

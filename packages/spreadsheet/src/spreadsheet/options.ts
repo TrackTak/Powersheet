@@ -6,7 +6,7 @@ export interface IRowColOptions {
 
 // eslint-disable-next-line functional/no-mixed-type
 export interface ITextPatternFormats {
-  plainText: string
+  automatic: string
   number: string
   percent: string
   [index: string]: string
@@ -45,7 +45,7 @@ export const defaultOptions: IOptions = {
     defaultSize: 100
   },
   textPatternFormats: {
-    plainText: '',
+    automatic: '',
     number: '#,##0.00',
     percent: '0.00%'
   },

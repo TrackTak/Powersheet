@@ -35,7 +35,6 @@ export type DropdownName = DropdownIconName | DropdownButtonName
 
 export type DropdownIconName =
   | ColorPickerIconName
-  | 'functions'
   | 'verticalTextAlign'
   | 'horizontalTextAlign'
   | 'borders'

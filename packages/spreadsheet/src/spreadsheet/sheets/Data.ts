@@ -44,6 +44,9 @@ export interface IMergedCell {
 export interface ISpreadsheetData {
   exportSpreadsheetName?: string
   showFormulas?: boolean
+  textPatternFormats?: {
+    [index: string]: string
+  }
 }
 
 export interface IPersistedData extends ISpreadsheetData {

@@ -26,7 +26,6 @@ import Clipboard from '../Clipboard'
 import { Line } from 'konva/lib/shapes/Line'
 import CellError from './cellError/CellError'
 import { DetailedCellError } from '@tracktak/hyperformula'
-import { Instance, Props } from 'tippy.js'
 import CellHighlighter from '../cellHighlighter/CellHighlighter'
 import { ICellMetadata } from './Data'
 
@@ -719,49 +718,27 @@ class Sheets {
   /**
    * @internal
    */
-  _getTippyCellReferenceClientRect(tippyContainer: Instance<Props>) {
-    const {
-      top,
-      left,
-      right,
-      bottom,
-      x,
-      y,
-      width,
-      height,
-      toJSON
-    } = this.sheetEl.getBoundingClientRect()
-    const selectedCellRect = this.selector.selectedCell!._getClientRectWithoutStroke()
+  _getTippyCellReferenceClientRect() {
+    const { width, height } = this.selector.selectedCell!.rect.getSize()
+    const selectedCellPosition = this.selector.selectedCell!.rect.getAbsolutePosition(
+      this.stage
+    )
 
-    const tippyBox = tippyContainer.popper.firstElementChild! as HTMLElement
+    let { x, y } = this.stage.container().getBoundingClientRect()
 
-    let xPosition = left + selectedCellRect.x + selectedCellRect.width
-    let yPosition = top + selectedCellRect.y
-
-    const rowScrollBarWidth = this.rows.scrollBar.scrollBarEl.getBoundingClientRect()
-      .width
-
-    const colScrollBarHeight = this.cols.scrollBar.scrollBarEl.getBoundingClientRect()
-      .height
-
-    if (xPosition + tippyBox.offsetWidth + rowScrollBarWidth > width) {
-      xPosition = left + selectedCellRect.x - tippyBox.offsetWidth
-    }
-
-    if (yPosition + tippyBox.offsetHeight + colScrollBarHeight > height) {
-      yPosition = top + selectedCellRect.y - tippyBox.offsetHeight
-    }
+    x += selectedCellPosition.x
+    y += selectedCellPosition.y
 
     return {
-      top: yPosition,
-      left: xPosition,
-      right,
-      bottom,
       x,
       y,
       width,
       height,
-      toJSON
+      top: y,
+      left: x,
+      right: x + width,
+      bottom: y + height,
+      toJSON: () => {}
     }
   }
 

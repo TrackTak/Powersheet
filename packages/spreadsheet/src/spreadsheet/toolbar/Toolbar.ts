@@ -637,7 +637,7 @@ class Toolbar {
     this.tooltip = delegate(this.toolbarEl, {
       target: `.${toolbarPrefix}-tooltip`,
       touch: false,
-      delay: 300
+      delay: 100
     })
 
     const setDropdownActive = (element: HTMLButtonElement, active: boolean) => {
@@ -658,6 +658,7 @@ class Toolbar {
       theme: 'dropdown',
       placement: 'auto',
       interactive: true,
+      delay: 100,
       arrow: false,
       onHide: ({ reference }) => {
         setDropdownActive(reference as HTMLButtonElement, false)

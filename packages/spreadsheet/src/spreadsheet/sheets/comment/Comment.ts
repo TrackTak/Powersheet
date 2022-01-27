@@ -37,7 +37,7 @@ class Comment {
     this.buttonContainer.appendChild(this.cancelButton)
 
     this.container = tippy(this._sheets.sheetEl, {
-      placement: 'top-start',
+      placement: 'right-start',
       offset: [0, 0],
       interactive: true,
       arrow: false,
@@ -51,7 +51,7 @@ class Comment {
         this.textarea.value = ''
       },
       getReferenceClientRect: () =>
-        this._sheets._getTippyCellReferenceClientRect(this.container)
+        this._sheets._getTippyCellReferenceClientRect()
     })
 
     this.hide()
@@ -104,8 +104,6 @@ class Comment {
   }
 
   show(simpleCellAddress: SimpleCellAddress) {
-    // unmount forces position to update
-    this.container.unmount()
     this.container.show()
 
     const {

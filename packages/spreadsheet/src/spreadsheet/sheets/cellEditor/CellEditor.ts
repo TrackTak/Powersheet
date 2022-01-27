@@ -108,18 +108,18 @@ class CellEditor {
     this.cellEditorContainerEl.appendChild(this.cellEditorEl)
     this.cellTooltip = delegate(this.cellEditorEl, {
       target: cellEditorClassName,
+      placement: 'top-start',
+      offset: [0, 5],
       arrow: false,
       trigger: 'manual',
       hideOnClick: false,
-      placement: 'top-start',
-      theme: 'cell',
-      offset: [0, 5]
+      theme: 'cell'
     })
     this._sheets.sheetEl.appendChild(this.cellEditorContainerEl)
 
     this.cellEditorContainerEl.style.display = 'none'
 
-    this.formulaHelper = new FormulaHelper(this._onItemClick)
+    this.formulaHelper = new FormulaHelper(this._onItemClick, this._sheets)
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
     this.functionSummaryHelper = new FunctionSummaryHelper(this._spreadsheet)
     this.cellEditorContainerEl.appendChild(
@@ -200,8 +200,11 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const { sheet, row, col } =
-      this._sheets.selector.selectedCell?.simpleCellAddress!
+    const {
+      sheet,
+      row,
+      col
+    } = this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -305,10 +308,12 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      )
+    const {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
     let newValue = cellValue?.toString()
 
@@ -408,10 +413,12 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const { cellValue, metadata } =
-      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      )
+    const {
+      cellValue,
+      metadata
+    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      simpleCellAddress
+    )
 
     let value: RawCellContent =
       this.currentCellText?.replace(NON_BREAKING_SPACE_REGEX, ' ') ?? null

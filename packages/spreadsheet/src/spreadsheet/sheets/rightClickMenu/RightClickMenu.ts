@@ -81,9 +81,15 @@ class RightClickMenu {
 
     this.buttonMap.comment.addEventListener('click', this._commentOnClick)
     this.buttonMap.deleteRow.addEventListener('click', this._deleteRowOnClick)
-    this.buttonMap.deleteColumn.addEventListener('click', this._deleteColOnClick)
+    this.buttonMap.deleteColumn.addEventListener(
+      'click',
+      this._deleteColOnClick
+    )
     this.buttonMap.insertRow.addEventListener('click', this._insertRowOnClick)
-    this.buttonMap.insertColumn.addEventListener('click', this._insertColOnClick)
+    this.buttonMap.insertColumn.addEventListener(
+      'click',
+      this._insertColOnClick
+    )
 
     this.buttonMap.cut.addEventListener('click', async () => {
       await this._sheets.clipboard.cut()
@@ -98,10 +104,11 @@ class RightClickMenu {
     })
 
     this.dropdown = tippy(this._sheets.sheetEl, {
-      placement: 'auto',
+      placement: 'bottom-start',
       interactive: true,
       arrow: false,
-      delay: 0,
+      delay: 100,
+      offset: [0, 0],
       trigger: 'click',
       plugins: [followCursor],
       followCursor: 'initial',
@@ -117,8 +124,8 @@ class RightClickMenu {
   }
 
   private _commentOnClick = () => {
-    const simpleCellAddress =
-      this._sheets.selector.selectedCell!.simpleCellAddress
+    const simpleCellAddress = this._sheets.selector.selectedCell!
+      .simpleCellAddress
 
     this._sheets.comment?.show(simpleCellAddress)
   }
@@ -154,12 +161,18 @@ class RightClickMenu {
     this.rightClickMenuEl.remove()
     this.dropdown.destroy()
     this.buttonMap.comment.removeEventListener('click', this._commentOnClick)
-    this.buttonMap.deleteRow.removeEventListener('click', this._deleteRowOnClick)
+    this.buttonMap.deleteRow.removeEventListener(
+      'click',
+      this._deleteRowOnClick
+    )
     this.buttonMap.deleteColumn.removeEventListener(
       'click',
       this._deleteColOnClick
     )
-    this.buttonMap.insertRow.removeEventListener('click', this._insertRowOnClick)
+    this.buttonMap.insertRow.removeEventListener(
+      'click',
+      this._insertRowOnClick
+    )
     this.buttonMap.insertColumn.removeEventListener(
       'click',
       this._insertColOnClick

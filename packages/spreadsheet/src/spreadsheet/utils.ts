@@ -199,13 +199,13 @@ export const getColumnHeader = (number: number) => {
 
 export const setCaretToEndOfElement = (node: Node) => {
   const range = document.createRange()
-  const sel = window.getSelection()
+  const selection = window.getSelection()
 
   range.selectNodeContents(node)
   range.collapse(false)
 
-  sel?.removeAllRanges()
-  sel?.addRange(range)
+  selection?.removeAllRanges()
+  selection?.addRange(range)
 
   range.detach()
 }

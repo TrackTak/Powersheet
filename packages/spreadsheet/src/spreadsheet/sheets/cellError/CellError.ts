@@ -20,7 +20,7 @@ class CellError {
     this.wrapper.appendChild(this.content)
 
     this.container = tippy(this._sheets.sheetEl, {
-      placement: 'top-start',
+      placement: 'right-start',
       offset: [0, 0],
       interactive: true,
       arrow: false,
@@ -34,7 +34,7 @@ class CellError {
         this.content.textContent = ''
       },
       getReferenceClientRect: () =>
-        this._sheets._getTippyCellReferenceClientRect(this.container)
+        this._sheets._getTippyCellReferenceClientRect()
     })
 
     this.hide()
@@ -54,8 +54,6 @@ class CellError {
   }
 
   show(message: string) {
-    // unmount forces position to update
-    this.container.unmount()
     this.container.show()
 
     this.content.textContent = message

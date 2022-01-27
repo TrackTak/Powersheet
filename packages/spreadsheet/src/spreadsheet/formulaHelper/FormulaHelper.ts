@@ -1,4 +1,4 @@
-import tippy, { DelegateInstance } from 'tippy.js'
+import tippy, { Instance, Props } from 'tippy.js'
 import isEmpty from 'lodash/isEmpty'
 import {
   createFormulaList,
@@ -12,7 +12,7 @@ type FormulaHelperClickHandler = (item: string) => void
 class FormulaHelper {
   formulaHelperEl: HTMLDivElement
   formulaHelperListContainerEl: HTMLDivElement
-  helper: DelegateInstance
+  helper: Instance<Props>
   list?: HTMLUListElement
 
   /**
@@ -22,20 +22,21 @@ class FormulaHelper {
     private _onItemClick: FormulaHelperClickHandler,
     private _sheets: Sheets
   ) {
-    const { formulaHelperListContainerEl, formulaHelperEl } =
-      createWrapperContent()
+    const {
+      formulaHelperListContainerEl,
+      formulaHelperEl
+    } = createWrapperContent()
     this.formulaHelperListContainerEl = formulaHelperListContainerEl
     this.formulaHelperEl = formulaHelperEl
     this.helper = tippy(formulaHelperEl, {
-      placement: 'top-start',
+      placement: 'bottom-start',
       offset: [0, 0],
       interactive: true,
       arrow: false,
       theme: 'formula-helper',
       trigger: 'manual',
-      showOnCreate: false,
       getReferenceClientRect: () =>
-        this._sheets._getTippyCellReferenceClientRect(this.helper, true)
+        this._sheets._getTippyCellReferenceClientRect()
     })
   }
 

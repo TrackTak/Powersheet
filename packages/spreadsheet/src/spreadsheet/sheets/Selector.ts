@@ -198,6 +198,7 @@ class Selector {
 
     if (this._sheets.cellEditor.isInCellSelectionMode) {
       this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
+      this._sheets.cellEditor.setCaretPosition()
     }
 
     // We don't update sheet viewport for performance reasons

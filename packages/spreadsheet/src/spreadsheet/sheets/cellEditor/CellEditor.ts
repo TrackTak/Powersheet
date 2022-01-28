@@ -380,7 +380,9 @@ class CellEditor {
 
     let newCellReferenceText = cellReferenceText
 
-    if (this._sheets.activeSheetId !== this._sheets.activeSheetId) {
+    if (
+      this._sheets.activeSheetId !== this.currentCell?.simpleCellAddress.sheet
+    ) {
       const sheetName = this._spreadsheet.hyperformula.getSheetName(
         this._sheets.activeSheetId
       )

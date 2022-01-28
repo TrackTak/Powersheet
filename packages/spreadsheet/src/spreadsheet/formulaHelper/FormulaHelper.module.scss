@@ -1,7 +1,15 @@
 @import '../styles.scss';
 
 .formulaHelper {
-  position: relative;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  visibility: hidden;
+}
+
+.tippyContainer {
+  height: 100%;
 }
 
 .formulaHelperListContainer {

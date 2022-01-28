@@ -11,11 +11,18 @@ export interface IParameterSyntaxElement {
 export const createWrapperContent = () => {
   const functionSummaryHelperContainerEl = document.createElement('div')
   const functionSummaryHelperEl = document.createElement('div')
+  const tippyContainer = document.createElement('div')
+
   functionSummaryHelperEl.appendChild(functionSummaryHelperContainerEl)
+  functionSummaryHelperEl.appendChild(tippyContainer)
+
+  functionSummaryHelperEl.classList.add(functionSummaryHelperPrefix)
+  tippyContainer.classList.add(`${functionSummaryHelperPrefix}-tippy-container`)
 
   return {
     functionSummaryHelperContainerEl,
-    functionSummaryHelperEl
+    functionSummaryHelperEl,
+    tippyContainer
   }
 }
 

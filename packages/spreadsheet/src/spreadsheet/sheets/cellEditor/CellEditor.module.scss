@@ -1,3 +1,5 @@
+@use '../../variables';
+
 :global(.powersheet-cell-editor) {
   box-sizing: border-box;
   resize: none;
@@ -17,6 +19,7 @@
 .cellEditorContainer {
   position: absolute;
   box-sizing: border-box;
+  z-index: variables.$cellEditorZIndex;
 }
 
 .formulaInput {

@@ -339,6 +339,32 @@ class CellEditor {
     }
   }
 
+  setCaretPosition() {
+    const caretPosition = this.previousCellReference?.caretPosition
+    const cellReferenceText = this.previousCellReference?.cellReferenceText
+
+    if (
+      caretPosition === undefined ||
+      cellReferenceText === undefined ||
+      this.currentCellText === null
+    ) {
+      return
+    }
+
+    // @ts-ignore
+    const lexer = this._spreadsheet.hyperformula._parser.lexer
+    const tokens = lexer.tokenizeFormula(this.currentCellText)
+      .tokens as IToken[]
+
+    const nodeIndex = tokens.findIndex(
+      token => token.endOffset === caretPosition + cellReferenceText.length - 1
+    )!
+
+    const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
+
+    setCaretToEndOfElement(node)
+  }
+
   /**
    * Replaces text at the current caret position in the contentEditable
    */
@@ -385,26 +411,6 @@ class CellEditor {
     }
 
     this.setContentEditable(newText)
-
-    // @ts-ignore
-    const lexer = this._spreadsheet.hyperformula._parser.lexer
-    const tokens = lexer.tokenizeFormula(newText).tokens as IToken[]
-
-    const nodeIndex = tokens.findIndex(
-      token =>
-        token.endOffset ===
-        currentCaretPosition + newCellReferenceText.length - 1
-    )!
-
-    const node = this.cellEditorEl.childNodes[nodeIndex].childNodes[0]
-
-    // For some reason we need it in 2 places here for single cell selections
-    // otherwise it intermittently does not set the caret
-    setCaretToEndOfElement(node)
-
-    setTimeout(() => {
-      setCaretToEndOfElement(node)
-    }, 0)
   }
 
   /**

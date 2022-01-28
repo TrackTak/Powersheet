@@ -198,6 +198,7 @@ class Selector {
 
     if (this._sheets.cellEditor.isInCellSelectionMode) {
       this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
+      this._sheets.cellEditor.setCaretPosition()
     }
 
     // We don't update sheet viewport for performance reasons
@@ -231,6 +232,11 @@ class Selector {
 
     this.selectCellFromSimpleCellAddress(cell.simpleCellAddress)
 
+    // SetTimeout needed due to the mouseDown event
+    setTimeout(() => {
+      this._sheets.cellEditor.setCaretPosition()
+    }, 0)
+
     this._spreadsheet.eventEmitter.emit('startSelection', cell)
   }
 
@@ -255,6 +261,7 @@ class Selector {
 
       if (this._sheets.cellEditor.isInCellSelectionMode) {
         this._sheets.cellHighlighter._createHighlightedAreaFromCurrentSelection()
+        this._sheets.cellEditor.setCaretPosition()
       }
 
       // We don't update sheet viewport for performance reasons

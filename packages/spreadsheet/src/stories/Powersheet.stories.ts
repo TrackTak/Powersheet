@@ -253,7 +253,7 @@ AllCurrencySymbols.args = {
   },
   data: {
     textPatternFormats: {
-      dynamicCurrency: `=['All Currency Symbols'!B6]#,##0.00`
+      dynamicCurrency: `=\"['All Currency Symbols'!B6]\"#,##0.00`
     }
   },
   sheets: {
@@ -284,7 +284,7 @@ AllCurrencySymbols.args = {
           }
         },
         '5_1': {
-          cellValue: '$'
+          cellValue: 'NT$'
         }
       }
     }

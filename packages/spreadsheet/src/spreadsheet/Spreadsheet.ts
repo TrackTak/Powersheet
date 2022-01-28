@@ -63,7 +63,11 @@ class Spreadsheet {
   merger: Merger
   operations: Operations
   uiUndoRedo: UIUndoRedo
-  functionMetadata: Record<string, IFunctionHelperData> = {}
+  functionMetadata: Record<
+    string,
+    IFunctionHelperData
+  > = powersheetFormulaMetadataJSON
+  customFunctionMetadata: Record<string, IFunctionHelperData> = {}
   functionMetadataByGroup: Dictionary<
     [IFunctionHelperData, ...IFunctionHelperData[]]
   > = {}
@@ -95,7 +99,7 @@ class Spreadsheet {
     if (!isNil(this.options.height)) {
       this.spreadsheetEl.style.height = `${this.options.height}px`
     }
-    this.setFunctionMetadata(powersheetFormulaMetadataJSON)
+    this.setFunctionMetadata()
 
     this.merger = new Merger(this.hyperformula)
     this.sheets = new Sheets(this)
@@ -134,12 +138,14 @@ class Spreadsheet {
     this.updateSize()
   }
 
-  private setFunctionMetadata(
-    functionMetadata: Record<string, IFunctionHelperData>,
-    blockedFunctionTypes: string[] = []
-  ) {
-    this.functionMetadata = functionMetadata
-    this.functionMetadataByGroup = groupBy(functionMetadata, 'type')
+  private setFunctionMetadata(blockedFunctionTypes: string[] = []) {
+    this.functionMetadataByGroup = groupBy(
+      {
+        ...this.customFunctionMetadata,
+        ...this.functionMetadata
+      },
+      'type'
+    )
     this.unregisterBlockedFunctions(blockedFunctionTypes)
     this.functionHelper?._update()
   }
@@ -367,10 +373,9 @@ class Spreadsheet {
   setCustomFunctionMetadata(
     customFunctionMetadata: Record<string, IFunctionHelperData>
   ) {
-    this.setFunctionMetadata({
-      ...customFunctionMetadata,
-      ...this.functionMetadata
-    })
+    this.customFunctionMetadata = customFunctionMetadata
+
+    this.setFunctionMetadata()
   }
 
   /**
@@ -379,7 +384,7 @@ class Spreadsheet {
    * @param blockedFunctionTypes - The array of function types e.g. Engineering, Array etc.
    */
   setFunctionTypeBlocklist(blockedFunctionTypes: string[]) {
-    this.setFunctionMetadata(this.functionMetadata, blockedFunctionTypes)
+    this.setFunctionMetadata(blockedFunctionTypes)
   }
 }
 

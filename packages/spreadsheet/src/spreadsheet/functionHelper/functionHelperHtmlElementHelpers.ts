@@ -3,6 +3,14 @@ import { IFunctionHelperData } from './FunctionHelper'
 
 export const functionHelperPrefix = `${prefix}-function-helper`
 
+export const createGroupHeader = (groupHeader: string) => {
+  const groupHeaderEl = document.createElement('h3')
+  groupHeaderEl.classList.add(`${functionHelperPrefix}-group-header`)
+  groupHeaderEl.textContent = groupHeader
+
+  return { groupHeaderEl }
+}
+
 export const createMainHeader = (headerText: string) => {
   const mainHeaderEl = document.createElement('h1')
   mainHeaderEl.classList.add(`${functionHelperPrefix}-main-header`)

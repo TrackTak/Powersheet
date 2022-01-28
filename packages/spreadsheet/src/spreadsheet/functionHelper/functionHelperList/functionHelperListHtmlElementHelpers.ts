@@ -3,6 +3,7 @@ import { prefix } from '../../utils'
 import { IFunctionHelperData } from '../FunctionHelper'
 import {
   createCodeText,
+  createGroupHeader,
   createHeader,
   createParagraph,
   createSubHeader,
@@ -87,6 +88,9 @@ export const updateFunctionList = (
       })
     }
   })
+
+  const { groupHeaderEl } = createGroupHeader('Tracktak')
+  content.appendChild(groupHeaderEl)
 }
 
 export const createFunctionGroupSection = (name: string) => {

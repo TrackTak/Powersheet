@@ -5,7 +5,6 @@ import {
   createWrapperContent
 } from './formulaHtmlElementHelpers'
 import { HyperFormula } from '@tracktak/hyperformula'
-import Sheets from '../sheets/Sheets'
 
 type FormulaHelperClickHandler = (item: string) => void
 
@@ -18,25 +17,21 @@ class FormulaHelper {
   /**
    * @internal
    */
-  constructor(
-    private _onItemClick: FormulaHelperClickHandler,
-    private _sheets: Sheets
-  ) {
+  constructor(private _onItemClick: FormulaHelperClickHandler) {
     const {
-      formulaHelperListContainerEl,
-      formulaHelperEl
+      formulaHelperEl,
+      tippyContainer,
+      formulaHelperListContainerEl
     } = createWrapperContent()
     this.formulaHelperListContainerEl = formulaHelperListContainerEl
     this.formulaHelperEl = formulaHelperEl
-    this.helper = tippy(formulaHelperEl, {
+    this.helper = tippy(tippyContainer, {
       placement: 'bottom-start',
       offset: [0, 0],
       interactive: true,
       arrow: false,
       theme: 'formula-helper',
-      trigger: 'manual',
-      getReferenceClientRect: () =>
-        this._sheets._getTippyCellReferenceClientRect()
+      trigger: 'manual'
     })
   }
 

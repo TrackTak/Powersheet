@@ -17,14 +17,19 @@ export const createFormulaList = (formulas: string[]) => {
 
 export const createWrapperContent = () => {
   const formulaHelperListContainerEl = document.createElement('div')
-  formulaHelperListContainerEl.classList.add(styles.formulaHelperListContainer)
-
   const formulaHelperEl = document.createElement('div')
-  formulaHelperEl.classList.add(styles.formulaHelper, formulaHelperPrefix)
+  const tippyContainer = document.createElement('div')
+
   formulaHelperEl.appendChild(formulaHelperListContainerEl)
+  formulaHelperEl.appendChild(tippyContainer)
+
+  formulaHelperListContainerEl.classList.add(styles.formulaHelperListContainer)
+  formulaHelperEl.classList.add(styles.formulaHelper)
+  tippyContainer.classList.add(styles.tippyContainer)
 
   return {
     formulaHelperListContainerEl,
-    formulaHelperEl
+    formulaHelperEl,
+    tippyContainer
   }
 }

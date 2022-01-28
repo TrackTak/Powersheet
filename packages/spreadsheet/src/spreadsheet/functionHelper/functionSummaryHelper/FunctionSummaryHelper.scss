@@ -2,12 +2,24 @@
 @use '../../styles.scss';
 
 .powersheet-function-summary-helper {
-  position: relative;
-  width: 300px;
-  padding: 10px;
-  min-height: 25px;
-  line-height: 25px;
-  overflow-wrap: break-word;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  visibility: hidden;
+
+  &-tippy-container {
+    height: 100%;
+  }
+
+  &-container {
+    position: relative;
+    width: 300px;
+    padding: 10px;
+    min-height: 25px;
+    line-height: 25px;
+    overflow-wrap: break-word;
+  }
 
   &-parameters,
   &-main-header {

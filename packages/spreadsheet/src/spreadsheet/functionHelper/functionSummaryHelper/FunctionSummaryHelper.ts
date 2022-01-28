@@ -19,7 +19,6 @@ import { subsequentPlaceholderWhitelist } from '../../sheets/cellEditor/CellEdit
 import { IToken } from 'chevrotain'
 import { last } from 'lodash'
 import { getCaretPosition } from '../../utils'
-import { detectOverflow } from '@popperjs/core'
 
 class FunctionSummaryHelper {
   functionSummaryHelperEl: HTMLDivElement
@@ -34,19 +33,21 @@ class FunctionSummaryHelper {
    * @internal
    */
   constructor(private _spreadsheet: Spreadsheet) {
-    const { functionSummaryHelperContainerEl, functionSummaryHelperEl } =
-      createWrapperContent()
+    const {
+      functionSummaryHelperContainerEl,
+      functionSummaryHelperEl,
+      tippyContainer
+    } = createWrapperContent()
     this.functionSummaryHelperListContainerEl = functionSummaryHelperContainerEl
     this.functionSummaryHelperEl = functionSummaryHelperEl
-    this.helper = tippy(functionSummaryHelperEl, {
+    this.helper = tippy(tippyContainer, {
+      placement: 'bottom-start',
       offset: [0, 0],
       interactive: true,
       arrow: false,
       theme: 'formula-helper',
       trigger: 'manual',
-      hideOnClick: false,
-      getReferenceClientRect: () =>
-        this._spreadsheet.sheets._getTippyCellReferenceClientRect()
+      hideOnClick: false
     })
     this.parameterSyntaxElements = []
   }
@@ -62,9 +63,6 @@ class FunctionSummaryHelper {
     if (metadata) {
       this._update(metadata)
       this.helper.show()
-      this.helper.setProps({
-        placement: 'bottom-start'
-      })
     }
   }
 
@@ -163,7 +161,7 @@ class FunctionSummaryHelper {
   private _update(formulaMetadata: IFunctionHelperData) {
     this.functionSummaryHelperListContainerEl = document.createElement('div')
     this.functionSummaryHelperListContainerEl.classList.add(
-      `${functionSummaryHelperPrefix}`
+      `${functionSummaryHelperPrefix}-container`
     )
 
     this.expandIcon = document.createElement('span')
@@ -255,16 +253,6 @@ class FunctionSummaryHelper {
 
       if (this.helper.popperInstance) {
         await this.helper.popperInstance.update()
-
-        const overflow = detectOverflow(this.helper.popperInstance.state, {
-          boundary: this._spreadsheet.spreadsheetEl
-        })
-
-        if (overflow.bottom > 0) {
-          this.helper.setProps({
-            placement: 'top-start'
-          })
-        }
       }
     }
   }

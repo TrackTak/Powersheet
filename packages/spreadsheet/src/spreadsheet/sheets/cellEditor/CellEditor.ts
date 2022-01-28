@@ -119,7 +119,7 @@ class CellEditor {
 
     this.cellEditorContainerEl.style.display = 'none'
 
-    this.formulaHelper = new FormulaHelper(this._onItemClick, this._sheets)
+    this.formulaHelper = new FormulaHelper(this._onItemClick)
     this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
     this.functionSummaryHelper = new FunctionSummaryHelper(this._spreadsheet)
     this.cellEditorContainerEl.appendChild(

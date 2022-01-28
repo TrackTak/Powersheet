@@ -30,6 +30,7 @@ class BottomBar {
   createNewSheetButtonElements!: IIconElements
   tabContainer!: HTMLDivElement
   sheetTabElementsMap!: Map<number, ISheetTabElements>
+  nameContainer!: HTMLSpanElement
   private _spreadsheet!: Spreadsheet
 
   private _setSheetTabElements(sheetId: number) {
@@ -116,16 +117,14 @@ class BottomBar {
       setTabToContentEditable()
     })
 
-    nameContainer.addEventListener('blur', () => {
-      nameContainer.contentEditable = 'false'
-      nameContainer.blur()
+    nameContainer.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        this.renameSheet(sheetId)
+      }
+    })
 
-      this._spreadsheet.hyperformula.renameSheet(
-        sheetId,
-        nameContainer.textContent!
-      )
-      this._spreadsheet.render()
-      this._spreadsheet.persistData()
+    nameContainer.addEventListener('blur', () => {
+      this.renameSheet(sheetId)
     })
 
     nameContainer.textContent = sheetName
@@ -140,6 +139,21 @@ class BottomBar {
       sheetSelectionDropdownButton,
       isActive
     })
+
+    this.nameContainer = nameContainer
+  }
+
+  private renameSheet(sheetId: number) {
+    this.nameContainer.contentEditable = 'false'
+    this.nameContainer.blur()
+
+    this._spreadsheet.hyperformula.renameSheet(
+      sheetId,
+      this.nameContainer.textContent!
+    )
+
+    this._spreadsheet.render()
+    this._spreadsheet.persistData()
   }
 
   private _sheetSelectionOnClick = () => {

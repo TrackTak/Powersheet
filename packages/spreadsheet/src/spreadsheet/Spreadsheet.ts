@@ -16,9 +16,16 @@ import Exporter from './Exporter'
 import BottomBar from './bottomBar/BottomBar'
 import {
   HyperFormula,
-  lexerConfig,
-  DetailedCellError
+  DetailedCellError,
+  lexerConfig
 } from '@tracktak/hyperformula'
+import {
+  buildLexerConfig,
+  FormulaLexer
+  // @ts-ignore
+} from '@tracktak/hyperformula/es/parser/index'
+// @ts-ignore
+import { Config } from '@tracktak/hyperformula/es/Config'
 import { ISpreadsheetData } from './sheets/Data'
 import PowersheetEmitter from './PowersheetEmitter'
 import { NestedPartial } from './types'
@@ -69,6 +76,7 @@ class Spreadsheet {
   > = {}
   bottomBar?: BottomBar
   isSaving = false
+  patternLexer: FormulaLexer
 
   constructor(params: ISpreadsheetConstructor) {
     this.options = defaultOptions
@@ -118,6 +126,18 @@ class Spreadsheet {
       this.sheets
     )
 
+    const config = new Config(this.hyperformula.getConfig())
+    const patternLexerConfig = buildLexerConfig(config)
+
+    patternLexerConfig.allTokens = [
+      lexerConfig.WhiteSpace,
+      lexerConfig.CellReference
+    ]
+
+    const sheetMapping = this.hyperformula.dependencyGraph.sheetMapping
+
+    this.patternLexer = new FormulaLexer(patternLexerConfig, sheetMapping)
+
     // once is StoryBook bug workaround: https://github.com/storybookjs/storybook/issues/15753#issuecomment-932495346
     window.addEventListener('DOMContentLoaded', this._onDOMContentLoaded, {
       once: true
@@ -160,9 +180,7 @@ class Spreadsheet {
       return pattern
     }
 
-    // @ts-ignore
-    const lexer = this.hyperformula._parser.lexer
-    const tokens = lexer.tokenizeFormula(pattern).tokens as IToken[]
+    const tokens = this.patternLexer.tokenizeFormula(pattern).tokens as IToken[]
     const cellReferenceValues: IPatternCellReference[] = []
 
     tokens.forEach(token => {

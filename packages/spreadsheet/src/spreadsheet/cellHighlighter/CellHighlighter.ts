@@ -72,8 +72,11 @@ class CellHighlighter {
   }
 
   getCurrentColor() {
-    const { saturation, lightness, alpha } =
-      this._spreadsheet.options.cellHighlight
+    const {
+      saturation,
+      lightness,
+      alpha
+    } = this._spreadsheet.options.cellHighlight
 
     return `hsla(${Math.floor(
       this.currentHue * 360
@@ -105,7 +108,7 @@ class CellHighlighter {
       return []
     }
 
-    const sheet = this._sheets.cellEditor.currentCell.simpleCellAddress.sheet
+    const sheet = this._sheets.activeSheetId
 
     const { goldenRatio } = this._spreadsheet.options.cellHighlight
 
@@ -163,11 +166,10 @@ class CellHighlighter {
       let rangeSimpleCellAddress
 
       if (type === 'simpleCellString') {
-        const precedentSimpleCellAddress =
-          this._spreadsheet.hyperformula.simpleCellAddressFromString(
-            referenceText,
-            sheet
-          )
+        const precedentSimpleCellAddress = this._spreadsheet.hyperformula.simpleCellAddressFromString(
+          referenceText,
+          sheet
+        )
 
         if (!precedentSimpleCellAddress) {
           return
@@ -184,11 +186,10 @@ class CellHighlighter {
           simpleCellAddress
         )
       } else {
-        const precedentSimpleCellRange =
-          this._spreadsheet.hyperformula.simpleCellRangeFromString(
-            referenceText,
-            sheet
-          )
+        const precedentSimpleCellRange = this._spreadsheet.hyperformula.simpleCellRangeFromString(
+          referenceText,
+          sheet
+        )
 
         if (!precedentSimpleCellRange) {
           return
@@ -220,8 +221,9 @@ class CellHighlighter {
           }
         )
 
-        const groupedCells =
-          this._sheets.cells._getGroupedCellsByStickyGroup(cells)
+        const groupedCells = this._sheets.cells._getGroupedCellsByStickyGroup(
+          cells
+        )
 
         const groupedCellHighlightedArea: IGroupedCellHighlightedArea = {}
 
@@ -356,8 +358,7 @@ class CellHighlighter {
    * @internal
    */
   _createHighlightedAreaFromCurrentSelection() {
-    const rangeSimpleCellAddress =
-      this._sheets.selector._getSelectionAreaFromRangeSimpleCellAddress()
+    const rangeSimpleCellAddress = this._sheets.selector._getSelectionAreaFromRangeSimpleCellAddress()
     const cells = rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,
       simpleCellAddress => {
@@ -417,10 +418,8 @@ class CellHighlighter {
       }
     })
 
-    const startCellReferenceString =
-      rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
-    const endCellReferenceString =
-      rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
+    const startCellReferenceString = rangeSimpleCellAddress.topLeftSimpleCellAddress.addressToString()
+    const endCellReferenceString = rangeSimpleCellAddress.bottomRightSimpleCellAddress.addressToString()
 
     const cellReference =
       startCellReferenceString === endCellReferenceString

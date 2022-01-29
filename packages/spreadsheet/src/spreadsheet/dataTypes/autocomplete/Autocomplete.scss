@@ -1,0 +1,37 @@
+@import '../../styles.scss';
+
+.powersheet-autocomplete {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  visibility: hidden;
+
+  &-list-container {
+    background: white;
+    max-height: 250px;
+    overflow-y: auto;
+  }
+
+  &-tippy-container {
+    height: 100%;
+  }
+
+  &-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      height: 32px;
+      line-height: 32px;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-family: 'Inconsolata', monospace, arial, sans, sans-serif;
+
+      &:hover {
+        background-color: #f5f5f5; // Extract to common styles
+      }
+    }
+  }
+}

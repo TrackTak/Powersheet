@@ -6,11 +6,7 @@ import { Story, Meta } from '@storybook/html'
 import { currencySymbolMap } from 'currency-symbol-map'
 import TouchEmulator from 'hammer-touchemulator'
 import { merge } from 'lodash'
-import {
-  ICellMetadata,
-  ICellStyles,
-  SerializedSheets
-} from '../spreadsheet/sheets/Data'
+import { ICellMetadata, SerializedSheets } from '../spreadsheet/sheets/Data'
 import { defaultOptions } from '..'
 import { HyperFormula } from '@tracktak/hyperformula'
 import {
@@ -133,6 +129,28 @@ MillionRows.args = {
     row: {
       headerRect: {
         width: 50
+      }
+    }
+  }
+}
+
+export const CellDataTypes = Template.bind({})
+
+CellDataTypes.args = {
+  sheets: {
+    'Cell Data Types': {
+      cells: {
+        '0_0': {
+          cellValue: 'Autocomplete cell'
+        },
+        '0_1': {
+          metadata: {
+            cellDataType: {
+              type: 'autocomplete',
+              cellContent: '={1,2,3,4,5,6,7,8,9,10,11,12,13}'
+            }
+          }
+        }
       }
     }
   }
@@ -458,7 +476,7 @@ RealExample.args = {
 const SpreadsheetPerformanceTemplate: Story<IArgs> = () => {
   const cells: Record<CellId, GenericDataRawCellContent<ICellMetadata>> = {}
 
-  const cell: Partial<ICellStyles> = {
+  const cell: Partial<ICellMetadata> = {
     comment: 'Performance of each cell',
     fontColor: 'white',
     fontSize: 13,

@@ -9,9 +9,9 @@ export type BorderStyle =
   | 'borderTop'
   | 'borderRight'
   | 'borderBottom'
+export type CellType = 'autocomplete'
 
 export interface ICellStyles {
-  comment?: string
   borders?: BorderStyle[]
   backgroundColor?: string
   fontColor?: string
@@ -26,7 +26,15 @@ export interface ICellStyles {
   verticalTextAlign?: VerticalTextAlign
 }
 
-export type ICellMetadata = ICellStyles
+export interface ICellDataType {
+  type: CellType
+  cellContent: string
+}
+
+export interface ICellMetadata extends ICellStyles {
+  comment?: string
+  cellDataType?: ICellDataType
+}
 
 export interface ISheetMetadata {
   frozenRow?: number

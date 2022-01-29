@@ -17,8 +17,14 @@ import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
 import { isPercent } from 'numfmt'
-import { RawCellContent } from '@tracktak/hyperformula'
+import {
+  CellValue,
+  DetailedCellError,
+  RawCellContent
+} from '@tracktak/hyperformula'
 import { defaultOptions } from '../../options'
+import Autocomplete from '../../dataTypes/autocomplete/Autocomplete'
+import { LabelValue } from '../../dataTypes/autocomplete/autocompleteHtmlElementHelpers'
 
 export interface ICurrentScroll {
   row: number
@@ -74,7 +80,8 @@ class CellEditor {
   cellEditorContainerEl: HTMLDivElement
   cellEditorEl: HTMLDivElement
   cellTooltip: DelegateInstance
-  formulaHelper?: FormulaHelper
+  formulaHelper: FormulaHelper
+  autocomplete: Autocomplete
   functionSummaryHelper: FunctionSummaryHelper
   currentCell: Cell | null = null
   currentScroll: ICurrentScroll | null = null
@@ -120,7 +127,11 @@ class CellEditor {
     this.cellEditorContainerEl.style.display = 'none'
 
     this.formulaHelper = new FormulaHelper(this._onItemClick)
-    this.cellEditorContainerEl.appendChild(this.formulaHelper.formulaHelperEl)
+    this.autocomplete = new Autocomplete(this._onAutocompleteItemClick)
+    this.cellEditorContainerEl.appendChild(this.autocomplete.dropdownEl)
+    this.cellEditorContainerEl.appendChild(
+      this.formulaHelper.autocomplete.dropdownEl
+    )
     this.functionSummaryHelper = new FunctionSummaryHelper(this._spreadsheet)
     this.cellEditorContainerEl.appendChild(
       this.functionSummaryHelper.functionSummaryHelperEl
@@ -143,7 +154,7 @@ class CellEditor {
     this.setContentEditable(value)
 
     this.cellEditorEl.focus()
-    this.formulaHelper?.hide()
+    this.formulaHelper.hide()
 
     setCaretToEndOfElement(this.cellEditorEl)
 
@@ -151,7 +162,7 @@ class CellEditor {
     this._updateFunctionSummaryHelperHighlights()
   }
 
-  private _onInput = (e: Event) => {
+  private _onInput = async (e: Event) => {
     const target = e.target as HTMLDivElement
     const nodes = target.getElementsByClassName('powersheet-token')
     const textContent = nodes.length
@@ -166,6 +177,38 @@ class CellEditor {
 
     restoreCaretPosition()
 
+    const {
+      metadata
+    } = this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+      this.currentCell!.simpleCellAddress
+    )
+
+    if (
+      metadata?.cellDataType?.type === 'autocomplete' &&
+      !!textContent?.length
+    ) {
+      const [
+        cellValue,
+        promise
+      ] = this._spreadsheet.hyperformula.calculateFormula(
+        metadata.cellDataType.cellContent,
+        this._sheets.activeSheetId
+      )
+
+      // TODO: Allow calculateFormula to bring back user specific types
+      promise.then(cellValue => {
+        this.updateAutocompleteDropdown((cellValue as unknown) as LabelValue[])
+      })
+
+      this.updateAutocompleteDropdown(cellValue)
+
+      this.autocomplete.show()
+
+      return
+    } else {
+      this.autocomplete.hide()
+    }
+
     const isFormulaInput = isStringAFormula(textContent)
 
     if (isFormulaInput) {
@@ -175,25 +218,52 @@ class CellEditor {
       functionName = hasOpenBracket ? input[0] : functionName
 
       if (hasOpenBracket) {
-        this.formulaHelper?.hide()
+        this.formulaHelper.hide()
         this.functionSummaryHelper.show(functionName)
         this._updateFunctionSummaryHelperHighlights()
       } else {
-        this.formulaHelper?.show(functionName)
+        this.formulaHelper.show(functionName)
         this.functionSummaryHelper.hide()
       }
       this._addPlaceholderIfNeeded(
         this.cellEditorEl,
         this._spreadsheet.formulaBar?.editableContent
       )
-    } else {
-      this.cellEditorEl.classList.remove(styles.formulaInput)
-      this._spreadsheet.formulaBar?.editableContent.classList.remove(
-        styles.formulaInput
-      )
-      this.formulaHelper?.hide()
-      this.functionSummaryHelper.hide()
+      return
     }
+
+    this.cellEditorEl.classList.remove(styles.formulaInput)
+    this._spreadsheet.formulaBar?.editableContent.classList.remove(
+      styles.formulaInput
+    )
+    this.formulaHelper.hide()
+    this.functionSummaryHelper.hide()
+  }
+
+  private updateAutocompleteDropdown(
+    cellValue: CellValue | CellValue[][] | LabelValue[]
+  ) {
+    const cellValues = Array.isArray(cellValue) ? cellValue : [cellValue]
+
+    const items = cellValues
+      .map(cellValue => {
+        if (cellValue instanceof DetailedCellError) {
+          return { label: cellValue.value, value: cellValue.value }
+        }
+
+        if (cellValue === null) {
+          return null
+        }
+
+        if (typeof cellValue === 'object') {
+          return cellValue
+        }
+
+        return { label: cellValue?.toString(), value: cellValue?.toString() }
+      })
+      .filter(x => x !== null) as LabelValue[]
+
+    this.autocomplete._updateList(items)
   }
 
   private moveSelectedCell({
@@ -213,6 +283,11 @@ class CellEditor {
     )
 
     this._sheets.selector.selectCellFromSimpleCellAddress(simpleCellAddress)
+  }
+
+  private _onAutocompleteItemClick = (value: string) => {
+    this.setContentEditable(value)
+    this.hideAndSave()
   }
 
   private _onKeyDown = (e: KeyboardEvent) => {
@@ -528,7 +603,8 @@ class CellEditor {
     this.cellEditorEl.removeEventListener('keyup', this._onKeyUp)
     this.cellEditorEl.removeEventListener('mouseup', this._onMouseUp)
     this.cellEditorEl.removeEventListener('click', this._onClick)
-    this.formulaHelper?._destroy()
+    this.formulaHelper._destroy()
+    this.autocomplete._destroy()
     this.functionSummaryHelper._destroy()
   }
 
@@ -638,6 +714,8 @@ class CellEditor {
     this.currentCell = null
     this.currentScroll = null
     this.cellTooltip.hide()
+    this.formulaHelper.hide()
+    this.autocomplete.hide()
 
     this.cellEditorContainerEl.style.display = 'none'
 

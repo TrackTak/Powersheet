@@ -45,7 +45,7 @@ class FunctionSummaryHelper {
       offset: [0, 0],
       interactive: true,
       arrow: false,
-      theme: 'formula-helper',
+      theme: 'autocomplete',
       trigger: 'manual',
       hideOnClick: false
     })

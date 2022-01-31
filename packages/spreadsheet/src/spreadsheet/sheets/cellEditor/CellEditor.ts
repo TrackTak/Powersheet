@@ -177,27 +177,24 @@ class CellEditor {
 
     restoreCaretPosition()
 
-    const {
-      metadata
-    } = this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      this.currentCell!.simpleCellAddress
-    )
+    const { metadata } =
+      this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        this.currentCell!.simpleCellAddress
+      )
 
     if (
       metadata?.cellDataType?.type === 'autocomplete' &&
       !!textContent?.length
     ) {
-      const [
-        cellValue,
-        promise
-      ] = this._spreadsheet.hyperformula.calculateFormula(
-        metadata.cellDataType.cellContent,
-        this._sheets.activeSheetId
-      )
+      const [cellValue, promise] =
+        this._spreadsheet.hyperformula.calculateFormula(
+          metadata.cellDataType.cellContent,
+          this._sheets.activeSheetId
+        )
 
       // TODO: Allow calculateFormula to bring back user specific types
       promise.then(cellValue => {
-        this.updateAutocompleteDropdown((cellValue as unknown) as LabelValue[])
+        this.updateAutocompleteDropdown(cellValue as unknown as LabelValue[])
       })
 
       this.updateAutocompleteDropdown(cellValue)
@@ -255,7 +252,7 @@ class CellEditor {
           return null
         }
 
-        if (typeof cellValue === 'object') {
+        if (!Array.isArray(cellValue) && typeof cellValue === 'object') {
           return cellValue
         }
 
@@ -270,11 +267,8 @@ class CellEditor {
     rowsToMove = 0,
     colsToMove = 0
   }: IMoveSelectCellParam) {
-    const {
-      sheet,
-      row,
-      col
-    } = this._sheets.selector.selectedCell?.simpleCellAddress!
+    const { sheet, row, col } =
+      this._sheets.selector.selectedCell?.simpleCellAddress!
 
     const simpleCellAddress = new SimpleCellAddress(
       sheet,
@@ -383,12 +377,10 @@ class CellEditor {
     }, '')
 
   private _setCellValue(simpleCellAddress: SimpleCellAddress) {
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let newValue = cellValue?.toString()
 
@@ -496,12 +488,10 @@ class CellEditor {
    */
   saveContentToCell() {
     const simpleCellAddress = this.currentCell!.simpleCellAddress
-    const {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      simpleCellAddress
-    )
+    const { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        simpleCellAddress
+      )
 
     let value: RawCellContent =
       this.currentCellText?.replace(NON_BREAKING_SPACE_REGEX, ' ') ?? null

@@ -22,7 +22,8 @@ class Autocomplete {
       interactive: true,
       arrow: false,
       theme: 'autocomplete',
-      trigger: 'manual'
+      trigger: 'manual',
+      maxWidth: ''
     })
   }
 

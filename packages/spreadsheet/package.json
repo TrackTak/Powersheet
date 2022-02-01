@@ -51,7 +51,7 @@
     "deploy-storybook": "storybook-to-aws-s3 --bucket-path=storybook.powersheet.io/"
   },
   "peerDependencies": {
-    "@tracktak/hyperformula": "5.1.0"
+    "@tracktak/hyperformula": "5.1.1"
   },
   "dependencies": {
     "@material/drawer": "^13.0.0",
@@ -87,7 +87,7 @@
     "@storybook/preset-scss": "^1.0.3",
     "@storybook/storybook-deployer": "^2.8.10",
     "@storybook/theming": "^6.3.12",
-    "@tracktak/hyperformula": "5.1.0",
+    "@tracktak/hyperformula": "5.1.1",
     "@types/lodash": "^4.14.176",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",

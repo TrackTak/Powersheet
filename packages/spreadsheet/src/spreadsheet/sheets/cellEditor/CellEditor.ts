@@ -158,6 +158,8 @@ class CellEditor {
     this.formulaHelper.hide()
 
     setCaretToEndOfElement(this.cellEditorEl)
+    const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
+    restoreCaretPosition()
 
     this.functionSummaryHelper.show(suggestion)
     this._updateFunctionSummaryHelperHighlights()

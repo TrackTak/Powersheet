@@ -1,4 +1,4 @@
-import tippy, { followCursor, Instance, Props } from 'tippy.js'
+import tippy, { Instance, Props } from 'tippy.js'
 import styles from './RightClickMenu.module.scss'
 import Sheets from '../Sheets'
 import { createGroup } from '../../htmlElementHelpers'
@@ -110,12 +110,12 @@ class RightClickMenu {
       delay: 100,
       offset: [0, 0],
       trigger: 'click',
-      plugins: [followCursor],
-      followCursor: 'initial',
       theme: 'dropdown',
       content,
       showOnCreate: false,
-      hideOnClick: true
+      hideOnClick: true,
+      getReferenceClientRect: () =>
+        this._sheets._getTippyCellReferenceClientRect()
     })
 
     this.hide()
@@ -124,8 +124,8 @@ class RightClickMenu {
   }
 
   private _commentOnClick = () => {
-    const simpleCellAddress = this._sheets.selector.selectedCell!
-      .simpleCellAddress
+    const simpleCellAddress =
+      this._sheets.selector.selectedCell!.simpleCellAddress
 
     this._sheets.comment?.show(simpleCellAddress)
   }
@@ -184,7 +184,9 @@ class RightClickMenu {
     this.dropdown.hide()
   }
 
-  show() {
+  async show() {
+    await this.dropdown.popperInstance?.update()
+
     this.dropdown.enable()
     this.dropdown.show()
   }

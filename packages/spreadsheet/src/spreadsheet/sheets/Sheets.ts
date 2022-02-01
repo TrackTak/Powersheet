@@ -334,8 +334,10 @@ class Sheets {
     this.rows.scrollBar._previousTouchMovePosition = clientY
   }
 
-  private _onContextMenu = (e: KonvaEventObject<MouseEvent>) => {
+  private _onContextMenu = async (e: KonvaEventObject<MouseEvent>) => {
     e.evt.preventDefault()
+
+    await this.rightClickMenu.show()
   }
 
   private _onSheetMouseDown = () => {
@@ -353,16 +355,8 @@ class Sheets {
   }
 
   private _stageOnClick = (e: KonvaEventObject<MouseEvent>) => {
-    if (e.evt.button === 0) {
+    if (e.evt.button !== 2) {
       this.rightClickMenu.hide()
-    }
-
-    if (e.evt.button === 2) {
-      if (this.rightClickMenu.dropdown.state.isShown) {
-        this.rightClickMenu.hide()
-      } else {
-        this.rightClickMenu.show()
-      }
     }
   }
 
@@ -384,12 +378,10 @@ class Sheets {
       selectedFirstcell.simpleCellAddress
     )
 
-    let {
-      cellValue,
-      metadata
-    } = this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
-      simpleCellAddress
-    )
+    let { cellValue, metadata } =
+      this._spreadsheet.hyperformula.getCellValue<ICellMetadata>(
+        simpleCellAddress
+      )
 
     const comment = metadata?.comment
 
@@ -478,11 +470,10 @@ class Sheets {
       default:
         if (this.cellEditor.getIsHidden() && !e.ctrlKey) {
           const selectedCell = this.selector.selectedCell!
-          const {
-            cellValue
-          } = this._spreadsheet.hyperformula.getCellSerialized(
-            selectedCell.simpleCellAddress
-          )
+          const { cellValue } =
+            this._spreadsheet.hyperformula.getCellSerialized(
+              selectedCell.simpleCellAddress
+            )
 
           if (cellValue) {
             this.cellEditor.clear()
@@ -578,9 +569,8 @@ class Sheets {
    * @internal
    */
   _getSizeFromCells(cells: Cell[]) {
-    const minMaxRangeSimpleCellAddress = this._getMinMaxRangeSimpleCellAddress(
-      cells
-    )
+    const minMaxRangeSimpleCellAddress =
+      this._getMinMaxRangeSimpleCellAddress(cells)
 
     let height = 0
     let width = 0
@@ -720,9 +710,8 @@ class Sheets {
    */
   _getTippyCellReferenceClientRect() {
     const { width, height } = this.selector.selectedCell!.rect.getSize()
-    const selectedCellPosition = this.selector.selectedCell!.rect.getAbsolutePosition(
-      this.stage
-    )
+    const selectedCellPosition =
+      this.selector.selectedCell!.rect.getAbsolutePosition(this.stage)
 
     let { x, y } = this.stage.container().getBoundingClientRect()
 

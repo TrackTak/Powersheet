@@ -158,6 +158,9 @@ class CellEditor {
     this.formulaHelper.hide()
 
     setCaretToEndOfElement(this.cellEditorEl)
+    const restoreCaretPosition = saveCaretPosition(this.cellEditorEl)
+    // Restoring the caret position so that the text selection is cleared
+    restoreCaretPosition()
 
     this.functionSummaryHelper.show(suggestion)
     this._updateFunctionSummaryHelperHighlights()

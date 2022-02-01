@@ -25,6 +25,7 @@ import {
 import { defaultOptions } from '../../options'
 import Autocomplete from '../../dataTypes/autocomplete/Autocomplete'
 import { LabelValue } from '../../dataTypes/autocomplete/autocompleteHtmlElementHelpers'
+import NP from 'number-precision'
 
 export interface ICurrentScroll {
   row: number
@@ -389,7 +390,7 @@ class CellEditor {
       Number.isFinite(parseFloat(newValue)) &&
       isPercent(metadata?.textFormatPattern)
     ) {
-      newValue = ((cellValue as number) * 100).toFixed(2) + '%'
+      newValue = NP.times(cellValue as number, 100) + '%'
     }
 
     this.setContentEditable(newValue?.toString() ?? null)
@@ -507,11 +508,11 @@ class CellEditor {
       Number.isFinite(parseFloat(value)) &&
       isPercent(newMetadata.textFormatPattern)
     ) {
-      value = parseFloat((parseFloat(value) / 100).toFixed(2))
+      value = NP.divide(parseFloat(value), 100)
     } else if (value !== null && isPercent(value)) {
       // We don't want hyperformula formatting it as a percentage if
       // the user typed in a percent because it will divide by 100 internally
-      value = parseFloat((parseFloat(value.slice(0, -1)) / 100).toFixed(2))
+      value = NP.divide(parseFloat(value.slice(0, -1)), 100)
 
       if (!isPercent(newMetadata.textFormatPattern)) {
         newMetadata.textFormatPattern =

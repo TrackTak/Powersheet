@@ -21,6 +21,7 @@ import {
 } from '@tracktak/hyperformula'
 import { Group } from 'konva/lib/Group'
 import { isNil } from 'lodash'
+import NP from 'number-precision'
 
 /**
  * @internal
@@ -158,7 +159,10 @@ class StyleableCell extends Cell {
     fontStyle.setStyle()
   }
 
-  private _setStrikeThrough(strikeThrough: undefined | boolean, underline: undefined | boolean) {
+  private _setStrikeThrough(
+    strikeThrough: undefined | boolean,
+    underline: undefined | boolean
+  ) {
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough ?? false,
@@ -168,7 +172,10 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private _setUnderline(underline: undefined | boolean, strikeThrough: undefined | boolean) {
+  private _setUnderline(
+    underline: undefined | boolean,
+    strikeThrough: undefined | boolean
+  ) {
     const textDecoration = new TextDecoration(
       this.text,
       strikeThrough,
@@ -178,13 +185,17 @@ class StyleableCell extends Cell {
     textDecoration.setStyle()
   }
 
-  private _setHorizontalTextAlign(horizontalTextAlign: undefined | HorizontalTextAlign) {
+  private _setHorizontalTextAlign(
+    horizontalTextAlign: undefined | HorizontalTextAlign
+  ) {
     this.text.align(
       horizontalTextAlign ?? this._sheets._spreadsheet.styles.cell.text.align!
     )
   }
 
-  private _setVerticalTextAlign(verticalTextAlign: undefined | VerticalTextAlign) {
+  private _setVerticalTextAlign(
+    verticalTextAlign: undefined | VerticalTextAlign
+  ) {
     this.text.verticalAlign(
       verticalTextAlign ??
         this._sheets._spreadsheet.styles.cell.text.verticalAlign!
@@ -235,11 +246,13 @@ class StyleableCell extends Cell {
     return newText
   }
 
-  private _setCellTextValue(cellValueSerialized: undefined | RawCellContent, textFormatPattern: undefined | string) {
-    const { cellValue }  =
-      this._sheets._spreadsheet.hyperformula.getCellValue(
-        this.simpleCellAddress
-      )
+  private _setCellTextValue(
+    cellValueSerialized: undefined | RawCellContent,
+    textFormatPattern: undefined | string
+  ) {
+    const { cellValue } = this._sheets._spreadsheet.hyperformula.getCellValue(
+      this.simpleCellAddress
+    )
     const width = this.rect.width()
 
     let value: undefined | CellValue | RawCellContent = cellValue
@@ -255,9 +268,10 @@ class StyleableCell extends Cell {
     if (!isNil(value)) {
       let text = value
 
-      const detailedCellType = this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
-        this.simpleCellAddress
-      )
+      const detailedCellType =
+        this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
+          this.simpleCellAddress
+        )
 
       // Only set the width for text wrapping to work
       this.text.width(width)
@@ -276,19 +290,32 @@ class StyleableCell extends Cell {
         detailedCellType !== CellValueDetailedType.STRING &&
         detailedCellType !== CellValueDetailedType.BOOLEAN
       ) {
-        textFormatPattern = this._sheets._spreadsheet.parseDynamicPattern(textFormatPattern)
+        textFormatPattern =
+          this._sheets._spreadsheet.parseDynamicPattern(textFormatPattern)
 
         text = this._formatTextOnPattern(text.toString(), textFormatPattern)
       }
 
-      if (detailedCellType === CellValueDetailedType.NUMBER_PERCENT && !isPercent(text)) {
-        text = ((text as number) * 100).toFixed(2) + "%"
+      if (
+        detailedCellType === CellValueDetailedType.NUMBER_PERCENT &&
+        !isPercent(text)
+      ) {
+        text = NP.times(text as number, 100) + '%'
       }
 
-      if (detailedCellType === CellValueDetailedType.NUMBER_CURRENCY && !textFormatPattern) {
-        const currencySymbol = this._sheets._spreadsheet.hyperformula.getCellValueFormat(this.simpleCellAddress)!
+      if (
+        detailedCellType === CellValueDetailedType.NUMBER_CURRENCY &&
+        !textFormatPattern
+      ) {
+        const currencySymbol =
+          this._sheets._spreadsheet.hyperformula.getCellValueFormat(
+            this.simpleCellAddress
+          )!
 
-        text = this._formatTextOnPattern(text.toString(), this._sheets._spreadsheet.options.textPatternFormats.number)
+        text = this._formatTextOnPattern(
+          text.toString(),
+          this._sheets._spreadsheet.options.textPatternFormats.number
+        )
 
         text = currencySymbol + text
       }
@@ -311,7 +338,10 @@ class StyleableCell extends Cell {
   }
 
   private _updateStyles() {
-    const { cellValue, metadata } = this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(this.simpleCellAddress)
+    const { cellValue, metadata } =
+      this._sheets._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        this.simpleCellAddress
+      )
 
     const {
       textWrap,
@@ -326,7 +356,7 @@ class StyleableCell extends Cell {
       horizontalTextAlign,
       verticalTextAlign,
       textFormatPattern,
-      comment,
+      comment
     } = metadata ?? {}
 
     this._setCellTextValue(cellValue, textFormatPattern)
@@ -351,9 +381,10 @@ class StyleableCell extends Cell {
 
     // TODO: Add logic to not throw in hyperformula if a cell is missing
     try {
-      cellType = this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
-        this.simpleCellAddress
-      )
+      cellType =
+        this._sheets._spreadsheet.hyperformula.getCellValueDetailedType(
+          this.simpleCellAddress
+        )
     } catch (error) {}
 
     this._setCellErrorMarker(CellValueDetailedType.ERROR === cellType)

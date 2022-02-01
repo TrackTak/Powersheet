@@ -13082,6 +13082,11 @@ number-is-nan@^1.0.0:
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
   integrity sha1-CXtgK1NCKlIsGvuHkDGDNpQaAR0=
 
+number-precision@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/number-precision/-/number-precision-1.5.1.tgz#ea343990409d873464074353fcb30ac105a90e61"
+  integrity sha512-JdTfhUHd1aUL4svSaJXlv3CKNz92js2z0+HS/9AX8euw+akompBz/QEZ7e3y7eTuJxvRqXBZP6mapUlTtLoTsA==
+
 numfmt@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/numfmt/-/numfmt-2.1.0.tgz#98bb11ca5eb242d537f4fb025c43768956c748b7"

@@ -9,7 +9,6 @@ import {
   mapFromSheetsToSerializedSheets,
   prefix
 } from './utils'
-import 'tippy.js/dist/tippy.css'
 import './tippy.scss'
 import styles from './Spreadsheet.module.scss'
 import Exporter from './Exporter'

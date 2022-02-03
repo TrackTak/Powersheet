@@ -1,6 +1,6 @@
 {
   "name": "@tracktak/powersheet",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "A Lightning Fast Spreadsheet for Businesses",
   "author": "TRACKTAK LTD",
   "source": "src/index.ts",
@@ -23,8 +23,9 @@
   ],
   "scripts": {
     "build:tsc": "tsc -p tsconfig.json",
-    "build": "parcel build",
+    "build": "parcel build && npm run remove-inline-css",
     "watch:build": "parcel watch",
+    "remove-inline-css": "babel dist --out-dir dist --config-file ./babel.style.config.json",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:lint": "eslint src --ext .ts --fix",
@@ -58,6 +59,7 @@
     "a-color-picker": "^1.2.1",
     "change-case": "^4.1.2",
     "konva": "^8.2.2",
+    "comlink": "^4.3.1",
     "lodash": "^4.17.21",
     "material-components-web": "^13.0.0",
     "number-precision": "^1.5.1",
@@ -69,8 +71,9 @@
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
-    "@babel/core": "^7.16.0",
+    "@babel/cli": "^7.16.8",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@iwatakeshi/babel-plugin-remove-import-styles": "^1.0.5",
     "@microsoft/api-documenter": "^7.13.68",
     "@microsoft/api-extractor": "^7.18.19",
     "@parcel/core": "^2.0.1",

@@ -1,3 +1,5 @@
+@use 'tippy.js/dist/tippy';
+
 .tippy-box[data-theme~='dropdown'] {
   color: rgba(0, 0, 0, 0.9);
   background: white;

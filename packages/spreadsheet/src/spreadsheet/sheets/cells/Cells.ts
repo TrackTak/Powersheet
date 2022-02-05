@@ -60,7 +60,8 @@ class Cells {
 
   private _getCellGroup() {
     const cellGroup = new Group({
-      name: 'stylableCellGroup'
+      name: 'stylableCellGroup',
+      listening: false
     })
     const cellRect = new Rect({
       ...this._spreadsheet.styles.cell.rect,
@@ -94,7 +95,8 @@ class Cells {
     // Cell borders must be in a seperate group as they
     // need to take precedent over all cell strokes in their zIndex
     const cellBordersGroup = new Group({
-      name: 'stylableCellBordersGroup'
+      name: 'stylableCellBordersGroup',
+      listening: false
     })
 
     cellBordersGroup.add(...borderLines)
@@ -303,7 +305,9 @@ class Cells {
     const cellExists = this.cellsMap.has(sheetCellId)
 
     if (!cellExists) {
-      this._setStyleableCell(simpleCellAddress)
+      if (isOnFrozenRowCol || cell.cellValue || cell.metadata) {
+        this._setStyleableCell(simpleCellAddress)
+      }
     }
   }
 

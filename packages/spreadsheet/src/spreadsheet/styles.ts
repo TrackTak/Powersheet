@@ -67,46 +67,62 @@ const fontFamily = 'Arial'
 export const sharedStyles = {
   gridLine: {
     stroke: '#e3e3e3',
-    strokeWidth
+    strokeWidth,
+    listening: false,
+    perfectDrawing: false
   },
   resizeMarker: {
     fill: '#0057ff',
     opacity: 0.3,
     visible: false,
     hitStrokeWidth: resizeHitStrokeWidth,
-    draggable: true
+    draggable: true,
+    perfectDrawing: false
   },
   resizeGuideLine: {
     strokeWidth,
     visible: false,
-    stroke: 'blue'
+    stroke: 'blue',
+    listening: false,
+    perfectDrawing: false
   },
   resizeLine: {
     stroke: '#8a8a8a',
     strokeWidth,
     hitStrokeWidth: resizeHitStrokeWidth,
-    opacity: 0.7
+    opacity: 0.7,
+    perfectDrawing: false
   },
   frozenLine: {
     strokeWidth,
-    stroke: 'blue'
+    stroke: 'blue',
+    listening: false,
+    perfectDrawing: false
   },
   headerRect: {
-    fill: '#f4f5f8'
+    fill: '#f4f5f8',
+    listening: false,
+    perfectDrawing: false
   },
   headerText: {
-    fontFamily
+    fontFamily,
+    listening: false,
+    perfectDrawing: false
   }
 }
 
 export const defaultStyles: IStyles = {
   topLeftRect: {
-    fill: sharedStyles.headerRect.fill
+    fill: sharedStyles.headerRect.fill,
+    listening: false,
+    perfectDrawing: false
   },
   selection: {
     strokeWidth,
     stroke: '#1a73e8',
-    fill: 'rgb(14, 101, 235, 0.1)'
+    fill: 'rgb(14, 101, 235, 0.1)',
+    listening: false,
+    perfectDrawing: false
   },
   row: {
     frozenLine: sharedStyles.frozenLine,
@@ -152,11 +168,15 @@ export const defaultStyles: IStyles = {
   },
   selectionFirstCell: {
     rect: {
-      fill: 'transparent'
+      fill: 'transparent',
+      listening: false,
+      perfectDrawing: false
     },
     innerRect: {
       strokeWidth: cellStrokeWidth,
-      stroke: '#0057ff'
+      stroke: '#0057ff',
+      listening: false,
+      perfectDrawing: false
     }
   },
   highlightedCell: {
@@ -172,7 +192,9 @@ export const defaultStyles: IStyles = {
     rect: {
       fill: 'white',
       stroke: sharedStyles.gridLine.stroke,
-      strokeWidth: sharedStyles.gridLine.strokeWidth
+      strokeWidth: sharedStyles.gridLine.strokeWidth,
+      listening: false,
+      perfectDrawing: false
     },
     text: {
       fontFamily,
@@ -182,7 +204,9 @@ export const defaultStyles: IStyles = {
       verticalAlign: 'middle',
       wrap: 'none',
       padding: 2,
-      visible: false
+      visible: false,
+      listening: false,
+      perfectDrawing: false
     },
     commentMarker: {
       stroke: 'orange',
@@ -190,7 +214,8 @@ export const defaultStyles: IStyles = {
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,
-      visible: false
+      visible: false,
+      perfectDrawing: false
     },
     errorMarker: {
       stroke: '#ff0000',
@@ -198,12 +223,15 @@ export const defaultStyles: IStyles = {
       rotation: 180,
       points: [0, 5, 5, 5, 0, 0],
       closed: true,
-      visible: false
+      visible: false,
+      perfectDrawing: false
     },
     borderLine: {
       stroke: 'black',
       strokeWidth: sharedStyles.gridLine.strokeWidth,
-      visible: false
+      visible: false,
+      listening: false,
+      perfectDrawing: false
     }
   }
 }

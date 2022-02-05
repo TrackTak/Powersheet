@@ -1,7 +1,9 @@
 import { Shape } from 'konva/lib/Shape'
 import { Rect } from 'konva/lib/shapes/Rect'
 import { Vector2d } from 'konva/lib/types'
+import { isEqual } from 'lodash'
 import Spreadsheet from '../Spreadsheet'
+import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress'
 import SelectedCell from './cells/cell/SelectedCell'
 import SimpleCellAddress from './cells/cell/SimpleCellAddress'
 import { IGroupedCells } from './cells/Cells'
@@ -34,6 +36,7 @@ class Selector {
   selectedSimpleCellAddress: SimpleCellAddress
   groupedCellSelectionArea: IGroupedCellSelectionArea
   selectionArea?: ISelectionArea | null
+  previousRangeSimpleCellAddress?: RangeSimpleCellAddress | null
   private _spreadsheet: Spreadsheet
   private _previousSelectedSimpleCellAddress?: SimpleCellAddress
 
@@ -57,7 +60,11 @@ class Selector {
   }
 
   private _renderSelectedCell() {
-    if (this.selectedSimpleCellAddress) {
+    const hasSelectedDifferenceCell = !isEqual(
+      this.selectedSimpleCellAddress,
+      this._previousSelectedSimpleCellAddress
+    )
+    if (this.selectedSimpleCellAddress && hasSelectedDifferenceCell) {
       this.selectedCell?._destroy()
 
       this.selectedCell = new SelectedCell(
@@ -74,8 +81,22 @@ class Selector {
 
   private _renderSelectionArea() {
     if (this.selectionArea) {
-      const rangeSimpleCellAddress = this._getSelectionAreaFromRangeSimpleCellAddress()
+      const rangeSimpleCellAddress =
+        this._getSelectionAreaFromRangeSimpleCellAddress()
+      const hasMovedInSameCell =
+        isEqual(
+          rangeSimpleCellAddress.topLeftSimpleCellAddress,
+          this.previousRangeSimpleCellAddress?.topLeftSimpleCellAddress
+        ) &&
+        isEqual(
+          rangeSimpleCellAddress.bottomRightSimpleCellAddress,
+          this.previousRangeSimpleCellAddress?.bottomRightSimpleCellAddress
+        )
+      if (hasMovedInSameCell) {
+        return
+      }
 
+      this.previousRangeSimpleCellAddress = rangeSimpleCellAddress
       this.selectedCells = rangeSimpleCellAddress.getCellsBetweenRange(
         this._sheets,
         simpleCellAddress => {
@@ -118,7 +139,8 @@ class Selector {
   }
 
   getSelectedCellsFromArea() {
-    const rangeSimpleCellAddress = this._getSelectionAreaFromRangeSimpleCellAddress()
+    const rangeSimpleCellAddress =
+      this._getSelectionAreaFromRangeSimpleCellAddress()
 
     return rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,
@@ -136,10 +158,11 @@ class Selector {
       throw new Error('selectionArea is undefined')
     }
 
-    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
-      this.selectionArea.start,
-      this.selectionArea.end
-    )
+    const rangeSimpleCellAddress =
+      this._sheets._convertVectorsToRangeSimpleCellAddress(
+        this.selectionArea.start,
+        this.selectionArea.end
+      )
 
     return rangeSimpleCellAddress
   }
@@ -213,13 +236,12 @@ class Selector {
    * @param vector The X,Y co-ordinates to start the selection at
    */
   startSelection(vector: Vector2d) {
-    this._previousSelectedSimpleCellAddress = this.selectedCell?.simpleCellAddress
+    this._previousSelectedSimpleCellAddress =
+      this.selectedCell?.simpleCellAddress
     this.selectionArea = null
 
-    const rangeSimpleCellAddress = this._sheets._convertVectorsToRangeSimpleCellAddress(
-      vector,
-      vector
-    )
+    const rangeSimpleCellAddress =
+      this._sheets._convertVectorsToRangeSimpleCellAddress(vector, vector)
 
     const cell = rangeSimpleCellAddress.getCellsBetweenRange(
       this._sheets,

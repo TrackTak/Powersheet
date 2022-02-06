@@ -196,12 +196,14 @@ class CellEditor {
           this._sheets.activeSheetId
         )
 
-      // TODO: Allow calculateFormula to bring back user specific types
-      promise.then(cellValue => {
-        this.updateAutocompleteDropdown(cellValue as unknown as LabelValue[])
-      })
-
-      this.updateAutocompleteDropdown(cellValue)
+      if (promise) {
+        // TODO: Allow calculateFormula to bring back user specific types
+        promise?.then(cellValue => {
+          this.updateAutocompleteDropdown(cellValue as unknown as LabelValue[])
+        })
+      } else {
+        this.updateAutocompleteDropdown(cellValue)
+      }
 
       this.autocomplete.show()
 

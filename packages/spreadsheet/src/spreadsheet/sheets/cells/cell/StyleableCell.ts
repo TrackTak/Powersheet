@@ -3,7 +3,7 @@ import { Text } from 'konva/lib/shapes/Text'
 import Sheets from '../../Sheets'
 import FontStyle from './FontStyle'
 import TextDecoration from './TextDecoration'
-import { format, isPercent } from 'numfmt'
+import numfmt from 'numfmt'
 import Cell from './Cell'
 import SimpleCellAddress from './SimpleCellAddress'
 import {
@@ -231,14 +231,16 @@ class StyleableCell extends Cell {
   private _formatTextOnPattern(text: string, textFormatPattern: string) {
     let newText = text
 
+    const formatter = numfmt(textFormatPattern)
+
     try {
-      newText = format(textFormatPattern, Number(newText))
+      newText = formatter(Number(newText))
     } catch (e) {
       newText = e as string
     }
 
     try {
-      newText = format(textFormatPattern, newText)
+      newText = formatter(newText)
     } catch (e) {
       newText = e as string
     }
@@ -298,7 +300,7 @@ class StyleableCell extends Cell {
 
       if (
         detailedCellType === CellValueDetailedType.NUMBER_PERCENT &&
-        !isPercent(text)
+        !numfmt(text).isPercent()
       ) {
         text = NP.times(text as number, 100) + '%'
       }

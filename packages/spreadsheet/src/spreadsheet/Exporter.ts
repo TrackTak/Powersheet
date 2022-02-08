@@ -1,7 +1,7 @@
 import type { ColInfo, RowInfo, WorkSheet, XLSX$Utils } from 'xlsx'
 import Spreadsheet from './Spreadsheet'
 import { isNil } from 'lodash'
-import { isText, isDate, isPercent } from 'numfmt'
+import numfmt from 'numfmt'
 import RangeSimpleCellAddress from './sheets/cells/cell/RangeSimpleCellAddress'
 import SimpleCellAddress from './sheets/cells/cell/SimpleCellAddress'
 import { FunctionPluginDefinition } from '@tracktak/hyperformula'
@@ -10,6 +10,7 @@ import { FunctionPluginDefinition } from '@tracktak/hyperformula'
 import { writeFile, utils } from 'xlsx/dist/xlsx.mini.min'
 import { ICellMetadata, ISheetMetadata } from './sheets/Data'
 import Merger from './sheets/Merger'
+import NP from 'number-precision'
 
 export interface ICustomRegisteredPluginDefinition {
   implementedFunctions: FunctionPluginDefinition['implementedFunctions']
@@ -149,19 +150,28 @@ class Exporter {
           let type
 
           let textFormatPattern = serializedCell?.metadata?.textFormatPattern
+            ? this._spreadsheet.parseDynamicPattern(
+                serializedCell?.metadata?.textFormatPattern
+              )
+            : undefined
 
-          if (isPercent(value)) {
-            textFormatPattern = undefined
-          }
+          const formatter = numfmt(textFormatPattern)
 
           if (isNil(value) && isNil(textFormatPattern)) {
             type = 'z'
-          } else if (isText(textFormatPattern) || isNil(textFormatPattern)) {
+          } else if (
+            formatter.isText(textFormatPattern) ||
+            isNil(textFormatPattern)
+          ) {
             type = 's'
-          } else if (isDate(textFormatPattern)) {
+          } else if (formatter.isDate(textFormatPattern)) {
             type = 'd'
           } else {
             type = 'n'
+          }
+
+          if (formatter.isPercent() && numfmt.isPercent(value)) {
+            value = NP.divide(parseFloat(value.slice(0, -1)), 100)
           }
 
           if (value) {

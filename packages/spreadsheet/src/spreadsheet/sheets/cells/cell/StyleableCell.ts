@@ -3,7 +3,7 @@ import { Text } from 'konva/lib/shapes/Text'
 import Sheets from '../../Sheets'
 import FontStyle from './FontStyle'
 import TextDecoration from './TextDecoration'
-import numfmt from 'numfmt'
+import numfmt, { isPercent } from 'numfmt'
 import Cell from './Cell'
 import SimpleCellAddress from './SimpleCellAddress'
 import {
@@ -300,7 +300,7 @@ class StyleableCell extends Cell {
 
       if (
         detailedCellType === CellValueDetailedType.NUMBER_PERCENT &&
-        !numfmt(text).isPercent()
+        !isPercent(text)
       ) {
         text = NP.times(text as number, 100) + '%'
       }

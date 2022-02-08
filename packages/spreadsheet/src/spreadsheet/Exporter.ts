@@ -157,7 +157,28 @@ class Exporter {
 
           const formatter = numfmt(textFormatPattern)
 
-          if (formatter.isPercent() && numfmt.isPercent(value)) {
+          const cellType =
+            this._spreadsheet.hyperformula.getCellType(simpleCellAddress)
+          // TODO: Fix this in HF later
+          const cellValueDetailedType = !isNil(cell.cellValue)
+            ? this._spreadsheet.hyperformula.getCellValueDetailedType(
+                simpleCellAddress
+              )
+            : 'EMPTY'
+
+          if (
+            typeof value === 'string' &&
+            cellType === 'VALUE' &&
+            cellValueDetailedType === 'NUMBER_RAW'
+          ) {
+            value = parseFloat(value)
+          }
+
+          if (
+            formatter.isPercent() &&
+            cellType === 'VALUE' &&
+            cellValueDetailedType === 'NUMBER_PERCENT'
+          ) {
             value = NP.divide(parseFloat(value.slice(0, -1)), 100)
           }
 
@@ -172,7 +193,6 @@ class Exporter {
             type = 'd'
           } else {
             type = 'n'
-            value = isNil(value) ? value : Number(value)
           }
 
           if (value) {

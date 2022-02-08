@@ -34,8 +34,7 @@
       "2_4": {
         "metadata": {
           "backgroundColor": "#8ff1d2",
-          "comment": "The forecasted number of years until the company’s current Operating Margin will converge on the target Operating Margin. For example, if today's year is 2021 and the year of convergence is 5 then it will converge in year 2026.",
-          "textFormatPattern": "#,##0.00"
+          "comment": "The forecasted number of years until the company’s current Operating Margin will converge on the target Operating Margin. For example, if today's year is 2021 and the year of convergence is 5 then it will converge in year 2026."
         }
       },
       "3_4": {

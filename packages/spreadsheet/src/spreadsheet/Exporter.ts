@@ -97,10 +97,7 @@ class Exporter {
             ...worksheet[cellString]
           }
 
-          let value =
-            worksheet[cellString].v ??
-            serializedCell?.cellValue ??
-            cell.cellValue
+          let value = worksheet[cellString].v ?? cell.cellValue
 
           if (
             this._spreadsheet.hyperformula.doesCellHaveFormula(
@@ -157,9 +154,6 @@ class Exporter {
 
           const formatter = numfmt(textFormatPattern)
 
-          const cellType =
-            this._spreadsheet.hyperformula.getCellType(simpleCellAddress)
-
           // TODO: Fix this in HF later
           const cellValueType = isNil(cell.cellValue)
             ? 'EMPTY'
@@ -174,15 +168,14 @@ class Exporter {
 
           if (
             typeof value === 'string' &&
-            cellType === 'VALUE' &&
             cellValueDetailedType === 'NUMBER_RAW'
           ) {
             value = parseFloat(value)
           }
 
           if (
+            typeof value === 'string' &&
             formatter.isPercent() &&
-            cellType === 'VALUE' &&
             cellValueDetailedType === 'NUMBER_PERCENT'
           ) {
             value = NP.divide(parseFloat(value.slice(0, -1)), 100)
@@ -198,7 +191,7 @@ class Exporter {
             type = 'n'
           }
 
-          if (value) {
+          if (!isNil(value) && worksheet[cellString].f === undefined) {
             worksheet[cellString].v = value
           }
 

@@ -1084,43 +1084,43 @@
       "29_1": { "cellValue": "Base Year", "metadata": { "bold": true } },
       "29_2": {
         "cellValue": "1",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_3": {
         "cellValue": "2",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_4": {
         "cellValue": "3",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_5": {
         "cellValue": "4",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_6": {
         "cellValue": "5",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_7": {
         "cellValue": "6",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_8": {
         "cellValue": "7",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_9": {
         "cellValue": "8",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_10": {
         "cellValue": "9",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_11": {
         "cellValue": "10",
-        "metadata": { "bold": true, "textFormatPattern": "#,##0.00" }
+        "metadata": { "bold": true }
       },
       "29_12": { "cellValue": "Terminal Year", "metadata": { "bold": true } },
       "30_0": { "cellValue": "Revenues", "metadata": { "bold": true } },

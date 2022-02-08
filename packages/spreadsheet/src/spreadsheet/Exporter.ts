@@ -159,12 +159,18 @@ class Exporter {
 
           const cellType =
             this._spreadsheet.hyperformula.getCellType(simpleCellAddress)
+
           // TODO: Fix this in HF later
-          const cellValueDetailedType = !isNil(cell.cellValue)
-            ? this._spreadsheet.hyperformula.getCellValueDetailedType(
+          const cellValueType = isNil(cell.cellValue)
+            ? 'EMPTY'
+            : this._spreadsheet.hyperformula.getCellValueType(simpleCellAddress)
+
+          // TODO: Fix this in HF later
+          const cellValueDetailedType = isNil(cell.cellValue)
+            ? 'EMPTY'
+            : this._spreadsheet.hyperformula.getCellValueDetailedType(
                 simpleCellAddress
               )
-            : 'EMPTY'
 
           if (
             typeof value === 'string' &&
@@ -182,14 +188,11 @@ class Exporter {
             value = NP.divide(parseFloat(value.slice(0, -1)), 100)
           }
 
-          if (isNil(value) && isNil(textFormatPattern)) {
+          if (cellValueType === 'EMPTY') {
             type = 'z'
-          } else if (
-            formatter.isText(textFormatPattern) ||
-            isNil(textFormatPattern)
-          ) {
+          } else if (cellValueType === 'STRING') {
             type = 's'
-          } else if (formatter.isDate(textFormatPattern)) {
+          } else if (cellValueDetailedType === 'NUMBER_DATE') {
             type = 'd'
           } else {
             type = 'n'

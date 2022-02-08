@@ -16,7 +16,7 @@ import { ICellMetadata } from '../Data'
 import SimpleCellAddress from '../cells/cell/SimpleCellAddress'
 import FunctionSummaryHelper from '../../functionHelper/functionSummaryHelper/FunctionSummaryHelper'
 import { IToken } from 'chevrotain'
-import numfmt from 'numfmt'
+import { isPercent } from 'numfmt'
 import {
   CellValue,
   DetailedCellError,
@@ -390,12 +390,10 @@ class CellEditor {
 
     let newValue = cellValue?.toString()
 
-    const formatter = numfmt(metadata?.textFormatPattern)
-
     if (
       newValue !== undefined &&
       Number.isFinite(parseFloat(newValue)) &&
-      formatter.isPercent()
+      isPercent(metadata?.textFormatPattern)
     ) {
       newValue = NP.times(cellValue as number, 100) + '%'
     }
@@ -510,20 +508,18 @@ class CellEditor {
       return
     }
 
-    const formatter = numfmt(newMetadata?.textFormatPattern)
-
     if (
       value !== null &&
       Number.isFinite(parseFloat(value)) &&
-      formatter.isPercent()
+      isPercent(newMetadata.textFormatPattern)
     ) {
       value = NP.divide(parseFloat(value), 100)
-    } else if (value !== null && numfmt(value).isPercent()) {
+    } else if (value !== null && isPercent(value)) {
       // We don't want hyperformula formatting it as a percentage if
       // the user typed in a percent because it will divide by 100 internally
       value = NP.divide(parseFloat(value.slice(0, -1)), 100)
 
-      if (!formatter.isPercent()) {
+      if (!isPercent(newMetadata.textFormatPattern)) {
         newMetadata.textFormatPattern =
           defaultOptions.textPatternFormats.percent
       }

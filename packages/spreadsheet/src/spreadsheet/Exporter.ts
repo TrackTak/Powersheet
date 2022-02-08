@@ -157,6 +157,10 @@ class Exporter {
 
           const formatter = numfmt(textFormatPattern)
 
+          if (formatter.isPercent() && numfmt.isPercent(value)) {
+            value = NP.divide(parseFloat(value.slice(0, -1)), 100)
+          }
+
           if (isNil(value) && isNil(textFormatPattern)) {
             type = 'z'
           } else if (
@@ -168,10 +172,7 @@ class Exporter {
             type = 'd'
           } else {
             type = 'n'
-          }
-
-          if (formatter.isPercent() && numfmt.isPercent(value)) {
-            value = NP.divide(parseFloat(value.slice(0, -1)), 100)
+            value = isNil(value) ? value : Number(value)
           }
 
           if (value) {

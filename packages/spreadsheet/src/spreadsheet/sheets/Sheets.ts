@@ -498,6 +498,7 @@ class Sheets {
   }
 
   switchSheet(sheetId: number) {
+    this._cachedGroups.styledCells.clear()
     this.cells._destroy()
     this.rows._destroy()
     this.cols._destroy()
@@ -511,6 +512,8 @@ class Sheets {
     this.rows = new RowCols('row', this)
     this.selector = new Selector(this)
     this.cellHighlighter = new CellHighlighter(this)
+
+    this.cells._setCachedCells(sheetId)
 
     this.cellEditor._setActiveSheetId()
     this._spreadsheet.render()
@@ -539,7 +542,7 @@ class Sheets {
 
     this.rows._setCachedRowCols()
     this.cols._setCachedRowCols()
-    this.cells._setCachedCells()
+    this.cells._setCachedCells(this.activeSheetId)
 
     this._spreadsheet.render()
   }

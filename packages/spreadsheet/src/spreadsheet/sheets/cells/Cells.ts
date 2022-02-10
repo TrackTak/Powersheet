@@ -156,7 +156,7 @@ class Cells {
   /**
    * @internal
    */
-  _setCachedCells() {
+  _setCachedCells(activeSheetId: number) {
     // TODO: Remove * 2 and measure the
     // outOfViewport for freeze correctly instead
     // const currentNumberOfCachedCells =
@@ -180,20 +180,22 @@ class Cells {
     //   })
     // }
 
+    // TODO - is this correct?
     const sheetValues =
-      this._sheets._spreadsheet.hyperformula.getAllSheetsValues()
+      this._sheets._spreadsheet.hyperformula.getSheetValues(activeSheetId)
 
-    Object.keys(sheetValues).forEach((sheet, sheetIndex) => {
-      const cells = sheetValues[sheet]
-      for (let rowIndex = 0; rowIndex < cells.length; rowIndex++) {
-        const cols = cells[rowIndex]
-        if (!cols) continue
-        for (let colIndex = 0; colIndex < cols.length; colIndex++) {
-          const address = new SimpleCellAddress(sheetIndex, rowIndex, colIndex)
-          this._setStyleableCell(address)
-        }
-      }
+    // TODO - Cache one sheet at a time or all at startup?
+    // Object.keys(sheetValues).forEach((sheet, sheetIndex) => {
+    const { cells } = sheetValues
+    cells.forEach((_, rowIndex) => {
+      const cols = cells[rowIndex]
+      cols.forEach((_, colIndex) => {
+        const address = new SimpleCellAddress(activeSheetId, rowIndex, colIndex)
+        this._setStyleableCell(address)
+      })
     })
+
+    // })
     // this._sheets._cachedGroupsNumber.cells = currentNumberOfCachedCells
   }
 

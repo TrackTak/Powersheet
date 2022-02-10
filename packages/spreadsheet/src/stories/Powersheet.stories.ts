@@ -303,6 +303,12 @@ AllCurrencySymbols.args = {
         },
         '5_1': {
           cellValue: 'NT$'
+        },
+        '5_3': {
+          cellValue: '2',
+          metadata: {
+            textFormatPattern: `=\"['All Currency Symbols'!B6]\"#,##0.00`
+          }
         }
       }
     }

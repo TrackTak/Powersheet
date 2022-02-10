@@ -6,6 +6,7 @@ import FormulaHelper from '../../formulaHelper/FormulaHelper'
 import Spreadsheet from '../../Spreadsheet'
 import Cell from '../cells/cell/Cell'
 import {
+  addressToSheetCellId,
   getCaretPosition,
   isStringAFormula,
   prefix,
@@ -527,6 +528,9 @@ class CellEditor {
       cellValue: value,
       metadata: newMetadata
     })
+    this._sheets._cachedGroups.styledCells.delete(
+      addressToSheetCellId(simpleCellAddress)
+    )
     this._spreadsheet.persistData()
   }
 

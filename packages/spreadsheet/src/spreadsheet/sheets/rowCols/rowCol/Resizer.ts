@@ -26,9 +26,10 @@ class Resizer {
     this._sheets = this._rowCols._sheets
     this._spreadsheet = this._sheets._spreadsheet
 
-    const size = this._rowCols._sheets._getViewportVector()[
-      this._rowCols._oppositeFunctions.axis
-    ]
+    const size =
+      this._rowCols._sheets._getViewportVector()[
+        this._rowCols._oppositeFunctions.axis
+      ]
     this.resizeMarker = new Rect({
       ...this._spreadsheet.styles[this._rowCols._type].resizeMarker,
       name: 'resizeMarker',
@@ -115,7 +116,7 @@ class Resizer {
 
     this.hideResizeMarker()
     this.hideGuideLine()
-
+    this._sheets._cachedGroups.styledCells.clear()
     if (this._rowCols._type === 'row') {
       this._spreadsheet.operations.setRowSize(
         this._sheets.activeSheetId,

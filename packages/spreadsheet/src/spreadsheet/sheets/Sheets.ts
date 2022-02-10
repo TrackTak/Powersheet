@@ -18,7 +18,7 @@ import styles from './Sheets.module.scss'
 import { KonvaEventObject } from 'konva/lib/Node'
 import Comment from './comment/Comment'
 import { debounce, DebouncedFunc, throttle } from 'lodash'
-import SimpleCellAddress from './cells/cell/SimpleCellAddress'
+import SimpleCellAddress, { SheetCellId } from './cells/cell/SimpleCellAddress'
 import RangeSimpleCellAddress from './cells/cell/RangeSimpleCellAddress'
 import Cell from './cells/cell/Cell'
 import Cells from './cells/Cells'
@@ -28,6 +28,7 @@ import CellError from './cellError/CellError'
 import { DetailedCellError } from '@tracktak/hyperformula'
 import CellHighlighter from '../cellHighlighter/CellHighlighter'
 import { ICellMetadata } from './Data'
+import StyleableCell from './cells/cell/StyleableCell'
 
 export interface IDimensions {
   width: number
@@ -68,6 +69,7 @@ export interface ICachedCellGroups {
 
 export interface ICachedGroups {
   cells: ICachedCellGroups[]
+  styledCells: Map<SheetCellId, StyleableCell>
   rows: ICachedRowColGroups
   cols: ICachedRowColGroups
 }
@@ -112,6 +114,7 @@ class Sheets {
    * @internal
    */
   _cachedGroups: ICachedGroups = {
+    styledCells: new Map(),
     cells: [],
     rows: {
       headerGroups: [],

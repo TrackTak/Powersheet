@@ -58,6 +58,7 @@ import {
   UnsetFrozenRowColUndoEntry
 } from '../UIUndoRedo'
 import Merger from '../sheets/Merger'
+import { addressToSheetCellId } from '../utils'
 
 export interface IToolbarActionGroups {
   elements: HTMLElement[]
@@ -122,11 +123,10 @@ class Toolbar {
     )
 
     borderCells.forEach(cell => {
-      const {
-        metadata
-      } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        cell.simpleCellAddress
-      )
+      const { metadata } =
+        this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+          cell.simpleCellAddress
+        )
 
       const borders = metadata?.borders ?? []
 
@@ -230,11 +230,10 @@ class Toolbar {
 
   private _clearBorders(simpleCellAddresses: SimpleCellAddress[]) {
     simpleCellAddresses.forEach(simpleCellAddress => {
-      const {
-        metadata
-      } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-        simpleCellAddress
-      )
+      const { metadata } =
+        this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+          simpleCellAddress
+        )
 
       delete metadata?.borders
 
@@ -248,10 +247,8 @@ class Toolbar {
   }
 
   private _setTextFormatPatterns() {
-    const {
-      dropdownContent: textFormatDropdownContent,
-      textFormats
-    } = createTextFormatContent(this._spreadsheet._getTextFormatPatterns())
+    const { dropdownContent: textFormatDropdownContent, textFormats } =
+      createTextFormatContent(this._spreadsheet._getTextFormatPatterns())
 
     this.dropdownMap.textFormatPattern = textFormatDropdownContent
 
@@ -270,10 +267,8 @@ class Toolbar {
     const sortedFontSizes = this._spreadsheet.options.fontSizes.sort(
       (a, b) => a - b
     )
-    const {
-      dropdownContent: fontSizeDropdownContent,
-      fontSizes
-    } = createFontSizeContent(sortedFontSizes)
+    const { dropdownContent: fontSizeDropdownContent, fontSizes } =
+      createFontSizeContent(sortedFontSizes)
 
     this.dropdownMap.fontSize = fontSizeDropdownContent
 
@@ -297,11 +292,8 @@ class Toolbar {
     name: DropdownIconName,
     createArrow?: boolean
   ) {
-    const {
-      iconButtonValues,
-      arrowIconValues,
-      tooltip
-    } = createDropdownIconButton(name, toolbarPrefix, createArrow)
+    const { iconButtonValues, arrowIconValues, tooltip } =
+      createDropdownIconButton(name, toolbarPrefix, createArrow)
 
     this.iconElementsMap[name] = {
       ...iconButtonValues,
@@ -311,13 +303,8 @@ class Toolbar {
   }
 
   private _setDropdownButton(name: DropdownButtonName, createArrow?: boolean) {
-    const {
-      buttonContainer,
-      button,
-      text,
-      arrowIconValues,
-      tooltip
-    } = createDropdownButton(name, toolbarPrefix, createArrow)
+    const { buttonContainer, button, text, arrowIconValues, tooltip } =
+      createDropdownButton(name, toolbarPrefix, createArrow)
 
     this.buttonElementsMap[name] = {
       buttonContainer,
@@ -352,11 +339,10 @@ class Toolbar {
   ) {
     let fill
 
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
 
     if (colorPickerIconName === 'backgroundColor') {
       fill = metadata?.backgroundColor ?? ''
@@ -400,11 +386,10 @@ class Toolbar {
   }
 
   private _setActiveHorizontalIcon(selectedCell: SelectedCell) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
     const icon = this.iconElementsMap.horizontalTextAlign.icon
 
     switch (metadata?.horizontalTextAlign) {
@@ -421,11 +406,10 @@ class Toolbar {
   }
 
   private _setActiveVerticalIcon(selectedCell: SelectedCell) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
 
     const icon = this.iconElementsMap.verticalTextAlign.icon
 
@@ -443,11 +427,10 @@ class Toolbar {
   }
 
   private _setActiveFontSize(selectedCell: SelectedCell) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
 
     this.buttonElementsMap.fontSize.text.textContent = (
       metadata?.fontSize ?? this._spreadsheet.styles.cell.text.fontSize!
@@ -455,11 +438,10 @@ class Toolbar {
   }
 
   private _setActiveTextFormat(selectedCell: SelectedCell) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
 
     let textFormat = 'automatic'
 
@@ -473,9 +455,8 @@ class Toolbar {
       }
     })
 
-    this.buttonElementsMap.textFormatPattern.text.textContent = sentenceCase(
-      textFormat
-    )
+    this.buttonElementsMap.textFormatPattern.text.textContent =
+      sentenceCase(textFormat)
   }
 
   private _setActiveHistoryIcons() {
@@ -713,17 +694,20 @@ class Toolbar {
   setValue = (name: IconElementsName | DropdownButtonName, value?: any) => {
     const selectedCell = this._spreadsheet.sheets.selector.selectedCell
     const selectedCells = this._spreadsheet.sheets.selector.selectedCells
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-      this._spreadsheet.sheets.activeSheetId
-    )
+    const sheetMetadata =
+      this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
+        this._spreadsheet.sheets.activeSheetId
+      )
     const setStyle = <T>(key: keyof ICellMetadata, value: T) => {
       this._spreadsheet.hyperformula.batchUndoRedo(() => {
         selectedCells.forEach(({ simpleCellAddress }) => {
-          const {
-            metadata
-          } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-            simpleCellAddress
+          this._spreadsheet.sheets._cachedGroups.styledCells.delete(
+            addressToSheetCellId(simpleCellAddress)
           )
+          const { metadata } =
+            this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+              simpleCellAddress
+            )
 
           let cellValue: number | string | undefined
 
@@ -744,11 +728,13 @@ class Toolbar {
 
     const deleteStyle = (key: keyof ICellMetadata) => {
       selectedCells.forEach(cell => {
-        const {
-          metadata
-        } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-          cell.simpleCellAddress
+        this._spreadsheet.sheets._cachedGroups.styledCells.delete(
+          addressToSheetCellId(cell.simpleCellAddress)
         )
+        const { metadata } =
+          this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+            cell.simpleCellAddress
+          )
 
         if (metadata) {
           delete metadata[key]
@@ -767,13 +753,13 @@ class Toolbar {
 
     switch (name) {
       case 'functionHelper': {
-        this._spreadsheet.options.showFunctionHelper = !this._spreadsheet
-          .options.showFunctionHelper
+        this._spreadsheet.options.showFunctionHelper =
+          !this._spreadsheet.options.showFunctionHelper
         break
       }
       case 'formula': {
-        this._spreadsheet.spreadsheetData.showFormulas = !this._spreadsheet
-          .spreadsheetData.showFormulas
+        this._spreadsheet.spreadsheetData.showFormulas =
+          !this._spreadsheet.spreadsheetData.showFormulas
         this._spreadsheet.persistData()
         break
       }
@@ -891,9 +877,10 @@ class Toolbar {
             )
           })
         } else {
-          const rangeSimpleCellAddress = this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
-            selectedCells
-          )
+          const rangeSimpleCellAddress =
+            this._spreadsheet.sheets._getMinMaxRangeSimpleCellAddress(
+              selectedCells
+            )
           const width = rangeSimpleCellAddress.width()
           const height = rangeSimpleCellAddress.height()
 
@@ -1106,20 +1093,18 @@ class Toolbar {
   }
 
   isFreezeActive(sheetId: number) {
-    const sheetMetadata = this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(
-      sheetId
-    )
+    const sheetMetadata =
+      this._spreadsheet.hyperformula.getSheetMetadata<ISheetMetadata>(sheetId)
     const { frozenRow, frozenCol } = sheetMetadata
 
     return frozenRow !== undefined || frozenCol !== undefined
   }
 
   isActive(selectedCell: SelectedCell, key: keyof ICellMetadata) {
-    const {
-      metadata
-    } = this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
-      selectedCell.simpleCellAddress
-    )
+    const { metadata } =
+      this._spreadsheet.hyperformula.getCellSerialized<ICellMetadata>(
+        selectedCell.simpleCellAddress
+      )
 
     const style = metadata?.[key]
 

@@ -125,14 +125,14 @@ class Cells {
   _cacheOutOfViewportCells() {
     this.cellsMap.forEach((cell, cellId) => {
       if (!cell.group.isClientRectOnScreen()) {
-        cell.group.remove()
-        cell.bordersGroup.remove()
+        // cell.group.remove()
+        // cell.bordersGroup.remove()
 
         this.cellsMap.delete(cellId)
-        this._sheets._cachedGroups.cells.push({
-          group: cell.group,
-          borderGroup: cell.bordersGroup
-        })
+        // this._sheets._cachedGroups.cells.push({
+        //   group: cell.group,
+        //   borderGroup: cell.bordersGroup
+        // })
       }
     })
   }
@@ -159,25 +159,42 @@ class Cells {
   _setCachedCells() {
     // TODO: Remove * 2 and measure the
     // outOfViewport for freeze correctly instead
-    const currentNumberOfCachedCells =
-      this._sheets._cachedGroupsNumber.rows *
-      this._sheets._cachedGroupsNumber.cols *
-      2
+    // const currentNumberOfCachedCells =
+    //   this._sheets._cachedGroupsNumber.rows *
+    //   this._sheets._cachedGroupsNumber.cols *
+    //   2
+    // const { cells } = this._sheets._spreadsheet.hyperformula.getSheetSerialized(
+    //   this._sheets.activeSheetId
+    // )
 
-    for (
-      let index = this._sheets._cachedGroupsNumber.cells;
-      index < currentNumberOfCachedCells;
-      index++
-    ) {
-      const { cellGroup, cellBordersGroup } = this._getCellGroup()
+    // for (
+    //   let index = this._sheets._cachedGroupsNumber.cells;
+    //   index < currentNumberOfCachedCells;
+    //   index++
+    // ) {
+    //   const { cellGroup, cellBordersGroup } = this._getCellGroup()
 
-      this._sheets._cachedGroups.cells.push({
-        group: cellGroup,
-        borderGroup: cellBordersGroup
-      })
-    }
+    //   this._sheets._cachedGroups.cells.push({
+    //     group: cellGroup,
+    //     borderGroup: cellBordersGroup
+    //   })
+    // }
 
-    this._sheets._cachedGroupsNumber.cells = currentNumberOfCachedCells
+    const sheetValues =
+      this._sheets._spreadsheet.hyperformula.getAllSheetsValues()
+
+    Object.keys(sheetValues).forEach((sheet, sheetIndex) => {
+      const cells = sheetValues[sheet]
+      for (let rowIndex = 0; rowIndex < cells.length; rowIndex++) {
+        const cols = cells[rowIndex]
+        if (!cols) continue
+        for (let colIndex = 0; colIndex < cols.length; colIndex++) {
+          const address = new SimpleCellAddress(sheetIndex, rowIndex, colIndex)
+          this._setStyleableCell(address)
+        }
+      }
+    })
+    // this._sheets._cachedGroupsNumber.cells = currentNumberOfCachedCells
   }
 
   /**
@@ -185,8 +202,8 @@ class Cells {
    */
   _resetCachedCells() {
     this.cellsMap.forEach((cell, cellId) => {
-      cell.group.remove()
-      cell.bordersGroup.remove()
+      // cell.group.remove()
+      // cell.bordersGroup.remove()
 
       this.cellsMap.delete(cellId)
       this._sheets._cachedGroups.cells.push({
@@ -224,16 +241,24 @@ class Cells {
    * @internal
    */
   _setStyleableCell(simpleCellAddress: SimpleCellAddress) {
-    const { group, borderGroup } = this._sheets._cachedGroups.cells.pop() ?? {}
-
-    if (!group || !borderGroup) return
-
-    const styleableCell = new StyleableCell(
-      this._sheets,
-      simpleCellAddress,
-      group,
-      borderGroup
+    let styleableCell = this._sheets._cachedGroups.styledCells.get(
+      addressToSheetCellId(simpleCellAddress)
     )
+
+    if (!styleableCell) {
+      const { cellGroup, cellBordersGroup } = this._getCellGroup()
+      styleableCell = new StyleableCell(
+        this._sheets,
+        simpleCellAddress,
+        cellGroup,
+        cellBordersGroup
+      )
+
+      this._sheets._cachedGroups.styledCells.set(
+        addressToSheetCellId(simpleCellAddress),
+        styleableCell
+      )
+    }
 
     const sheetCellId = addressToSheetCellId(simpleCellAddress)
 

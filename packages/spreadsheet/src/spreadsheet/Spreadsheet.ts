@@ -143,6 +143,11 @@ class Spreadsheet {
     })
 
     this.hyperformula.on('asyncValuesUpdated', this.onAsyncValuesUpdated)
+    this.hyperformula.on('valuesUpdated', this.onValuesUpdated)
+  }
+
+  private onValuesUpdated = () => {
+    this.render()
   }
 
   private onAsyncValuesUpdated = () => {
@@ -251,6 +256,7 @@ class Spreadsheet {
     window.removeEventListener('DOMContentLoaded', this._onDOMContentLoaded)
 
     this.hyperformula.off('asyncValuesUpdated', this.onAsyncValuesUpdated)
+    this.hyperformula.off('valuesUpdated', this.onValuesUpdated)
 
     this.spreadsheetEl.remove()
 
